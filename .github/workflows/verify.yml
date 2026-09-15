@@ -2,6 +2,9 @@ name: Native mobile verification
 on: [push, pull_request]
 permissions:
   contents: read
+concurrency:
+  group: native-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   verify:
     runs-on: ubuntu-latest

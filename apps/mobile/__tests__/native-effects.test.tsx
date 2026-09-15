@@ -10,6 +10,7 @@ let now = 0;
 const mockHaptic = jest.fn((..._args: unknown[]) => Promise.resolve());
 const mockAwake = jest.fn(() => Promise.resolve());
 const mockSleep = jest.fn(() => Promise.resolve());
+const mockActivate = jest.fn((_active: boolean) => Promise.resolve());
 const mockPlayers: {
   loop: boolean;
   play: jest.Mock;
@@ -40,7 +41,7 @@ jest.mock("expo-keep-awake", () => ({
 }));
 jest.mock("expo-audio", () => ({
   setAudioModeAsync: () => Promise.resolve(),
-  setIsAudioActiveAsync: () => Promise.resolve(),
+  setIsAudioActiveAsync: (active: boolean) => mockActivate(active),
   createAudioPlayer: () => {
     const player = {
       loop: false,
@@ -65,6 +66,7 @@ beforeEach(() => {
   mockHaptic.mockClear();
   mockAwake.mockClear();
   mockSleep.mockClear();
+  mockActivate.mockReset().mockResolvedValue(undefined);
   Object.defineProperty(AppState, "currentState", {
     configurable: true,
     value: "active",
@@ -189,4 +191,26 @@ test("a cancelled cue's late error cannot pause a resumed session", async () => 
     rejectSeek(new Error("cancelled seek"));
   });
   expect(mockController.current?.engine.status).toBe("running");
+});
+
+test("starting from Today waits for native audio activation before the first cue", async () => {
+  await render(<NativeSessionEffects />);
+  await act(async () => {
+    await Promise.resolve();
+  });
+  let activate!: () => void;
+  mockActivate.mockImplementationOnce(
+    () =>
+      new Promise<void>((resolve) => {
+        activate = resolve;
+      }),
+  );
+  await act(async () => {
+    mockController.start(null);
+  });
+  expect(mockPlayers[0].play).not.toHaveBeenCalled();
+  await act(async () => {
+    activate();
+  });
+  expect(mockPlayers[0].play).toHaveBeenCalledTimes(1);
 });

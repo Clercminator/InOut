@@ -36,7 +36,9 @@ export function NativeSessionEffects() {
   const cue = useRef("");
   const cycle = useRef(-1);
   const completedId = useRef("");
-  const [audioReady, setAudioReady] = useState(false);
+  const audioKey = `${audio}:${running}:${session?.stage}`;
+  const [readyAudioKey, setReadyAudioKey] = useState<string | null>(null);
+  const audioReady = audio === "silent" || readyAudioKey === audioKey;
   const view = controller.view();
 
   useEffect(() => {
@@ -50,7 +52,7 @@ export function NativeSessionEffects() {
   useEffect(() => {
     // Respect the silent switch. Exclusive focus lets native interruptions pause playback.
     let mounted = true;
-    setAudioReady(false);
+    setReadyAudioKey(null);
     void setAudioModeAsync({
       playsInSilentMode: false,
       shouldPlayInBackground: false,
@@ -64,15 +66,15 @@ export function NativeSessionEffects() {
           : undefined,
       )
       .then(() => {
-        if (mounted) setAudioReady(true);
+        if (mounted) setReadyAudioKey(audioKey);
       })
       .catch(() => {
-        if (mounted) controller.pause("interruption");
+        if (mounted && audio !== "silent") controller.pause("interruption");
       });
     return () => {
       mounted = false;
     };
-  }, [controller, running, audio, session?.stage]);
+  }, [controller, running, audio, session?.stage, audioKey]);
 
   useEffect(() => {
     const gen = ++generation.current;
@@ -110,6 +112,7 @@ export function NativeSessionEffects() {
     const subscription = guard.addListener("playbackStatusUpdate", (status) => {
       if (status.playing) hasPlayed = true;
       if (
+        status.error ||
         status.mediaServicesDidReset ||
         (hasPlayed && !status.playing && !status.isBuffering)
       ) {
