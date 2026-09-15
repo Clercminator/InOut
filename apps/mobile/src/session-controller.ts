@@ -11,7 +11,13 @@ import type { LocalStore } from "./storage";
 export class SessionController {
   current: SessionRecord | null = null;
   preferences: Preferences;
-  error: string | null = null;
+  private sessionError: string | null = null;
+  private preferencesError: string | null = null;
+  private pendingPreferences: Preferences | null = null;
+  private historyCache: SessionRecord[] | null = null;
+  get error(): string | null {
+    return this.sessionError ?? this.preferencesError;
+  }
   private listeners = new Set<() => void>();
   private revision = 0;
   constructor(
@@ -26,6 +32,17 @@ export class SessionController {
         ...pending,
         engine: engine.recover(pending.engine, now()),
       };
+      if (
+        this.current.stage === "active" &&
+        this.current.engine.status === "completed"
+      ) {
+        this.current = {
+          ...this.current,
+          stage: "post",
+          endReason: "completed",
+          finishedAt: this.current.engine.checkpointAt,
+        };
+      }
       this.save();
     }
   }
@@ -42,11 +59,16 @@ export class SessionController {
   }
   private save() {
     try {
-      if (this.current) this.store.save(this.current);
-      this.error = null;
+      if (this.current) {
+        this.store.save(this.current);
+        if (this.current.stage === "result") this.historyCache = null;
+      }
+      this.sessionError = null;
     } catch {
-      this.error =
-        "Could not save on this phone. Free some storage, then retry. Your session is paused.";
+      this.sessionError =
+        this.current?.stage === "active"
+          ? "Could not save on this phone. Your session is paused. Free some storage, then retry."
+          : "Your result has not been saved yet. Free some storage, then retry before starting another session.";
       if (this.current?.engine.status === "running")
         this.current = {
           ...this.current,
@@ -56,11 +78,12 @@ export class SessionController {
     this.emit();
   }
   retry() {
-    this.save();
+    if (this.sessionError) this.save();
+    if (this.pendingPreferences) this.setPreferences(this.pendingPreferences);
   }
   start(pre: number | null, cycles = sigh.defaultCycles) {
     if (!validRating(pre)) throw new Error("Choose a rating from 1 to 10");
-    if (this.current && this.current.stage !== "result") return;
+    if (this.error || (this.current && this.current.stage !== "result")) return;
     this.current = {
       id: this.id(),
       protocolId: sigh.id,
@@ -111,15 +134,21 @@ export class SessionController {
   }
   pause(reason: EngineState["pauseReason"] = "manual") {
     if (!this.current || this.current.stage !== "active") return;
+    const before = this.current.engine;
+    if (before.status !== "running") return;
+    const now = this.now();
     this.current = {
       ...this.current,
-      engine: engine.pause(this.current.engine, this.now(), reason),
+      engine: engine.pause(before, now, reason),
     };
     if (this.current.engine.status === "completed")
       this.current = {
         ...this.current,
         stage: "post",
-        finishedAt: this.now(),
+        finishedAt:
+          before.anchorAt +
+          engine.totalDuration(before.plan) -
+          before.elapsedAtAnchor,
         endReason: "completed",
       };
     this.save();
@@ -163,10 +192,12 @@ export class SessionController {
     this.save();
   }
   history() {
-    return this.store.history();
+    return (this.historyCache ??= this.store.history());
   }
   remove(id: string) {
+    if (this.sessionError && this.current?.id === id) return;
     this.store.remove(id);
+    this.historyCache = null;
     if (this.current?.id === id && this.current.stage === "result")
       this.current = null;
     this.emit();
@@ -175,9 +206,11 @@ export class SessionController {
     try {
       this.store.savePreferences(preferences);
       this.preferences = preferences;
-      this.error = null;
+      this.pendingPreferences = null;
+      this.preferencesError = null;
     } catch {
-      this.error = "Settings could not be saved. Please retry.";
+      this.pendingPreferences = { ...preferences };
+      this.preferencesError = "Settings could not be saved. Please retry.";
     }
     this.emit();
   }

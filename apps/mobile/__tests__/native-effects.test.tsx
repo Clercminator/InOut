@@ -135,3 +135,58 @@ test("native audio-focus loss requires explicit resume", async () => {
   });
   expect(mockController.view()?.sessionElapsedMs).toBe(2500);
 });
+
+test("an audio seek resolving after its phase elapsed does not play a stale cue", async () => {
+  mockController.start(null);
+  await render(<NativeSessionEffects />);
+  await act(async () => {
+    await Promise.resolve();
+  });
+  let finishSeek!: () => void;
+  mockPlayers[1].seekTo.mockImplementationOnce(
+    () =>
+      new Promise<void>((resolve) => {
+        finishSeek = resolve;
+      }),
+  );
+  await act(async () => {
+    now = 4000;
+    mockController.tick();
+  });
+  // No render has occurred for the new phase yet; the authoritative clock has advanced.
+  await act(async () => {
+    now = 6500;
+    finishSeek();
+  });
+  expect(mockPlayers[1].play).not.toHaveBeenCalled();
+  expect(mockController.current?.engine.status).toBe("running");
+});
+
+test("a cancelled cue's late error cannot pause a resumed session", async () => {
+  mockController.start(null);
+  await render(<NativeSessionEffects />);
+  await act(async () => {
+    await Promise.resolve();
+  });
+  let rejectSeek!: (error: Error) => void;
+  mockPlayers[1].seekTo.mockImplementationOnce(
+    () =>
+      new Promise<void>((_resolve, reject) => {
+        rejectSeek = reject;
+      }),
+  );
+  await act(async () => {
+    now = 4000;
+    mockController.tick();
+  });
+  await act(async () => {
+    mockController.pause();
+  });
+  await act(async () => {
+    mockController.resume();
+  });
+  await act(async () => {
+    rejectSeek(new Error("cancelled seek"));
+  });
+  expect(mockController.current?.engine.status).toBe("running");
+});

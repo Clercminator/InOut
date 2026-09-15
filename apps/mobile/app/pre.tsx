@@ -18,7 +18,7 @@ export default function Pre() {
   if (controller.current?.stage === "post") return <Redirect href="/post" />;
   const start = (value: number | null) => {
     controller.start(value);
-    router.replace("/session");
+    if (controller.current?.stage === "active") router.replace("/session");
   };
   return (
     <BackScreen title="STATE SHIFT · PRE">
@@ -33,11 +33,12 @@ export default function Pre() {
       <SaveError />
       <Button
         title="START RESET  →"
-        disabled={rating === null}
+        disabled={rating === null || !!controller.error}
         onPress={() => start(rating)}
       />
       <Button
         title="Skip rating & start"
+        disabled={!!controller.error}
         secondary
         onPress={() => start(null)}
       />

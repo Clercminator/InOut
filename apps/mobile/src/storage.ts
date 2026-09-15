@@ -35,7 +35,7 @@ export class LocalStore {
     if (!validRating(record.pre) || !validRating(record.post))
       throw new Error("Invalid tension rating");
     this.db.runSync(
-      "INSERT INTO sessions(id, stage, started_at, payload) VALUES(?,?,?,?) ON CONFLICT(id) DO UPDATE SET stage=excluded.stage, payload=excluded.payload",
+      "INSERT INTO sessions(id, stage, started_at, payload) VALUES(?,?,?,?) ON CONFLICT(id) DO UPDATE SET stage=excluded.stage, started_at=excluded.started_at, payload=excluded.payload",
       record.id,
       record.stage,
       record.engine.startedAt,
@@ -66,7 +66,9 @@ export class LocalStore {
     return this.db
       .getAllSync<{
         payload: string;
-      }>("SELECT payload FROM sessions WHERE stage='result' ORDER BY started_at DESC")
+      }>(
+        "SELECT payload FROM sessions WHERE stage='result' ORDER BY started_at DESC",
+      )
       .map((row) => this.decode(row.payload));
   }
   remove(id: string) {

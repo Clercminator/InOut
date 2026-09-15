@@ -191,14 +191,20 @@ export function NativeSessionEffects() {
         void player
           .seekTo(0)
           .then(() => {
+            const currentView = controller.view();
             if (
               generation.current === gen &&
+              controller.current?.id === session?.id &&
               controller.current?.engine.status === "running" &&
+              currentView?.cueKey === view.cueKey &&
+              currentView.phaseRemainingMs > 750 &&
               AppState.currentState === "active"
             )
               player.play();
           })
-          .catch(() => controller.pause("interruption"));
+          .catch(() => {
+            if (generation.current === gen) controller.pause("interruption");
+          });
     }
   }, [
     running,

@@ -1,6 +1,6 @@
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { Alert, BackHandler, View } from "react-native";
-import { Redirect, router } from "expo-router";
+import { Redirect, router, useFocusEffect } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { Screen, Label, Title, Copy, Button, s } from "../src/ui";
 import { useSession, SaveError } from "../src/provider";
@@ -9,6 +9,9 @@ import { colors } from "@inout/design-tokens";
 
 export default function Session() {
   const controller = useSession();
+  useFocusEffect(
+    useCallback(() => () => controller.pause("interruption"), [controller]),
+  );
   const record = controller.current;
   const view = controller.view();
   useEffect(() => {

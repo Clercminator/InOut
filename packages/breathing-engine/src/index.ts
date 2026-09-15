@@ -174,6 +174,11 @@ export function recover(state: EngineState, now: number): EngineState {
     state.elapsedAtAnchor > totalDuration(state.plan)
   )
     throw new Error("Invalid saved session");
+  if (
+    state.status === "running" &&
+    state.elapsedAtAnchor === totalDuration(state.plan)
+  )
+    return { ...state, status: "completed" };
   return state.status === "running"
     ? {
         ...state,
