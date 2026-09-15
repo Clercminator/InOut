@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Space+Grotesk:wght@500;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "on-error-container": "#ffdad6", "inverse-primary": "#5c5f61", "tertiary": "#ffffff", "surface-container-low": "#1a1c20", "surface-variant": "#333539", "on-error": "#690005", "surface-tint": "#c4c7c9", "inverse-surface": "#e2e2e8", "surface-dim": "#111317", "on-surface": "#e2e2e8", "primary": "#ffffff", "on-primary-fixed-variant": "#444749", "outline": "#8e9193", "primary-container": "#e0e3e5", "secondary-container": "#0566d9", "on-tertiary": "#552100", "on-tertiary-fixed": "#341100", "on-primary": "#2d3133", "secondary-fixed": "#d8e2ff", "primary-fixed": "#e0e3e5", "on-background": "#e2e2e8", "primary-fixed-dim": "#c4c7c9", "tertiary-fixed-dim": "#ffb690", "tertiary-container": "#ffdbca", "on-primary-fixed": "#191c1e", "on-secondary": "#002e6a", "on-secondary-fixed-variant": "#004395", "on-secondary-fixed": "#001a42", "secondary-fixed-dim": "#adc6ff", "secondary": "#adc6ff", "surface-container-highest": "#333539", "background": "#111317", "surface-bright": "#37393e", "surface": "#111317", "on-tertiary-container": "#a74800", "on-surface-variant": "#c4c7c9", "error-container": "#93000a", "error": "#ffb4ab", "surface-container-high": "#282a2e", "tertiary-fixed": "#ffdbca", "on-primary-container": "#626567", "outline-variant": "#444749", "inverse-on-surface": "#2f3035", "on-secondary-container": "#e6ecff", "on-tertiary-fixed-variant": "#783200", "surface-container-lowest": "#0c0e12", "surface-container": "#1e2024" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "margin-desktop": "2.5rem", "space-xs": "0.25rem", "margin-tablet": "1.5rem", "space-lg": "1.5rem", "gutter-desktop": "1.5rem", "space-2xl": "3rem", "margin": "1rem", "space-md": "1rem", "space-sm": "0.5rem", "gutter": "1rem", "space-xl": "2rem" }, "fontFamily": { "label-mono": ["Space Grotesk"], "metric-timer-mobile": ["Space Grotesk"], "display-hero-mobile": ["Inter"], "body-md": ["Inter"], "headline-xl-mobile": ["Inter"], "metric-timer": ["Space Grotesk"], "body-sm": ["Inter"], "headline-lg": ["Inter"], "headline-xl": ["Inter"], "body-lg": ["Inter"], "headline-md": ["Inter"], "label-caps": ["Space Grotesk"], "display-hero": ["Inter"] }, "fontSize": { "label-mono": ["13px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }], "metric-timer-mobile": ["72px", { "lineHeight": "72px", "letterSpacing": "-0.04em", "fontWeight": "700" }], "display-hero-mobile": ["56px", { "lineHeight": "56px", "letterSpacing": "-0.04em", "fontWeight": "800" }], "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400" }], "headline-xl-mobile": ["32px", { "lineHeight": "36px", "letterSpacing": "-0.03em", "fontWeight": "700" }], "metric-timer": ["104px", { "lineHeight": "96px", "letterSpacing": "-0.05em", "fontWeight": "700" }], "body-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500" }], "headline-lg": ["24px", { "lineHeight": "28px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "headline-xl": ["40px", { "lineHeight": "44px", "letterSpacing": "-0.03em", "fontWeight": "700" }], "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "400" }], "headline-md": ["20px", { "lineHeight": "24px", "letterSpacing": "-0.015em", "fontWeight": "600" }], "label-caps": ["11px", { "lineHeight": "14px", "letterSpacing": "0.08em", "fontWeight": "700" }], "display-hero": ["80px", { "lineHeight": "80px", "letterSpacing": "-0.04em", "fontWeight": "800" }] } } } }</script><style>@layer base { html, body { width: 100vw; margin: 0; padding: 0; } body { overscroll-behavior: none; } .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); } .pt-safe { padding-top: env(safe-area-inset-top, 0px); } main > :first-child { margin-top: 0 !important; } main > :last-child { margin-bottom: 0 !important; } } ::-webkit-scrollbar { display: none; }</style></head><body class="bg-surface text-on-surface font-body-md text-body-md antialiased selection:bg-secondary-container selection:text-on-secondary-container min-h-screen flex flex-col"><header class="fixed top-0 w-full z-50 pt-safe bg-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.2)]"><div class="h-16 px-margin flex items-center justify-between"><div class="flex items-center gap-space-sm"><button aria-label="Back" class="w-11 h-11 flex items-center justify-center rounded-lg bg-surface-container-low text-on-surface hover:text-primary transition-colors active:scale-95" onclick="history.back()"><span class="material-symbols-outlined text-[20px]">arrow_back</span></button><h1 class="font-headline-md text-headline-md font-bold tracking-tight text-primary uppercase">Active Session</h1></div><div class="flex items-center gap-space-sm"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex-1 w-full bg-surface pt-16 pb-safe px-margin flex flex-col"><div class="flex flex-col w-full pb-12 gap-y-space-lg">
+<!-- USER ACCOUNT HERO / GUEST SYNC BANNER -->
+<section class="flex flex-col bg-surface-container-low rounded-xl p-space-md shadow-md gap-y-space-md">
+<div class="flex items-start justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm">
+<div class="w-12 h-12 rounded-xl bg-surface-container-highest flex items-center justify-center text-primary shrink-0 shadow-sm">
+<span class="material-symbols-outlined text-[24px]">person_outline</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-space-xs">
+<span class="font-label-caps text-label-caps uppercase text-secondary tracking-wider">Local Profile</span>
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+</div>
+<h2 class="font-headline-md text-headline-md text-primary font-bold tracking-tight truncate">Guest Account</h2>
+</div>
+</div>
+<span class="font-label-mono text-label-mono text-on-surface-variant bg-surface-container px-2 py-1 rounded-full shrink-0">UNSYNCED</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant">
+      Your respiratory logs, metrics, and breathwork presets are currently cached locally on this hardware.
+    </p>
+<!-- Value Pills List -->
+<div class="flex flex-wrap gap-1.5">
+<div class="flex items-center gap-1.5 bg-surface-container px-2.5 py-1 rounded-full">
+<span class="material-symbols-outlined text-primary text-[14px]">cloud_sync</span>
+<span class="font-label-caps text-label-caps text-on-surface">Sync across devices</span>
+</div>
+<div class="flex items-center gap-1.5 bg-surface-container px-2.5 py-1 rounded-full">
+<span class="material-symbols-outlined text-primary text-[14px]">history</span>
+<span class="font-label-caps text-label-caps text-on-surface">Telemetry backup</span>
+</div>
+<div class="flex items-center gap-1.5 bg-surface-container px-2.5 py-1 rounded-full">
+<span class="material-symbols-outlined text-primary text-[14px]">tune</span>
+<span class="font-label-caps text-label-caps text-on-surface">Custom cadence save</span>
+</div>
+</div>
+<button class="w-full h-14 rounded-lg bg-primary text-on-primary font-body-lg text-body-lg font-bold flex items-center justify-center gap-space-sm active:scale-[0.98] transition-transform shadow-md" id="sync-btn" type="button">
+<span class="material-symbols-outlined text-[20px]">sync</span>
+<span>CREATE ACCOUNT &amp; SYNC</span>
+</button>
+</section>
+<!-- GUIDANCE & AUDIO SECTION -->
+<section class="flex flex-col gap-y-space-sm">
+<div class="flex items-center justify-between px-space-xs">
+<h3 class="font-label-caps text-label-caps uppercase text-on-surface-variant tracking-wider">Guidance &amp; Acoustic Cadence</h3>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">graphic_eq</span>
+</div>
+<div class="flex flex-col bg-surface-container-low rounded-xl shadow-sm">
+<!-- Voice Guidance Toggle Row -->
+<div class="flex items-center justify-between p-space-md">
+<div class="flex flex-col pr-space-md min-w-0">
+<span class="font-body-lg text-body-lg text-primary font-semibold">Voice Guidance</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Spoken inhalation, hold, and exhalation triggers</span>
+</div>
+<button aria-checked="true" class="w-12 h-7 rounded-full bg-secondary-container p-0.5 flex items-center transition-colors shrink-0" data-toggle="voice" role="switch" type="button">
+<div class="w-6 h-6 rounded-full bg-primary shadow-sm transform translate-x-5 transition-transform"></div>
+</button>
+</div>
+<!-- Voice Profile Segmented Selector -->
+<div class="flex flex-col px-space-md pb-space-md pt-0 gap-y-space-xs">
+<label class="font-label-caps text-label-caps uppercase text-on-surface-variant">Voice Profile</label>
+<div class="grid grid-cols-3 bg-surface-container rounded-lg p-1 gap-1" role="radiogroup">
+<button class="py-2 rounded-md font-label-mono text-label-mono text-center font-bold bg-surface-container-highest text-primary shadow-sm transition-all" data-segment="voice" data-value="minimal" type="button">Minimal</button>
+<button class="py-2 rounded-md font-label-mono text-label-mono text-center text-on-surface-variant hover:text-primary transition-all" data-segment="voice" data-value="functional" type="button">Command</button>
+<button class="py-2 rounded-md font-label-mono text-label-mono text-center text-on-surface-variant hover:text-primary transition-all" data-segment="voice" data-value="subtle" type="button">Subtle</button>
+</div>
+</div>
+<!-- Sound Cues Toggle Row -->
+<div class="flex items-center justify-between p-space-md bg-surface-container-high/40">
+<div class="flex flex-col pr-space-md min-w-0">
+<span class="font-body-lg text-body-lg text-primary font-semibold">Acoustic Cues</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Sub-bass sine impulse at phase transitions</span>
+</div>
+<button aria-checked="true" class="w-12 h-7 rounded-full bg-secondary-container p-0.5 flex items-center transition-colors shrink-0" data-toggle="sound-cues" role="switch" type="button">
+<div class="w-6 h-6 rounded-full bg-primary shadow-sm transform translate-x-5 transition-transform"></div>
+</button>
+</div>
+<!-- Ambient Soundscape Selector -->
+<div class="flex flex-col p-space-md gap-y-space-xs">
+<label class="font-label-caps text-label-caps uppercase text-on-surface-variant">Atmospheric Noise Layer</label>
+<div class="grid grid-cols-3 bg-surface-container rounded-lg p-1 gap-1" role="radiogroup">
+<button class="py-2 rounded-md font-label-mono text-label-mono text-center font-bold bg-surface-container-highest text-primary shadow-sm transition-all" data-segment="ambient" data-value="off" type="button">Off</button>
+<button class="py-2 rounded-md font-label-mono text-label-mono text-center text-on-surface-variant hover:text-primary transition-all" data-segment="ambient" data-value="brown" type="button">Brown 40Hz</button>
+<button class="py-2 rounded-md font-label-mono text-label-mono text-center text-on-surface-variant hover:text-primary transition-all" data-segment="ambient" data-value="flow" type="button">Soft Flow</button>
+</div>
+</div>
+</div>
+</section>
+<!-- FEEDBACK & DISPLAY TELEMETRY -->
+<section class="flex flex-col gap-y-space-sm">
+<div class="flex items-center justify-between px-space-xs">
+<h3 class="font-label-caps text-label-caps uppercase text-on-surface-variant tracking-wider">Haptics &amp; HUD Engine</h3>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">vibration</span>
+</div>
+<div class="flex flex-col bg-surface-container-low rounded-xl shadow-sm divide-y divide-surface-container-high/60">
+<!-- Haptic Rhythm -->
+<div class="flex items-center justify-between p-space-md">
+<div class="flex flex-col pr-space-md min-w-0">
+<span class="font-body-lg text-body-lg text-primary font-semibold">Tactile Rhythm Engine</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Directional haptic waveforms for eyes-closed sessions</span>
+</div>
+<button aria-checked="true" class="w-12 h-7 rounded-full bg-secondary-container p-0.5 flex items-center transition-colors shrink-0" data-toggle="haptic" role="switch" type="button">
+<div class="w-6 h-6 rounded-full bg-primary shadow-sm transform translate-x-5 transition-transform"></div>
+</button>
+</div>
+<!-- Phase Countdown HUD -->
+<div class="flex items-center justify-between p-space-md">
+<div class="flex flex-col pr-space-md min-w-0">
+<span class="font-body-lg text-body-lg text-primary font-semibold">Phase Countdown Milliseconds</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">High-cadence numeric telemetry on primary ring</span>
+</div>
+<button aria-checked="true" class="w-12 h-7 rounded-full bg-secondary-container p-0.5 flex items-center transition-colors shrink-0" data-toggle="phase-num" role="switch" type="button">
+<div class="w-6 h-6 rounded-full bg-primary shadow-sm transform translate-x-5 transition-transform"></div>
+</button>
+</div>
+<!-- Cycle Tracker -->
+<div class="flex items-center justify-between p-space-md">
+<div class="flex flex-col pr-space-md min-w-0">
+<span class="font-body-lg text-body-lg text-primary font-semibold">Repetition &amp; Round Counter</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Glanceable completed cycle dots across HUD base</span>
+</div>
+<button aria-checked="true" class="w-12 h-7 rounded-full bg-secondary-container p-0.5 flex items-center transition-colors shrink-0" data-toggle="cycle-counter" role="switch" type="button">
+<div class="w-6 h-6 rounded-full bg-primary shadow-sm transform translate-x-5 transition-transform"></div>
+</button>
+</div>
+<!-- Keep Awake -->
+<div class="flex items-center justify-between p-space-md">
+<div class="flex flex-col pr-space-md min-w-0">
+<span class="font-body-lg text-body-lg text-primary font-semibold">Prevent Screen Sleep</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Locks display active during continuous breathing cycles</span>
+</div>
+<button aria-checked="true" class="w-12 h-7 rounded-full bg-secondary-container p-0.5 flex items-center transition-colors shrink-0" data-toggle="awake" role="switch" type="button">
+<div class="w-6 h-6 rounded-full bg-primary shadow-sm transform translate-x-5 transition-transform"></div>
+</button>
+</div>
+</div>
+</section>
+<!-- HABIT ROUTINE & NOTIFICATION CADENCE -->
+<section class="flex flex-col gap-y-space-sm">
+<div class="flex items-center justify-between px-space-xs">
+<h3 class="font-label-caps text-label-caps uppercase text-on-surface-variant tracking-wider">Conditioning Schedule</h3>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">alarm</span>
+</div>
+<!-- Morning Card -->
+<div class="flex flex-col bg-surface-container-low rounded-xl p-space-md shadow-sm gap-y-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">wb_sunny</span>
+</div>
+<div class="flex flex-col">
+<span class="font-body-lg text-body-lg font-bold text-primary">Morning Focus Alert</span>
+<span class="font-label-mono text-label-mono text-secondary">Box Protocol (4-4-4-4)</span>
+</div>
+</div>
+<button aria-checked="true" class="w-12 h-7 rounded-full bg-secondary-container p-0.5 flex items-center transition-colors shrink-0" data-toggle="morning-remind" role="switch" type="button">
+<div class="w-6 h-6 rounded-full bg-primary shadow-sm transform translate-x-5 transition-transform"></div>
+</button>
+</div>
+<!-- Time Dial / Target Picker -->
+<div class="flex items-center justify-between bg-surface-container rounded-lg p-space-sm">
+<span class="font-label-caps text-label-caps uppercase text-on-surface-variant px-space-xs">Scheduled Time</span>
+<button class="font-metric-timer-mobile text-headline-xl-mobile text-primary font-bold tracking-tight bg-surface-container-highest px-3 py-1 rounded-md active:scale-95 transition-transform" id="morning-time-val" type="button">08:30 AM</button>
+</div>
+<!-- Habit Days Pill Matrix -->
+<div class="flex flex-col gap-y-1.5">
+<label class="font-label-caps text-label-caps uppercase text-on-surface-variant">Active Cadence Days</label>
+<div class="flex items-center justify-between gap-1 w-full" id="day-selector-morning">
+<button class="w-10 h-10 rounded-lg font-label-mono text-label-mono font-bold transition-all bg-primary text-on-primary" type="button">M</button>
+<button class="w-10 h-10 rounded-lg font-label-mono text-label-mono font-bold transition-all bg-primary text-on-primary" type="button">T</button>
+<button class="w-10 h-10 rounded-lg font-label-mono text-label-mono font-bold transition-all bg-primary text-on-primary" type="button">W</button>
+<button class="w-10 h-10 rounded-lg font-label-mono text-label-mono font-bold transition-all bg-primary text-on-primary" type="button">T</button>
+<button class="w-10 h-10 rounded-lg font-label-mono text-label-mono font-bold transition-all bg-primary text-on-primary" type="button">F</button>
+<button class="w-10 h-10 rounded-lg font-label-mono text-label-mono font-bold transition-all bg-surface-container-highest text-on-surface-variant" type="button">S</button>
+<button class="w-10 h-10 rounded-lg font-label-mono text-label-mono font-bold transition-all bg-surface-container-highest text-on-surface-variant" type="button">S</button>
+</div>
+</div>
+</div>
+<!-- Evening Card -->
+<div class="flex items-center justify-between bg-surface-container-low rounded-xl p-space-md shadow-sm">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined text-[20px]">bedtime</span>
+</div>
+<div class="flex flex-col min-w-0 pr-space-sm">
+<span class="font-body-lg text-body-lg font-bold text-primary truncate">Evening Down-Regulation</span>
+<span class="font-label-mono text-label-mono text-on-surface-variant">10:15 PM · 4-7-8 Protocol</span>
+</div>
+</div>
+<button aria-checked="true" class="w-12 h-7 rounded-full bg-secondary-container p-0.5 flex items-center transition-colors shrink-0" data-toggle="evening-remind" role="switch" type="button">
+<div class="w-6 h-6 rounded-full bg-primary shadow-sm transform translate-x-5 transition-transform"></div>
+</button>
+</div>
+</section>
+<!-- APPEARANCE MATRIX -->
+<section class="flex flex-col gap-y-space-sm">
+<div class="flex items-center justify-between px-space-xs">
+<h3 class="font-label-caps text-label-caps uppercase text-on-surface-variant tracking-wider">Display Tone &amp; Hardware</h3>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">palette</span>
+</div>
+<div class="flex flex-col bg-surface-container-low rounded-xl p-space-md shadow-sm gap-y-space-sm">
+<div class="grid grid-cols-3 bg-surface-container rounded-lg p-1 gap-1" role="radiogroup">
+<button class="py-2.5 rounded-md font-label-mono text-label-mono text-center font-bold bg-surface-container-highest text-primary shadow-sm transition-all" data-segment="theme" data-value="dark" type="button">Basalt Dark</button>
+<button class="py-2.5 rounded-md font-label-mono text-label-mono text-center text-on-surface-variant hover:text-primary transition-all" data-segment="theme" data-value="system" type="button">System</button>
+<button class="py-2.5 rounded-md font-label-mono text-label-mono text-center text-on-surface-variant hover:text-primary transition-all" data-segment="theme" data-value="oled" type="button">Pure OLED</button>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Pure OLED eliminates backlighting bleed for zero-light sleep readiness.</span>
+</div>
+</section>
+<!-- CLINICAL SAFETY & METHODOLOGY -->
+<section class="flex flex-col gap-y-space-sm">
+<div class="flex items-center justify-between px-space-xs">
+<h3 class="font-label-caps text-label-caps uppercase text-on-surface-variant tracking-wider">Clinical Evidence &amp; Safety</h3>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">verified_user</span>
+</div>
+<div class="flex flex-col bg-surface-container-low rounded-xl shadow-sm divide-y divide-surface-container-high/60">
+<button class="flex items-center justify-between p-space-md text-left active:bg-surface-container transition-colors" type="button">
+<div class="flex flex-col pr-space-md min-w-0">
+<span class="font-body-lg text-body-lg text-primary font-medium">Respiratory Safety Guidelines</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Contraindications regarding hyperventilation and breath holds</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant text-[20px]">chevron_right</span>
+</button>
+<button class="flex items-center justify-between p-space-md text-left active:bg-surface-container transition-colors" type="button">
+<div class="flex flex-col pr-space-md min-w-0">
+<span class="font-body-lg text-body-lg text-primary font-medium">Hypoxic Conditioning Protocols</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">CO2 tolerance mechanics and high-strain parameters</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant text-[20px]">chevron_right</span>
+</button>
+<button class="flex items-center justify-between p-space-md text-left active:bg-surface-container transition-colors" type="button">
+<div class="flex flex-col pr-space-md min-w-0">
+<span class="font-body-lg text-body-lg text-primary font-medium">Clinical Citations &amp; Huberman Index</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Peer-reviewed autonomic nervous system research</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant text-[20px]">chevron_right</span>
+</button>
+</div>
+</section>
+<!-- DATA, EXPORT & CACHE PURGE -->
+<section class="flex flex-col gap-y-space-sm">
+<div class="flex items-center justify-between px-space-xs">
+<h3 class="font-label-caps text-label-caps uppercase text-on-surface-variant tracking-wider">Data Telemetry &amp; Storage</h3>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">database</span>
+</div>
+<div class="flex flex-col bg-surface-container-low rounded-xl shadow-sm divide-y divide-surface-container-high/60">
+<button class="flex items-center justify-between p-space-md active:bg-surface-container transition-colors text-left" id="export-json-btn" type="button">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary text-[20px]">file_download</span>
+<span class="font-body-lg text-body-lg text-primary font-medium">Export Telemetry (JSON / CSV)</span>
+</div>
+<span class="font-label-mono text-label-mono text-on-surface-variant bg-surface-container px-2 py-0.5 rounded">2.4 MB</span>
+</button>
+<button class="flex items-center justify-between p-space-md active:bg-surface-container transition-colors text-left" id="clear-cache-btn" type="button">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary text-[20px]">cached</span>
+<span class="font-body-lg text-body-lg text-primary font-medium">Clear Cached Waveform Data</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant text-[20px]">cleaning_services</span>
+</button>
+<button class="flex items-center justify-between p-space-md active:bg-error-container/30 transition-colors text-left" id="delete-data-btn" type="button">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-error text-[20px]">delete_forever</span>
+<span class="font-body-lg text-body-lg text-error font-medium">Purge All Logs &amp; Reset App</span>
+</div>
+<span class="font-label-caps text-label-caps text-error uppercase">Irreversible</span>
+</button>
+</div>
+</section>
+<!-- FOOTER DIAGNOSTICS / BUILD VERSION -->
+<footer class="flex flex-col items-center justify-center pt-space-md pb-space-lg gap-y-1">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+<span class="font-label-mono text-label-mono text-primary font-bold tracking-tight">IN/OUT ATHLETIC TELEMETRY</span>
+</div>
+<p class="font-label-mono text-label-mono text-on-surface-variant">v2.4.0 · BUILD 412 · ENGINE OPTIMIZED</p>
+</footer>
+</div>
+<script>
+  (function() {
+    // 1. Unified Switch Toggle Handling
+    const toggles = document.querySelectorAll('button[role="switch"]');
+    toggles.forEach(toggle => {
+      toggle.addEventListener('click', () => {
+        const isChecked = toggle.getAttribute('aria-checked') === 'true';
+        const nextState = !isChecked;
+        toggle.setAttribute('aria-checked', String(nextState));
+        
+        const knob = toggle.querySelector('div');
+        if (nextState) {
+          toggle.classList.remove('bg-surface-container-highest');
+          toggle.classList.add('bg-secondary-container');
+          knob.classList.remove('translate-x-0');
+          knob.classList.add('translate-x-5');
+        } else {
+          toggle.classList.remove('bg-secondary-container');
+          toggle.classList.add('bg-surface-container-highest');
+          knob.classList.remove('translate-x-5');
+          knob.classList.add('translate-x-0');
+        }
+      });
+    });
+
+    // 2. Segmented Selectors (Voice, Ambient, Theme)
+    const handleSegmentGroup = (groupKey) => {
+      const buttons = document.querySelectorAll(`button[data-segment="${groupKey}"]`);
+      buttons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          buttons.forEach(b => {
+            b.classList.remove('bg-surface-container-highest', 'text-primary', 'font-bold', 'shadow-sm');
+            b.classList.add('text-on-surface-variant');
+          });
+          btn.classList.add('bg-surface-container-highest', 'text-primary', 'font-bold', 'shadow-sm');
+          btn.classList.remove('text-on-surface-variant');
+        });
+      });
+    };
+
+    handleSegmentGroup('voice');
+    handleSegmentGroup('ambient');
+    handleSegmentGroup('theme');
+
+    // 3. Day Habit Selector Buttons
+    const dayButtons = document.querySelectorAll('#day-selector-morning button');
+    dayButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const isActive = btn.classList.contains('bg-primary');
+        if (isActive) {
+          btn.classList.remove('bg-primary', 'text-on-primary');
+          btn.classList.add('bg-surface-container-highest', 'text-on-surface-variant');
+        } else {
+          btn.classList.remove('bg-surface-container-highest', 'text-on-surface-variant');
+          btn.classList.add('bg-primary', 'text-on-primary');
+        }
+      });
+    });
+
+    // 4. Quick Action Micro-feedback
+    const syncBtn = document.getElementById('sync-btn');
+    if (syncBtn) {
+      syncBtn.addEventListener('click', () => {
+        const originalText = syncBtn.innerHTML;
+        syncBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[20px]">refresh</span><span>CONNECTING SECURE VAULT...</span>';
+        setTimeout(() => {
+          syncBtn.innerHTML = '<span class="material-symbols-outlined text-[20px]">check_circle</span><span>ACCOUNT LINKED</span>';
+          syncBtn.classList.remove('bg-primary', 'text-on-primary');
+          syncBtn.classList.add('bg-secondary-container', 'text-on-secondary-container');
+        }, 800);
+      });
+    }
+
+    const clearCacheBtn = document.getElementById('clear-cache-btn');
+    if (clearCacheBtn) {
+      clearCacheBtn.addEventListener('click', () => {
+        const badge = clearCacheBtn.querySelector('.material-symbols-outlined:last-child');
+        if (badge) {
+          badge.textContent = 'check';
+          badge.classList.add('text-secondary');
+          setTimeout(() => {
+            badge.textContent = 'cleaning_services';
+            badge.classList.remove('text-secondary');
+          }, 1200);
+        }
+      });
+    }
+
+    const exportBtn = document.getElementById('export-json-btn');
+    if (exportBtn) {
+      exportBtn.addEventListener('click', () => {
+        const badge = exportBtn.querySelector('span:last-child');
+        if (badge) {
+          badge.textContent = 'PACKING...';
+          setTimeout(() => {
+            badge.textContent = 'DOWNLOADED';
+            badge.classList.add('bg-secondary-container', 'text-on-secondary-container');
+          }, 600);
+        }
+      });
+    }
+  })();
+</script></main></body></html>

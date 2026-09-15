@@ -1,0 +1,322 @@
+<!DOCTYPE html><html class="dark" lang="en"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Space+Grotesk:wght@500;700&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "on-error-container": "#ffdad6", "inverse-primary": "#5c5f61", "tertiary": "#ffffff", "surface-container-low": "#1a1c20", "surface-variant": "#333539", "on-error": "#690005", "surface-tint": "#c4c7c9", "inverse-surface": "#e2e2e8", "surface-dim": "#111317", "on-surface": "#e2e2e8", "primary": "#ffffff", "on-primary-fixed-variant": "#444749", "outline": "#8e9193", "primary-container": "#e0e3e5", "secondary-container": "#0566d9", "on-tertiary": "#552100", "on-tertiary-fixed": "#341100", "on-primary": "#2d3133", "secondary-fixed": "#d8e2ff", "primary-fixed": "#e0e3e5", "on-background": "#e2e2e8", "primary-fixed-dim": "#c4c7c9", "tertiary-fixed-dim": "#ffb690", "tertiary-container": "#ffdbca", "on-primary-fixed": "#191c1e", "on-secondary": "#002e6a", "on-secondary-fixed-variant": "#004395", "on-secondary-fixed": "#001a42", "secondary-fixed-dim": "#adc6ff", "secondary": "#adc6ff", "surface-container-highest": "#333539", "background": "#111317", "surface-bright": "#37393e", "surface": "#111317", "on-tertiary-container": "#a74800", "on-surface-variant": "#c4c7c9", "error-container": "#93000a", "error": "#ffb4ab", "surface-container-high": "#282a2e", "tertiary-fixed": "#ffdbca", "on-primary-container": "#626567", "outline-variant": "#444749", "inverse-on-surface": "#2f3035", "on-secondary-container": "#e6ecff", "on-tertiary-fixed-variant": "#783200", "surface-container-lowest": "#0c0e12", "surface-container": "#1e2024" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "margin-desktop": "2.5rem", "space-xs": "0.25rem", "margin-tablet": "1.5rem", "space-lg": "1.5rem", "gutter-desktop": "1.5rem", "space-2xl": "3rem", "margin": "1rem", "space-md": "1rem", "space-sm": "0.5rem", "gutter": "1rem", "space-xl": "2rem" }, "fontFamily": { "label-mono": ["Space Grotesk"], "metric-timer-mobile": ["Space Grotesk"], "display-hero-mobile": ["Inter"], "body-md": ["Inter"], "headline-xl-mobile": ["Inter"], "metric-timer": ["Space Grotesk"], "body-sm": ["Inter"], "headline-lg": ["Inter"], "headline-xl": ["Inter"], "body-lg": ["Inter"], "headline-md": ["Inter"], "label-caps": ["Space Grotesk"], "display-hero": ["Inter"] }, "fontSize": { "label-mono": ["13px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }], "metric-timer-mobile": ["72px", { "lineHeight": "72px", "letterSpacing": "-0.04em", "fontWeight": "700" }], "display-hero-mobile": ["56px", { "lineHeight": "56px", "letterSpacing": "-0.04em", "fontWeight": "800" }], "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400" }], "headline-xl-mobile": ["32px", { "lineHeight": "36px", "letterSpacing": "-0.03em", "fontWeight": "700" }], "metric-timer": ["104px", { "lineHeight": "96px", "letterSpacing": "-0.05em", "fontWeight": "700" }], "body-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500" }], "headline-lg": ["24px", { "lineHeight": "28px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "headline-xl": ["40px", { "lineHeight": "44px", "letterSpacing": "-0.03em", "fontWeight": "700" }], "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "400" }], "headline-md": ["20px", { "lineHeight": "24px", "letterSpacing": "-0.015em", "fontWeight": "600" }], "label-caps": ["11px", { "lineHeight": "14px", "letterSpacing": "0.08em", "fontWeight": "700" }], "display-hero": ["80px", { "lineHeight": "80px", "letterSpacing": "-0.04em", "fontWeight": "800" }] } } } }</script><style>@layer base { html, body { width: 100vw; margin: 0; padding: 0; } body { overscroll-behavior: none; } .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); } .pt-safe { padding-top: env(safe-area-inset-top, 0px); } main > :first-child { margin-top: 0 !important; } main > :last-child { margin-bottom: 0 !important; } } ::-webkit-scrollbar { display: none; }</style></head><body class="bg-surface text-on-surface font-body-md text-body-md antialiased selection:bg-secondary-container selection:text-on-secondary-container min-h-screen flex flex-col"><header class="fixed top-0 w-full z-50 pt-safe bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.2)]"><div class="h-16 px-margin flex items-center justify-between"><div class="flex items-center gap-space-sm"><div class="w-2 h-2 rounded-full bg-secondary animate-pulse"></div><span class="font-label-caps text-headline-md tracking-tighter uppercase text-primary font-bold">IN<span class="text-secondary">/</span>OUT</span><span class="hidden">Today</span></div><div class="flex items-center gap-space-sm"><button aria-label="Quick settings" class="w-11 h-11 flex items-center justify-center rounded-lg bg-surface-container-low text-on-surface-variant hover:text-primary transition-colors active:scale-95"><span class="material-symbols-outlined text-[20px]">tune</span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex-1 w-full bg-surface pt-16 pb-24 px-margin flex flex-col"><div class="flex flex-col w-full space-y-space-lg select-none pb-space-lg">
+<!-- Sub-header & Controls -->
+<div class="flex items-center justify-between pt-space-xs">
+<div class="flex items-center gap-space-sm">
+<h1 class="font-headline-lg text-headline-lg text-primary tracking-tight">PROGRESS</h1>
+
+</div>
+<div class="flex items-center gap-space-xs">
+<button aria-label="Change Date Range" class="w-9 h-9 rounded-lg bg-surface-container-low text-on-surface-variant flex items-center justify-center active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[18px]">calendar_today</span>
+</button>
+<button aria-label="Export Data" class="w-9 h-9 rounded-lg bg-surface-container-low text-on-surface-variant flex items-center justify-center active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[18px]">file_download</span>
+</button>
+</div>
+</div>
+<!-- Timeframe Selector Tabs -->
+<div class="flex items-center justify-between border-b border-surface-container-high/40 pb-2 mb-1"><div class="flex items-center gap-4"><button class="font-label-caps text-label-caps text-primary border-b-2 border-secondary pb-1 tracking-wider">OVERVIEW</button><button class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary pb-1 tracking-wider transition-colors">SESSION HISTORY</button></div><span class="font-label-mono text-[10px] text-outline">38 LOGS</span></div><div class="flex items-center p-1 bg-surface-container-lowest rounded-lg">
+<button class="flex-1 py-1.5 rounded text-center font-label-mono text-label-mono text-on-surface-variant transition-colors hover:text-primary active:scale-95">EXPORT</button>
+<button class="flex-1 py-1.5 rounded text-center font-label-mono text-label-mono bg-surface-container-high text-primary shadow-sm active:scale-95">EXPORT</button>
+<button class="flex-1 py-1.5 rounded text-center font-label-mono text-label-mono text-on-surface-variant transition-colors hover:text-primary active:scale-95">EXPORT</button>
+<button class="flex-1 py-1.5 rounded text-center font-label-mono text-label-mono text-on-surface-variant transition-colors hover:text-primary active:scale-95">EXPORT</button>
+</div>
+<!-- Section 1: Performance Summary Grid (2x2) -->
+<section class="grid grid-cols-2 gap-space-sm">
+<!-- Sessions -->
+<div class="bg-surface-container-low rounded-xl p-space-md flex flex-col justify-between relative overflow-hidden">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="font-label-caps text-label-caps tracking-wider text-outline">SESSIONS</span>
+<span class="material-symbols-outlined text-[16px] text-secondary">fitness_center</span>
+</div>
+<div class="mt-space-md flex items-baseline gap-1.5">
+<span class="font-headline-xl-mobile text-headline-xl-mobile font-bold text-primary font-metric-timer tracking-tight">38</span>
+<span class="font-label-mono text-label-mono text-secondary font-medium">+14%</span>
+</div>
+<div class="mt-1 flex items-center gap-1 text-on-surface-variant font-body-sm text-body-sm">
+<span class="">Target: 30 / mo</span>
+</div>
+</div>
+<!-- Total Time -->
+<div class="bg-surface-container-low rounded-xl p-space-md flex flex-col justify-between relative overflow-hidden">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="font-label-caps text-label-caps tracking-wider text-outline">TOTAL TIME</span>
+<span class="material-symbols-outlined text-[16px] text-secondary">timer</span>
+</div>
+<div class="mt-space-md flex items-baseline">
+<span class="font-headline-xl-mobile text-headline-xl-mobile font-bold text-primary font-metric-timer tracking-tight">2<span class="text-secondary text-[22px]">h</span> 46<span class="text-secondary text-[22px]">m</span></span>
+</div>
+<div class="mt-1 flex items-center gap-1 text-on-surface-variant font-body-sm text-body-sm">
+<span class="">Avg: 4.4m / session</span>
+</div>
+</div>
+<!-- Current Streak -->
+<div class="bg-surface-container-low rounded-xl p-space-md flex flex-col justify-between relative overflow-hidden">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="font-label-caps text-label-caps tracking-wider text-outline">CURRENT STREAK</span>
+<span class="material-symbols-outlined text-[16px] text-secondary" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+</div>
+<div class="mt-space-md flex items-baseline gap-1.5">
+<span class="font-headline-xl-mobile text-headline-xl-mobile font-bold text-primary font-metric-timer tracking-tight">7</span>
+<span class="font-label-mono text-label-mono text-primary font-medium">DAYS</span>
+</div>
+<div class="mt-1 flex items-center gap-1 text-on-surface-variant font-body-sm text-body-sm">
+<span class="">Personal best: 14d</span>
+</div>
+</div>
+<!-- Average State Shift -->
+<div class="bg-surface-container-low rounded-xl p-space-md flex flex-col justify-between relative overflow-hidden">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="font-label-caps text-label-caps tracking-wider text-outline">AVG STATE SHIFT</span>
+<span class="material-symbols-outlined text-[16px] text-secondary">insights</span>
+</div>
+<div class="mt-space-md flex items-baseline gap-1.5">
+<span class="font-headline-xl-mobile text-headline-xl-mobile font-bold text-secondary font-metric-timer tracking-tight">+2.4</span>
+<span class="font-label-mono text-label-mono text-on-surface-variant">/ 5.0</span>
+</div>
+<div class="mt-1 flex items-center gap-1 text-on-surface-variant font-body-sm text-body-sm">
+<span class="">Self-reported rating</span>
+</div>
+</div>
+</section>
+<!-- Section 2: HabitKit-Style Matrix Heat Map -->
+<section class="bg-surface-container-low rounded-xl p-space-md flex flex-col gap-space-md shadow-sm">
+<div class="flex items-center justify-between">
+<div class="flex flex-col"><span class="font-headline-md text-headline-md text-primary tracking-tight">30-Day Activity</span></div>
+<span class="font-label-mono text-label-mono text-secondary px-2 py-0.5 rounded bg-surface-container-high">80% ADHERENCE</span>
+</div>
+<!-- The 30-Day Minimalist Punch-card (6x5 Layout with Day Labels) -->
+<div class="flex flex-col gap-1.5 pt-1">
+<div class="grid grid-cols-6 gap-2" id="matrix-grid">
+<!-- Week 1 -->
+<div class="aspect-square rounded bg-surface-container flex items-center justify-center group relative cursor-pointer" data-day="Day 1" data-val="0 sessions">
+<span class="text-[9px] font-label-mono text-outline-variant group-hover:text-primary">01</span>
+</div>
+<div class="aspect-square rounded bg-secondary/40 flex items-center justify-center group relative cursor-pointer" data-day="Day 2" data-val="1 session">
+<span class="text-[9px] font-label-mono text-primary group-hover:scale-110 transition-transform">02</span>
+</div>
+<div class="aspect-square rounded bg-secondary/60 flex items-center justify-center group relative cursor-pointer" data-day="Day 3" data-val="2 sessions">
+<span class="text-[9px] font-label-mono text-surface-container-lowest font-bold">03</span>
+</div>
+<div class="aspect-square rounded bg-secondary flex items-center justify-center group relative cursor-pointer shadow-[0_0_8px_rgba(173,198,255,0.3)]" data-day="Day 4" data-val="3 sessions">
+<span class="text-[9px] font-label-mono text-on-secondary font-bold">04</span>
+</div>
+<div class="aspect-square rounded bg-secondary/40 flex items-center justify-center group relative cursor-pointer" data-day="Day 5" data-val="1 session">
+<span class="text-[9px] font-label-mono text-primary">05</span>
+</div>
+<div class="aspect-square rounded bg-surface-container flex items-center justify-center group relative cursor-pointer" data-day="Day 6" data-val="0 sessions">
+<span class="text-[9px] font-label-mono text-outline-variant">06</span>
+</div>
+<!-- Week 2 -->
+<div class="aspect-square rounded bg-secondary/40 flex items-center justify-center group relative cursor-pointer" data-day="Day 7" data-val="1 session">
+<span class="text-[9px] font-label-mono text-primary">07</span>
+</div>
+<div class="aspect-square rounded bg-secondary/80 flex items-center justify-center group relative cursor-pointer" data-day="Day 8" data-val="2 sessions">
+<span class="text-[9px] font-label-mono text-surface-container-lowest font-bold">08</span>
+</div>
+<div class="aspect-square rounded bg-secondary flex items-center justify-center group relative cursor-pointer shadow-[0_0_8px_rgba(173,198,255,0.3)]" data-day="Day 9" data-val="3 sessions">
+<span class="text-[9px] font-label-mono text-on-secondary font-bold">09</span>
+</div>
+<div class="aspect-square rounded bg-secondary/40 flex items-center justify-center group relative cursor-pointer" data-day="Day 10" data-val="1 session">
+<span class="text-[9px] font-label-mono text-primary">10</span>
+</div>
+<div class="aspect-square rounded bg-surface-container flex items-center justify-center group relative cursor-pointer" data-day="Day 11" data-val="0 sessions">
+<span class="text-[9px] font-label-mono text-outline-variant">11</span>
+</div>
+<div class="aspect-square rounded bg-secondary/40 flex items-center justify-center group relative cursor-pointer" data-day="Day 12" data-val="1 session">
+<span class="text-[9px] font-label-mono text-primary">12</span>
+</div>
+<!-- Week 3 -->
+<div class="aspect-square rounded bg-secondary/60 flex items-center justify-center group relative cursor-pointer" data-day="Day 13" data-val="2 sessions">
+<span class="text-[9px] font-label-mono text-surface-container-lowest font-bold">13</span>
+</div>
+<div class="aspect-square rounded bg-secondary flex items-center justify-center group relative cursor-pointer shadow-[0_0_8px_rgba(173,198,255,0.3)]" data-day="Day 14" data-val="3 sessions">
+<span class="text-[9px] font-label-mono text-on-secondary font-bold">14</span>
+</div>
+<div class="aspect-square rounded bg-secondary/60 flex items-center justify-center group relative cursor-pointer" data-day="Day 15" data-val="2 sessions">
+<span class="text-[9px] font-label-mono text-surface-container-lowest font-bold">15</span>
+</div>
+<div class="aspect-square rounded bg-surface-container flex items-center justify-center group relative cursor-pointer" data-day="Day 16" data-val="0 sessions">
+<span class="text-[9px] font-label-mono text-outline-variant">16</span>
+</div>
+<div class="aspect-square rounded bg-surface-container flex items-center justify-center group relative cursor-pointer" data-day="Day 17" data-val="0 sessions">
+<span class="text-[9px] font-label-mono text-outline-variant">17</span>
+</div>
+<div class="aspect-square rounded bg-secondary/40 flex items-center justify-center group relative cursor-pointer" data-day="Day 18" data-val="1 session">
+<span class="text-[9px] font-label-mono text-primary">18</span>
+</div>
+<!-- Week 4 -->
+<div class="aspect-square rounded bg-secondary/40 flex items-center justify-center group relative cursor-pointer" data-day="Day 19" data-val="1 session">
+<span class="text-[9px] font-label-mono text-primary">19</span>
+</div>
+<div class="aspect-square rounded bg-secondary/80 flex items-center justify-center group relative cursor-pointer" data-day="Day 20" data-val="2 sessions">
+<span class="text-[9px] font-label-mono text-surface-container-lowest font-bold">20</span>
+</div>
+<div class="aspect-square rounded bg-secondary/60 flex items-center justify-center group relative cursor-pointer" data-day="Day 21" data-val="2 sessions">
+<span class="text-[9px] font-label-mono text-surface-container-lowest font-bold">21</span>
+</div>
+<div class="aspect-square rounded bg-secondary/40 flex items-center justify-center group relative cursor-pointer" data-day="Day 22" data-val="1 session">
+<span class="text-[9px] font-label-mono text-primary">22</span>
+</div>
+<div class="aspect-square rounded bg-secondary/60 flex items-center justify-center group relative cursor-pointer" data-day="Day 23" data-val="2 sessions">
+<span class="text-[9px] font-label-mono text-surface-container-lowest font-bold">23</span>
+</div>
+<div class="aspect-square rounded bg-surface-container flex items-center justify-center group relative cursor-pointer" data-day="Day 24" data-val="0 sessions">
+<span class="text-[9px] font-label-mono text-outline-variant">24</span>
+</div>
+<!-- Current 7-Day Streak Finish -->
+<div class="aspect-square rounded bg-secondary/40 flex items-center justify-center group relative cursor-pointer" data-day="Day 25" data-val="1 session">
+<span class="text-[9px] font-label-mono text-primary">25</span>
+</div>
+<div class="aspect-square rounded bg-secondary/60 flex items-center justify-center group relative cursor-pointer" data-day="Day 26" data-val="2 sessions">
+<span class="text-[9px] font-label-mono text-surface-container-lowest font-bold">26</span>
+</div>
+<div class="aspect-square rounded bg-secondary/80 flex items-center justify-center group relative cursor-pointer" data-day="Day 27" data-val="2 sessions">
+<span class="text-[9px] font-label-mono text-surface-container-lowest font-bold">27</span>
+</div>
+<div class="aspect-square rounded bg-secondary flex items-center justify-center group relative cursor-pointer shadow-[0_0_8px_rgba(173,198,255,0.3)]" data-day="Day 28" data-val="3 sessions">
+<span class="text-[9px] font-label-mono text-on-secondary font-bold">28</span>
+</div>
+<div class="aspect-square rounded bg-secondary flex items-center justify-center group relative cursor-pointer shadow-[0_0_8px_rgba(173,198,255,0.3)]" data-day="Day 29" data-val="3 sessions">
+<span class="text-[9px] font-label-mono text-on-secondary font-bold">29</span>
+</div>
+<div class="aspect-square rounded bg-primary flex items-center justify-center group relative cursor-pointer shadow-[0_0_12px_rgba(255,255,255,0.4)]" data-day="Day 30 (Today)" data-val="4 sessions">
+<span class="text-[9px] font-label-mono text-on-primary font-bold">30</span>
+</div>
+</div>
+</div>
+<!-- Active Hover Dynamic Tooltip Feed -->
+<div class="flex items-center justify-between pt-1 border-t border-surface-container-high/40 text-on-surface-variant font-label-mono text-label-mono">
+<div class="flex items-center gap-1.5" id="grid-status-target">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="text-primary font-body-sm text-body-sm">Active 24 of the last 30 days</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="text-outline text-[10px] uppercase font-label-caps">Vol:</span>
+<div class="w-2 h-2 rounded-xs bg-surface-container"></div>
+<div class="w-2 h-2 rounded-xs bg-secondary/40"></div>
+<div class="w-2 h-2 rounded-xs bg-secondary"></div>
+<div class="w-2 h-2 rounded-xs bg-primary"></div>
+</div>
+</div>
+</section>
+<!-- Section 3: "WHAT WORKS FOR YOU" (Personalized Insights) -->
+<section class="flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-secondary">psychology</span>
+<h2 class="font-headline-md text-headline-md text-primary tracking-tight">WHAT WORKS FOR YOU</h2>
+</div>
+
+</div>
+<div class="grid grid-cols-1 gap-space-sm">
+<!-- Card 1: Best for Calm -->
+<div class="bg-surface-container-low rounded-xl p-space-md flex flex-col gap-1.5 transition-all duration-150 hover:bg-surface-container active:scale-[0.99]">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-secondary tracking-wider">BEST FOR CALM</span>
+<span class="font-label-mono text-label-mono text-on-surface-variant">CADENCE 4-7-8</span>
+</div>
+<div class="flex items-baseline justify-between mt-0.5">
+<h3 class="font-headline-lg text-headline-lg font-bold text-primary tracking-tight">Extended Exhale</h3>
+<span class="text-secondary font-label-caps text-label-caps px-2 py-0.5 rounded bg-secondary-container/20 font-bold">+3.2 SHIFT</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant">
+          Average improvement: <span class="text-primary font-medium">3.2 points</span> across 8 logged sessions.
+        </p>
+</div>
+<!-- Card 2: Fastest Reset -->
+<div class="bg-surface-container-low rounded-xl p-space-md flex flex-col gap-1.5 transition-all duration-150 hover:bg-surface-container active:scale-[0.99]">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-secondary tracking-wider">FASTEST RESET</span>
+<span class="font-label-mono text-label-mono text-on-surface-variant">&lt; 1 MIN ROUTINE</span>
+</div>
+<div class="flex items-baseline justify-between mt-0.5">
+<h3 class="font-headline-lg text-headline-lg font-bold text-primary tracking-tight">Physiological Sigh</h3>
+<span class="text-on-surface-variant font-label-mono text-label-mono">0:52 AVG</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant">
+          Average session length: <span class="text-primary font-medium">0:52</span> · 14 total completed resets.
+        </p>
+</div>
+<!-- Card 3: Most Used -->
+<div class="bg-surface-container-low rounded-xl p-space-md flex flex-col gap-1.5 transition-all duration-150 hover:bg-surface-container active:scale-[0.99]">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-outline tracking-wider">MOST USED</span>
+<span class="font-label-mono text-label-mono text-on-surface-variant">CADENCE 4-4-4-4</span>
+</div>
+<div class="flex items-baseline justify-between mt-0.5">
+<h3 class="font-headline-lg text-headline-lg font-bold text-primary tracking-tight">Box Breathing</h3>
+<span class="text-primary font-label-mono text-label-mono font-medium">48 MINS</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant">
+          Completed <span class="text-primary font-medium">12 sessions</span> · accounting for 48 minutes total volume.
+        </p>
+</div>
+<!-- Card 4: Evening Favorite -->
+<div class="bg-surface-container-low rounded-xl p-space-md flex flex-col gap-1.5 transition-all duration-150 hover:bg-surface-container active:scale-[0.99]">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-secondary tracking-wider">EVENING FAVORITE</span>
+<span class="font-label-mono text-label-mono text-on-surface-variant">SLEEP READINESS</span>
+</div>
+<div class="flex items-baseline justify-between mt-0.5">
+<h3 class="font-headline-lg text-headline-lg font-bold text-primary tracking-tight">4-7-8 Protocol</h3>
+<span class="text-on-surface-variant font-label-mono text-label-mono">21:00 PEAK</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant">
+          Consistent execution: <span class="text-primary font-medium">6 sessions</span> · 9:00 PM average initiation.
+        </p>
+</div>
+</div>
+</section>
+<!-- Export Micro-card / Share Routine -->
+<div class="flex items-center justify-between border-b border-surface-container-high/40 pb-2 mb-1"><div class="flex items-center gap-4"><button class="font-label-caps text-label-caps text-primary border-b-2 border-secondary pb-1 tracking-wider">OVERVIEW</button><button class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary pb-1 tracking-wider transition-colors">SESSION HISTORY</button></div><span class="font-label-mono text-[10px] text-outline">38 LOGS</span></div><div class="bg-surface-container-lowest rounded-xl p-space-md flex items-center justify-between mt-space-sm">
+<div class="flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[20px]">share</span>
+</div>
+<div class="flex flex-col"><span class="font-body-md text-body-md font-semibold text-primary">Export Data</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Download your logged sessions and shift history</span></div>
+</div>
+<button class="px-3 py-2 rounded-lg bg-surface-container-high text-primary font-label-caps text-label-caps tracking-wider hover:bg-surface-bright active:scale-95 transition-transform">EXPORT</button>
+</div>
+</div>
+<!-- Inline Interaction for Habit Heatmap Inspection & Navigation State Sync -->
+<script>
+  (function() {
+    // 1. Sync active bottom navigation indicator to 'progress'
+    const navLinks = document.querySelectorAll('nav a[data-path]');
+    navLinks.forEach(link => {
+      const isProgress = link.getAttribute('data-path') === 'progress';
+      const indicator = link.querySelector('.indicator');
+      if (isProgress) {
+        link.classList.add('text-primary', 'font-semibold');
+        link.classList.remove('text-on-surface-variant');
+        if (indicator) indicator.classList.remove('opacity-0');
+      } else {
+        link.classList.remove('text-primary', 'font-semibold');
+        link.classList.add('text-on-surface-variant');
+        if (indicator) indicator.classList.add('opacity-0');
+      }
+    });
+
+    // 2. Interactive Heatmap Tooltip Display
+    const statusTarget = document.getElementById('grid-status-target');
+    const cells = document.querySelectorAll('#matrix-grid > div');
+    const defaultHTML = '<span class="w-2 h-2 rounded-full bg-secondary"></span><span class="text-primary font-body-sm text-body-sm">Active 24 of the last 30 days</span>';
+
+    cells.forEach(cell => {
+      cell.addEventListener('pointerenter', () => {
+        const day = cell.getAttribute('data-day');
+        const val = cell.getAttribute('data-val');
+        statusTarget.innerHTML = `<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span><span class="text-primary font-label-mono text-label-mono font-medium">${day}: ${val}</span>`;
+      });
+
+      cell.addEventListener('pointerleave', () => {
+        statusTarget.innerHTML = defaultHTML;
+      });
+    });
+  })();
+</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface-container-lowest/85 backdrop-blur-xl shadow-[0_-1px_12px_rgba(0,0,0,0.3)]" data-active-classes="text-primary font-semibold [&amp;_.indicator]:opacity-100"><div class="flex justify-around items-center h-16 px-space-xs"><a aria-current="page" class="flex flex-col items-center justify-center min-w-[64px] h-12 transition-all duration-150 active:scale-95 text-primary font-semibold [&amp;_.indicator]:opacity-100" data-path="today" href="#"><span class="material-symbols-outlined text-[22px]">bolt</span><span class="font-label-caps text-label-caps mt-space-xs">Today</span><span class="indicator opacity-0 w-1 h-1 rounded-full bg-secondary mt-0.5 transition-opacity"></span></a><a class="flex flex-col items-center justify-center min-w-[64px] h-12 text-on-surface-variant transition-all duration-150 active:scale-95" data-path="protocols" href="#"><span class="material-symbols-outlined text-[22px]">dashboard</span><span class="font-label-caps text-label-caps mt-space-xs">Protocols</span><span class="indicator opacity-0 w-1 h-1 rounded-full bg-secondary mt-0.5 transition-opacity"></span></a><a class="flex flex-col items-center justify-center min-w-[64px] h-12 text-on-surface-variant transition-all duration-150 active:scale-95" data-path="custom" href="#"><span class="material-symbols-outlined text-[22px]">tune</span><span class="font-label-caps text-label-caps mt-space-xs">Custom</span><span class="indicator opacity-0 w-1 h-1 rounded-full bg-secondary mt-0.5 transition-opacity"></span></a><a class="flex flex-col items-center justify-center min-w-[64px] h-12 text-on-surface-variant transition-all duration-150 active:scale-95" data-path="progress" href="#"><span class="material-symbols-outlined text-[22px]">equalizer</span><span class="font-label-caps text-label-caps mt-space-xs">Progress</span><span class="indicator opacity-0 w-1 h-1 rounded-full bg-secondary mt-0.5 transition-opacity"></span></a></div></nav>
+
+</body></html>

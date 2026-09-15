@@ -1,0 +1,25 @@
+{
+  "name": "inout",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "start": "npm run start -w @inout/mobile",
+    "typecheck": "tsc --noEmit -p apps/mobile/tsconfig.json",
+    "test": "tsx --test tests/*.test.ts",
+    "verify": "npm run typecheck && npm test && npm run test:mobile",
+    "test:mobile": "npm test -w @inout/mobile"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.0",
+    "typescript": "~6.0.3",
+    "@types/node": "^24.0.0"
+  },
+  "overrides": {
+    "react-test-renderer": "19.2.3",
+    "react": "19.2.3"
+  }
+}
