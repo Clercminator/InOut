@@ -14,6 +14,7 @@ def adb(*args):
     return subprocess.check_output(['adb', *args], timeout=30).decode(errors='replace')
 
 def tree():
+    adb('shell', 'rm', '-f', '/sdcard/window.xml')
     adb('shell', 'uiautomator', 'dump', '/sdcard/window.xml')
     xml = adb('shell', 'cat', '/sdcard/window.xml')
     (OUT / 'last-screen.xml').write_text(xml)
@@ -22,9 +23,14 @@ def tree():
 def find(text, timeout=15):
     until = time.monotonic() + timeout
     while time.monotonic() < until:
-        root = tree()
+        try:
+            root = tree()
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired, ET.ParseError):
+            time.sleep(.3)
+            continue
         for node in root.iter('node'):
             if text in (node.get('text', '') + ' ' + node.get('content-desc', '')):
+                print(f'Found {text}', flush=True)
                 return node
         time.sleep(.3)
     raise AssertionError(f'Native screen did not show {text!r}')
@@ -54,10 +60,11 @@ try:
     adb('shell', 'svc', 'wifi', 'disable')
     adb('shell', 'svc', 'data', 'disable')
     launch()
+    tap('Skip introduction')
     find("Breathe for what's next.")
     shot('01-today-offline')
-    tap('Calm Now')
-    tap('Physiological Sigh')
+    scroll_to('Physiological Sigh,')
+    tap('Physiological Sigh,')
     scroll_to('Start reset')
     tap('Start reset')
     find('How tense are you right now?')
@@ -65,7 +72,7 @@ try:
     tap('7 of 10')
     scroll_to('START RESET')
     tap('START RESET')
-    find('ACTIVE SESSION')
+    # Avoid waiting for accessibility-tree idleness during the animated timer.
     time.sleep(2)
     shot('03-active')
     adb('shell', 'input', 'keyevent', 'KEYCODE_HOME')
@@ -76,7 +83,8 @@ try:
     shot('04-recovered')
     scroll_to('Resume')
     tap('Resume')
-    find('How tense are you now?', 65)
+    time.sleep(50)
+    find('How tense are you now?')
     shot('05-post')
     # The second rating remains pending across a cold launch.
     adb('shell', 'am', 'force-stop', APP)
@@ -96,6 +104,8 @@ try:
     adb('shell', 'am', 'force-stop', APP)
     launch()
     tap('Progress')
+    scroll_to('View session history')
+    tap('View session history')
     scroll_to('Tension down 4 points')
     shot('08-history-after-relaunch')
     (OUT / 'result.txt').write_text('PASS: native offline slice, background pause, process recovery, post recovery, and durable history.\n')

@@ -5,6 +5,8 @@ import { LocalStore, type Database } from "../apps/mobile/src/storage";
 import { SessionController } from "../apps/mobile/src/session-controller";
 import { stateShift } from "../packages/shared-types/src/index";
 import * as engine from "../packages/breathing-engine/src/index";
+import { makeMixProtocol } from "../apps/mobile/src/custom-protocol";
+import { protocols, planFor } from "../packages/protocols/src/index";
 function setup() {
   const db = new DatabaseSync(":memory:");
   const adapter: Database = {
@@ -43,6 +45,19 @@ function setup() {
       ),
   };
 }
+test("custom mix history preserves replay data after a cold launch", () => {
+  const env = setup();
+  const mix = makeMixProtocol([protocols[2], protocols[0]]);
+  const c = env.controller();
+  c.start(null, 2, mix);
+  env.now(2000);
+  c.end("ended");
+  const saved = env.controller().history()[0];
+  assert.equal(saved.protocol?.defaultCycles, 2);
+  assert.deepEqual(planFor(saved.protocol!), saved.engine.plan);
+  env.db.close();
+});
+
 test("offline slice survives relaunch at active, post and result stages", () => {
   const env = setup();
   let c = env.controller();

@@ -20,7 +20,7 @@
       "expo-router",
       "expo-font",
       "expo-sqlite",
-      ["expo-splash-screen", { "backgroundColor": "#111317" }],
+      ["expo-splash-screen", { "backgroundColor": "#111317", "image": "./assets/splash.png", "imageWidth": 200 }],
       [
         "expo-audio",
         {

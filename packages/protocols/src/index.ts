@@ -68,10 +68,11 @@ function protocol(
     animationType,
     audioConfig: { enabled: true },
     hapticConfig: { enabled: true },
-    availability: id === "physiological-sigh" ? "enabled" : "definitionOnly",
+    availability: "enabled",
   };
 }
-// Versioned pacing presets, not claims of clinical efficacy. Only the first slice is exposed for execution.
+// Versioned pacing presets, not claims of clinical efficacy. High-intensity use
+// additionally requires the native pre-session safety confirmation.
 export const protocols: Protocol[] = [
   protocol(
     "physiological-sigh",
@@ -153,7 +154,7 @@ export const protocols: Protocol[] = [
     6,
     "ripple",
   ),
-  // Definition only; a dedicated safety gate and reviewed retention UX are required before enabling.
+  // The native pre-session gate is required before this protocol can start.
   protocol(
     "high-intensity-cyclic",
     "High-Intensity Cyclic Breathing",
@@ -169,6 +170,11 @@ export function planFor(
   protocol: Protocol,
   cycles = protocol.defaultCycles,
 ): SessionPlan {
+  if (protocol.plan) {
+    if (!Number.isInteger(cycles) || cycles < 1 || cycles > 1000)
+      throw new Error("Invalid mix repeat count");
+    return { blocks: Array.from({ length: cycles }, () => protocol.plan!.blocks).flat() };
+  }
   return {
     blocks: [
       {

@@ -1,12 +1,27 @@
 import { Tabs } from "expo-router";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { colors, typography } from "@inout/design-tokens";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useEffect } from "react";
+import { router } from "expo-router";
+import { useSession } from "../../src/provider";
 export default function TabLayout() {
+  const insets = useSafeAreaInsets();
+  const controller = useSession();
+  useEffect(() => {
+    if (!controller.preferences.onboardingComplete) router.replace("/onboarding");
+  }, [controller.preferences.onboardingComplete]);
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: { backgroundColor: colors.lowest, borderTopWidth: 0 },
+        tabBarStyle: {
+          backgroundColor: colors.lowest,
+          borderTopWidth: 0,
+          height: 60 + insets.bottom,
+          paddingBottom: insets.bottom,
+          paddingTop: 4,
+        },
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.secondaryText,
         tabBarLabelStyle: { fontFamily: typography.label },

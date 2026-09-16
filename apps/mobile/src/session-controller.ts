@@ -1,5 +1,6 @@
 import * as engine from "@inout/breathing-engine";
 import { sigh, planFor } from "@inout/protocols";
+import type { Protocol } from "@inout/shared-types";
 import { validRating } from "@inout/shared-types";
 import type {
   EngineState,
@@ -10,6 +11,7 @@ import type { LocalStore } from "./storage";
 
 export class SessionController {
   current: SessionRecord | null = null;
+  customProtocol: Protocol | null = null;
   preferences: Preferences;
   private sessionError: string | null = null;
   private preferencesError: string | null = null;
@@ -81,16 +83,30 @@ export class SessionController {
     if (this.sessionError) this.save();
     if (this.pendingPreferences) this.setPreferences(this.pendingPreferences);
   }
-  start(pre: number | null, cycles = sigh.defaultCycles) {
+  start(
+    pre: number | null,
+    cycles: number | undefined = undefined,
+    protocol: Protocol = sigh,
+    safetyConfirmed = false,
+  ) {
     if (!validRating(pre)) throw new Error("Choose a rating from 1 to 10");
-    if (this.error || (this.current && this.current.stage !== "result")) return;
+    if (
+      this.error ||
+      protocol.availability !== "enabled" ||
+      (protocol.safetyCategory === "highIntensity" && !safetyConfirmed) ||
+      (this.current && this.current.stage !== "result")
+    )
+      return;
+    const selectedCycles = cycles ?? protocol.defaultCycles;
+    const plan = planFor(protocol, selectedCycles);
     this.current = {
       id: this.id(),
-      protocolId: sigh.id,
-      protocolVersion: sigh.version,
-      protocolName: sigh.name,
-      goal: "Calm",
-      engine: engine.start(planFor(sigh, cycles), this.now()),
+      protocolId: protocol.id,
+      protocolVersion: protocol.version,
+      protocolName: protocol.name,
+      protocol: JSON.parse(JSON.stringify({ ...protocol, defaultCycles: selectedCycles, defaultDuration: engine.totalDuration(plan) })),
+      goal: protocol.goalTags[0],
+      engine: engine.start(plan, this.now()),
       pre,
       post: null,
       stage: "active",
@@ -202,6 +218,13 @@ export class SessionController {
       this.current = null;
     this.emit();
   }
+  clearHistory() {
+    if (this.sessionError) return;
+    this.store.clearHistory();
+    this.historyCache = [];
+    if (this.current?.stage === "result") this.current = null;
+    this.emit();
+  }
   setPreferences(preferences: Preferences) {
     try {
       this.store.savePreferences(preferences);
@@ -212,6 +235,22 @@ export class SessionController {
       this.pendingPreferences = { ...preferences };
       this.preferencesError = "Settings could not be saved. Please retry.";
     }
+    this.emit();
+  }
+  isFavorite(protocolId: string) {
+    return this.preferences.favoriteProtocolIds?.includes(protocolId) ?? false;
+  }
+  toggleFavorite(protocolId: string) {
+    const favorites = new Set(this.preferences.favoriteProtocolIds ?? []);
+    if (favorites.has(protocolId)) favorites.delete(protocolId);
+    else favorites.add(protocolId);
+    this.setPreferences({
+      ...this.preferences,
+      favoriteProtocolIds: [...favorites],
+    });
+  }
+  setCustomProtocol(protocol: Protocol) {
+    this.customProtocol = protocol;
     this.emit();
   }
 }

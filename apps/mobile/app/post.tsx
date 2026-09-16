@@ -26,13 +26,15 @@ export default function Post() {
   };
   return (
     <Screen title="STATE SHIFT · POST">
-      <Label>SESSION COMPLETE</Label>
-      <Copy>
-        Physiological Sigh · {Math.round(record.engine.elapsedAtAnchor / 1000)}s
-        · {record.engine.plan.blocks[0].cycles} cycles
-      </Copy>
+      <View style={s.flowHeader}>
+        <Label>SESSION COMPLETE</Label>
+        <Title>{record.protocolName}</Title>
+        <Copy style={{ color: colors.accent }}>
+          {Math.round(record.engine.elapsedAtAnchor / 1000)} sec · {record.engine.plan.blocks.reduce((sum, block) => sum + block.cycles, 0)} cycles
+        </Copy>
+      </View>
       <Title>How tense are you now?</Title>
-      <StateScale value={rating} onChange={setRating} />
+      <StateScale value={rating} onChange={setRating} timing="After the practice" />
       <Label>WHAT DID YOU NOTICE? · OPTIONAL</Label>
       <View style={s.row}>
         {["Calmer", "Clearer", "More energized", "No change", "Worse"].map(

@@ -6,6 +6,7 @@ import { Screen, Label, Title, Copy, Button, s } from "../src/ui";
 import { useSession, SaveError } from "../src/provider";
 import { SighVisual } from "../src/sigh-visual";
 import { colors } from "@inout/design-tokens";
+import { protocols } from "@inout/protocols";
 
 export default function Session() {
   const controller = useSession();
@@ -28,6 +29,9 @@ export default function Session() {
       <Redirect href={{ pathname: "/result", params: { id: record.id } }} />
     );
   const running = record.engine.status === "running";
+  const animationType =
+    protocols.find((protocol) => protocol.id === record.engine.plan.blocks[view.blockIndex].protocolId)
+      ?.animationType ?? record.protocol?.animationType ?? "wave";
   const end = () => {
     controller.pause();
     Alert.alert(
@@ -53,12 +57,43 @@ export default function Session() {
     );
   };
   return (
-    <Screen title="ACTIVE SESSION">
-      <Title>Physiological Sigh</Title>
+    <Screen
+      title="ACTIVE SESSION"
+      footer={
+        <View
+          testID="session-controls"
+          style={{
+            paddingHorizontal: 16,
+            paddingBottom: 8,
+            paddingTop: 12,
+            gap: 8,
+          }}
+        >
+          <Button
+            title={running ? "Pause" : "Resume"}
+            disabled={!!controller.error}
+            onPress={() => (running ? controller.pause() : controller.resume())}
+          />
+          <View style={{ flexDirection: "row", gap: 8 }}>
+            <View style={{ flex: 1 }}>
+              <Button title="End session" secondary onPress={end} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Button title="I feel unwell" danger onPress={unwell} />
+            </View>
+          </View>
+        </View>
+      }
+    >
+      <Title>{record.protocolName}</Title>
       <Label>
-        CALM NOW · {Math.ceil(view.sessionRemainingMs / 1000)} SEC LEFT
+        {record.goal.toUpperCase()} · {Math.ceil(view.sessionRemainingMs / 1000)} SEC LEFT
       </Label>
       <SaveError />
+      {record.engine.plan.blocks.length > 1 && <Copy>
+        Block {view.blockIndex + 1}/{record.engine.plan.blocks.length} · {protocols.find((p) => p.id === record.engine.plan.blocks[view.blockIndex].protocolId)?.name ?? "Custom"}
+        {record.engine.plan.blocks[view.blockIndex + 1] ? ` · Next: ${protocols.find((p) => p.id === record.engine.plan.blocks[view.blockIndex + 1].protocolId)?.name ?? "Custom"}` : " · Final block"}
+      </Copy>}
       {!running && (
         <Copy accessibilityRole="alert">
           {record.engine.pauseReason === "manual"
@@ -70,9 +105,14 @@ export default function Session() {
         colors={["#0b192b", colors.lowest]}
         style={[s.card, { padding: 16 }]}
       >
-        <SighVisual view={view} running={running} />
+        <SighVisual
+          view={view}
+          running={running}
+          animationType={animationType}
+          phases={record.engine.plan.blocks[view.blockIndex].phases}
+        />
         <View style={s.row}>
-          {record.engine.plan.blocks[0].phases.map((phase, i) => (
+          {record.engine.plan.blocks[view.blockIndex].phases.map((phase, i) => (
             <View key={i} style={{ flex: 1, gap: 8 }}>
               <View
                 style={{
@@ -86,11 +126,6 @@ export default function Session() {
             </View>
           ))}
         </View>
-        <Button
-          title={running ? "Pause" : "Resume"}
-          disabled={!!controller.error}
-          onPress={() => (running ? controller.pause() : controller.resume())}
-        />
         {!running && (
           <Button
             title="Restart from the beginning"
@@ -108,8 +143,6 @@ export default function Session() {
             }
           />
         )}
-        <Button title="End session" secondary onPress={end} />
-        <Button title="I feel unwell" danger onPress={unwell} />
       </LinearGradient>
       <Copy style={s.small}>
         Breathe comfortably. Follow the guide without forcing.

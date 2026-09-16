@@ -13,6 +13,8 @@ export const defaultPreferences: Preferences = {
   audio: "tones",
   haptics: true,
   keepAwake: true,
+  onboardingComplete: false,
+  pro: false,
 };
 export class LocalStore {
   constructor(private db: Database) {
@@ -74,6 +76,9 @@ export class LocalStore {
   remove(id: string) {
     this.db.runSync("DELETE FROM sessions WHERE id=? AND stage='result'", id);
   }
+  clearHistory() {
+    this.db.runSync("DELETE FROM sessions WHERE stage='result'");
+  }
   preferences(): Preferences {
     const row = this.db.getFirstSync<{ payload: string }>(
       "SELECT payload FROM settings WHERE key='preferences'",
@@ -83,10 +88,20 @@ export class LocalStore {
     if (
       !["voice", "tones", "silent"].includes(p.audio) ||
       typeof p.haptics !== "boolean" ||
-      typeof p.keepAwake !== "boolean"
+      typeof p.keepAwake !== "boolean" ||
+      (p.favoriteProtocolIds !== undefined &&
+        (!Array.isArray(p.favoriteProtocolIds) ||
+          p.favoriteProtocolIds.some((id: unknown) => typeof id !== "string"))) ||
+      (p.onboardingComplete !== undefined && typeof p.onboardingComplete !== "boolean") ||
+      (p.pro !== undefined && typeof p.pro !== "boolean")
     )
       throw new Error("Saved settings could not be read.");
-    return p;
+    return {
+      ...p,
+      favoriteProtocolIds: p.favoriteProtocolIds ?? [],
+      onboardingComplete: p.onboardingComplete ?? false,
+      pro: p.pro ?? false,
+    };
   }
   savePreferences(p: Preferences) {
     this.db.runSync(

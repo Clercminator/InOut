@@ -5,20 +5,30 @@ import {
   Easing,
   StyleSheet,
   View,
+  type ViewStyle,
 } from "react-native";
 import { colors as c, typography as f } from "@inout/design-tokens";
 import type { snapshot } from "@inout/breathing-engine";
+import type { Protocol, Phase } from "@inout/shared-types";
 import { Copy, Label } from "./ui";
 type Snapshot = ReturnType<typeof snapshot>;
 export function SighVisual({
   view,
   running,
+  animationType = "sigh",
+  phases = [],
 }: {
   view: Snapshot;
   running: boolean;
+  animationType?: Protocol["animationType"];
+  phases?: Phase[];
 }) {
   const [reduced, setReduced] = useState(true);
   const scale = useRef(new Animated.Value(0.7)).current;
+  const phaseProgress = Math.min(
+    1,
+    view.phaseElapsedMs / Math.max(1, view.phase.durationMs),
+  );
   useEffect(() => {
     let mounted = true;
     void AccessibilityInfo.isReduceMotionEnabled().then((value) => {
@@ -35,23 +45,26 @@ export function SighVisual({
   }, []);
   useEffect(() => {
     scale.stopAnimation();
+    let previous = 1;
+    for (let offset = 1; offset <= phases.length; offset++) {
+      const phase = phases[(view.phaseIndex - offset + phases.length) % phases.length];
+      if (["exhale", "hum"].includes(phase.type)) { previous = 0.65; break; }
+      if (["inhale", "inhaleTopUp"].includes(phase.type)) break;
+    }
     const from =
       view.phase.type === "inhale"
         ? 0.65
         : view.phase.type === "inhaleTopUp"
           ? 0.9
-          : 1;
+          : previous;
     const to =
       view.phase.type === "inhale"
-        ? 0.9
+        ? animationType === "sigh" ? 0.9 : 1
         : view.phase.type === "inhaleTopUp"
           ? 1
-          : 0.65;
-    scale.setValue(
-      reduced
-        ? 1
-        : from + ((to - from) * view.phaseElapsedMs) / view.phase.durationMs,
-    );
+          : view.phase.type === "exhale" || view.phase.type === "hum" ? 0.65 : from;
+    if (animationType === "box") { scale.setValue(1); return; }
+    scale.setValue(reduced ? 1 : from + (to - from) * phaseProgress);
     if (!running || reduced) return;
     const animation = Animated.timing(scale, {
       toValue: to,
@@ -61,19 +74,59 @@ export function SighVisual({
     });
     animation.start();
     return () => animation.stop();
-  }, [view.cueKey, running, reduced, scale]);
+  }, [view.cueKey, running, reduced, scale, animationType]);
+  const shapeStyle =
+    animationType === "box"
+      ? styles.box
+      : animationType === "alternating"
+        ? styles.alternating
+        : animationType === "ripple"
+          ? styles.ripple
+          : animationType === "pulse"
+            ? styles.pulse
+            : animationType === "wave"
+              ? styles.orb
+              : styles.ring;
+  const boxProgress = (view.phaseIndex + phaseProgress) / 4;
+  const perimeter = boxProgress * 4;
+  const boxPosition: ViewStyle =
+    perimeter < 1
+      ? { left: `${8 + perimeter * 84}%`, top: "8%" }
+      : perimeter < 2
+        ? { left: "92%", top: `${8 + (perimeter - 1) * 84}%` }
+        : perimeter < 3
+          ? { left: `${92 - (perimeter - 2) * 84}%`, top: "92%" }
+          : { left: "8%", top: `${92 - (perimeter - 3) * 84}%` };
   return (
     <View style={styles.area}>
       <Animated.View
         accessible={false}
         importantForAccessibility="no-hide-descendants"
-        style={[styles.ring, { transform: [{ scale }] }]}
+        style={[shapeStyle, { transform: [{ scale }] }]}
       />
+      {animationType === "box" && !reduced && (
+        <View style={[styles.boxMarker, boxPosition]} />
+      )}
+      {animationType === "sigh" && (
+        <Animated.View
+          accessible={false}
+          importantForAccessibility="no-hide-descendants"
+          style={[styles.sighCore, { transform: [{ scale }] }]}
+        />
+      )}
+      {animationType === "wave" && (
+        <Animated.View
+          accessible={false}
+          importantForAccessibility="no-hide-descendants"
+          style={[styles.orbHighlight, { transform: [{ scale }] }]}
+        />
+      )}
       <View
         style={styles.readout}
         accessibilityLabel={`${view.phase.label}. Cycle ${view.currentCycle} of ${view.totalCycles}`}
       >
         <Label>{running ? view.phase.label.toUpperCase() : "PAUSED"}</Label>
+        {view.phase.nostril && <Copy>{view.phase.nostril.toUpperCase()} NOSTRIL</Copy>}
         <Copy style={styles.timer}>
           {Math.ceil(view.phaseRemainingMs / 1000)
             .toString()
@@ -103,6 +156,87 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: c.accent,
     backgroundColor: "#adc6ff08",
+  },
+  box: {
+    position: "absolute",
+    width: "84%",
+    height: "84%",
+    borderRadius: 14,
+    borderWidth: 3,
+    borderColor: c.accent,
+    backgroundColor: "#adc6ff08",
+  },
+  boxMarker: {
+    position: "absolute",
+    width: 14,
+    height: 14,
+    marginLeft: -7,
+    marginTop: -7,
+    borderRadius: 7,
+    backgroundColor: c.text,
+    shadowColor: c.accent,
+    shadowOpacity: 0.9,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  alternating: {
+    position: "absolute",
+    width: "72%",
+    height: "72%",
+    borderRadius: 999,
+    borderWidth: 3,
+    borderColor: c.blue,
+    backgroundColor: "#0566d908",
+    transform: [{ rotate: "45deg" }],
+  },
+  ripple: {
+    position: "absolute",
+    width: "78%",
+    height: "78%",
+    borderRadius: 999,
+    borderWidth: 8,
+    borderColor: c.accent,
+    backgroundColor: "transparent",
+  },
+  pulse: {
+    position: "absolute",
+    width: "58%",
+    height: "58%",
+    borderRadius: 999,
+    borderWidth: 10,
+    borderColor: c.danger,
+    backgroundColor: "#ffb4ab12",
+  },
+  orb: {
+    position: "absolute",
+    width: "58%",
+    height: "58%",
+    borderRadius: 999,
+    borderWidth: 2,
+    borderColor: c.accent,
+    backgroundColor: "#adc6ff24",
+    shadowColor: c.accent,
+    shadowOpacity: 0.45,
+    shadowRadius: 26,
+    elevation: 12,
+  },
+  orbHighlight: {
+    position: "absolute",
+    width: "34%",
+    height: "34%",
+    borderRadius: 999,
+    backgroundColor: "#ffffff22",
+  },
+  sighCore: {
+    position: "absolute",
+    width: "18%",
+    height: "18%",
+    borderRadius: 999,
+    backgroundColor: c.accent,
+    shadowColor: c.accent,
+    shadowOpacity: 0.8,
+    shadowRadius: 18,
+    elevation: 10,
   },
   readout: { alignItems: "center", gap: 4 },
   timer: {

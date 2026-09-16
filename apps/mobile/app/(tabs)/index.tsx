@@ -1,11 +1,45 @@
 import { router } from "expo-router";
-import { View } from "react-native";
-import { Screen, Title, Label, Card, Copy, Button, s } from "../../src/ui";
+import { useState } from "react";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { Pressable, View } from "react-native";
+import { Screen, Title, Label, Card, Copy, Button, ProtocolRow, s } from "../../src/ui";
 import { useSession } from "../../src/provider";
+import { protocols } from "@inout/protocols";
+import type { Goal } from "@inout/shared-types";
+
+const goals: { name: Goal; icon: keyof typeof MaterialIcons.glyphMap }[] = [
+  { name: "Calm", icon: "spa" },
+  { name: "Focus", icon: "center-focus-strong" },
+  { name: "Perform", icon: "bolt" },
+  { name: "Recover", icon: "replay" },
+  { name: "Sleep", icon: "bedtime" },
+  { name: "Energize", icon: "wb-sunny" },
+];
+const purposes: Record<Goal, string> = {
+  Calm: "Settle your nervous system",
+  Focus: "Clear the mental noise",
+  Perform: "Find steady composure",
+  Recover: "Return to an easy rhythm",
+  Sleep: "Wind down for rest",
+  Energize: "Wake up with intention",
+};
 export default function Today() {
   const { current } = useSession();
+  const [goal, setGoal] = useState<Goal>("Calm");
+  const recommendation = protocols.find((protocol) => protocol.goalTags.includes(goal)) ?? protocols[0];
   return (
-    <Screen>
+    <Screen
+      headerAction={
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Open settings"
+          onPress={() => router.push("/settings")}
+          style={s.iconButton}
+        >
+          <MaterialIcons name="settings" size={21} color="#e2e2e8" />
+        </Pressable>
+      }
+    >
       <Label>TODAY</Label>
       <Title>Breathe for what's next.</Title>
       {current?.stage === "active" && (
@@ -21,12 +55,6 @@ export default function Today() {
         />
       )}
       <Card>
-        <Label>CALM NOW</Label>
-        <Copy style={s.subtitle}>A moment to reset.</Copy>
-        <Copy>Two inhales. One long exhale.</Copy>
-        <Button title="Calm Now  →" onPress={() => router.push("/calm")} />
-      </Card>
-      <Card>
         <Label>QUICK RESET · 48 SEC</Label>
         <Copy style={s.subtitle}>Physiological Sigh</Copy>
         <Copy>3 guided cycles. No account needed.</Copy>
@@ -36,14 +64,32 @@ export default function Today() {
           onPress={() => router.push("/pre")}
         />
       </Card>
-      <View style={s.row}>
-        <Copy style={s.small}>Your breathing. Your pace.</Copy>
-        <Button
-          title="Settings"
-          secondary
-          onPress={() => router.push("/settings")}
-        />
+      <Label>WHAT DO YOU NEED?</Label>
+      <View style={s.goalGrid}>
+        {goals.map((item) => (
+          <Pressable
+            key={item.name}
+            accessibilityRole="button"
+            accessibilityState={{ selected: goal === item.name }}
+            onPress={() => setGoal(item.name)}
+            style={[s.goalChoice, goal === item.name && s.goalChoiceSelected]}
+          >
+            <MaterialIcons name={item.icon} size={18} color={goal === item.name ? "#111317" : "#adc6ff"} />
+            <Copy style={goal === item.name ? { color: "#111317" } : undefined}>{item.name}</Copy>
+          </Pressable>
+        ))}
       </View>
+      <View style={s.row}>
+        <View>
+          <Label>RECOMMENDED FOR {goal.toUpperCase()}</Label>
+          <Copy style={s.subtitle}>{purposes[goal]}</Copy>
+        </View>
+      </View>
+      <ProtocolRow
+        protocol={recommendation}
+        purpose={recommendation.name === "Physiological Sigh" ? "Two inhales, one long exhale" : purposes[goal]}
+        onPress={() => router.push({ pathname: "/protocol", params: { id: recommendation.id } })}
+      />
     </Screen>
   );
 }

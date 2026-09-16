@@ -24,6 +24,7 @@ export interface Phase {
   animationInstruction: "expand" | "topUp" | "contract" | "still" | "ripple";
 }
 export interface Protocol {
+  plan?: SessionPlan;
   id: string;
   version: number;
   name: string;
@@ -63,6 +64,7 @@ export interface EngineState {
     | "clockChange";
 }
 export interface SessionRecord {
+  protocol?: Protocol;
   id: string;
   protocolId: string;
   protocolVersion: number;
@@ -80,6 +82,9 @@ export interface Preferences {
   audio: "voice" | "tones" | "silent";
   haptics: boolean;
   keepAwake: boolean;
+  favoriteProtocolIds?: string[];
+  onboardingComplete?: boolean;
+  pro?: boolean;
 }
 export function stateShift(
   pre: number | null,

@@ -8,7 +8,7 @@ import {
 } from "expo-audio";
 import * as Haptics from "expo-haptics";
 import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
-import { useSession } from "./provider";
+import { useSession } from "./session-context";
 
 const sources = {
   voice: [
@@ -16,12 +16,26 @@ const sources = {
     require("../assets/audio/top-up.wav"),
     require("../assets/audio/exhale.wav"),
     require("../assets/audio/complete.wav"),
+    require("../assets/audio/hold.wav"),
+    require("../assets/audio/hum.wav"),
+    require("../assets/audio/rest.wav"),
+    require("../assets/audio/recover.wav"),
+    require("../assets/audio/natural.wav"),
+    require("../assets/audio/inhale-left.wav"),
+    require("../assets/audio/inhale-right.wav"),
+    require("../assets/audio/exhale-left.wav"),
+    require("../assets/audio/exhale-right.wav"),
   ],
   tones: [
     require("../assets/audio/tone-in.wav"),
     require("../assets/audio/tone-top.wav"),
     require("../assets/audio/tone-out.wav"),
     require("../assets/audio/tone-complete.wav"),
+    require("../assets/audio/tone-top.wav"),
+    require("../assets/audio/tone-out.wav"),
+    require("../assets/audio/tone-top.wav"),
+    require("../assets/audio/tone-in.wav"),
+    require("../assets/audio/tone-out.wav"),
   ],
 };
 export function NativeSessionEffects() {
@@ -178,17 +192,16 @@ export function NativeSessionEffects() {
               : Haptics.ImpactFeedbackStyle.Light,
         ).catch(() => {});
     }
-    AccessibilityInfo.announceForAccessibility(view.phase.label);
+    AccessibilityInfo.announceForAccessibility(`${view.phase.label}${view.phase.nostril ? ` ${view.phase.nostril}` : ""}`);
     // Skip expired cues after stalls. Only the current phase is announced, never a backlog.
     if (view.phaseRemainingMs > 750 && audio !== "silent" && audioReady) {
-      const player =
-        players.current[
-          view.phase.type === "inhale"
-            ? 0
-            : view.phase.type === "inhaleTopUp"
-              ? 1
-              : 2
-        ];
+      const indexes = { inhale: 0, inhaleTopUp: 1, exhale: 2, hold: 4, hum: 5, retention: 6, recovery: 7, freeBreathing: 8 };
+      let index = indexes[view.phase.type];
+      if (audio === "voice" && (view.phase.nostril === "left" || view.phase.nostril === "right")) {
+        if (view.phase.type === "inhale") index = view.phase.nostril === "left" ? 9 : 10;
+        if (view.phase.type === "exhale") index = view.phase.nostril === "left" ? 11 : 12;
+      }
+      const player = players.current[index];
       players.current.forEach((p) => p.pause());
       if (player)
         void player

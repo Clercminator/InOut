@@ -1,137 +1,64 @@
-import { useState } from "react";
-import { Alert, Pressable, ScrollView, View } from "react-native";
 import { router } from "expo-router";
+import { View } from "react-native";
 import { Screen, Title, Label, Card, Copy, Button, s } from "../../src/ui";
 import { useSession } from "../../src/provider";
-import { duration, shiftText } from "../../src/format";
+import { duration } from "../../src/format";
 import { stateShift } from "@inout/shared-types";
-import { colors } from "@inout/design-tokens";
-export default function History() {
+
+function dayKey(date: Date) {
+  return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+}
+
+export default function Progress() {
   const controller = useSession();
-  const all = controller.history();
-  const [filter, setFilter] = useState("All");
-  const records = all.filter((r) => filter === "All" || r.goal === filter);
-  const shifts = all
-    .filter((r) => r.endReason === "completed")
-    .map((r) => stateShift(r.pre, r.post))
-    .filter((v): v is number => v !== null);
+  const records = controller.history();
+  const completed = records.filter((record) => record.endReason === "completed");
+  const shifts = completed
+    .map((record) => stateShift(record.pre, record.post))
+    .filter((value): value is number => value !== null);
+  const activeDays = new Set(records.map((record) => dayKey(new Date(record.engine.startedAt))));
+  const totalMs = records.reduce((sum, record) => sum + record.engine.elapsedAtAnchor, 0);
+  let streak = 0;
+  const cursor = new Date();
+  if (!activeDays.has(dayKey(cursor))) cursor.setDate(cursor.getDate() - 1);
+  while (activeDays.has(dayKey(cursor))) {
+    streak += 1;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  const average = shifts.length
+    ? (shifts.reduce((a, b) => a + b, 0) / shifts.length).toFixed(1)
+    : "—";
+  const heatmap = Array.from({ length: 28 }, (_, index) => {
+    const date = new Date();
+    date.setDate(date.getDate() - (27 - index));
+    return activeDays.has(dayKey(date));
+  });
+  const bestGoal = completed.length
+    ? [...new Set(completed.map((record) => record.goal))].sort(
+        (a, b) =>
+          completed.filter((record) => record.goal === b).length -
+          completed.filter((record) => record.goal === a).length,
+      )[0]
+    : null;
+
   return (
-    <Screen>
-      <Label>LOGGED SESSIONS · ON THIS PHONE</Label>
-      <Title>HISTORY</Title>
+    <Screen title="PROGRESS">
+      <Title>Your practice, at a glance.</Title>
+      <View style={s.metricGrid}>
+        <Card style={s.metricCard}><Label>SESSIONS</Label><Title>{records.length}</Title></Card>
+        <Card style={s.metricCard}><Label>TOTAL TIME</Label><Title>{duration(totalMs)}</Title></Card>
+        <Card style={s.metricCard}><Label>STREAK</Label><Title>{streak}d</Title></Card>
+        <Card style={s.metricCard}><Label>AVG STATE SHIFT</Label><Title>{average}</Title></Card>
+      </View>
       <Card>
-        <View style={s.row}>
-          <View>
-            <Label>SESSIONS</Label>
-            <Title>{all.length}</Title>
-          </View>
-          <View>
-            <Label>TOTAL TIME</Label>
-            <Title>
-              {duration(
-                all.reduce((sum, r) => sum + r.engine.elapsedAtAnchor, 0),
-              )}
-            </Title>
-          </View>
-          <View>
-            <Label>AVG TENSION DROP</Label>
-            <Title>
-              {shifts.length
-                ? (shifts.reduce((a, b) => a + b, 0) / shifts.length).toFixed(1)
-                : "—"}
-            </Title>
-          </View>
-        </View>
-        <Copy style={s.small}>
-          State Shift is self-reported. Only paired ratings from completed
-          sessions contribute to the average.
-        </Copy>
+        <View style={s.row}><Label>ACTIVITY · 28 DAYS</Label><Copy style={s.small}>{records.length ? `${heatmap.filter(Boolean).length} active days` : "Your rhythm will appear here"}</Copy></View>
+        <View style={s.heatmap}>{heatmap.map((active, index) => <View key={index} style={[s.heatCell, active && s.heatCellActive]} />)}</View>
       </Card>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ gap: 8 }}
-      >
-        {[
-          "All",
-          "Calm",
-          "Focus",
-          "Perform",
-          "Recover",
-          "Sleep",
-          "Energize",
-        ].map((goal) => (
-          <Pressable
-            key={goal}
-            accessibilityRole="button"
-            accessibilityState={{ selected: filter === goal }}
-            onPress={() => setFilter(goal)}
-            style={[
-              s.button,
-              {
-                backgroundColor: filter === goal ? colors.text : colors.raised,
-              },
-            ]}
-          >
-            <Copy
-              style={{
-                color: filter === goal ? colors.background : colors.text,
-              }}
-            >
-              {goal}
-            </Copy>
-          </Pressable>
-        ))}
-      </ScrollView>
-      {!records.length && (
-        <Card>
-          <Title>No sessions yet.</Title>
-          <Copy>Your completed and ended sessions will appear here.</Copy>
-          <Button title="Start a reset" onPress={() => router.push("/pre")} />
-        </Card>
-      )}
-      {records.map((record) => (
-        <Card key={record.id}>
-          <Label>{new Date(record.engine.startedAt).toLocaleString()}</Label>
-          <Copy style={s.subtitle}>{record.protocolName}</Copy>
-          <Copy>
-            {duration(record.engine.elapsedAtAnchor)} ·{" "}
-            {record.endReason === "completed" ? "Completed" : "Ended early"}
-          </Copy>
-          <Copy style={{ color: colors.accent }}>{shiftText(record)}</Copy>
-          <Button
-            title="View session"
-            secondary
-            onPress={() =>
-              router.push({ pathname: "/result", params: { id: record.id } })
-            }
-          />
-          <Button
-            title="Delete"
-            secondary
-            onPress={() =>
-              Alert.alert(
-                "Delete this session?",
-                "This removes the local record permanently.",
-                [
-                  { text: "Cancel", style: "cancel" },
-                  {
-                    text: "Delete",
-                    style: "destructive",
-                    onPress: () => {
-                      try {
-                        controller.remove(record.id);
-                      } catch {
-                        Alert.alert("Could not delete", "Please try again.");
-                      }
-                    },
-                  },
-                ],
-              )
-            }
-          />
-        </Card>
-      ))}
+      <Card>
+        <Label>WHAT WORKS FOR YOU</Label>
+        {bestGoal ? <Copy>Most of your completed sessions are for {bestGoal}. Keep noticing which practices create a State Shift.</Copy> : <Copy>Complete a session and add a before-and-after rating to discover which practices create your State Shift.</Copy>}
+      </Card>
+      <Button title="View session history" secondary onPress={() => router.push("/history")} />
     </Screen>
   );
 }

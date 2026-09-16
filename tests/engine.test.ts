@@ -2,6 +2,19 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import * as e from "../packages/breathing-engine/src/index";
 import { planFor, sigh, protocols } from "../packages/protocols/src/index";
+import { makeMixProtocol } from "../apps/mobile/src/custom-protocol";
+
+test("mixes preserve selection order, complete cycles, repeats and block boundaries", () => {
+  const coherent = protocols.find((p) => p.id === "coherent")!;
+  const mix = makeMixProtocol([coherent, sigh]);
+  const plan = planFor(mix, 2);
+  assert.deepEqual(plan.blocks.map((b) => b.protocolId), ["coherent", sigh.id, "coherent", sigh.id]);
+  assert.deepEqual(plan.blocks.map((b) => b.cycles), [18, 3, 18, 3]);
+  assert.equal(e.totalDuration(plan), 456000);
+  assert.equal(e.snapshot(e.start(plan, 0), 180000).blockIndex, 1);
+  const intense = protocols.find((p) => p.safetyCategory === "highIntensity")!;
+  assert.equal(makeMixProtocol([sigh, intense]).safetyCategory, "highIntensity");
+});
 
 test("phase boundaries and stalled renders use timestamps", () => {
   const state = e.start(planFor(sigh), 1000);
@@ -77,7 +90,7 @@ test("all ten definitions validate and duration metadata reconciles", () => {
   }
   assert.equal(
     protocols.find((p) => p.safetyCategory === "highIntensity")?.availability,
-    "definitionOnly",
+    "enabled",
   );
 });
 test("invalid plans and corrupted engine state are rejected", () => {

@@ -4,6 +4,7 @@ import { AppState, AccessibilityInfo } from "react-native";
 import { NativeSessionEffects } from "../src/session-effects";
 import { SessionController } from "../src/session-controller";
 import type { LocalStore } from "../src/storage";
+import { protocols } from "@inout/protocols";
 
 let mockController: SessionController;
 let now = 0;
@@ -19,7 +20,7 @@ const mockPlayers: {
   seekTo: jest.Mock;
   listener?: (mockStatus: object) => void;
 }[] = [];
-jest.mock("../src/provider", () => ({
+jest.mock("../src/session-context", () => ({
   useSession: () => {
     const React = require("react");
     React.useSyncExternalStore(
@@ -88,6 +89,20 @@ afterEach(() => {
   jest.useRealTimers();
   jest.restoreAllMocks();
 });
+test("voice holds and alternating nostrils use their own cues", async () => {
+  mockController.preferences.audio = "voice";
+  const box = protocols.find((p) => p.id === "box")!;
+  mockController.start(null, 1, box);
+  await render(<NativeSessionEffects />);
+  await act(async () => { now = 4000; mockController.tick(); });
+  expect(mockPlayers[4].play).toHaveBeenCalled();
+  expect(mockPlayers[2].play).not.toHaveBeenCalled();
+  await act(async () => { mockController.end("ended"); });
+  const nadi = protocols.find((p) => p.id === "nadi-shodhana")!;
+  await act(async () => { mockController.start(null, 1, nadi); });
+  expect(mockPlayers[9].play).toHaveBeenCalled();
+});
+
 test("native cue delivery, pause cleanup, and no stale phase backlog", async () => {
   mockController.start(null);
   await render(<NativeSessionEffects />);

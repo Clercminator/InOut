@@ -1,9 +1,6 @@
 import React, {
-  createContext,
-  useContext,
   useEffect,
   useState,
-  useSyncExternalStore,
   type PropsWithChildren,
 } from "react";
 import { AppState, Platform } from "react-native";
@@ -13,9 +10,9 @@ import { createClock } from "@inout/breathing-engine";
 import { SessionController } from "./session-controller";
 import { LocalStore } from "./storage";
 import { NativeSessionEffects } from "./session-effects";
+import { SessionContext, useSession } from "./session-context";
 import { Screen, Title, Copy, Button } from "./ui";
 
-const Context = createContext<SessionController | null>(null);
 export function SessionProvider({ children }: PropsWithChildren) {
   const [attempt, setAttempt] = useState(0);
   const [controller, setController] = useState<SessionController | null>(null);
@@ -62,22 +59,13 @@ export function SessionProvider({ children }: PropsWithChildren) {
       </Screen>
     );
   return (
-    <Context.Provider value={controller}>
+    <SessionContext.Provider value={controller}>
       <NativeSessionEffects />
       {children}
-    </Context.Provider>
+    </SessionContext.Provider>
   );
 }
-export function useSession() {
-  const controller = useContext(Context);
-  if (!controller) throw new Error("SessionProvider required");
-  useSyncExternalStore(
-    controller.subscribe,
-    controller.getRevision,
-    controller.getRevision,
-  );
-  return controller;
-}
+export { useSession } from "./session-context";
 export function SaveError() {
   const controller = useSession();
   return controller.error ? (

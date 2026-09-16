@@ -1,5 +1,6 @@
 import { Alert, Share, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Screen, Title, Label, Card, Copy, Button, s } from "../src/ui";
 import { useSession, SaveError } from "../src/provider";
 import { shiftText, duration } from "../src/format";
@@ -21,15 +22,20 @@ export default function Result() {
     );
   const view = snapshot(record.engine, record.engine.anchorAt);
   return (
-    <Screen title="SELF-REPORTED">
-      <Label>
-        {record.endReason === "completed" ? "STATE SHIFT" : "SESSION ENDED"}
-      </Label>
-      <Copy>
-        {record.protocolName} · {duration(view.sessionElapsedMs)} ·{" "}
-        {view.completedCycles} completed cycles
-      </Copy>
-      <Card>
+    <Screen title="STATE SHIFT">
+      <View style={s.resultHeader}>
+        <View style={s.row}>
+          <View style={s.inlineLabel}>
+            <MaterialIcons name={record.endReason === "completed" ? "check-circle" : "pause-circle"} size={18} color={colors.accent} />
+            <Label>{record.endReason === "completed" ? "SESSION COMPLETE" : "SESSION ENDED"}</Label>
+          </View>
+          <Copy style={s.small}>SELF-REPORTED</Copy>
+        </View>
+        <Copy style={s.resultMeta}>
+          {record.protocolName} · {duration(view.sessionElapsedMs)} · {view.completedCycles} cycles
+        </Copy>
+      </View>
+      <Card style={s.resultHero}>
         <View style={s.row}>
           <View>
             <Label>BEFORE</Label>
@@ -48,7 +54,11 @@ export default function Result() {
       </Card>
       <Card>
         <Label>CADENCE</Label>
-        <Copy>Inhale · Top up · Long exhale</Copy>
+        <Copy>
+          {record.engine.plan.blocks.flatMap((block) => block.phases)
+            .map((phase) => `${phase.label} ${phase.durationMs / 1000}s`)
+            .join(" · ")}
+        </Copy>
         {record.effect && <Copy>{record.effect}</Copy>}
         {record.endReason === "unwell" && (
           <Copy>Stopped for discomfort. Breathe naturally and rest.</Copy>
@@ -58,7 +68,7 @@ export default function Result() {
       <Button
         title="DONE · VIEW HISTORY  →"
         disabled={!!controller.error}
-        onPress={() => router.replace("/(tabs)/progress")}
+        onPress={() => router.replace("/history")}
       />
       <Button
         title="Share result"
@@ -76,7 +86,12 @@ export default function Result() {
         title="Do it again"
         secondary
         disabled={!!controller.error}
-        onPress={() => router.replace("/pre")}
+        onPress={() => {
+          if (record.protocol) {
+            controller.setCustomProtocol(record.protocol);
+            router.replace({ pathname: "/pre", params: { id: "custom" } });
+          } else router.replace({ pathname: "/pre", params: { id: record.protocolId } });
+        }}
       />
     </Screen>
   );
