@@ -25,6 +25,7 @@ export function SighVisual({
 }) {
   const [reduced, setReduced] = useState(true);
   const scale = useRef(new Animated.Value(0.7)).current;
+  const ripple = useRef(new Animated.Value(0)).current;
   const phaseProgress = Math.min(
     1,
     view.phaseElapsedMs / Math.max(1, view.phase.durationMs),
@@ -43,6 +44,17 @@ export function SighVisual({
       sub.remove();
     };
   }, []);
+  useEffect(() => {
+    ripple.stopAnimation();
+    if (reduced) ripple.setValue(0);
+    if (!running || reduced || animationType !== "ripple" || view.phase.type !== "hum") return;
+    ripple.setValue(0);
+    const animation = Animated.loop(Animated.timing(ripple, {
+      toValue: 1, duration: 2200, easing: Easing.linear, useNativeDriver: true,
+    }));
+    animation.start();
+    return () => animation.stop();
+  }, [running, reduced, view.cueKey, animationType, ripple]);
   useEffect(() => {
     scale.stopAnimation();
     let previous = 1;
@@ -76,9 +88,7 @@ export function SighVisual({
     return () => animation.stop();
   }, [view.cueKey, running, reduced, scale, animationType]);
   const shapeStyle =
-    animationType === "alternating"
-        ? styles.alternating
-        : animationType === "ripple"
+    animationType === "ripple"
           ? styles.ripple
           : animationType === "pulse"
             ? styles.pulse
@@ -90,12 +100,30 @@ export function SighVisual({
       ? c.exhale : view.phaseIndex === 3 ? c.rest : c.hold;
   return (
     <View style={styles.area}>
-      {animationType !== "box" && <Animated.View
+      {animationType !== "box" && animationType !== "alternating" && animationType !== "ripple" && <Animated.View
         accessible={false}
         importantForAccessibility="no-hide-descendants"
         style={[shapeStyle, { borderColor: phaseColor, transform: [{ scale }] }]}
       />}
       {animationType === "box" && <BoxVisual view={view} running={running} reduced={reduced} />}
+      {animationType === "alternating" && (["left", "right"] as const).map((side) => (
+        <Animated.View key={side} accessible={false} importantForAccessibility="no-hide-descendants"
+          style={[styles.airChannel, {
+            left: side === "left" ? "4%" : "78%",
+            borderColor: view.phase.nostril === side ? phaseColor : c.sessionBorder,
+            backgroundColor: view.phase.nostril === side ? phaseColor + "15" : "transparent",
+            opacity: view.phase.nostril === side ? 1 : 0.4,
+            transform: [{ scaleY: view.phase.nostril === side ? scale : 0.65 }],
+          }]} />
+      ))}
+      {animationType === "ripple" && [0, 1, 2].map((index) => (
+        <Animated.View key={index} accessible={false} importantForAccessibility="no-hide-descendants"
+          style={[styles.ripple, {
+            borderColor: phaseColor,
+            opacity: reduced || !running || view.phase.type !== "hum" ? 0.3 : ripple.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0.35, 0.2, 0] }),
+            transform: [{ scale: reduced ? 0.72 + index * 0.13 : ripple.interpolate({ inputRange: [0, 1], outputRange: [0.6 + index * 0.12, 0.78 + index * 0.12] }) }],
+          }]} />
+      ))}
       {animationType === "sigh" && (
         <Animated.View
           accessible={false}
@@ -146,22 +174,13 @@ const styles = StyleSheet.create({
     borderColor: c.accent,
     backgroundColor: "#adc6ff08",
   },
-  alternating: {
-    position: "absolute",
-    width: "72%",
-    height: "72%",
-    borderRadius: 999,
-    borderWidth: 3,
-    borderColor: c.blue,
-    backgroundColor: "#0566d908",
-    transform: [{ rotate: "45deg" }],
-  },
+  airChannel: { position: "absolute", top: "15%", width: "18%", height: "70%", borderRadius: 999, borderWidth: 2 },
   ripple: {
     position: "absolute",
-    width: "78%",
-    height: "78%",
+    width: "94%",
+    height: "94%",
     borderRadius: 999,
-    borderWidth: 8,
+    borderWidth: 2,
     borderColor: c.accent,
     backgroundColor: "transparent",
   },
@@ -196,10 +215,11 @@ const styles = StyleSheet.create({
   },
   sighCore: {
     position: "absolute",
-    width: "18%",
-    height: "18%",
+    width: "54%",
+    height: "54%",
     borderRadius: 999,
     backgroundColor: c.accent,
+    opacity: 0.08,
     shadowColor: c.accent,
     shadowOpacity: 0.8,
     shadowRadius: 18,

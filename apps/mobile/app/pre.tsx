@@ -9,6 +9,7 @@ import {
   Copy,
   Button,
   StateScale,
+  Chip,
 } from "../src/ui";
 import { useSession, SaveError } from "../src/provider";
 import { protocols, sigh } from "@inout/protocols";
@@ -58,23 +59,23 @@ export default function Pre() {
       <Title>How tense are you right now?</Title>
       <StateScale value={rating} onChange={setRating} />
       <Card>
-        <Label>CADENCE</Label>
-        <Copy>{protocol.phases.map((phase) => phase.label).join(" · ")}</Copy>
-        <Label>SESSION LOADOUT</Label>
+        <Label>SESSION LENGTH</Label>
         <Copy style={{ color: "#adc6ff" }}>
           {durationLabel(cycles * cycleDuration)} · {cycles} {protocol.plan ? "repeats" : "cycles"}
         </Copy>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
         {protocol.durationPresets.map((duration) => {
           const presetCycles = Math.max(1, Math.round(duration / cycleDuration));
           return (
-            <Button
+            <Chip
               key={duration}
               title={`${durationLabel(duration)} · ${presetCycles} ${protocol.plan ? "repeats" : "cycles"}`}
-              secondary={cycles !== presetCycles}
+              selected={cycles === presetCycles}
               onPress={() => setCycles(presetCycles)}
             />
           );
         })}
+        </View>
         <Copy>Breathe comfortably. Stop if dizzy or unwell.</Copy>
         {protocol.safetyCategory === "retention" && <Copy>Keep holds comfortable. Return to natural breathing whenever you need to.</Copy>}
       </Card>

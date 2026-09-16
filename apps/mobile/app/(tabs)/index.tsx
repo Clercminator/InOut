@@ -1,8 +1,10 @@
 import { router } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
+import { colors } from "@inout/design-tokens";
 import { useState } from "react";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Pressable, View } from "react-native";
-import { Screen, Title, Label, Card, Copy, Button, ProtocolRow, s } from "../../src/ui";
+import { Screen, Title, Label, Copy, Button, ProtocolRow, s } from "../../src/ui";
 import { useSession } from "../../src/provider";
 import { protocols } from "@inout/protocols";
 import type { Goal } from "@inout/shared-types";
@@ -16,7 +18,7 @@ const goals: { name: Goal; icon: keyof typeof MaterialIcons.glyphMap }[] = [
   { name: "Energize", icon: "wb-sunny" },
 ];
 const purposes: Record<Goal, string> = {
-  Calm: "Settle your nervous system",
+  Calm: "Find a calmer rhythm",
   Focus: "Clear the mental noise",
   Perform: "Find steady composure",
   Recover: "Return to an easy rhythm",
@@ -54,16 +56,16 @@ export default function Today() {
           onPress={() => router.push("/post")}
         />
       )}
-      <Card>
+      <LinearGradient colors={[colors.sessionSurface, colors.card]} style={s.hero}>
         <Label>QUICK RESET · 48 SEC</Label>
+        <Title>Make room for a reset.</Title>
         <Copy style={s.subtitle}>Physiological Sigh</Copy>
         <Copy>3 guided cycles. No account needed.</Copy>
         <Button
           title="Start reset"
-          secondary
           onPress={() => router.push("/pre")}
         />
-      </Card>
+      </LinearGradient>
       <Label>WHAT DO YOU NEED?</Label>
       <View style={s.goalGrid}>
         {goals.map((item) => (

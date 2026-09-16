@@ -1,12 +1,10 @@
+import { useState } from "react";
+import { ScrollView } from "react-native";
 import { router } from "expo-router";
-import { Screen, Title, Label, ProtocolRow } from "../../src/ui";
+import { Screen, Title, Label, ProtocolRow, Chip, Card, Copy } from "../../src/ui";
 import { protocols } from "@inout/protocols";
 import { useSession } from "../../src/provider";
 
-function formatDuration(durationMs: number) {
-  const seconds = Math.round(durationMs / 1000);
-  return seconds < 60 ? `${seconds} sec` : `${Math.round(seconds / 60)} min`;
-}
 const purposes: Record<string, string> = {
   "physiological-sigh": "Quick reset",
   box: "Steady concentration",
@@ -22,16 +20,18 @@ const purposes: Record<string, string> = {
 
 export default function Protocols() {
   const controller = useSession();
+  const [filter, setFilter] = useState("All");
+  const filtered = protocols.filter((p) => p.availability === "enabled" && (filter === "All" || (filter === "Saved" ? controller.isFavorite(p.id) : p.goalTags.some((goal) => goal === filter))));
   return (
     <Screen>
       <Label>PROTOCOLS</Label>
       <Title>Find your rhythm.</Title>
-      {!!controller.preferences.favoriteProtocolIds?.length && (
-        <Label>
-          SAVED ROUTINES · {controller.preferences.favoriteProtocolIds.length}
-        </Label>
-      )}
-      {protocols.map((protocol) => {
+      <Copy>Choose a cadence for the moment ahead.</Copy>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+        {["All", "Saved", "Calm", "Focus", "Perform", "Recover", "Sleep", "Energize"].map((goal) => <Chip key={goal} title={goal} selected={filter === goal} onPress={() => setFilter(goal)} />)}
+      </ScrollView>
+      {!filtered.length && <Card><Title>Your collection starts here.</Title><Copy>Save a protocol from its detail screen to find it here.</Copy></Card>}
+      {filtered.map((protocol) => {
         const available = protocol.availability === "enabled";
         return available ? (
           <ProtocolRow

@@ -6,6 +6,7 @@ import Post from "../app/post";
 import Result from "../app/result";
 import Session from "../app/session";
 import Custom from "../app/(tabs)/custom";
+import ProtocolLibrary from "../app/(tabs)/protocols";
 import { SessionController } from "../src/session-controller";
 import type { LocalStore } from "../src/storage";
 import type { SessionRecord } from "@inout/shared-types";
@@ -155,6 +156,19 @@ test("Custom shows a saved routine and starts it with its protocol id", async ()
     pathname: "/pre",
     params: { id: "coherent" },
   });
+});
+
+test("library filters saved routines and goals without losing navigation", async () => {
+  mockController.toggleFavorite("coherent");
+  await render(<ProtocolLibrary />);
+  await fireEvent.press(screen.getByRole("button", { name: "Saved" }));
+  expect(screen.getByText("Coherent Breathing")).toBeTruthy();
+  expect(screen.queryByText("Box Breathing")).toBeNull();
+  await fireEvent.press(screen.getByRole("button", { name: "Sleep" }));
+  expect(screen.getByText("4-7-8 Breathing")).toBeTruthy();
+  expect(screen.queryByText("Coherent Breathing")).toBeNull();
+  await fireEvent.press(screen.getByRole("button", { name: /4-7-8 Breathing, Prepare for sleep/ }));
+  expect(mockPush).toHaveBeenCalledWith({ pathname: "/protocol", params: { id: "4-7-8" } });
 });
 
 test("clearing history removes a completed current record", () => {

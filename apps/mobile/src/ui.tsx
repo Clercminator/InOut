@@ -13,6 +13,18 @@ import { router } from "expo-router";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { colors as c, typography as f } from "@inout/design-tokens";
 import type { Protocol } from "@inout/shared-types";
+import { duration } from "./format";
+
+export function Chip({ title, selected, onPress }: { title: string; selected: boolean; onPress: () => void }) {
+  return <Pressable accessibilityRole="button" accessibilityState={{ selected }} onPress={onPress}
+    style={({ pressed }) => [s.chip, selected && s.chipSelected, { opacity: pressed ? 0.7 : 1 }]}>
+    <Copy style={{ color: selected ? c.onAccent : c.secondaryText, fontFamily: f.label }}>{title}</Copy>
+  </Pressable>;
+}
+
+const protocolIcons = {
+  sigh: "air", box: "crop-square", wave: "waves", alternating: "sync-alt", ripple: "graphic-eq", pulse: "bolt",
+} as const;
 
 export function Copy({ style, ...props }: TextProps) {
   return <Text {...props} style={[s.copy, style]} />;
@@ -109,7 +121,7 @@ export function Screen({
         {headerAction}
       </View>
       {scroll ? (
-        <ScrollView contentContainerStyle={s.content}>{children}</ScrollView>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.content}>{children}</ScrollView>
       ) : (
         children
       )}
@@ -161,9 +173,9 @@ export function StateScale({
             accessibilityLabel={`${n} of 10${n === 1 ? ", very relaxed" : n === 10 ? ", very tense" : ""}`}
             accessibilityState={{ selected: value === n }}
             onPress={() => onChange(n)}
-            style={[s.scaleCell, value === n && { backgroundColor: c.blue }]}
+            style={[s.scaleCell, value === n && { backgroundColor: c.accent, borderColor: c.accent }]}
           >
-            <Copy style={{ fontFamily: f.heading }}>{n}</Copy>
+            <Copy style={{ fontFamily: f.heading, color: value === n ? c.onAccent : c.text }}>{n}</Copy>
           </Pressable>
         ))}
       </View>
@@ -192,13 +204,13 @@ export function ProtocolRow({
       style={({ pressed }) => [s.protocolRow, { opacity: pressed ? 0.7 : 1 }]}
     >
       <View style={s.protocolIcon}>
-        <MaterialIcons name="air" size={20} color={c.accent} />
+        <MaterialIcons name={protocolIcons[protocol.animationType]} size={24} color={protocol.animationType === "ripple" ? c.exhale : c.accent} />
       </View>
       <View style={s.protocolInfo}>
         <Copy style={s.protocolName}>{protocol.name}</Copy>
         <Copy style={s.small}>{purpose}</Copy>
         <Copy style={s.protocolMeta}>
-          {protocol.phases.map((phase) => `${phase.durationMs / 1000}s`).join(" · ")} · {Math.round(protocol.defaultDuration / 1000)} sec
+          {duration(protocol.defaultDuration)} · {protocol.defaultCycles} cycles · {protocol.goalTags.join(" / ")}
         </Copy>
       </View>
       <MaterialIcons name="chevron-right" size={22} color={c.secondaryText} />
@@ -207,7 +219,7 @@ export function ProtocolRow({
 }
 export const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: c.background },
-  content: { padding: 16, gap: 14, flexGrow: 1, paddingBottom: 24 },
+  content: { padding: 20, gap: 20, flexGrow: 1, paddingBottom: 32 },
   header: {
     minHeight: 56,
     paddingHorizontal: 16,
@@ -237,7 +249,7 @@ export const s = StyleSheet.create({
   },
   subtitle: { fontFamily: f.heading, fontSize: 18, lineHeight: 23 },
   small: { color: c.secondaryText, fontSize: 12, lineHeight: 18 },
-  card: { backgroundColor: c.card, borderRadius: 14, padding: 16, gap: 12 },
+  card: { backgroundColor: c.card, borderRadius: 20, padding: 18, gap: 12, borderWidth: 1, borderColor: c.border },
   row: {
     flexDirection: "row",
     alignItems: "center",
@@ -246,9 +258,9 @@ export const s = StyleSheet.create({
     flexWrap: "wrap",
   },
   button: {
-    minHeight: 44,
+    minHeight: 52,
     borderRadius: 12,
-    backgroundColor: c.text,
+    backgroundColor: c.accent,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 16,
@@ -276,6 +288,8 @@ export const s = StyleSheet.create({
   },
   scale: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   scaleCell: {
+    borderWidth: 1,
+    borderColor: c.border,
     flexGrow: 1,
     flexBasis: "16%",
     minWidth: 44,
@@ -335,18 +349,20 @@ export const s = StyleSheet.create({
     elevation: 5,
   },
   protocolRow: {
-    minHeight: 82,
+    minHeight: 96,
     backgroundColor: c.card,
-    borderRadius: 12,
-    padding: 12,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: c.border,
+    padding: 16,
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
   },
   protocolIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     backgroundColor: c.raised,
     alignItems: "center",
     justifyContent: "center",
@@ -356,18 +372,23 @@ export const s = StyleSheet.create({
   protocolMeta: { color: c.secondaryText, fontSize: 11, lineHeight: 15 },
   goalGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   goalChoice: {
-    width: "31%",
-    minHeight: 48,
+    flexBasis: "30%",
+    flexGrow: 1,
+    minHeight: 72,
     borderRadius: 10,
     backgroundColor: c.raised,
-    flexDirection: "row",
+    flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
-    gap: 5,
+    gap: 8,
+    padding: 8,
   },
   goalChoiceSelected: { backgroundColor: c.accent },
   metricGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  metricCard: { width: "48%", padding: 12, gap: 6 },
+  metricCard: { flexBasis: "46%", flexGrow: 1, padding: 16, gap: 10 },
+  chip: { minHeight: 44, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 999, backgroundColor: c.raised, borderWidth: 1, borderColor: c.border, justifyContent: "center", alignItems: "center" },
+  chipSelected: { backgroundColor: c.accent, borderColor: c.accent },
+  hero: { padding: 22, borderRadius: 24, borderWidth: 1, borderColor: c.sessionBorder, gap: 16, overflow: "hidden" },
   heatmap: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
   heatCell: { width: "10%", aspectRatio: 1, borderRadius: 3, backgroundColor: c.raised },
   heatCellActive: { backgroundColor: c.accent },

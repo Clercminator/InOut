@@ -4,6 +4,7 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Screen, Title, Label, Card, Copy, Button, s } from "../src/ui";
 import { useSession, SaveError } from "../src/provider";
 import { shiftText, duration } from "../src/format";
+import { stateShift } from "@inout/shared-types";
 import { snapshot } from "@inout/breathing-engine";
 import { colors } from "@inout/design-tokens";
 export default function Result() {
@@ -20,6 +21,8 @@ export default function Result() {
         <Button title="Today" onPress={() => router.replace("/(tabs)")} />
       </Screen>
     );
+  const shift = stateShift(record.pre, record.post);
+  const resultColor = shift !== null && shift > 0 ? colors.exhale : colors.accent;
   const view = snapshot(record.engine, record.engine.anchorAt);
   return (
     <Screen title="STATE SHIFT">
@@ -35,7 +38,7 @@ export default function Result() {
           {record.protocolName} · {duration(view.sessionElapsedMs)} · {view.completedCycles} cycles
         </Copy>
       </View>
-      <Card style={s.resultHero}>
+      <Card style={{ ...s.resultHero, borderColor: resultColor + "50", padding: 24 }}>
         <View style={s.row}>
           <View>
             <Label>BEFORE</Label>
@@ -46,7 +49,7 @@ export default function Result() {
           <Copy>→</Copy>
           <View>
             <Label>AFTER</Label>
-            <Copy style={s.rating}>{record.post ?? "—"}</Copy>
+            <Copy style={[s.rating, { color: resultColor }]}>{record.post ?? "—"}</Copy>
           </View>
         </View>
         <Title>{shiftText(record)}</Title>

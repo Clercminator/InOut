@@ -1,7 +1,8 @@
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useState } from "react";
 import { Alert, Pressable, ScrollView, View } from "react-native";
 import { router } from "expo-router";
-import { BackScreen, Title, Label, Card, Copy, Button, s } from "../src/ui";
+import { BackScreen, Title, Label, Card, Copy, Button, Chip, s } from "../src/ui";
 import { useSession } from "../src/provider";
 import { duration, shiftText } from "../src/format";
 import { stateShift } from "@inout/shared-types";
@@ -20,22 +21,27 @@ export default function History() {
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
         {["All", "Calm", "Focus", "Perform", "Recover", "Sleep", "Energize"].map((goal) => (
-          <Pressable key={goal} accessibilityRole="button" accessibilityState={{ selected: filter === goal }} onPress={() => setFilter(goal)} style={[s.button, { backgroundColor: filter === goal ? colors.text : colors.raised }]}>
-            <Copy style={{ color: filter === goal ? colors.background : colors.text }}>{goal}</Copy>
-          </Pressable>
+          <Chip key={goal} title={goal} selected={filter === goal} onPress={() => setFilter(goal)} />
         ))}
       </ScrollView>
       <Copy style={s.small}>{records.length} sessions · {shifts.length ? `average shift ${(shifts.reduce((a, b) => a + b, 0) / shifts.length).toFixed(1)}` : "no paired ratings yet"}</Copy>
-      {!records.length && <Card><Title>No sessions yet.</Title><Copy>Your completed and ended sessions will appear here.</Copy><Button title="Start a reset" onPress={() => router.push("/pre")} /></Card>}
+      {!records.length && <Card><Title>{filter === "All" ? "Your first reset starts here." : `No ${filter.toLowerCase()} sessions yet.`}</Title><Copy>Each session adds to your personal practice history.</Copy><Button title="Start a reset" onPress={() => router.push("/pre")} /></Card>}
       {records.map((record) => (
         <Card key={record.id}>
-          <Label>{new Date(record.engine.startedAt).toLocaleString()}</Label>
+          <View style={s.row}>
+            <Label>{record.goal.toUpperCase()} · {new Date(record.engine.startedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</Label>
+            <Copy style={s.small}>{new Date(record.engine.startedAt).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}</Copy>
+          </View>
           <Copy style={s.subtitle}>{record.protocolName}</Copy>
-          <Copy>{duration(record.engine.elapsedAtAnchor)} · {record.endReason === "completed" ? "Completed" : "Ended early"}</Copy>
-          <Copy style={{ color: colors.accent }}>{shiftText(record)}</Copy>
-          {record.effect && <Copy>{record.effect}</Copy>}
-          <Button title="View session" secondary onPress={() => router.push({ pathname: "/result", params: { id: record.id } })} />
-          <Button title="Delete" secondary onPress={() => Alert.alert("Delete this session?", "This removes the local record permanently.", [{ text: "Cancel", style: "cancel" }, { text: "Delete", style: "destructive", onPress: () => controller.remove(record.id) }])} />
+          <Copy style={s.small}>{duration(record.engine.elapsedAtAnchor)} · {record.endReason === "completed" ? "Completed" : "Ended early"}</Copy>
+          <Copy style={{ color: stateShift(record.pre, record.post) !== null && stateShift(record.pre, record.post)! > 0 ? colors.exhale : colors.accent }}>{shiftText(record)}</Copy>
+          {record.effect && <Copy style={s.small}>{record.effect}</Copy>}
+          <View style={s.row}>
+            <Button title="View session" secondary onPress={() => router.push({ pathname: "/result", params: { id: record.id } })} />
+            <Pressable accessibilityRole="button" accessibilityLabel={`Delete ${record.protocolName} session`} style={s.iconButton} onPress={() => Alert.alert("Delete this session?", "This removes the local record permanently.", [{ text: "Cancel", style: "cancel" }, { text: "Delete", style: "destructive", onPress: () => controller.remove(record.id) }])}>
+              <MaterialIcons name="delete-outline" size={22} color={colors.muted} />
+            </Pressable>
+          </View>
         </Card>
       ))}
     </BackScreen>

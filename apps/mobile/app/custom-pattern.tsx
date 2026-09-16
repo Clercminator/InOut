@@ -5,6 +5,7 @@ import { BackScreen, Button, Card, Copy, Label, Title, s } from "../src/ui";
 import { useSession } from "../src/provider";
 import { customPhase, makeCustomProtocol } from "../src/custom-protocol";
 import type { PhaseType } from "@inout/shared-types";
+import { duration } from "../src/format";
 
 const options: { type: PhaseType; seconds: number; label: string }[] = [
   { type: "inhale", seconds: 4, label: "Inhale · 4 sec" },
@@ -28,6 +29,7 @@ export default function CustomPattern() {
       <Copy>Build a cadence from simple phases, then try it through the same State Shift flow.</Copy>
       <Card>
         <Label>YOUR CADENCE</Label>
+        <Copy style={s.subtitle}>{duration(phases.reduce((sum, phase) => sum + phase.durationMs, 0) * 6)} · 6 cycles</Copy>
         {selected.map((phase, index) => <View key={`${phase.type}-${index}`} style={s.customPhase}><Copy>{index + 1}</Copy><Copy style={s.subtitle}>{phase.type === "inhale" ? "Inhale" : phase.type === "exhale" ? "Exhale" : phase.type === "hold" ? "Hold" : "Breathe naturally"}</Copy><Copy style={s.small}>{phase.seconds} sec</Copy></View>)}
       </Card>
       <Label>ADD A PHASE</Label>
