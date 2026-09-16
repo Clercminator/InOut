@@ -12,6 +12,7 @@ export default function ProtocolDetail() {
     .map((phase) => `${phase.durationMs / 1000}s ${phase.label.toLowerCase()}`)
     .join(" · ");
   const available = protocol.availability === "enabled";
+  if (!available) return <BackScreen title="PROTOCOL"><Title>Not in this release.</Title><Button title="Browse protocols" onPress={() => router.replace("/(tabs)/protocols")} /></BackScreen>;
   return (
     <BackScreen title="PROTOCOL">
       <Label>{protocol.goalTags.join(" · ").toUpperCase()}</Label>

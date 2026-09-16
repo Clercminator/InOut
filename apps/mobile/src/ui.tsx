@@ -121,7 +121,7 @@ export function Screen({
         {headerAction}
       </View>
       {scroll ? (
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.content}>{children}</ScrollView>
+        <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" automaticallyAdjustKeyboardInsets showsVerticalScrollIndicator={false} contentContainerStyle={s.content}>{children}</ScrollView>
       ) : (
         children
       )}

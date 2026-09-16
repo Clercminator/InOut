@@ -21,7 +21,6 @@ export default function Pre() {
     ? controller.customProtocol
     : protocols.find((item) => item.id === id) ?? sigh;
   const [rating, setRating] = useState<number | null>(null);
-  const [safetyConfirmed, setSafetyConfirmed] = useState(false);
   const cycleDuration = protocol.plan ? totalDuration(protocol.plan) : protocol.phases.reduce(
     (total, phase) => total + phase.durationMs,
     0,
@@ -38,12 +37,13 @@ export default function Pre() {
   if (controller.current?.stage === "active")
     return <Redirect href="/session" />;
   if (controller.current?.stage === "post") return <Redirect href="/post" />;
+  if (protocol.availability !== "enabled" || protocol.safetyCategory === "highIntensity" || protocol.plan?.blocks.some((b) => b.protocolId === "high-intensity-cyclic"))
+    return <BackScreen title="PROTOCOL"><Title>Not in this release.</Title><Copy>This routine includes a protocol that is currently unavailable. Choose another breathing practice.</Copy><Button title="Browse protocols" onPress={() => router.replace("/(tabs)/protocols")} /></BackScreen>;
   const start = (value: number | null) => {
     controller.start(
       value,
       cycles,
       protocol,
-      safetyConfirmed,
     );
     if (controller.current?.stage === "active") router.replace("/session");
   };
@@ -79,42 +79,19 @@ export default function Pre() {
         <Copy>Breathe comfortably. Stop if dizzy or unwell.</Copy>
         {protocol.safetyCategory === "retention" && <Copy>Keep holds comfortable. Return to natural breathing whenever you need to.</Copy>}
       </Card>
-      {protocol.safetyCategory === "highIntensity" && (
-        <Card>
-          <Label>HIGH-INTENSITY SAFETY GATE</Label>
-          <Copy>
-            Only practice seated or lying down. Never use this protocol while
-            driving, operating machinery, standing, swimming, bathing, or near water.
-          </Copy>
-          <Copy style={{ color: "#ffb4ab" }}>
-            Stop immediately if you feel unwell and return to natural breathing.
-          </Copy>
-          <Button
-            title={
-              safetyConfirmed
-                ? "Safety confirmed"
-                : "I am seated or lying somewhere safe"
-            }
-            secondary={!safetyConfirmed}
-            onPress={() => setSafetyConfirmed((confirmed) => !confirmed)}
-          />
-        </Card>
-      )}
       <SaveError />
       <Button
         title="START RESET  →"
         disabled={
           rating === null ||
-          !!controller.error ||
-          (protocol.safetyCategory === "highIntensity" && !safetyConfirmed)
+          !!controller.error
         }
         onPress={() => start(rating)}
       />
       <Button
         title="Skip rating & start"
         disabled={
-          !!controller.error ||
-          (protocol.safetyCategory === "highIntensity" && !safetyConfirmed)
+          !!controller.error
         }
         secondary
         onPress={() => start(null)}

@@ -3,24 +3,51 @@
     "name": "IN/OUT",
     "slug": "inout",
     "scheme": "inout",
-    "version": "0.1.0",
+    "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
-    "platforms": ["ios", "android"],
+    "platforms": [
+      "ios",
+      "android"
+    ],
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.imrtech.inout",
-      "infoPlist": { "ITSAppUsesNonExemptEncryption": false }
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "buildNumber": "1"
     },
     "android": {
       "package": "com.imrtech.inout",
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "monochromeImage": "./assets/monochrome-icon.png",
+        "backgroundColor": "#111317"
+      },
+      "versionCode": 1,
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_MEDIA_AUDIO",
+        "android.permission.SYSTEM_ALERT_WINDOW"
+      ]
     },
     "plugins": [
       "expo-router",
       "expo-font",
       "expo-sqlite",
-      ["expo-splash-screen", { "backgroundColor": "#111317", "image": "./assets/splash.png", "imageWidth": 200 }],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#111317",
+          "image": "./assets/splash.png",
+          "imageWidth": 200
+        }
+      ],
       [
         "expo-audio",
         {
@@ -30,6 +57,7 @@
           "enableBackgroundRecording": false
         }
       ]
-    ]
+    ],
+    "icon": "./assets/icon.png"
   }
 }

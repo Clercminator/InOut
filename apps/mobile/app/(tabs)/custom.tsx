@@ -6,7 +6,7 @@ import { useSession } from "../../src/provider";
 
 export default function Custom() {
   const controller = useSession();
-  const saved = protocols.filter((protocol) => controller.isFavorite(protocol.id));
+  const saved = protocols.filter((protocol) => protocol.availability === "enabled" && controller.isFavorite(protocol.id));
 
   return (
     <Screen>
@@ -28,7 +28,7 @@ export default function Custom() {
       </Card>
       {!saved.length && (
         <Card>
-          <Title>No saved routines yet.</Title>
+          <Title>No favorite protocols yet.</Title>
           <Copy>
             Save a protocol from its detail screen and it will appear here for
             quick access.

@@ -45,7 +45,8 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "test": "jest --runInBand",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "eas-build-pre-install": "node ../../scripts/eas-release-check.mjs"
   },
   "private": true
 }

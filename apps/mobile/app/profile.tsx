@@ -25,10 +25,9 @@ export default function Profile() {
         </View>
       </Card>
       <Card>
-        <Label>MEMBERSHIP</Label>
-        <Copy style={s.subtitle}>IN/OUT Preview</Copy>
-        <Copy>Practice offline as a guest. Subscriptions are not available yet.</Copy>
-        <Button title="Explore planned Pro features" secondary onPress={() => router.push("/pro")} />
+        <Label>GUEST PRACTICE</Label>
+        <Copy style={s.subtitle}>IN/OUT</Copy>
+        <Copy>Your routines and history are available offline on this phone. No account is required.</Copy>
       </Card>
       <Button title="Settings" secondary onPress={() => router.push("/settings")} />
     </BackScreen>

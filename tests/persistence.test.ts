@@ -58,6 +58,65 @@ test("custom mix history preserves replay data after a cold launch", () => {
   env.db.close();
 });
 
+test("version 1 upgrades preserve history, settings and an interrupted session", () => {
+  const env = setup(), c = env.controller();
+  c.start(7); c.end("ended"); c.start(3);
+  c.toggleFavorite("box");
+  env.db.exec("DROP TABLE routines; PRAGMA user_version=1");
+  const migrated = new LocalStore(env.adapter);
+  assert.equal(migrated.history().length, 1);
+  assert.equal(migrated.pending()?.pre, 3);
+  assert.deepEqual(migrated.preferences().favoriteProtocolIds, ["box"]);
+  assert.deepEqual(migrated.routines(), []);
+  assert.equal(env.db.prepare("PRAGMA user_version").get()?.user_version, 2);
+  env.db.close();
+});
+
+test("saved routines survive reload, edit, duplicate and delete independently of sessions", () => {
+  const env = setup(), c = env.controller();
+  const id = c.saveRoutine(protocols[0], "pattern")!;
+  const mix = makeMixProtocol([protocols[2], protocols[0]]);
+  c.saveRoutine(mix, "mix");
+  const reloaded = env.controller();
+  assert.equal(reloaded.routines().length, 2);
+  const saved = reloaded.routines().find((r) => r.id === id)!;
+  reloaded.start(null, 1, saved.protocol);
+  reloaded.saveRoutine({ ...saved.protocol, name: "Edited name" }, "pattern", id);
+  assert.notEqual(reloaded.current?.protocolName, "Edited name");
+  reloaded.duplicateRoutine(saved);
+  reloaded.removeRoutine(id);
+  assert.equal(env.controller().routines().length, 2);
+  assert.equal(env.controller().current?.protocolId, id);
+  env.db.close();
+});
+
+test("failed routine writes retry without duplicate records", () => {
+  const env = setup(), c = env.controller();
+  const original = env.adapter.runSync;
+  env.adapter.runSync = () => { throw new Error("disk full"); };
+  assert.equal(c.saveRoutine(protocols[0], "pattern", "stable-id"), null);
+  assert.ok(c.error);
+  env.adapter.runSync = original;
+  c.retry(); c.retry();
+  assert.equal(c.error, null);
+  assert.equal(c.routines().length, 1);
+  env.db.close();
+});
+
+test("full local reset removes history, active session, settings and routines", () => {
+  const env = setup(), c = env.controller();
+  c.start(7); c.end("ended"); c.start(3);
+  c.saveRoutine(protocols[0], "pattern"); c.toggleFavorite("box");
+  assert.equal(c.resetLocalData(), true);
+  const fresh = env.controller();
+  assert.equal(fresh.current, null);
+  assert.deepEqual(fresh.routines(), []);
+  assert.deepEqual(fresh.history(), []);
+  assert.equal(fresh.isFavorite("box"), false);
+  assert.equal(fresh.preferences.onboardingComplete, false);
+  env.db.close();
+});
+
 test("offline slice survives relaunch at active, post and result stages", () => {
   const env = setup();
   let c = env.controller();
@@ -162,7 +221,7 @@ test("disk failure pauses safely and retry preserves timing", () => {
 });
 test("newer schemas and malformed records are preserved", () => {
   const env = setup();
-  env.db.exec("PRAGMA user_version=2");
+  env.db.exec("PRAGMA user_version=3");
   assert.throws(() => new LocalStore(env.adapter));
   env.db.exec("PRAGMA user_version=1");
   env.db

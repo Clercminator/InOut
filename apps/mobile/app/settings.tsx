@@ -1,3 +1,4 @@
+import Constants from "expo-constants";
 import { Alert, Switch, View } from "react-native";
 import { router } from "expo-router";
 import { BackScreen, Title, Label, Card, Copy, Button, s } from "../src/ui";
@@ -12,10 +13,9 @@ export default function Settings() {
     <BackScreen title="SETTINGS">
       <Title>Your guidance.</Title>
       <Card>
-        <Label>ACCOUNT</Label>
-        <Copy>IN/OUT Preview · {historyCount} sessions</Copy>
+        <Label>YOUR PRACTICE</Label>
+        <Copy>IN/OUT · {historyCount} sessions</Copy>
         <Button title="Open Profile" secondary onPress={() => router.push("/profile")} />
-        <Button title="Explore planned Pro features" secondary onPress={() => router.push("/pro")} />
       </Card>
       <Card>
         <Label>AUDIO</Label>
@@ -77,9 +77,7 @@ export default function Settings() {
       <Card>
         <Label>SAFETY</Label>
         <Copy>
-          Breathe comfortably. Stop if dizzy, faint, or unwell. High-intensity
-          breathing is for seated or lying practice only, never driving or in
-          or near water.
+          Breathe comfortably. Stop if dizzy, faint, or unwell. Never practice while driving, operating machinery, swimming, bathing, or near water.
         </Copy>
         <Copy style={s.small}>
           State Shift ratings are private, self-reported notes, not biometric
@@ -114,8 +112,15 @@ export default function Settings() {
         />
       </Card>
       <Card>
+        <Label>HELP & PRIVACY</Label>
+        <Button title="Help & support" secondary onPress={() => router.push("/support")} />
+        <Button title="Privacy policy" secondary onPress={() => router.push("/privacy")} />
+        <Button title="Breathing safety" secondary onPress={() => router.push("/safety")} />
+        <Button title="Delete all local data" danger secondary onPress={() => Alert.alert("Delete all local data?", "This permanently removes sessions, ratings, routines, favorites and settings on this phone, including the current session.", [{ text: "Cancel", style: "cancel" }, { text: "Delete everything", style: "destructive", onPress: () => { if (controller.resetLocalData()) router.replace("/onboarding"); } }])} />
+      </Card>
+      <Card>
         <Label>IN/OUT</Label>
-        <Copy style={s.small}>Version 0.1.0 · Offline-first breathing practice</Copy>
+        <Copy style={s.small}>Version {Constants.expoConfig?.version} · Offline-first breathing practice</Copy>
       </Card>
       <SaveError />
     </BackScreen>

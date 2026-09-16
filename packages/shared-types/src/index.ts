@@ -86,6 +86,12 @@ export interface Preferences {
   onboardingComplete?: boolean;
   pro?: boolean;
 }
+export interface SavedRoutine {
+  id: string;
+  kind: "pattern" | "mix";
+  protocol: Protocol;
+  updatedAt: number;
+}
 export function stateShift(
   pre: number | null,
   post: number | null,

@@ -1,6 +1,7 @@
 import * as engine from "@inout/breathing-engine";
 import { sigh, planFor } from "@inout/protocols";
-import type { Protocol } from "@inout/shared-types";
+import type { Protocol, SavedRoutine } from "@inout/shared-types";
+import { defaultPreferences } from "./storage";
 import { validRating } from "@inout/shared-types";
 import type {
   EngineState,
@@ -17,8 +18,11 @@ export class SessionController {
   private preferencesError: string | null = null;
   private pendingPreferences: Preferences | null = null;
   private historyCache: SessionRecord[] | null = null;
+  private routinesCache: SavedRoutine[] | null = null;
+  private libraryError: string | null = null;
+  private pendingMutation: (() => void) | null = null;
   get error(): string | null {
-    return this.sessionError ?? this.preferencesError;
+    return this.sessionError ?? this.preferencesError ?? this.libraryError;
   }
   private listeners = new Set<() => void>();
   private revision = 0;
@@ -82,6 +86,7 @@ export class SessionController {
   retry() {
     if (this.sessionError) this.save();
     if (this.pendingPreferences) this.setPreferences(this.pendingPreferences);
+    if (this.pendingMutation) this.mutate(this.pendingMutation);
   }
   start(
     pre: number | null,
@@ -93,7 +98,8 @@ export class SessionController {
     if (
       this.error ||
       protocol.availability !== "enabled" ||
-      (protocol.safetyCategory === "highIntensity" && !safetyConfirmed) ||
+      protocol.safetyCategory === "highIntensity" ||
+      protocol.plan?.blocks.some((b) => b.protocolId === "high-intensity-cyclic") ||
       (this.current && this.current.stage !== "result")
     )
       return;
@@ -171,6 +177,7 @@ export class SessionController {
   }
   resume() {
     if (!this.current || this.error || this.current.stage !== "active") return;
+    if (this.current.protocol?.safetyCategory === "highIntensity" || this.current.engine.plan.blocks.some((b) => b.protocolId === "high-intensity-cyclic")) return;
     this.current = {
       ...this.current,
       engine: engine.resume(this.current.engine, this.now()),
@@ -179,6 +186,7 @@ export class SessionController {
   }
   restart() {
     if (!this.current || this.error || this.current.stage !== "active") return;
+    if (this.current.protocol?.safetyCategory === "highIntensity" || this.current.engine.plan.blocks.some((b) => b.protocolId === "high-intensity-cyclic")) return;
     this.current = {
       ...this.current,
       engine: engine.restart(this.current.engine, this.now()),
@@ -212,18 +220,19 @@ export class SessionController {
   }
   remove(id: string) {
     if (this.sessionError && this.current?.id === id) return;
-    this.store.remove(id);
-    this.historyCache = null;
-    if (this.current?.id === id && this.current.stage === "result")
-      this.current = null;
-    this.emit();
+    this.mutate(() => {
+      this.store.remove(id);
+      this.historyCache = null;
+      if (this.current?.id === id && this.current.stage === "result") this.current = null;
+    });
   }
   clearHistory() {
     if (this.sessionError) return;
-    this.store.clearHistory();
-    this.historyCache = [];
-    if (this.current?.stage === "result") this.current = null;
-    this.emit();
+    this.mutate(() => {
+      this.store.clearHistory();
+      this.historyCache = [];
+      if (this.current?.stage === "result") this.current = null;
+    });
   }
   setPreferences(preferences: Preferences) {
     try {
@@ -252,5 +261,47 @@ export class SessionController {
   setCustomProtocol(protocol: Protocol) {
     this.customProtocol = protocol;
     this.emit();
+  }
+  routines() { return (this.routinesCache ??= this.store.routines()); }
+  private mutate(action: () => void): boolean {
+    try {
+      action();
+      this.pendingMutation = null;
+      this.libraryError = null;
+      this.emit();
+      return true;
+    } catch {
+      this.pendingMutation = action;
+      this.libraryError = "Your changes could not be saved. Free some storage, then retry.";
+      this.emit();
+      return false;
+    }
+  }
+  saveRoutine(protocol: Protocol, kind: SavedRoutine["kind"], id?: string) {
+    if (this.error) return null;
+    const key = id ?? this.id();
+    const routine: SavedRoutine = { id: key, kind, protocol: JSON.parse(JSON.stringify({ ...protocol, id: key })), updatedAt: this.now() };
+    return this.mutate(() => { this.store.saveRoutine(routine); this.routinesCache = null; }) ? key : null;
+  }
+  duplicateRoutine(routine: SavedRoutine) {
+    return this.saveRoutine({ ...routine.protocol, name: `${routine.protocol.name.slice(0, 53)} copy` }, routine.kind);
+  }
+  removeRoutine(id: string) {
+    if (this.error) return false;
+    return this.mutate(() => { this.store.removeRoutine(id); this.routinesCache = null; });
+  }
+  resetLocalData() {
+    this.pause();
+    return this.mutate(() => {
+      this.store.reset();
+      this.current = null;
+      this.customProtocol = null;
+      this.historyCache = [];
+      this.routinesCache = [];
+      this.preferences = { ...defaultPreferences };
+      this.pendingPreferences = null;
+      this.sessionError = null;
+      this.preferencesError = null;
+    });
   }
 }

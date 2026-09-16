@@ -1,10 +1,29 @@
 {
-  "cli": { "version": ">= 18.0.0", "appVersionSource": "local" },
+  "cli": {
+    "version": ">= 18.0.0",
+    "appVersionSource": "local"
+  },
   "build": {
     "preview": {
       "distribution": "internal",
-      "android": { "buildType": "apk" }
+      "android": {
+        "buildType": "apk"
+      }
     },
-    "production": { "autoIncrement": true }
+    "production": {
+      "autoIncrement": true,
+      "env": {
+        "INOUT_RELEASE": "1"
+      },
+      "android": {
+        "buildType": "app-bundle"
+      }
+    },
+    "simulator": {
+      "ios": {
+        "simulator": true
+      },
+      "distribution": "internal"
+    }
   }
 }

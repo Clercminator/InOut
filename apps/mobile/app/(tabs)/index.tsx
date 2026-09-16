@@ -28,7 +28,7 @@ const purposes: Record<Goal, string> = {
 export default function Today() {
   const { current } = useSession();
   const [goal, setGoal] = useState<Goal>("Calm");
-  const recommendation = protocols.find((protocol) => protocol.goalTags.includes(goal)) ?? protocols[0];
+  const recommendation = protocols.find((protocol) => protocol.availability === "enabled" && protocol.goalTags.includes(goal)) ?? protocols[0];
   return (
     <Screen
       headerAction={
@@ -68,7 +68,7 @@ export default function Today() {
       </LinearGradient>
       <Label>WHAT DO YOU NEED?</Label>
       <View style={s.goalGrid}>
-        {goals.map((item) => (
+        {goals.filter((item) => protocols.some((p) => p.availability === "enabled" && p.goalTags.includes(item.name))).map((item) => (
           <Pressable
             key={item.name}
             accessibilityRole="button"

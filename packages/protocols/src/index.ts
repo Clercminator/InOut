@@ -68,7 +68,7 @@ function protocol(
     animationType,
     audioConfig: { enabled: true },
     hapticConfig: { enabled: true },
-    availability: "enabled",
+    availability: safetyCategory === "highIntensity" ? "definitionOnly" : "enabled",
   };
 }
 // Versioned pacing presets, not claims of clinical efficacy. High-intensity use
@@ -154,7 +154,7 @@ export const protocols: Protocol[] = [
     6,
     "ripple",
   ),
-  // The native pre-session gate is required before this protocol can start.
+  // Retained in the shared model, excluded from this release.
   protocol(
     "high-intensity-cyclic",
     "High-Intensity Cyclic Breathing",

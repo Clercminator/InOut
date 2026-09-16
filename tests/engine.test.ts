@@ -90,7 +90,7 @@ test("all ten definitions validate and duration metadata reconciles", () => {
   }
   assert.equal(
     protocols.find((p) => p.safetyCategory === "highIntensity")?.availability,
-    "enabled",
+    "definitionOnly",
   );
 });
 test("invalid plans and corrupted engine state are rejected", () => {

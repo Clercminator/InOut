@@ -29,6 +29,7 @@ export default function Session() {
       <Redirect href={{ pathname: "/result", params: { id: record.id } }} />
     );
   const running = record.engine.status === "running";
+  const unavailable = record.protocol?.safetyCategory === "highIntensity" || record.engine.plan.blocks.some((b) => b.protocolId === "high-intensity-cyclic");
   const animationType =
     protocols.find((protocol) => protocol.id === record.engine.plan.blocks[view.blockIndex].protocolId)
       ?.animationType ?? record.protocol?.animationType ?? "wave";
@@ -71,7 +72,7 @@ export default function Session() {
         >
           <Button
             title={running ? "Pause" : "Resume"}
-            disabled={!!controller.error}
+            disabled={!!controller.error || unavailable}
             onPress={() => (running ? controller.pause() : controller.resume())}
           />
           <View style={{ flexDirection: "row", gap: 8 }}>
@@ -90,6 +91,7 @@ export default function Session() {
         {record.goal.toUpperCase()} · {Math.ceil(view.sessionRemainingMs / 1000)} SEC LEFT
       </Label>
       <SaveError />
+      {unavailable && <Copy>This older routine is not available in this release. End this session to choose another practice.</Copy>}
       {record.engine.plan.blocks.length > 1 && <Copy>
         Block {view.blockIndex + 1}/{record.engine.plan.blocks.length} · {protocols.find((p) => p.id === record.engine.plan.blocks[view.blockIndex].protocolId)?.name ?? "Custom"}
         {record.engine.plan.blocks[view.blockIndex + 1] ? ` · Next: ${protocols.find((p) => p.id === record.engine.plan.blocks[view.blockIndex + 1].protocolId)?.name ?? "Custom"}` : " · Final block"}
@@ -131,7 +133,7 @@ export default function Session() {
           <Button
             title="Restart from the beginning"
             secondary
-            disabled={!!controller.error}
+            disabled={!!controller.error || unavailable}
             onPress={() =>
               Alert.alert(
                 "Restart session?",

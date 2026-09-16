@@ -7,9 +7,10 @@ import Result from "../app/result";
 import Session from "../app/session";
 import Custom from "../app/(tabs)/custom";
 import ProtocolLibrary from "../app/(tabs)/protocols";
+import { RoutineEditor } from "../src/routine-editor";
 import { SessionController } from "../src/session-controller";
 import type { LocalStore } from "../src/storage";
-import type { SessionRecord } from "@inout/shared-types";
+import type { SessionRecord, SavedRoutine } from "@inout/shared-types";
 import { protocols } from "@inout/protocols";
 
 let mockController: SessionController;
@@ -29,6 +30,7 @@ jest.mock("expo-router", () => ({
   },
 }));
 jest.mock("../src/sigh-visual", () => ({ SighVisual: () => null }));
+jest.mock("expo-crypto", () => ({ randomUUID: () => "draft-id" }));
 jest.mock("../src/provider", () => ({
   useSession: () => mockController,
   SaveError: () => null,
@@ -37,6 +39,7 @@ jest.mock("../src/provider", () => ({
 let now = 0;
 beforeEach(() => {
   let record: SessionRecord | null = null;
+  const routines = new Map<string, SavedRoutine>();
   let storedPreferences = {
     audio: "silent" as const,
     haptics: false,
@@ -60,6 +63,9 @@ beforeEach(() => {
       record = null;
     },
     history: () => (record?.stage === "result" ? [record] : []),
+    routines: () => [...routines.values()],
+    saveRoutine: (routine: SavedRoutine) => routines.set(routine.id, routine),
+    removeRoutine: (id: string) => routines.delete(id),
   } as unknown as LocalStore;
   mockController = new SessionController(
     store,
@@ -74,6 +80,38 @@ test("pre rating requires a deliberate selection and keeps skip available", asyn
   await fireEvent.press(screen.getByRole("button", { name: "START RESET  →" }));
   expect(mockController.current?.pre).toBe(7);
   expect(mockReplace).toHaveBeenCalledWith("/session");
+});
+
+test("pattern editor changes durations, reorders phases and saves the executed cadence", async () => {
+  await render(<RoutineEditor kind="pattern" />);
+  await fireEvent.changeText(screen.getByLabelText("Name"), "Evening pattern");
+  await fireEvent.changeText(screen.getByLabelText("Phase 1 seconds"), "3");
+  await fireEvent.press(screen.getByRole("button", { name: "Move down 1" }));
+  await fireEvent.press(screen.getByRole("button", { name: "Save routine" }));
+  const saved = mockController.routines()[0];
+  expect(saved.protocol.name).toBe("Evening pattern");
+  expect(saved.protocol.phases.map((p) => p.durationMs)).toEqual([6000, 3000]);
+  await fireEvent.press(screen.getByRole("button", { name: "Use this routine" }));
+  expect(mockController.customProtocol?.phases).toEqual(saved.protocol.phases);
+});
+
+test("invalid duration blocks saving and running a custom pattern", async () => {
+  await render(<RoutineEditor kind="pattern" />);
+  await fireEvent.changeText(screen.getByLabelText("Phase 1 seconds"), "");
+  expect(screen.getByRole("button", { name: "Save routine" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Use this routine" })).toBeDisabled();
+});
+
+test("mix editor supports duplicated ordered blocks and repeat counts", async () => {
+  await render(<RoutineEditor kind="mix" />);
+  await fireEvent.press(screen.getByRole("button", { name: "Add Physiological Sigh" }));
+  await fireEvent.press(screen.getByRole("button", { name: "Duplicate 1" }));
+  await fireEvent.changeText(screen.getByLabelText("Block 2 cycles"), "2");
+  await fireEvent.changeText(screen.getByLabelText("Repeats"), "2");
+  await fireEvent.press(screen.getByRole("button", { name: "Save routine" }));
+  const saved = mockController.routines()[0].protocol;
+  expect(saved.plan?.blocks.map((b) => b.cycles)).toEqual([3, 2]);
+  expect(saved.defaultDuration).toBe(160000);
 });
 test("post hides the prior score/comparison until an explicit answer", async () => {
   mockController.start(7);
@@ -189,18 +227,17 @@ test("enabled gentle protocols use their own plan and metadata", () => {
   );
 });
 
-test("all protocols are available, with a high-intensity start gate", () => {
+test("high-intensity definitions stay unavailable even after safety confirmation", () => {
   const box = protocols.find((protocol) => protocol.id === "box")!;
   const cyclic = protocols.find(
     (protocol) => protocol.id === "high-intensity-cyclic",
   )!;
   expect(box.availability).toBe("enabled");
-  expect(cyclic.availability).toBe("enabled");
+  expect(cyclic.availability).toBe("definitionOnly");
   mockController.start(null, cyclic.defaultCycles, cyclic);
   expect(mockController.current).toBeNull();
   mockController.start(null, cyclic.defaultCycles, cyclic, true);
-  expect(mockController.current?.protocolId).toBe(cyclic.id);
-  mockController.end("ended");
+  expect(mockController.current).toBeNull();
   mockController.start(null, box.defaultCycles, box);
   expect(mockController.current?.protocolId).toBe("box");
 });
