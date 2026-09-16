@@ -6,7 +6,7 @@ appId: com.imrtech.inout
 - assertVisible: "Breathe for what's next."
 - takeScreenshot: artifacts/ios-capture/01-today
 - tapOn: "Start reset"
-- assertVisible: "How tense are you right now?"
+- assertVisible: 'How tense are you right now\?'
 - tapOn: "7 of 10"
 - takeScreenshot: artifacts/ios-capture/02-pre
 - scrollUntilVisible:
@@ -18,7 +18,7 @@ appId: com.imrtech.inout
     waitToSettleTimeoutMs: 500
 - takeScreenshot: artifacts/ios-capture/03-session
 - extendedWaitUntil:
-    visible: "How tense are you now?"
+    visible: 'How tense are you now\?'
     timeout: 70000
 - tapOn: "3 of 10"
 - takeScreenshot: artifacts/ios-capture/04-post
