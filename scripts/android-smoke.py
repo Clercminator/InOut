@@ -56,6 +56,9 @@ def launch():
     adb('shell', 'am', 'start', '-n', f'{APP}/.MainActivity')
 
 try:
+    # Capture real app screens at Google Play's recommended portrait dimensions.
+    adb('shell', 'wm', 'size', '1080x1920')
+    adb('shell', 'wm', 'density', '400')
     adb('install', '-r', sys.argv[1])
     adb('shell', 'svc', 'wifi', 'disable')
     adb('shell', 'svc', 'data', 'disable')
