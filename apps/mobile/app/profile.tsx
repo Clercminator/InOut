@@ -4,11 +4,12 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { BackScreen, Title, Label, Card, Copy, Button, s } from "../src/ui";
 import { useSession } from "../src/provider";
 import { duration } from "../src/format";
+import { protocols } from "@inout/protocols";
 
 export default function Profile() {
   const controller = useSession();
   const records = controller.history();
-  const saved = controller.preferences.favoriteProtocolIds?.length ?? 0;
+  const saved = protocols.filter((p) => p.availability === "enabled" && controller.isFavorite(p.id)).length + controller.routines().length;
   const total = records.reduce((sum, record) => sum + record.engine.elapsedAtAnchor, 0);
   return (
     <BackScreen title="PROFILE">

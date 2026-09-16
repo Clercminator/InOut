@@ -6,12 +6,14 @@
   "build": {
     "preview": {
       "distribution": "internal",
+      "ios": { "image": "macos-tahoe-26.5-xcode-26.6" },
       "android": {
         "buildType": "apk"
       }
     },
     "production": {
       "autoIncrement": true,
+      "ios": { "image": "macos-tahoe-26.5-xcode-26.6" },
       "env": {
         "INOUT_RELEASE": "1"
       },
@@ -21,6 +23,7 @@
     },
     "simulator": {
       "ios": {
+        "image": "macos-tahoe-26.5-xcode-26.6",
         "simulator": true
       },
       "distribution": "internal"

@@ -76,7 +76,7 @@ export default function Pre() {
           );
         })}
         </View>
-        <Copy>Breathe comfortably. Stop if dizzy or unwell.</Copy>
+        <Copy>Breathe comfortably in a safe place. Never practice while driving or in water. Stop if dizzy or unwell.</Copy>
         {protocol.safetyCategory === "retention" && <Copy>Keep holds comfortable. Return to natural breathing whenever you need to.</Copy>}
       </Card>
       <SaveError />
@@ -97,6 +97,7 @@ export default function Pre() {
         onPress={() => start(null)}
       />
       <Copy>Self-reported. Takes 1–2 seconds.</Copy>
+      <Button title="Breathing safety" secondary onPress={() => router.push("/safety")} />
     </BackScreen>
   );
 }
