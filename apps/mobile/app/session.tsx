@@ -102,8 +102,8 @@ export default function Session() {
         </Copy>
       )}
       <LinearGradient
-        colors={["#0b192b", colors.lowest]}
-        style={[s.card, { padding: 16 }]}
+        colors={[colors.sessionSurface, colors.lowest]}
+        style={[s.card, { padding: 16, borderWidth: 1, borderColor: colors.sessionBorder, borderRadius: 24 }]}
       >
         <SighVisual
           view={view}
@@ -113,7 +113,7 @@ export default function Session() {
         />
         <View style={s.row}>
           {record.engine.plan.blocks[view.blockIndex].phases.map((phase, i) => (
-            <View key={i} style={{ flex: 1, gap: 8 }}>
+            <View key={i} style={{ flex: 1, gap: 8, minWidth: 48 }}>
               <View
                 style={{
                   height: 4,
@@ -122,7 +122,8 @@ export default function Session() {
                     i === view.phaseIndex ? colors.accent : colors.border,
                 }}
               />
-              <Copy style={s.small}>{phase.label.toUpperCase()}</Copy>
+              <Copy style={[s.small, { color: i === view.phaseIndex ? colors.text : colors.muted }]}>{phase.label.toUpperCase()}</Copy>
+              <Copy style={[s.small, { color: colors.muted }]}>{phase.durationMs / 1000}s</Copy>
             </View>
           ))}
         </View>

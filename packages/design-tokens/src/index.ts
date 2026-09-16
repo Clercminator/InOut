@@ -13,6 +13,12 @@ export const colors = {
   onAccent: "#002e6a",
   danger: "#ffb4ab",
   dangerSurface: "#300c10",
+  sessionSurface: "#101d30",
+  sessionBorder: "#263a53",
+  inhale: "#adc6ff",
+  hold: "#c9baff",
+  exhale: "#8ddbc9",
+  rest: "#a6b8ce",
 } as const;
 export const spacing = {
   xs: 4,

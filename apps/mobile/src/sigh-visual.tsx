@@ -5,12 +5,12 @@ import {
   Easing,
   StyleSheet,
   View,
-  type ViewStyle,
 } from "react-native";
 import { colors as c, typography as f } from "@inout/design-tokens";
 import type { snapshot } from "@inout/breathing-engine";
 import type { Protocol, Phase } from "@inout/shared-types";
-import { Copy, Label } from "./ui";
+import { Copy } from "./ui";
+import { BoxVisual } from "./box-visual";
 type Snapshot = ReturnType<typeof snapshot>;
 export function SighVisual({
   view,
@@ -76,9 +76,7 @@ export function SighVisual({
     return () => animation.stop();
   }, [view.cueKey, running, reduced, scale, animationType]);
   const shapeStyle =
-    animationType === "box"
-      ? styles.box
-      : animationType === "alternating"
+    animationType === "alternating"
         ? styles.alternating
         : animationType === "ripple"
           ? styles.ripple
@@ -87,31 +85,22 @@ export function SighVisual({
             : animationType === "wave"
               ? styles.orb
               : styles.ring;
-  const boxProgress = (view.phaseIndex + phaseProgress) / 4;
-  const perimeter = boxProgress * 4;
-  const boxPosition: ViewStyle =
-    perimeter < 1
-      ? { left: `${8 + perimeter * 84}%`, top: "8%" }
-      : perimeter < 2
-        ? { left: "92%", top: `${8 + (perimeter - 1) * 84}%` }
-        : perimeter < 3
-          ? { left: `${92 - (perimeter - 2) * 84}%`, top: "92%" }
-          : { left: "8%", top: `${92 - (perimeter - 3) * 84}%` };
+  const phaseColor = view.phase.type === "inhale" || view.phase.type === "inhaleTopUp"
+    ? c.inhale : view.phase.type === "exhale" || view.phase.type === "hum"
+      ? c.exhale : view.phaseIndex === 3 ? c.rest : c.hold;
   return (
     <View style={styles.area}>
-      <Animated.View
+      {animationType !== "box" && <Animated.View
         accessible={false}
         importantForAccessibility="no-hide-descendants"
-        style={[shapeStyle, { transform: [{ scale }] }]}
-      />
-      {animationType === "box" && !reduced && (
-        <View style={[styles.boxMarker, boxPosition]} />
-      )}
+        style={[shapeStyle, { borderColor: phaseColor, transform: [{ scale }] }]}
+      />}
+      {animationType === "box" && <BoxVisual view={view} running={running} reduced={reduced} />}
       {animationType === "sigh" && (
         <Animated.View
           accessible={false}
           importantForAccessibility="no-hide-descendants"
-          style={[styles.sighCore, { transform: [{ scale }] }]}
+          style={[styles.sighCore, { backgroundColor: phaseColor, transform: [{ scale }] }]}
         />
       )}
       {animationType === "wave" && (
@@ -125,14 +114,14 @@ export function SighVisual({
         style={styles.readout}
         accessibilityLabel={`${view.phase.label}. Cycle ${view.currentCycle} of ${view.totalCycles}`}
       >
-        <Label>{running ? view.phase.label.toUpperCase() : "PAUSED"}</Label>
+        <Copy style={[styles.phase, { color: running ? phaseColor : c.secondaryText }]}>{running ? view.phase.label.toUpperCase() : "PAUSED"}</Copy>
         {view.phase.nostril && <Copy>{view.phase.nostril.toUpperCase()} NOSTRIL</Copy>}
         <Copy style={styles.timer}>
           {Math.ceil(view.phaseRemainingMs / 1000)
             .toString()
             .padStart(2, "0")}
         </Copy>
-        <Copy>
+        <Copy style={styles.cycle}>
           CYCLE {view.currentCycle}/{view.totalCycles}
         </Copy>
       </View>
@@ -153,31 +142,9 @@ const styles = StyleSheet.create({
     width: "95%",
     height: "95%",
     borderRadius: 999,
-    borderWidth: 3,
+    borderWidth: 2,
     borderColor: c.accent,
     backgroundColor: "#adc6ff08",
-  },
-  box: {
-    position: "absolute",
-    width: "84%",
-    height: "84%",
-    borderRadius: 14,
-    borderWidth: 3,
-    borderColor: c.accent,
-    backgroundColor: "#adc6ff08",
-  },
-  boxMarker: {
-    position: "absolute",
-    width: 14,
-    height: 14,
-    marginLeft: -7,
-    marginTop: -7,
-    borderRadius: 7,
-    backgroundColor: c.text,
-    shadowColor: c.accent,
-    shadowOpacity: 0.9,
-    shadowRadius: 10,
-    elevation: 8,
   },
   alternating: {
     position: "absolute",
@@ -204,8 +171,8 @@ const styles = StyleSheet.create({
     height: "58%",
     borderRadius: 999,
     borderWidth: 10,
-    borderColor: c.danger,
-    backgroundColor: "#ffb4ab12",
+    borderColor: c.inhale,
+    backgroundColor: "#adc6ff12",
   },
   orb: {
     position: "absolute",
@@ -238,7 +205,9 @@ const styles = StyleSheet.create({
     shadowRadius: 18,
     elevation: 10,
   },
-  readout: { alignItems: "center", gap: 4 },
+  readout: { alignItems: "center", gap: 8, maxWidth: "72%" },
+  phase: { fontFamily: f.label, fontSize: 13, letterSpacing: 2, textAlign: "center" },
+  cycle: { fontFamily: f.label, fontSize: 11, letterSpacing: 1.2, color: c.secondaryText },
   timer: {
     fontFamily: f.metric,
     fontSize: 72,
