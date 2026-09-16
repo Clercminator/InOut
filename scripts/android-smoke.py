@@ -46,7 +46,11 @@ def scroll_to(text):
             find(text, 2)
             return
         except AssertionError:
-            adb('shell', 'input', 'swipe', '500', '1700', '500', '500', '300')
+            root = tree()
+            area = next(node for node in root.iter('node') if node.get('class') == 'android.widget.ScrollView')
+            left, top, right, bottom = map(int, re.findall(r'\d+', area.attrib['bounds']))
+            x = str((left + right) // 2)
+            adb('shell', 'input', 'swipe', x, str(top + (bottom-top)*4//5), x, str(top + (bottom-top)//5), '300')
     find(text)
 
 def shot(name):
