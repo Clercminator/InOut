@@ -47,7 +47,7 @@ def scroll_to(text):
             return
         except AssertionError:
             root = tree()
-            area = next(node for node in root.iter('node') if node.get('class') == 'android.widget.ScrollView')
+            area = next(node for node in root.iter('node') if node.get('class') == 'android.widget.ScrollView' and node.get('scrollable') == 'true')
             left, top, right, bottom = map(int, re.findall(r'\d+', area.attrib['bounds']))
             x = str((left + right) // 2)
             adb('shell', 'input', 'swipe', x, str(top + (bottom-top)*4//5), x, str(top + (bottom-top)//5), '300')
