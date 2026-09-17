@@ -45,6 +45,27 @@ function setup() {
       ),
   };
 }
+
+for (const protocol of protocols.filter((p) => p.availability === "enabled")) {
+  test(`${protocol.name}: offline completion, post recovery and durable history`, () => {
+    const env = setup();
+    try {
+      const c = env.controller();
+      c.start(7, protocol.defaultCycles, protocol);
+      assert.equal(c.current?.protocolId, protocol.id);
+      env.now(1000 + engine.totalDuration(planFor(protocol)));
+      c.tick();
+      assert.equal(c.current?.stage, "post");
+      const recovered = env.controller();
+      assert.equal(recovered.current?.stage, "post");
+      recovered.answer(3, null);
+      const saved = env.controller().history()[0];
+      assert.equal(saved.protocolId, protocol.id);
+      assert.equal(stateShift(saved.pre, saved.post), 4);
+      assert.equal(saved.engine.elapsedAtAnchor, engine.totalDuration(planFor(protocol)));
+    } finally { env.db.close(); }
+  });
+}
 test("custom mix history preserves replay data after a cold launch", () => {
   const env = setup();
   const mix = makeMixProtocol([protocols[2], protocols[0]]);

@@ -49,8 +49,12 @@ jobs:
           for attempt in 1 2; do
             output="$PWD/artifacts/ios-capture/attempt-$attempt"
             mkdir -p "$output"
-            if "$MAESTRO_BIN" --device "$device" test -e SCREENSHOT_DIR="$output" --test-output-dir "$output/debug" --debug-output "$output/debug" --format junit --output "$output/results.xml" .maestro/ios-store.yaml; then
-              test "$(find "$output" -maxdepth 1 -name '*.png' | wc -l | tr -d ' ')" = "6"
+            if "$MAESTRO_BIN" --device "$device" test --test-output-dir "$output/debug" --debug-output "$output/debug" --format junit --output "$output/results.xml" .maestro/ios-store.yaml; then
+              for name in 01-today 02-pre 03-session 04-post 05-result 06-history; do
+                matches=$(find "$output/debug" -path '*/takeScreenshot/*' -name "$name.png")
+                test "$(printf '%s\n' "$matches" | sed '/^$/d' | wc -l | tr -d ' ')" = "1"
+                cp "$matches" "$output/$name.png"
+              done
               echo "PASS on attempt $attempt" > artifacts/ios-capture/result.txt
               exit 0
             fi

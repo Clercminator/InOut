@@ -7,6 +7,7 @@ import Result from "../app/result";
 import Session from "../app/session";
 import Custom from "../app/(tabs)/custom";
 import ProtocolLibrary from "../app/(tabs)/protocols";
+import Progress from "../app/(tabs)/progress";
 import { RoutineEditor } from "../src/routine-editor";
 import { SessionController } from "../src/session-controller";
 import type { LocalStore } from "../src/storage";
@@ -72,6 +73,17 @@ beforeEach(() => {
     () => now,
     () => "test-session",
   );
+});
+
+test("Progress history button navigates to the durable session list", async () => {
+  mockController.start(7);
+  now = 48000;
+  mockController.tick();
+  mockController.answer(3, null);
+  await render(<Progress />);
+  await fireEvent.press(screen.getByRole("button", { name: "View session history" }));
+  expect(mockPush).toHaveBeenCalledWith("/history");
+  expect(mockController.history()).toHaveLength(1);
 });
 test("pre rating requires a deliberate selection and keeps skip available", async () => {
   await render(<Pre />);

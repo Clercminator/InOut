@@ -4,11 +4,11 @@ appId: com.imrtech.inout
     clearState: true
 - tapOn: "Skip introduction"
 - assertVisible: "Breathe for what's next."
-- takeScreenshot: ${SCREENSHOT_DIR}/01-today
+- takeScreenshot: 01-today
 - tapOn: "Start reset"
 - assertVisible: 'How tense are you right now\?'
 - tapOn: "7 of 10"
-- takeScreenshot: ${SCREENSHOT_DIR}/02-pre
+- takeScreenshot: 02-pre
 - scrollUntilVisible:
     element:
       text: "START RESET.*"
@@ -16,23 +16,23 @@ appId: com.imrtech.inout
 - tapOn:
     text: "START RESET.*"
     waitToSettleTimeoutMs: 500
-- takeScreenshot: ${SCREENSHOT_DIR}/03-session
+- takeScreenshot: 03-session
 - extendedWaitUntil:
     visible: 'How tense are you now\?'
     timeout: 70000
 - tapOn: "3 of 10"
-- takeScreenshot: ${SCREENSHOT_DIR}/04-post
+- takeScreenshot: 04-post
 - scrollUntilVisible:
     element:
       text: "SEE MY STATE SHIFT.*"
     direction: DOWN
 - tapOn: "SEE MY STATE SHIFT.*"
 - assertVisible: "Tension down 4 points"
-- takeScreenshot: ${SCREENSHOT_DIR}/05-result
+- takeScreenshot: 05-result
 - scrollUntilVisible:
     element:
       text: ".*VIEW HISTORY.*"
     direction: DOWN
 - tapOn: ".*VIEW HISTORY.*"
 - assertVisible: "HISTORY"
-- takeScreenshot: ${SCREENSHOT_DIR}/06-history
+- takeScreenshot: 06-history
