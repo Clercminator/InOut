@@ -9,6 +9,8 @@ import type {
   SessionRecord,
 } from "@inout/shared-types";
 import type { LocalStore } from "./storage";
+import { EntitlementService } from "./entitlements";
+import { AnalyticsService } from "./analytics";
 
 export class SessionController {
   current: SessionRecord | null = null;
@@ -21,6 +23,7 @@ export class SessionController {
   private routinesCache: SavedRoutine[] | null = null;
   private libraryError: string | null = null;
   private pendingMutation: (() => void) | null = null;
+  routineNotice: string | null = null;
   get error(): string | null {
     return this.sessionError ?? this.preferencesError ?? this.libraryError;
   }
@@ -30,6 +33,8 @@ export class SessionController {
     private store: LocalStore,
     private now: () => number,
     private id: () => string,
+    readonly entitlements = new EntitlementService(),
+    readonly analytics = new AnalyticsService(),
   ) {
     this.preferences = store.preferences();
     const pending = store.pending();
@@ -59,6 +64,7 @@ export class SessionController {
     };
   };
   getRevision = () => this.revision;
+  entitlementsChanged = () => { this.routineNotice = null; this.emit(); };
   private emit() {
     this.revision++;
     this.listeners.forEach((fn) => fn());
@@ -279,9 +285,19 @@ export class SessionController {
   }
   saveRoutine(protocol: Protocol, kind: SavedRoutine["kind"], id?: string) {
     if (this.error) return null;
+    const access = this.entitlements.routineAccess(kind, this.routines(), id);
+    this.routineNotice = access.allowed ? null : access.message;
+    if (!access.allowed) { this.emit(); return null; }
     const key = id ?? this.id();
     const routine: SavedRoutine = { id: key, kind, protocol: JSON.parse(JSON.stringify({ ...protocol, id: key })), updatedAt: this.now() };
-    return this.mutate(() => { this.store.saveRoutine(routine); this.routinesCache = null; }) ? key : null;
+    return this.mutate(() => {
+      // Re-evaluate at retry time: a failed write must not bypass a later downgrade.
+      const decision = this.entitlements.routineAccess(kind, this.routines(), key);
+      if (!decision.allowed) { this.routineNotice = decision.message; return; }
+      const created = !this.routines().some((r) => r.id === key);
+      this.store.saveRoutine(routine); this.routinesCache = null;
+      if (created) this.analytics.track(kind === "pattern" ? "custom_created" : "mix_created");
+    }) && !this.routineNotice ? key : null;
   }
   duplicateRoutine(routine: SavedRoutine) {
     return this.saveRoutine({ ...routine.protocol, name: `${routine.protocol.name.slice(0, 53)} copy` }, routine.kind);

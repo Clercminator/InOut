@@ -4,14 +4,25 @@ import { router } from "expo-router";
 import { BackScreen, Title, Label, Card, Copy, Button, s } from "../src/ui";
 import { useSession, SaveError } from "../src/provider";
 import { colors } from "@inout/design-tokens";
+import { useCommercial } from "../src/commercial-context";
 export default function Settings() {
   const controller = useSession();
+  const commercial = useCommercial();
   const preferences = controller.preferences;
   const historyCount = controller.history().length;
   const savedCount = preferences.favoriteProtocolIds?.length ?? 0;
   return (
     <BackScreen title="SETTINGS">
       <Title>Your guidance.</Title>
+      <Card>
+        <Label>PLAN & PRIVACY</Label>
+        <Copy>{commercial?.entitlements.state.pro ? "Pro" : "Free"} · All nine breathing protocols included</Copy>
+        <Button title="Pro & subscriptions" secondary onPress={() => router.push("/pro")} />
+        <Button title="Ad privacy options" secondary onPress={() => {
+          if (!commercial || commercial.ads.mode === "preview") { Alert.alert("Native build required", "Ad privacy choices are available in a native development build."); return; }
+          void commercial.ads.privacyOptions().then(() => Alert.alert("Privacy options", "Your available ad privacy choices have been reviewed.")).catch(() => Alert.alert("Privacy options unavailable", "No new ad request was made. Try again when connected."));
+        }} />
+      </Card>
       <Card>
         <Label>YOUR PRACTICE</Label>
         <Copy>IN/OUT · {historyCount} sessions</Copy>

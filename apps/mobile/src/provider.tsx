@@ -12,21 +12,41 @@ import { LocalStore } from "./storage";
 import { NativeSessionEffects } from "./session-effects";
 import { SessionContext, useSession } from "./session-context";
 import { Screen, Title, Copy, Button } from "./ui";
+import { createCommercialServices } from "./commercial";
+import { CommercialContext, type CommercialServices } from "./commercial-context";
 
 export function SessionProvider({ children }: PropsWithChildren) {
   const [attempt, setAttempt] = useState(0);
   const [controller, setController] = useState<SessionController | null>(null);
   const [failure, setFailure] = useState(false);
+  const [commercial, setCommercial] = useState<CommercialServices | null>(null);
   useEffect(() => {
     try {
       const store = new LocalStore(SQLite.openDatabaseSync("inout.db"));
       const clock = createClock(Date.now, () => performance.now());
-      setController(new SessionController(store, clock.now, randomUUID));
+      const services = createCommercialServices(store);
+      setCommercial(services);
+      setController(new SessionController(store, clock.now, randomUUID, services.entitlements, services.analytics));
       setFailure(false);
     } catch {
       setFailure(true);
     }
   }, [attempt]);
+  useEffect(() => {
+    if (!commercial || !controller) return;
+    const unsubscribe = commercial.entitlements.subscribe(controller.entitlementsChanged);
+    const unsubscribeStore = commercial.subscriptions.listen();
+    if (commercial.subscriptions.adapter.mode !== "unavailable") void commercial.subscriptions.load();
+    commercial.analytics.track("app_open");
+    const timer = setInterval(commercial.entitlements.refresh, 30000);
+    const foreground = AppState.addEventListener("change", (state) => {
+      if (state === "active") {
+        commercial.entitlements.refresh();
+        if (commercial.subscriptions.adapter.mode === "store") void commercial.subscriptions.load();
+      }
+    });
+    return () => { unsubscribe(); unsubscribeStore(); foreground.remove(); clearInterval(timer); };
+  }, [commercial, controller]);
   useEffect(() => {
     if (!controller) return;
     const state = AppState.addEventListener("change", (next) => {
@@ -60,8 +80,10 @@ export function SessionProvider({ children }: PropsWithChildren) {
     );
   return (
     <SessionContext.Provider value={controller}>
+      <CommercialContext.Provider value={commercial}>
       <NativeSessionEffects />
       {children}
+      </CommercialContext.Provider>
     </SessionContext.Provider>
   );
 }

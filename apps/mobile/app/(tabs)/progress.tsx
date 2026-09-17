@@ -6,6 +6,7 @@ import { periodRecords } from "../../src/progress";
 import { useSession } from "../../src/provider";
 import { duration } from "../../src/format";
 import { stateShift } from "@inout/shared-types";
+import { AdSlot } from "../../src/ad-slot";
 
 function dayKey(date: Date) {
   return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
@@ -67,6 +68,7 @@ export default function Progress() {
         {bestGoal ? <Copy>Most of your completed sessions are for {bestGoal}. Keep noticing which practices create a State Shift.</Copy> : <Copy>Complete a session and add a before-and-after rating to discover which practices create your State Shift.</Copy>}
       </Card>
       <Button title="View session history" secondary onPress={() => router.push("/history")} />
+      <AdSlot placement="progress" />
     </Screen>
   );
 }

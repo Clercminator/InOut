@@ -133,4 +133,11 @@ export class LocalStore {
       JSON.stringify(p),
     );
   }
+  readEntitlementCache(): unknown {
+    const row = this.db.getFirstSync<{ payload: string }>("SELECT payload FROM settings WHERE key='entitlement-cache-v1'");
+    return row ? JSON.parse(row.payload) : null;
+  }
+  writeEntitlementCache(value: unknown) {
+    this.db.runSync("INSERT INTO settings(key,payload) VALUES('entitlement-cache-v1',?) ON CONFLICT(key) DO UPDATE SET payload=excluded.payload", JSON.stringify(value));
+  }
 }

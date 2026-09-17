@@ -8,6 +8,7 @@ import { Screen, Title, Label, Copy, Button, ProtocolRow, s } from "../../src/ui
 import { useSession } from "../../src/provider";
 import { protocols } from "@inout/protocols";
 import type { Goal } from "@inout/shared-types";
+import { AdSlot } from "../../src/ad-slot";
 
 const goals: { name: Goal; icon: keyof typeof MaterialIcons.glyphMap }[] = [
   { name: "Calm", icon: "spa" },
@@ -92,6 +93,7 @@ export default function Today() {
         purpose={recommendation.name === "Physiological Sigh" ? "Two inhales, one long exhale" : purposes[goal]}
         onPress={() => router.push({ pathname: "/protocol", params: { id: recommendation.id } })}
       />
+      <AdSlot placement="today" />
     </Screen>
   );
 }

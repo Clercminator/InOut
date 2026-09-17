@@ -7,6 +7,7 @@ import { stateShift } from "../packages/shared-types/src/index";
 import * as engine from "../packages/breathing-engine/src/index";
 import { makeMixProtocol } from "../apps/mobile/src/custom-protocol";
 import { protocols, planFor } from "../packages/protocols/src/index";
+import { EntitlementService } from "../apps/mobile/src/entitlements";
 function setup() {
   const db = new DatabaseSync(":memory:");
   const adapter: Database = {
@@ -37,11 +38,12 @@ function setup() {
     now: (value: number) => {
       now = value;
     },
-    controller: () =>
+    controller: (entitlements?: EntitlementService) =>
       new SessionController(
         store,
         () => now,
         () => String(++id),
+        entitlements,
       ),
   };
 }
@@ -98,16 +100,43 @@ test("saved routines survive reload, edit, duplicate and delete independently of
   const id = c.saveRoutine(protocols[0], "pattern")!;
   const mix = makeMixProtocol([protocols[2], protocols[0]]);
   c.saveRoutine(mix, "mix");
-  const reloaded = env.controller();
+  const entitlements = new EntitlementService(true);
+  const reloaded = env.controller(entitlements);
   assert.equal(reloaded.routines().length, 2);
   const saved = reloaded.routines().find((r) => r.id === id)!;
   reloaded.start(null, 1, saved.protocol);
   reloaded.saveRoutine({ ...saved.protocol, name: "Edited name" }, "pattern", id);
   assert.notEqual(reloaded.current?.protocolName, "Edited name");
-  reloaded.duplicateRoutine(saved);
+  assert.equal(reloaded.duplicateRoutine(saved), null);
+  entitlements.simulate("active");
+  assert.ok(reloaded.duplicateRoutine(saved));
   reloaded.removeRoutine(id);
   assert.equal(env.controller().routines().length, 2);
   assert.equal(env.controller().current?.protocolId, id);
+  env.db.close();
+});
+
+test("downgrade preserves over-limit routines and a failed write retry cannot bypass Free quota", () => {
+  const env = setup();
+  const e = new EntitlementService(true);
+  e.simulate("active");
+  const c = env.controller(e);
+  c.saveRoutine(protocols[0], "pattern", "one");
+  c.saveRoutine(protocols[1], "pattern", "two");
+  const original = env.adapter.runSync;
+  env.adapter.runSync = () => { throw new Error("disk full"); };
+  c.saveRoutine(protocols[2], "pattern", "three");
+  e.simulate("free");
+  env.adapter.runSync = original;
+  c.retry();
+  assert.equal(c.routines().length, 2);
+  assert.equal(c.error, null);
+  assert.match(c.routineNotice!, /Free includes/);
+  assert.equal(c.saveRoutine(protocols[2], "pattern", "one"), "one");
+  c.start(null, 1, c.routines()[0].protocol);
+  assert.equal(c.current?.stage, "active");
+  assert.equal(c.removeRoutine("two"), true);
+  assert.equal(c.routines().length, 1);
   env.db.close();
 });
 

@@ -12,11 +12,12 @@ export function RoutineLibrary({ kind }: { kind: SavedRoutine["kind"] }) {
     <Title>{kind === "pattern" ? "Your patterns." : "Your mixes."}</Title>
     <Button title={kind === "pattern" ? "Create Pattern" : "Create Mix"} onPress={() => router.push(route)} />
     <SaveError />
+    {!!controller.routineNotice && <Copy accessibilityRole="alert">{controller.routineNotice}</Copy>}
     {!items.length && <Card><Copy>No saved routines yet. Create one to keep it on this phone.</Copy></Card>}
     {items.map((item) => <Card key={item.id}><Title>{item.protocol.name}</Title><Copy>{duration(item.protocol.defaultDuration)} · Saved offline</Copy>
       <Button title={`Start ${item.protocol.name}`} disabled={!!controller.error} onPress={() => { controller.setCustomProtocol(item.protocol); router.push({ pathname: "/pre", params: { id: "custom" } }); }} />
       <Button title="Edit" secondary onPress={() => router.push({ pathname: route, params: { id: item.id } })} />
-      <Button title="Duplicate" secondary disabled={!!controller.error} onPress={() => { controller.duplicateRoutine(item); }} />
+      <Button title="Duplicate" secondary disabled={!!controller.error} onPress={() => { if (!controller.duplicateRoutine(item) && controller.routineNotice) Alert.alert("Saved routine limit", controller.routineNotice, [{ text: "OK" }, { text: "Explore Pro", onPress: () => router.push("/pro") }]); }} />
       <Button title="Delete" danger secondary disabled={!!controller.error} onPress={() => Alert.alert("Delete this routine?", "Existing history and active sessions will remain.", [{ text: "Cancel", style: "cancel" }, { text: "Delete", style: "destructive", onPress: () => { controller.removeRoutine(item.id); } }])} />
     </Card>)}
   </BackScreen>;

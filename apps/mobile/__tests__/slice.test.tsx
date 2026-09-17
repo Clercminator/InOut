@@ -26,6 +26,7 @@ jest.mock("expo-router", () => ({
     canGoBack: () => false,
   },
   useLocalSearchParams: () => mockParams,
+  usePathname: () => "/progress",
   useFocusEffect: (effect: () => () => void) => {
     require("react").useEffect(effect, [effect]);
   },

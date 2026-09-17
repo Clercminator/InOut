@@ -38,6 +38,7 @@ export function RoutineEditor({ kind }: { kind: SavedRoutine["kind"] }) {
       protocol: makeCustomProtocol(b.protocolId, protocols.find((p) => p.id === b.protocolId)?.name ?? controller.routines().find((p) => p.id === b.protocolId)?.protocol.name ?? "Custom pattern", b.phases, b.cycles),
     })) ?? []);
   const [notice, setNotice] = useState("");
+  const access = controller.entitlements.routineAccess(kind, controller.routines(), key);
   const changeRows = (next: Row[]) => { setNotice(""); setRows(next); };
   let draft: Protocol | null = null, validation = "";
   try {
@@ -76,7 +77,9 @@ export function RoutineEditor({ kind }: { kind: SavedRoutine["kind"] }) {
     <Copy>Breathe comfortably. Use easy holds and stop if you feel unwell.</Copy>
     <Button title="Audio & haptics" secondary onPress={() => router.push("/settings")} />
     <SaveError />{!!notice && <Copy accessibilityRole="alert">{notice}</Copy>}
-    <Button title="Save routine" disabled={!draft || !!controller.error} onPress={() => { if (draft && controller.saveRoutine(draft,kind,key)) setNotice("Saved on this phone."); }} />
+    {!access.allowed && <><Copy accessibilityRole="alert">{access.message}</Copy><Button title="Explore Pro" secondary onPress={() => router.push("/pro")} /></>}
+    {!!controller.routineNotice && <Copy accessibilityRole="alert">{controller.routineNotice}</Copy>}
+    <Button title="Save routine" disabled={!draft || !!controller.error || !access.allowed} onPress={() => { if (draft && controller.saveRoutine(draft,kind,key)) setNotice("Saved on this phone."); }} />
     <Button title="Use this routine" secondary disabled={!draft || !!controller.error} onPress={() => { if (draft) { controller.setCustomProtocol(draft); router.push({ pathname: "/pre", params: { id: "custom" } }); } }} />
   </BackScreen>;
 }
