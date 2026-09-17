@@ -4,6 +4,14 @@ IN/OUT is a native breathing app for iPhone and Android, built with React Native
 
 **Current release scope: free, guest-only, offline version 1.0.0.** No account, subscription, ads, analytics or health-sensor integration. Publisher: **David Clerc**. Support: **davidclerc@imrtech.xyz**.
 
+## For product and business consultation
+
+Start with the [Product, features and monetization briefing](PRODUCT_STRATEGY_BRIEF.md). It covers target-user hypotheses, the feature/option inventory, free versus paid choices, monetization alternatives, priorities, what to defer or skip, research and measurement, operating costs, and decisions the consultant should help resolve. Proposals are explicitly separated from implemented capabilities and approved release scope.
+
+**Key commercial distinction:** the original vision proposes charging for Custom Patterns and Mix Mode; the current release includes them free. There is no billing system or validated pricing. Changing that boundary requires an explicit product decision and a policy for existing users.
+
+Use this README for delivery status and technical evidence, the briefing for product/business decisions, [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md) for the original vision, and the [store submission guide](release/STORE_SUBMISSION_GUIDE.md) for publication requirements. Together they form the consultant handoff; mockups and future vision are not evidence of shipped features.
+
 ## Current status
 
 **Status consolidated September 17, 2026, against repository commit `a848eb4`. The app is implemented, but release validation is unfinished and it has not been submitted to either store.**
