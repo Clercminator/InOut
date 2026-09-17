@@ -46,8 +46,24 @@ jobs:
           app=$(find artifacts/simulator/app -maxdepth 1 -name '*.app' -print -quit)
           xcrun simctl install "$device" "$app"
           mkdir -p artifacts/ios-capture
-          "$MAESTRO_BIN" --device "$device" test -e SCREENSHOT_DIR="$PWD/artifacts/ios-capture" --format junit --output artifacts/ios-capture/results.xml .maestro/ios-store.yaml
-          test "$(find artifacts/ios-capture -maxdepth 1 -name '*.png' | wc -l | tr -d ' ')" = "6"
+          for attempt in 1 2; do
+            output="$PWD/artifacts/ios-capture/attempt-$attempt"
+            mkdir -p "$output"
+            if "$MAESTRO_BIN" --device "$device" test -e SCREENSHOT_DIR="$output" --test-output-dir "$output/debug" --debug-output "$output/debug" --format junit --output "$output/results.xml" .maestro/ios-store.yaml; then
+              test "$(find "$output" -maxdepth 1 -name '*.png' | wc -l | tr -d ' ')" = "6"
+              echo "PASS on attempt $attempt" > artifacts/ios-capture/result.txt
+              exit 0
+            fi
+            xcrun simctl io "$device" screenshot "$output/failure.png" || true
+            xcrun simctl spawn "$device" log show --last 3m --style compact > "$output/simulator.log" 2>&1 || true
+            # Retry only a failed XCTest transport, never an app assertion.
+            if [ "$attempt" = 2 ] || ! grep -q 'DeviceUnreachableException' "$output/results.xml"; then
+              exit 1
+            fi
+            xcrun simctl shutdown "$device"
+            xcrun simctl boot "$device"
+            xcrun simctl bootstatus "$device" -b
+          done
       - uses: actions/upload-artifact@v4
         if: always()
         with:

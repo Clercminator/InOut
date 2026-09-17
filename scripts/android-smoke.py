@@ -20,6 +20,29 @@ def tree():
     (OUT / 'last-screen.xml').write_text(xml)
     return ET.fromstring(xml)
 
+def bounds(node):
+    return tuple(map(int, re.findall(r'\d+', node.attrib['bounds'])))
+
+def visible_target(root, text):
+    parents = {child: parent for parent in root.iter() for child in parent}
+    for node in root.iter('node'):
+        if text not in (node.get('text', '') + ' ' + node.get('content-desc', '')):
+            continue
+        left, top, right, bottom = bounds(node)
+        if right <= left or bottom <= top:
+            continue
+        ancestor = parents.get(node)
+        while ancestor is not None:
+            if ancestor.get('class') == 'android.widget.ScrollView':
+                _, clip_top, _, clip_bottom = bounds(ancestor)
+                # A sliver in the accessibility tree is not a usable tap target.
+                if top < clip_top + 12 or bottom > clip_bottom - 12:
+                    break
+            ancestor = parents.get(ancestor)
+        else:
+            return node
+    return None
+
 def find(text, timeout=15):
     until = time.monotonic() + timeout
     while time.monotonic() < until:
@@ -28,16 +51,26 @@ def find(text, timeout=15):
         except (subprocess.CalledProcessError, subprocess.TimeoutExpired, ET.ParseError):
             time.sleep(.3)
             continue
-        for node in root.iter('node'):
-            if text in (node.get('text', '') + ' ' + node.get('content-desc', '')):
-                print(f'Found {text}', flush=True)
-                return node
+        node = visible_target(root, text)
+        if node is not None:
+            print(f'Found {text}', flush=True)
+            return node
         time.sleep(.3)
     raise AssertionError(f'Native screen did not show {text!r}')
 
 def tap(text):
     node = find(text)
-    x1, y1, x2, y2 = map(int, re.findall(r'\d+', node.attrib['bounds']))
+    # Wait for scroll momentum/layout to settle before using screen coordinates.
+    for _ in range(5):
+        time.sleep(.4)
+        settled = find(text)
+        if bounds(settled) == bounds(node):
+            break
+        node = settled
+    else:
+        raise AssertionError(f'Tap target kept moving: {text!r}')
+    x1, y1, x2, y2 = bounds(settled)
+    print(f'Tap {text}: {bounds(settled)}', flush=True)
     adb('shell', 'input', 'tap', str((x1+x2)//2), str((y1+y2)//2))
 
 def scroll_to(text):
@@ -113,6 +146,7 @@ try:
     tap('Progress')
     scroll_to('View session history')
     tap('View session history')
+    find('HISTORY')
     scroll_to('Tension down 4 points')
     shot('08-history-after-relaunch')
     adb('shell', 'am', 'force-stop', APP)
