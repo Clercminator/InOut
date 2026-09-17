@@ -231,6 +231,7 @@ export const s = StyleSheet.create({
   brand: {
     fontFamily: f.display,
     fontSize: 26,
+    lineHeight: 34,
     color: c.text,
     letterSpacing: -1.3,
   },

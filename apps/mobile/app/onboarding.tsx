@@ -35,11 +35,7 @@ export default function Onboarding() {
     if (!controller.error) router.replace("/(tabs)");
   };
   return (
-    <Screen>
-      <View style={s.onboardingTop}>
-        <Copy style={s.brand}>IN<Copy style={[s.brand, { color: "#adc6ff" }]}>/</Copy>OUT</Copy>
-        <Label>{page + 1} / {pages.length}</Label>
-      </View>
+    <Screen headerAction={<Label>{page + 1} / {pages.length}</Label>}>
       <View style={s.onboardingBody}>
         <View style={s.onboardingIcon}><MaterialIcons name={current.icon} size={38} color="#adc6ff" /></View>
         <Label>{current.label}</Label>
