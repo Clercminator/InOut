@@ -1,6 +1,8 @@
 # PROJECT_CONTEXT.md
 # IN/OUT — PRODUCT & IMPLEMENTATION CONTEXT
 
+> **September 17, 2026 launch decision:** Commercial v1 is required: all nine normal protocols free, optional recurring Pro, conservative ads for Free, browser sharing and product-event measurement. The previous free-only release is superseded. [LAUNCH_PLAN.md](LAUNCH_PLAN.md) is the current scope/task/gate authority; [README.md](README.md) records implementation evidence. High-intensity breathing stays excluded. Cloud sync remains future scope. Original implementation priorities below provide background, not permission to skip the current bounded task.
+
 ## 1. PRODUCT DEFINITION
 
 IN/OUT is a MOBILE-FIRST breathing protocol application for iOS and Android.
@@ -899,31 +901,15 @@ UI queries entitlement state.
 Do not scatter plan-name conditions throughout components.
 
 
-## 33. FREE / PRO CONCEPT
+## 33. FREE / PRO LAUNCH BOUNDARY
 
-FREE:
+FREE includes all nine normal launch protocols, timer/visuals/cues/haptics, State Shift, basic History/Progress, favorites, offline practice, sharing and safety. Initial centrally configurable limits: one saved Custom Pattern and one saved Mix. Unsaved drafts remain usable.
 
-- recommendations
-- State Shift
-- core timer
-- approximately 3 protocols
-- basic history
-- share links
-- browser exercises
-- safety functionality
+PRO is monthly/annual recurring access modeled by capabilities: adFree, unlimitedCustomPatterns, unlimitedMixes, unlimitedSavedRoutines, advancedProgress, advancedInsights, advancedReminders, advancedGuidance, premiumAudioVisuals and futureCloudSync. Reserved flags do not imply the corresponding feature is implemented. A trial is optional and store-configured.
 
-PRO:
+Free ads must be conservative browsing placements, never active sessions, State Shift, onboarding or safety. No post-reset interstitial. Never target ads or analytics with tension ratings, notes, routine definitions or inferred wellbeing states. Use provider abstractions; mock/dev states must not masquerade as real purchases.
 
-- all protocols
-- Custom Pattern
-- Mix Mode
-- unlimited presets
-- full insights
-- longer history
-- advanced guidance
-- advanced reminders
-
-Exact commercial configuration may change.
+The detailed implementation sequence, event map, external setup and acceptance gates are in LAUNCH_PLAN.md and OWNER_SETUP_CHECKLIST.md. Do not remove existing routine/history data on downgrade.
 
 
 ## 34. NOTIFICATIONS

@@ -1,37 +1,46 @@
 # IN/OUT 1.0 — Apple App Store and Google Play submission guide
 
-**Release status: not submitted.** The [root README](../README.md#current-status) is the central tracker for completed work, unresolved engineering tasks, owner steps and dated verification evidence. This file is the store submission handoff, not a declaration that release acceptance has passed.
+**Commercial v1 is the launch target. Not ready for submission.** The former free-only release is superseded. [LAUNCH_PLAN.md](../LAUNCH_PLAN.md) is the scope/QA/gate authority; [OWNER_SETUP_CHECKLIST.md](../OWNER_SETUP_CHECKLIST.md) gives console tasks and safe configuration storage. [README.md](../README.md) records implemented behavior and verification evidence.
 
-Publisher: **David Clerc** · Support: **davidclerc@imrtech.xyz**
+Publisher: **David Clerc** · Support: **davidclerc@imrtech.xyz** · Both bundle/package IDs: `com.imrtech.inout`.
 
-- Privacy: https://clercminator.github.io/InOut/privacy.html
-- Support: https://clercminator.github.io/InOut/support.html
-- Safety: https://clercminator.github.io/InOut/safety.html
-- Store copy, keywords and reviewer walkthrough: [store-listing.json](store-listing.json).
-- Google Play icon (512 × 512) and feature graphic (1024 × 500): [assets](assets/).
-- Apple icon (1024 × 1024): [icon.png](../apps/mobile/assets/icon.png).
-- Application identifier on both platforms: `com.imrtech.inout`.
+## Launch product
 
-## Release scope
+- All nine normal protocols, core timer/visuals/cues/haptics, State Shift, basic History/Progress, favorites, offline practice, sharing and safety are Free.
+- Free initially supports one saved Custom Pattern and one saved Mix; Pro removes save limits and advertising, with deeper Progress and recurring-practice benefits as actually implemented.
+- Monthly/annual recurring subscriptions, optional store-configured trial, purchase restoration and management must work on both platforms.
+- Conservative Free ads only in browsing/management surfaces. Never sessions, State Shift, onboarding or safety; no post-reset interstitial. Pro has no ads.
+- A share URL must deliver a browser exercise before offering installation. High-intensity cyclic breathing remains excluded.
 
-Free, offline, guest-only practice: nine built-in protocols, custom patterns and mixes, saved routines, optional self-reported State Shift, history, sharing, settings, safety and support. No purchases, subscription, account, ads, tracking or health-sensor integration. The tenth protocol remains in the domain model but high-intensity breathing is unavailable throughout this release.
+## Current implementation versus launch
 
-## Console information to review
+The current development build has native local practice/routines/history and entitlement foundation work. RevenueCat purchase/restore and AdMob/UMP adapters plus a dev-only analytics logger are implemented. Production provider configuration, real purchase/consent acceptance, browser resets and cloud accounts remain incomplete. Development Free/Pro simulation is not a purchase or store entitlement. Do not list reserved future sync/guidance capabilities as available benefits.
 
-The current app stores sessions, ratings, routines and preferences locally. There is no developer backend, analytics SDK or automatic data upload. OS backups may include app data. Sharing is explicitly initiated by the user. Email support receives whatever the user sends; the GitHub-hosted public website receives ordinary web requests.
+Store metadata in [store-listing.json](store-listing.json) is explicitly a commercial draft. [readiness.json](readiness.json) keeps production gates closed. `npm run release:check` validates local draft integrity; with `INOUT_RELEASE=1`, preflight also rejects unapproved metadata/open launch gates. Passing the normal check is not submission approval.
 
-Use these facts when completing Apple's App Privacy and Google's Data safety forms. Review the forms' current definitions and exceptions for optional support, user-directed sharing, diagnostics and platform backups; do not treat this document as a pre-submitted declaration. There is no account to delete; Settings provides deletion of all local data. Do not enable advertising or health-platform entitlements.
+## Public content and presentation
 
-Declare the breathing/wellbeing functionality in Google's Health apps declaration. Store copy and in-app safety explain that IN/OUT is not a medical device and does not diagnose, treat, cure or prevent conditions. Complete both stores' age/content questionnaires truthfully; no age rating has been assigned yet.
+- Published [Privacy](https://clercminator.github.io/InOut/privacy.html), [Support](https://clercminator.github.io/InOut/support.html) and [Safety](https://clercminator.github.io/InOut/safety.html) describe the current build, not completed commercial integrations.
+- Shared [content.json](content.json) feeds native help/privacy and generated public pages. Update and review it when provider behavior changes; do not falsely state either that planned SDKs are active or that commercial v1 has no ads/purchases.
+- Privacy Policy, Terms and Subscription Terms for the final candidate need owner/legal review. Final subscription duration, localized prices, trial/renewal terms, restore/manage behavior and premium benefits must match store offerings.
+- [Release artwork](assets/) and [native icons](../apps/mobile/assets/) exist. Final screenshots must come from the actual accepted commercial candidate. Older free-build captures are not final store evidence.
 
-References: [Apple review guidelines](https://developer.apple.com/app-store/review/guidelines/), [Google Health apps declaration](https://support.google.com/googleplay/android-developer/answer/14738291?hl=en), [Google health-content requirements](https://support.google.com/googleplay/android-developer/answer/16679511?hl=en-GB).
+## Billing, ads, analytics and data safety
+
+Record the actual SDK versions, automatic data collection, consent behavior, identifiers, sharing storage and any server retention before completing Apple App Privacy and Google Data safety. A local/dev analytics logger does not imply a remote analytics service is configured. An analytics event may record that an answer was entered, never its raw value or resulting shift. No routine content, notes or wellbeing inferences go to targeting/analytics.
+
+UMP consent and any applicable platform tracking permission need a deliberate implementation and verification. Do not assume non-personalized ads mean no collection or that an ATT decision replaces consent. Pro must suppress ad requests, not merely hide an already-loaded view.
+
+State Shift remains subjective, not biometric or clinical evidence. Complete health/age/content declarations truthfully; do not add health-sensor entitlements. If authenticated accounts become part of v1, add working account deletion and lossless guest migration before claiming them complete. Local deletion alone is not cloud account deletion.
+
+Official references: [Apple review guidelines](https://developer.apple.com/app-store/review/guidelines/), [Apple subscriptions](https://developer.apple.com/app-store/subscriptions/), [Google subscriptions](https://support.google.com/googleplay/android-developer/answer/9900533?hl=en), [Google UMP](https://developers.google.com/admob/ios/privacy), [Google Health apps declaration](https://support.google.com/googleplay/android-developer/answer/14738291?hl=en).
 
 ## Build and acceptance
 
-`npm run verify` checks types, engine, persistence, migrations and mobile flows. `npm run release:check` checks local release metadata. GitHub Actions builds an internally signed Android APK, exercises the offline flow on an emulator, and builds/launches an unsigned iPhone simulator app. Successful capture jobs can provide actual screenshots; a build artifact alone does not prove that the runtime flow or screenshot capture passed. These are not store-signed uploads. See the [verification evidence](../README.md#verification-evidence-and-limits) for the latest Android navigation and iPhone capture failures, earlier passing runs and physical-device limits.
+Run `npm run verify` and `npm run release:check`. CI provides a development-signed Android APK and unsigned iOS simulator app; these do not replace store-signed distribution builds, sandbox purchase tests or physical devices. See README for dated native flow results.
 
-From `apps/mobile`, EAS profiles provide internal Android preview, iOS simulator, and production AAB/iOS builds. Production runs a metadata preflight and increments build numbers. Production builds still require the owner's Expo project setup and store signing credentials. Reserve `com.imrtech.inout` in the developer consoles before the first upload.
+From `apps/mobile`, EAS profiles support preview APK, simulator and production AAB/iOS builds. Real project/signing configuration is owner-dependent. Production preflight stays closed until the commercial gates are backed by evidence.
 
-Before submission, install signed builds through Google Play internal testing and TestFlight. On physical iPhone and Android, check first launch and offline use, audible cues and haptics, silent mode, phone/audio interruptions, lock/unlock, forced closure recovery, saved routines, deletion, large text, screen readers and reduced motion. Capture final store screenshots from those builds in the dimensions each console requests. Simulator evidence cannot establish physical haptic/audio quality or replace these acceptance checks.
+Before submission, install the candidate through TestFlight and Play Internal Testing. Verify the full core QA matrix plus purchase/restore, cancellation/expiry/grace, offline entitlement cache, Free quotas/downgrade, consent and protected ad placements, browser sharing/verified links, and accurate settings/support. Physical audio/haptics, interruptions, accessibility and offline recovery still require acceptance.
 
-Owner steps: developer enrollment and identity verification, store records, signing access, current console disclosures, age/content ratings, distribution countries and free pricing, any required tester cohort, then submission. Do not add a subscription or billing configuration for this release.
+Owner steps and required return values are listed by stage in OWNER_SETUP_CHECKLIST.md. Reserve product IDs and configure prices/offers now; no credentials are fabricated. Submit only after the launch plan's gates are complete and the owner approves the accepted candidate.

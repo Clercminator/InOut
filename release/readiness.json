@@ -1,0 +1,11 @@
+{
+  "target": "commercial-v1",
+  "gates": {
+    "billingVerified": false,
+    "adsAndConsentVerified": false,
+    "sharingVerified": false,
+    "analyticsDecisionVerified": false,
+    "nativeDeviceAcceptance": false,
+    "metadataAndLegalApproved": false
+  }
+}

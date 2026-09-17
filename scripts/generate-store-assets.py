@@ -18,7 +18,7 @@ def wordmark(image, y, size, monochrome=False):
 icon = Image.new('RGB',(1024,1024),'#111317')
 wordmark(icon,435,178)
 icon.save(ROOT/'apps/mobile/assets/icon.png')
-icon.resize((512,512),Image.Resampling.LANCZOS).save(OUT/'google-play-icon.png')
+icon.resize((512,512),Image.Resampling.LANCZOS).convert('RGBA').save(OUT/'google-play-icon.png')
 for filename, mono in [('adaptive-icon.png',False),('monochrome-icon.png',True)]:
     layer=Image.new('RGBA',(1024,1024))
     wordmark(layer,448,155,mono)

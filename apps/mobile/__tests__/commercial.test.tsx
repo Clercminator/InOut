@@ -11,6 +11,14 @@ import { AdService } from "../src/ads";
 
 let mockPath = "/";
 const mockController = { current: null };
+const mockConsent = jest.fn();
+const mockInitialize = jest.fn();
+const mockConfigure = jest.fn();
+jest.mock("react-native-google-mobile-ads", () => ({
+  default: () => ({ initialize: mockInitialize, setRequestConfiguration: mockConfigure }),
+  AdsConsent: { gatherConsent: (...args: unknown[]) => mockConsent(...args) },
+  MaxAdContentRating: { G: "G" },
+}));
 jest.mock("expo-router", () => ({ router: { canGoBack: () => false, replace: jest.fn(), push: jest.fn() }, usePathname: () => mockPath }));
 jest.mock("../src/provider", () => ({ useSession: () => mockController }));
 
@@ -70,4 +78,26 @@ test("production entitlement service offers no developer override controls", asy
   const prod = { ...s, entitlements: new EntitlementService(false) };
   await render(wrap(prod, <Pro />));
   expect(screen.queryByRole("button", { name: "Simulate Pro" })).toBeNull();
+});
+
+test("live ads cannot initialize before consent or after becoming Pro during consent", async () => {
+  mockInitialize.mockClear(); mockConfigure.mockResolvedValue(undefined);
+  const e = new EntitlementService(true);
+  const ads = new AdService(e, "live");
+  mockConsent.mockResolvedValueOnce({ canRequestAds: false });
+  await ads.prepare();
+  expect(mockInitialize).not.toHaveBeenCalled(); expect(ads.ready).toBe(false);
+  let finish!: (info: { canRequestAds: boolean }) => void;
+  mockConsent.mockImplementationOnce(() => new Promise((resolve) => { finish = resolve; }));
+  const preparing = ads.prepare();
+  e.simulate("active"); finish({ canRequestAds: true }); await preparing;
+  expect(mockInitialize).not.toHaveBeenCalled(); expect(ads.ready).toBe(false);
+});
+
+test("native test ads initialize demo SDK only while the placement stays eligible", async () => {
+  mockInitialize.mockClear(); mockInitialize.mockResolvedValue([]);
+  mockConfigure.mockResolvedValue(undefined);
+  const ads = new AdService(new EntitlementService(), "test");
+  await ads.prepare(() => false); expect(mockInitialize).not.toHaveBeenCalled();
+  await ads.prepare(() => true); expect(mockInitialize).toHaveBeenCalledTimes(1); expect(ads.ready).toBe(true);
 });

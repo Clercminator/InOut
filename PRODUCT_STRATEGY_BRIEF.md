@@ -1,12 +1,12 @@
 # IN/OUT — Product, features and monetization briefing
 
-**Prepared September 17, 2026 for product/business consultation.** This document explains what the product does, what remains hypothetical, and which decisions would materially change its scope. It is a briefing for making decisions, not an approved expansion roadmap or a market study.
+**Prepared September 17, 2026 for product/business consultation.** This document explains what the product does, what remains hypothetical, and which decisions would materially change its scope. It includes the approved commercial direction plus research questions; it is not evidence that integrations are complete or a market study. [LAUNCH_PLAN.md](LAUNCH_PLAN.md) now controls engineering scope and launch gates.
 
 ## 1. Executive summary
 
 IN/OUT is a native iPhone/Android breathing application: choose a situation, follow a short structured practice, optionally record how tense you feel before and afterward, and keep a private practice history. The intended character is practical and precise, closer to a training timer than a meditation content service. “SmartWOD for breathing” is an internal positioning shorthand, not an affiliation.
 
-The application already includes nine usable protocols, custom routines, multi-protocol mixes, native cues, local history and progress. Its current release proposition is **free, offline and account-free**. It is not yet submitted to the stores. Native release validation and final screenshots remain unfinished; the [README status tracker](README.md#current-status) records the exact failures and owner dependencies.
+The application already includes nine usable protocols, custom routines, multi-protocol mixes, native cues, local history and progress. The owner has selected a **commercial v1: useful Free access, monthly/annual Pro, conservative Free ads, sharing/distribution and product-event measurement**. Core breathing remains offline and usable without an account. Real provider integrations are not live yet. It is not yet submitted to the stores. Native release validation and final screenshots remain unfinished; the [README status tracker](README.md#current-status) records the exact failures and owner dependencies.
 
 The central business question is not which additional screens to build. It is **which user repeatedly needs this experience, why they would choose it over a familiar timer or free exercise, and what additional value they would pay for**. The repository does not establish demand, retention, willingness to pay or acquisition economics.
 
@@ -25,12 +25,12 @@ The central business question is not which additional screens to build. It is **
 | --- | --- | --- |
 | [README](README.md) | Implemented features, architecture, run instructions, dated verification and remaining release tasks | Central factual delivery/status record |
 | This briefing | Product alternatives, business questions, proposed priorities and research | Recommendations and hypotheses, not authorized implementation |
-| [PROJECT_CONTEXT](PROJECT_CONTEXT.md) | Original comprehensive product vision | Includes accounts, web sharing and subscriptions that are not implemented |
+| [PROJECT_CONTEXT](PROJECT_CONTEXT.md) | Original comprehensive product vision | Includes future accounts/web sharing and subscription ambitions; current implementation status is below |
 | [Store submission guide](release/STORE_SUBMISSION_GUIDE.md) | Store handoff, owner tasks and acceptance requirements | Submission preparation, not evidence of approval |
-| [Store listing](release/store-listing.json) | Current proposed public description | Describes the free offline release |
+| [Store listing](release/store-listing.json) | Current proposed public description | Draft requiring commercial integration evidence and final approval |
 | [Stitch references](UI/) | Visual language and screen concepts | A paywall/account/reminder mockup does not mean that feature exists |
 
-The release is narrower than the original vision. In particular, the original context's end-to-end “MVP success criteria” include web sharing, account migration and subscriptions; **the current free offline release does not satisfy that entire original definition**. The consultant should assess whether this smaller first launch is the right learning step.
+The previous free-only first launch is superseded. Subscriptions, conservative ads and the shared-browser loop are now launch requirements. Account flows must remain honest about what exists; future cloud sync is not an available benefit. The current build still lacks the production integrations needed to satisfy commercial v1.
 
 ## 3. Audience, positioning and jobs to be done
 
@@ -65,17 +65,17 @@ Intended differentiation: situation-first entry, protocol-specific visuals, subj
 | Haptics/screen | Phase haptics and keep-awake switches | Device quality and interruption acceptance remain open |
 | Accessibility | Safe areas, touch targets, labels, font scaling and reduced-motion handling | Physical VoiceOver/TalkBack and large-text acceptance pending; no claim of a completed accessibility audit |
 | State Shift | Optional 1–10 pre/post tension, skip support, positive/unchanged/negative change | Tension is only one dimension; it may not measure focus/energy goals well. Do not equate it with efficacy or biometrics |
-| Custom patterns | Ordered editable phases, durations, cycles, total time; run/save/edit/duplicate/delete | Included free today; establish whether people actually create and reuse routines |
-| Mix Mode | Ordered built-ins/saved patterns, block cycles, repeat mix, next-block indication; saved mix management | Included free today; assess discoverability and whether complexity benefits the primary audience |
+| Custom patterns | Ordered editable phases, durations, cycles, total time; run/save/edit/duplicate/delete | Free gets one saved pattern initially; Pro removes the save limit. Measure creation and reuse |
+| Mix Mode | Ordered built-ins/saved patterns, block cycles, repeat mix, next-block indication; saved mix management | Free gets one saved mix initially; Pro removes the save limit. Assess discoverability and reuse |
 | History | Local records, filters, details, replay, deletion | No cloud restore, cross-device continuity or expanded note-taking system |
 | Progress | Period views, sessions/time/streaks, activity/usage and paired tension change | Partial fulfillment of the broader personal-insights concept; not a learning/coaching engine |
 | Sharing | Native text result share sheet | Partial: no generated image cards, shared exercise URLs, browser reset or install attribution loop |
 | Privacy and support | Offline legal/help, support email, local data deletion; public static pages | No support dashboard or established response-time commitment |
 | Offline/storage | Protocols, cues, routines, settings and sessions stored/bundled locally; recovery checkpoints | No app-managed backup/export/import or sync; OS backup is not a promised cross-device restore service |
 | Accounts | Guest-only; profile is not an authenticated cloud account | Optional account creation and lossless migration are proposed |
-| Reminders | Not implemented | Decide whether scheduled reminders solve demonstrated forgetting; notification permission should be contextual |
+| Reminders | Not implemented | Premium reminder foundation is planned; permission remains contextual |
 | Web | Published privacy/safety/support pages | Marketing funnel, shared breathing and account/billing experiences are proposed |
-| Purchases | None; all released capabilities free | No paywall, entitlements, purchase restoration, subscription management or billing backend |
+| Purchases | Monthly/annual UI, RevenueCat adapter, restore and lifecycle cache implemented | Store products/keys and real sandbox acceptance remain outstanding; dev purchases never charge |
 | Language/appearance | Current English experience and designed dark palette | No multilingual product or user-selectable light-theme offering; prioritize only with audience/accessibility evidence |
 | Wearables/sensors | No health sensors, watches or biometric integration | New product/privacy/validation scope, not a hidden existing capability |
 
@@ -88,38 +88,26 @@ Intended differentiation: situation-first entry, protocol-specific visuals, subj
 - Phone experience remains primary; a shared browser exercise would support distribution, not require rebuilding the product as a web app.
 - Existing data and saved routines should survive future schema, account and commercial changes.
 
-## 5. Monetization: current decision versus alternatives
+## 5. Approved monetization direction and unresolved decisions
 
-**Current decision:** the first release is free, with nine protocols, Custom Patterns, Mix Mode and local history/progress. There is no revenue mechanism implemented and no validated price, conversion rate or revenue forecast.
+**Approved:** all nine normal protocols remain free; monthly and annual recurring Pro are required, with an optional store-configured trial. Free supports one saved Custom Pattern and one saved Mix initially. Pro removes creation/save limits, removes ads and offers depth/continuity through advanced Progress/insights and recurring practice support. No safety paywall. Existing above-limit routines remain readable, editable, runnable and deletable after downgrade.
 
-**Original concept:** approximately three protocols free, with all protocols, Custom, Mix, expanded history/insights and guidance/reminders in Pro. That is not how the current release is configured. A future paid boundary needs an explicit owner decision and an existing-user policy; do not silently relabel already-free functionality as paid.
+Capabilities and limits belong in centralized configuration; do not hard-code plan names throughout screens. The full model and delivery gates are in [LAUNCH_PLAN.md](LAUNCH_PLAN.md). AdMob and RevenueCat are preferred isolated providers, not production-ready integrations. The owner expanded the current task to include subscription and ad development paths. Central entitlements, subscription UI/mock/RevenueCat adapter, native AdMob test slots/UMP code and a local event logger now exist. Real provider acceptance, premium insights/reminders and sharing remain outstanding.
 
-| Model to assess | What users would buy | Why it may fit | Main tradeoff and required work |
-| --- | --- | --- | --- |
-| Free first release | Nothing initially | Tests usefulness and repeat use with minimal commercial friction | No direct revenue; needs a time/budget limit and a defined learning objective |
-| One-time premium unlock | A durable set of additional tools or capabilities | A finite offline utility can be easy to explain as a single purchase | Long-term support without recurring revenue; purchase/restore/refund handling and an explicit premium boundary |
-| Optional subscription | An ongoing service, such as maintained programs, evolving guidance or useful sync/personal insights | Could fund continuing value and operating costs if users want them | Must earn repeat payment; introduces content/service obligations, entitlement states, billing support and churn |
-| Paid program/content packs | Optional, clearly defined curated routines/guidance | Lets buyers choose specific value without subscribing | Content creation, review, licensing, differentiation and pack ownership; packs must offer more than renamed free routines |
-| Paid download | The whole app upfront | Simple product proposition | Users cannot experience the native value before buying; acquisition/trial strategy and existing-user transition need review |
-| Voluntary support purchase | Support development with clearly described benefits, if any | Could preserve a broadly free utility | Uncertain revenue; validate platform treatment and demand before implementation |
-| Coach/team/employer offering | A service for distributing routines or supporting groups | Potential separate buyer and distribution channel | Entirely unvalidated; sales, administration, permissions and privacy obligations make this a separate initiative |
-| Advertising/sponsorship | Advertiser-funded access | A possible funding model to compare | Interruptions and tracking can conflict with a calm, private offline product; not recommended for the initial scope |
+The previous suggestions to launch free-only or choose one-time purchase instead are **superseded by the owner's decision**. Research should now refine the recurring offer, free limits, prices, trial and retention value rather than silently substitute a different business model.
 
-**Proposed direction:** retain the free first release as the learning vehicle. Evaluate a one-time unlock against a subscription after identifying an unmet need and repeated use. Do not add recurring billing just because a paywall exists in Stitch. There is not yet enough evidence to choose a paid package or price.
+Free ads must sit in conservative browsing/management locations. Pro sees none. Active breathing, State Shift, safety and onboarding are protected; no interstitial immediately after a reset. Advertising inputs and analytics must exclude ratings, private routines/notes and inferred wellbeing states.
 
-Apple and Google require continuing value for subscriptions; a subscription is not simply a different price label for a one-off benefit. Official references reviewed for this briefing: [Apple subscriptions](https://developer.apple.com/app-store/subscriptions/) and [Google subscription policy](https://support.google.com/googleplay/android-developer/answer/9900533?hl=en). Territory-specific billing and external-checkout rules need a fresh review when a market and payment model are selected; this document does not prescribe a universal web-checkout workaround.
+Remaining commercial decisions:
 
-### Decisions required before any paid implementation
+1. Monthly/annual prices, countries/currencies and optional trial duration/eligibility.
+2. Which advanced benefits are genuinely complete at launch; future sync must not be sold as live.
+3. How to present the single saved-pattern/mix limits and preserve existing data on downgrade.
+4. Ongoing guidance/content/support responsibilities and operating budget.
+5. Purchase identity, restoration, optional account behavior and offline entitlement-cache policy.
+6. Consent/advertising region configuration and whether remote analytics is enabled or remains local/dev.
 
-1. What customer problem becomes better after paying? Name the benefit in user terms.
-2. Which capabilities stay free, which are new paid additions, and what happens to existing users and routines?
-3. Is the value finite or recurring? Who will maintain any promised content/service?
-4. Which launch countries/currencies, price candidates and purchase types will be tested? No price is approved here.
-5. How should cancellation, expiry, refunds, offline access and purchase restoration affect the experience?
-6. Is an optional account needed for the promised benefit, and how will local data migrate safely?
-7. What does the support/refund workload cost, and what evidence would cause us to stop the paid experiment?
-
-RevenueCat is a suggested integration from the original context, not an installed billing system or a reason to choose subscriptions. Account/sync and payment entitlement architecture should follow the chosen benefits. A new monetization decision also requires updated store copy, disclosures and acceptance tests.
+Apple and Google require continuing subscription value: [Apple subscriptions](https://developer.apple.com/app-store/subscriptions/) and [Google subscription policy](https://support.google.com/googleplay/android-developer/answer/9900533?hl=en). Real purchase/grace/expiry/restore acceptance is required; a mock Pro switch is developer tooling only. Store products and public SDK keys are owner setup; private credentials stay in provider consoles.
 
 ### Business inputs not yet supplied
 
@@ -129,7 +117,7 @@ A consultant's financial model should show assumptions and sensitivities. For ex
 
 ## 6. What to focus on, add later or skip
 
-The following is a proposed sequence for discussion, not a commitment to build every row. Relative effort is qualitative, not an estimate or quote.
+The commercial sequence in LAUNCH_PLAN.md takes precedence over the earlier research-driven ordering below. These remain product evaluation considerations, not permission to defer launch-required subscriptions, ads or sharing. Relative effort is qualitative, not an estimate or quote.
 
 | Priority | Work/option | Reason | Dependency or evidence to proceed | Relative effort |
 | --- | --- | --- | --- | --- |
@@ -145,7 +133,7 @@ The following is a proposed sequence for discussion, not a commitment to build e
 | Defer | More animations, many more protocols, extensive themes | Current breadth is already enough to evaluate the main behavior | Revisit for measured comprehension/accessibility issues or clear demand | Variable |
 | Skip for this release | AI coach, health-sensor integration, social feed, wearable/desktop apps, high-intensity practice | Each adds a distinct product/support/validation burden | Separate evidence and explicit scope decision | High/new product scope |
 
-The sharing loop is strategically prominent in the original vision but absent from the first release. This is an explicit tradeoff: launch a smaller utility sooner versus launch the broader acquisition concept later. A consultant should choose based on the objective and available budget, not assume the loop already exists.
+The sharing loop is absent from the current implementation but is now a launch requirement. Scope a small free browser exercise rather than a duplicate web app; use the shared engine and a public snapshot that excludes personal scores by default.
 
 ## 7. Research, measurement and acquisition
 
@@ -172,7 +160,7 @@ There is engineering verification and a working feature inventory. No validated 
 | Does sharing acquire users? | After implementing links: shared exercise starts/completions and subsequent install/open actions where observable | Text shares alone do not provide this funnel; attribution is incomplete across devices/platforms |
 | Will people pay? | After a real offer exists: purchase/restore/refund outcomes and retention of paying cohorts | Separate price, package and audience effects; do not infer from installs |
 
-**No developer analytics collection is currently implemented.** These are proposed questions, not available dashboards. Initial learning can use consented observation and voluntary follow-up. Adding telemetry requires a separately agreed data-minimization plan and updated disclosures; avoid collecting raw tension ratings or private routines merely because they are convenient to log. Local progress screens are not a developer-accessible analytics system.
+**A provider-neutral event-name-only service and local/dev logger are implemented; complete trigger wiring and external collection are pending.** These are proposed questions, not available dashboards. Initial learning can use consented observation and voluntary follow-up. Adding telemetry requires a separately agreed data-minimization plan and updated disclosures; avoid collecting raw tension ratings or private routines merely because they are convenient to log. Local progress screens are not a developer-accessible analytics system.
 
 Numeric targets should be chosen after establishing a baseline and available sample size. Do not manufacture retention or conversion thresholds as if they were commitments already agreed by the owner.
 
@@ -181,7 +169,7 @@ Numeric targets should be chosen after establishing a baseline and available sam
 - Store presentation focused on the selected use occasion; compare message comprehension before optimizing keywords.
 - Small relevant communities or coach partnerships for feedback and early distribution, without building a coach platform first.
 - Demonstrations showing the actual short session and offline utility; no promised health result.
-- The shared browser reset as a later product-led acquisition experiment.
+- The launch-required shared browser reset as a measurable product-led acquisition experiment.
 - Paid acquisition only after defining what conversion means, instrumentation limits and a sustainable budget; no current acquisition economics support scaling it.
 
 ## 8. Operating and trust considerations
@@ -197,9 +185,9 @@ Content/claims review and device acceptance are distinct from adding features. D
 | Decision | Current state | Required output |
 | --- | --- | --- |
 | Primary audience/use occasion | Multiple candidates; not validated | One initial focus and evidence needed to challenge it |
-| First-launch scope | Free offline native app; release acceptance incomplete | Confirm it or explicitly change scope and delivery implications |
+| First-launch scope | Commercial native MVP; integrations/acceptance incomplete | Prioritize delivery within the approved Free/Pro/ads/sharing scope |
 | Feature priorities | Broad local feature set already implemented | Ordered keep/simplify/add/defer/skip list with user reasons |
-| Monetization | No implementation; free release versus original Pro concept | Model hypothesis, paid benefit, existing-user policy and price research plan |
+| Monetization | Monthly/annual recurring Pro selected; adapter/UI exist, store configuration and acceptance pending | Paid benefits, pricing/trial, downgrade behavior and operating economics |
 | Acquisition | Store copy prepared; browser sharing absent | One feasible initial channel/experiment and why |
 | Research/measurement | No customer evidence or developer analytics supplied | Recruitment, questions, definitions, consent approach and decision thresholds |
 | Market and language | Not specified as a business decision | First geography/language and support implications |
