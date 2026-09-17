@@ -1,5 +1,7 @@
 # IN/OUT 1.0 submission kit
 
+**Release status: not submitted.** The [root README](../README.md#current-status) is the central tracker for completed work, unresolved engineering tasks, owner steps and dated verification evidence. This file is the store submission handoff, not a declaration that release acceptance has passed.
+
 Publisher: **David Clerc** · Support: **davidclerc@imrtech.xyz**
 
 - Privacy: https://clercminator.github.io/InOut/privacy.html
@@ -26,7 +28,7 @@ References: [Apple review guidelines](https://developer.apple.com/app-store/revi
 
 ## Build and acceptance
 
-`npm run verify` checks types, engine, persistence, migrations and mobile flows. `npm run release:check` checks local release metadata. GitHub Actions builds an internally signed Android APK, exercises the offline flow on an emulator, and builds/launches an unsigned iPhone simulator app. Workflow artifacts provide binaries and actual screenshots; these are not store-signed uploads.
+`npm run verify` checks types, engine, persistence, migrations and mobile flows. `npm run release:check` checks local release metadata. GitHub Actions builds an internally signed Android APK, exercises the offline flow on an emulator, and builds/launches an unsigned iPhone simulator app. Successful capture jobs can provide actual screenshots; a build artifact alone does not prove that the runtime flow or screenshot capture passed. These are not store-signed uploads. See the [verification evidence](../README.md#verification-evidence-and-limits) for the latest Android navigation and iPhone capture failures, earlier passing runs and physical-device limits.
 
 From `apps/mobile`, EAS profiles provide internal Android preview, iOS simulator, and production AAB/iOS builds. Production runs a metadata preflight and increments build numbers. Production builds still require the owner's Expo project setup and store signing credentials. Reserve `com.imrtech.inout` in the developer consoles before the first upload.
 
