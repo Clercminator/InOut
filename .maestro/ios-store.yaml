@@ -4,11 +4,11 @@ appId: com.imrtech.inout
     clearState: true
 - tapOn: "Skip introduction"
 - assertVisible: "Breathe for what's next."
-- takeScreenshot: artifacts/ios-capture/01-today
+- takeScreenshot: ${SCREENSHOT_DIR}/01-today
 - tapOn: "Start reset"
 - assertVisible: 'How tense are you right now\?'
 - tapOn: "7 of 10"
-- takeScreenshot: artifacts/ios-capture/02-pre
+- takeScreenshot: ${SCREENSHOT_DIR}/02-pre
 - scrollUntilVisible:
     element:
       text: "START RESET.*"
@@ -16,23 +16,23 @@ appId: com.imrtech.inout
 - tapOn:
     text: "START RESET.*"
     waitToSettleTimeoutMs: 500
-- takeScreenshot: artifacts/ios-capture/03-session
+- takeScreenshot: ${SCREENSHOT_DIR}/03-session
 - extendedWaitUntil:
     visible: 'How tense are you now\?'
     timeout: 70000
 - tapOn: "3 of 10"
-- takeScreenshot: artifacts/ios-capture/04-post
+- takeScreenshot: ${SCREENSHOT_DIR}/04-post
 - scrollUntilVisible:
     element:
       text: "SEE MY STATE SHIFT.*"
     direction: DOWN
 - tapOn: "SEE MY STATE SHIFT.*"
 - assertVisible: "Tension down 4 points"
-- takeScreenshot: artifacts/ios-capture/05-result
+- takeScreenshot: ${SCREENSHOT_DIR}/05-result
 - scrollUntilVisible:
     element:
       text: ".*VIEW HISTORY.*"
     direction: DOWN
 - tapOn: ".*VIEW HISTORY.*"
 - assertVisible: "HISTORY"
-- takeScreenshot: artifacts/ios-capture/06-history
+- takeScreenshot: ${SCREENSHOT_DIR}/06-history

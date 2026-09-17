@@ -46,7 +46,8 @@ jobs:
           app=$(find artifacts/simulator/app -maxdepth 1 -name '*.app' -print -quit)
           xcrun simctl install "$device" "$app"
           mkdir -p artifacts/ios-capture
-          "$MAESTRO_BIN" --device "$device" test --format junit --output artifacts/ios-capture/results.xml .maestro/ios-store.yaml
+          "$MAESTRO_BIN" --device "$device" test -e SCREENSHOT_DIR="$PWD/artifacts/ios-capture" --format junit --output artifacts/ios-capture/results.xml .maestro/ios-store.yaml
+          test "$(find artifacts/ios-capture -maxdepth 1 -name '*.png' | wc -l | tr -d ' ')" = "6"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
