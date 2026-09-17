@@ -1,4 +1,4 @@
-# IN/OUT 1.0 submission kit
+# IN/OUT 1.0 — Apple App Store and Google Play submission guide
 
 **Release status: not submitted.** The [root README](../README.md#current-status) is the central tracker for completed work, unresolved engineering tasks, owner steps and dated verification evidence. This file is the store submission handoff, not a declaration that release acceptance has passed.
 

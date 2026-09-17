@@ -8,7 +8,7 @@ IN/OUT is a native breathing app for iPhone and Android, built with React Native
 
 **Status consolidated September 17, 2026, against repository commit `a848eb4`. The app is implemented, but release validation is unfinished and it has not been submitted to either store.**
 
-This README is the central project status tracker. [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md) describes the broader product vision, including features that are not built yet. The [submission kit](release/README.md) contains the supporting store handoff. Implementation and verification are tracked separately below: a feature existing in code does not mean it has passed physical-device acceptance.
+This README is the central project status tracker. [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md) describes the broader product vision, including features that are not built yet. The [App Store and Google Play submission guide](release/STORE_SUBMISSION_GUIDE.md) contains the store-console handoff and acceptance requirements. Implementation and verification are tracked separately below: a feature existing in code does not mean it has passed physical-device acceptance.
 
 | Area | Current state |
 | --- | --- |
@@ -203,7 +203,7 @@ CI Android APKs use internal/development signing; simulator `.app` files are not
 - [Shared public content](release/content.json) and [publisher information](release/public-info.json): sources for native legal/help content and generated public pages.
 - [Release assets](release/assets/): Play icon and feature graphic; native app/adaptive icons live in [mobile assets](apps/mobile/assets/).
 - Published [Privacy](https://clercminator.github.io/InOut/privacy.html), [Safety](https://clercminator.github.io/InOut/safety.html) and [Support](https://clercminator.github.io/InOut/support.html) pages.
-- [Submission kit](release/README.md): store-console handoff and acceptance checklist.
+- [App Store and Google Play submission guide](release/STORE_SUBMISSION_GUIDE.md): store-console handoff and acceptance checklist.
 
 The configured app marketing version is `1.0.0`; workspace package versions remain `0.1.0`. Both native platforms use `com.imrtech.inout`. Store copy describes the free offline release, with no purchases or unavailable high-intensity practice.
 
