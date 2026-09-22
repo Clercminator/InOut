@@ -48,6 +48,41 @@ function setup() {
   };
 }
 
+test("manual logs persist across controllers without replacing an active session and refresh/delete correctly", () => {
+  const env = setup();
+  try {
+    env.now(10000000);
+    const c = env.controller(); c.start(7);
+    const active = c.current?.id;
+    assert.deepEqual(c.history(), []);
+    const id = c.addManualSession({ goal: "Focus", durationMs: 7200000, startedAt: 1000 });
+    assert.ok(id); assert.equal(c.current?.id, active);
+    const other = env.controller();
+    assert.equal(other.history()[0].source, "manual"); assert.equal(other.history()[0].engine.elapsedAtAnchor, 7200000);
+    assert.equal(other.current?.id, active);
+    assert.equal(c.history().length, 1);
+    other.remove(id); assert.equal(c.history().length, 1);
+    c.refreshHistory(); assert.equal(c.history().length, 0);
+  } finally { env.db.close(); }
+});
+
+test("failed manual writes can retry and resubmit without duplicating a log", () => {
+  const env = setup();
+  try {
+    env.now(100000);
+    const c = env.controller();
+    const run = env.adapter.runSync;
+    env.adapter.runSync = () => { throw new Error("disk full"); };
+    const input = { goal: "Calm" as const, startedAt: 1000, durationMs: 60000 };
+    assert.equal(c.addManualSession(input, "manual-draft"), null);
+    assert.ok(c.error); assert.equal(c.history().length, 0);
+    env.adapter.runSync = run;
+    c.retry(); assert.equal(c.error, null);
+    assert.equal(c.addManualSession(input, "manual-draft"), "manual-draft");
+    assert.equal(env.controller().history().length, 1);
+  } finally { env.db.close(); }
+});
+
 for (const protocol of protocols.filter((p) => p.availability === "enabled")) {
   test(`${protocol.name}: offline completion, post recovery and durable history`, () => {
     const env = setup();

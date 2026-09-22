@@ -1,0 +1,55 @@
+appId: com.imrtech.inout
+---
+- launchApp:
+    clearState: true
+- tapOn: "Skip introduction"
+- tapOn: "Progress"
+- assertVisible: "CURRENT STREAK"
+- takeScreenshot: progress-overview
+- scrollUntilVisible:
+    element:
+      text: "Add session"
+    direction: DOWN
+- tapOn: "Add session"
+- scrollUntilVisible:
+    element:
+      text: "Choose date"
+    direction: DOWN
+- tapOn: "Choose date"
+- takeScreenshot: native-date-picker
+- tapOn: "Cancel picker"
+- tapOn: "Choose time"
+- takeScreenshot: native-time-picker
+- tapOn: "Done"
+- scrollUntilVisible:
+    element:
+      text: "Save session"
+    direction: DOWN
+- tapOn: "Save session"
+- assertVisible: "Session saved"
+- takeScreenshot: manual-saved
+- tapOn: "View progress"
+- scrollUntilVisible:
+    element:
+      text: "See all stats"
+    direction: DOWN
+- tapOn: "See all stats"
+- assertVisible: "MY STATS"
+- tapOn: "Weeks"
+- takeScreenshot: stats-weekly
+- scrollUntilVisible:
+    element:
+      text: "Previous period"
+    direction: DOWN
+- tapOn:
+    text: "Previous period"
+    index: 0
+- takeScreenshot: chart-selected-period
+- tapOn: "Go back"
+- scrollUntilVisible:
+    element:
+      text: "View session history"
+    direction: DOWN
+- tapOn: "View session history"
+- assertVisible: "Manual breathing"
+- takeScreenshot: manual-history

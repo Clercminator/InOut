@@ -64,6 +64,7 @@ export interface EngineState {
     | "clockChange";
 }
 export interface SessionRecord {
+  source?: "app" | "manual";
   protocol?: Protocol;
   id: string;
   protocolId: string;

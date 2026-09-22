@@ -1,5 +1,5 @@
 import React from "react";
-import { Alert } from "react-native";
+import { Alert, Share } from "react-native";
 import { render, fireEvent, screen } from "@testing-library/react-native";
 import Pre from "../app/pre";
 import Post from "../app/post";
@@ -8,6 +8,10 @@ import Session from "../app/session";
 import Custom from "../app/(tabs)/custom";
 import ProtocolLibrary from "../app/(tabs)/protocols";
 import Progress from "../app/(tabs)/progress";
+import Stats from "../app/stats";
+import AddSession from "../app/add-session";
+import History from "../app/history";
+import { dayKey } from "../src/progress";
 import { RoutineEditor } from "../src/routine-editor";
 import { SessionController } from "../src/session-controller";
 import type { LocalStore } from "../src/storage";
@@ -17,7 +21,7 @@ import { protocols } from "@inout/protocols";
 let mockController: SessionController;
 const mockReplace = jest.fn();
 const mockPush = jest.fn();
-let mockParams: { id?: string } = {};
+let mockParams: { id?: string; date?: string } = {};
 jest.mock("expo-router", () => ({
   Redirect: () => null,
   router: {
@@ -31,6 +35,11 @@ jest.mock("expo-router", () => ({
     require("react").useEffect(effect, [effect]);
   },
 }));
+jest.mock("@react-native-community/datetimepicker", () => ({
+  __esModule: true,
+  default: (props: object) => require("react").createElement(require("react-native").View, { ...props, testID: "native-date-picker" }),
+  DateTimePickerAndroid: { open: jest.fn() },
+}));
 jest.mock("../src/sigh-visual", () => ({ SighVisual: () => null }));
 jest.mock("expo-crypto", () => ({ randomUUID: () => "draft-id" }));
 jest.mock("../src/provider", () => ({
@@ -39,6 +48,7 @@ jest.mock("../src/provider", () => ({
 }));
 
 let now = 0;
+let mockDiskFull = false;
 beforeEach(() => {
   let record: SessionRecord | null = null;
   const routines = new Map<string, SavedRoutine>();
@@ -49,6 +59,7 @@ beforeEach(() => {
     favoriteProtocolIds: [] as string[],
   };
   now = 0;
+  mockDiskFull = false;
   mockParams = {};
   mockReplace.mockClear();
   mockPush.mockClear();
@@ -56,6 +67,7 @@ beforeEach(() => {
     preferences: () => storedPreferences,
     pending: () => null,
     save: (r: SessionRecord) => {
+      if (mockDiskFull) throw new Error("disk full");
       record = r;
     },
     savePreferences: (preferences: typeof storedPreferences) => {
@@ -85,6 +97,115 @@ test("Progress history button navigates to the durable session list", async () =
   await fireEvent.press(screen.getByRole("button", { name: "View session history" }));
   expect(mockPush).toHaveBeenCalledWith("/history");
   expect(mockController.history()).toHaveLength(1);
+});
+
+test("progress exposes period stats, calendar navigation, refresh and manual entry", async () => {
+  await render(<Progress />);
+  expect(screen.getByRole("button", { name: "Next month" })).toBeDisabled();
+  await fireEvent.press(screen.getByRole("button", { name: "Previous month" }));
+  expect(screen.getByRole("button", { name: "Next month" })).not.toBeDisabled();
+  await fireEvent.press(screen.getByRole("button", { name: "See all stats" }));
+  expect(mockPush).toHaveBeenCalledWith("/stats");
+  expect(screen.queryByText("Longest session duration")).toBeNull();
+  await fireEvent.press(screen.getByRole("button", { name: "Refresh data" }));
+  expect(screen.getByText("Local session data refreshed.")).toBeTruthy();
+  await fireEvent.press(screen.getByRole("button", { name: "Add session" }));
+  expect(mockPush).toHaveBeenCalledWith("/add-session");
+});
+
+test("progress shares actual totals and calendar days open their session logs", async () => {
+  now = Date.now();
+  const startedAt = now - 60000;
+  mockController.addManualSession({ goal: "Calm", startedAt, durationMs: 30000 });
+  const share = jest.spyOn(Share, "share").mockResolvedValue({ action: Share.sharedAction });
+  await render(<Progress />);
+  await fireEvent.press(screen.getByRole("button", { name: "Share progress" }));
+  expect(share).toHaveBeenCalledWith({ message: expect.stringContaining("1 total practice days · 30s total time") });
+  const key = dayKey(new Date(startedAt));
+  await fireEvent.press(screen.getByRole("button", { name: `${key}, practiced, view sessions, 1 practice day` }));
+  expect(mockPush).toHaveBeenCalledWith({ pathname: "/history", params: { date: key } });
+  share.mockRestore();
+});
+
+test("dedicated stats screen switches periods and labels scoped totals", async () => {
+  await render(<Stats />);
+  for (const period of ["Weeks", "Months", "All time", "Days"]) {
+    await fireEvent.press(screen.getByRole("button", { name: period }));
+    expect(screen.getByRole("button", { name: period })).toBeSelected();
+  }
+  expect(screen.getByText("Longest session duration")).toBeTruthy();
+  expect(screen.getAllByText("Period total")).toHaveLength(2);
+});
+
+test("native picker cancellation keeps the original timestamp", async () => {
+  now = Date.now();
+  await render(<AddSession />);
+  await fireEvent.press(screen.getByRole("button", { name: "Choose date" }));
+  await fireEvent(screen.getByTestId("native-date-picker"), "valueChange", {}, new Date(2000, 0, 1));
+  await fireEvent.press(screen.getByRole("button", { name: "Cancel picker" }));
+  await fireEvent.press(screen.getByRole("button", { name: "Save session" }));
+  expect(mockController.history()[0].engine.startedAt).toBeGreaterThan(now - 120000);
+});
+
+test("storage retry transitions directly to saved confirmation", async () => {
+  now = Date.now();
+  await render(<AddSession />);
+  mockDiskFull = true;
+  await fireEvent.press(screen.getByRole("button", { name: "Save session" }));
+  expect(mockController.error).toBeTruthy();
+  expect(mockController.history()).toHaveLength(0);
+  mockDiskFull = false;
+  await fireEvent.press(screen.getByRole("button", { name: "Retry saving" }));
+  expect(screen.getByText("Session saved")).toBeTruthy();
+  expect(mockController.history()).toHaveLength(1);
+  expect(mockController.error).toBeNull();
+});
+
+test("cancelling manual entry does not save a session", async () => {
+  await render(<AddSession />);
+  await fireEvent.press(screen.getByRole("button", { name: "Cancel" }));
+  expect(mockController.history()).toHaveLength(0);
+  expect(mockReplace).toHaveBeenCalledWith("/(tabs)/progress");
+});
+
+test("manual session form validates input then saves the selected goal, time and duration", async () => {
+  now = new Date(2026, 8, 21, 12).getTime();
+  await render(<AddSession />);
+  await fireEvent.changeText(screen.getByLabelText("Minutes"), "60");
+  await fireEvent.press(screen.getByRole("button", { name: "Save session" }));
+  expect(screen.getByText("Use whole numbers; minutes and seconds must be 0–59.")).toBeTruthy();
+  expect(mockController.history()).toHaveLength(0);
+  await fireEvent.press(screen.getByRole("button", { name: "Choose date" }));
+  await fireEvent(screen.getByTestId("native-date-picker"), "valueChange", {}, new Date(2026, 8, 20));
+  await fireEvent.press(screen.getByRole("button", { name: "Done" }));
+  await fireEvent.press(screen.getByRole("button", { name: "Choose time" }));
+  await fireEvent(screen.getByTestId("native-date-picker"), "valueChange", {}, new Date(2026, 8, 20, 9, 30));
+  await fireEvent.press(screen.getByRole("button", { name: "Done" }));
+  await fireEvent.changeText(screen.getByLabelText("Minutes"), "12");
+  await fireEvent.changeText(screen.getByLabelText("Seconds"), "30");
+  await fireEvent.press(screen.getByRole("button", { name: "Focus" }));
+  await fireEvent.press(screen.getByRole("button", { name: "Save session" }));
+  const record = mockController.history()[0];
+  expect(record.source).toBe("manual"); expect(record.goal).toBe("Focus");
+  expect(record.engine.elapsedAtAnchor).toBe(750000);
+  expect(record.engine.startedAt).toBe(new Date(2026, 8, 20, 9, 30).getTime());
+  expect(screen.getByText("Session saved")).toBeTruthy();
+  await fireEvent.press(screen.getByRole("button", { name: "View session history" }));
+  expect(mockReplace).toHaveBeenCalledWith("/history");
+});
+
+test("history date filter and manual result preserve provenance without offering replay", async () => {
+  now = new Date(2026, 8, 21, 12).getTime();
+  const id = mockController.addManualSession({ goal: "Calm", startedAt: new Date(2026, 8, 20, 12).getTime(), durationMs: 60000 });
+  mockParams = { date: "2026-09-19" };
+  const rendered = await render(<History />);
+  expect(screen.queryByText("Manual breathing")).toBeNull();
+  await fireEvent.press(screen.getByRole("button", { name: "Show all dates" }));
+  expect(mockReplace).toHaveBeenCalledWith("/history");
+  await rendered.unmount(); mockParams = { id: id! };
+  await render(<Result />);
+  expect(screen.getByText(/Manually logged/)).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Do it again" })).toBeNull();
 });
 test("pre rating requires a deliberate selection and keeps skip available", async () => {
   await render(<Pre />);

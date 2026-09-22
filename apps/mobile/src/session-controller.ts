@@ -11,6 +11,7 @@ import type {
 import type { LocalStore } from "./storage";
 import { EntitlementService } from "./entitlements";
 import { AnalyticsService } from "./analytics";
+import { manualSession, type ManualSessionInput } from "./manual-session";
 
 export class SessionController {
   current: SessionRecord | null = null;
@@ -23,6 +24,7 @@ export class SessionController {
   private routinesCache: SavedRoutine[] | null = null;
   private libraryError: string | null = null;
   private pendingMutation: (() => void) | null = null;
+  private pendingManualId: string | null = null;
   routineNotice: string | null = null;
   get error(): string | null {
     return this.sessionError ?? this.preferencesError ?? this.libraryError;
@@ -223,6 +225,26 @@ export class SessionController {
   }
   history() {
     return (this.historyCache ??= this.store.history());
+  }
+  refreshHistory() {
+    return this.mutate(() => { this.historyCache = this.store.history(); });
+  }
+  addManualSession(input: ManualSessionInput, id = this.id()) {
+    if (this.error) return null;
+    const record = manualSession(input, id, this.now());
+    this.pendingManualId = id;
+    return this.mutate(() => {
+      this.store.save(record);
+      this.historyCache = null;
+      this.pendingManualId = null;
+    }) ? record.id : null;
+  }
+  cancelManualSave(id: string) {
+    if (this.pendingManualId !== id) return;
+    this.pendingMutation = null;
+    this.pendingManualId = null;
+    this.libraryError = null;
+    this.emit();
   }
   remove(id: string) {
     if (this.sessionError && this.current?.id === id) return;

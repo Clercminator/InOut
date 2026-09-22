@@ -3,7 +3,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Screen, Title, Label, Card, Copy, Button, s } from "../src/ui";
 import { useSession, SaveError } from "../src/provider";
-import { shiftText, duration } from "../src/format";
+import { shiftText, practiceDuration as duration } from "../src/format";
 import { stateShift } from "@inout/shared-types";
 import { snapshot } from "@inout/breathing-engine";
 import { colors } from "@inout/design-tokens";
@@ -35,7 +35,7 @@ export default function Result() {
           <Copy style={s.small}>SELF-REPORTED</Copy>
         </View>
         <Copy style={s.resultMeta}>
-          {record.protocolName} · {duration(view.sessionElapsedMs)} · {view.completedCycles} cycles
+          {record.protocolName} · {duration(view.sessionElapsedMs)} · {record.source === "manual" ? "Manually logged" : `${view.completedCycles} cycles`}
         </Copy>
       </View>
       <Card style={{ ...s.resultHero, borderColor: resultColor + "50", padding: 24 }}>
@@ -55,7 +55,7 @@ export default function Result() {
         <Title>{shiftText(record)}</Title>
         <Copy style={s.small}>Self-reported tension · 1–10</Copy>
       </Card>
-      <Card>
+      {record.source !== "manual" && <Card>
         <Label>CADENCE</Label>
         <Copy>
           {record.engine.plan.blocks.flatMap((block) => block.phases)
@@ -66,7 +66,7 @@ export default function Result() {
         {record.endReason === "unwell" && (
           <Copy>Stopped for discomfort. Breathe naturally and rest.</Copy>
         )}
-      </Card>
+      </Card>}
       <SaveError />
       <Button
         title="DONE · VIEW HISTORY  →"
@@ -85,7 +85,7 @@ export default function Result() {
           );
         }}
       />
-      <Button
+      {record.source !== "manual" && <Button
         title="Do it again"
         secondary
         disabled={!!controller.error}
@@ -95,7 +95,7 @@ export default function Result() {
             router.replace({ pathname: "/pre", params: { id: "custom" } });
           } else router.replace({ pathname: "/pre", params: { id: record.protocolId } });
         }}
-      />
+      />}
     </Screen>
   );
 }

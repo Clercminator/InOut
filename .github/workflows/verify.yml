@@ -101,6 +101,20 @@ jobs:
           mkdir -p ../../artifacts/ios-smoke
           xcrun simctl io "$device" screenshot ../../artifacts/ios-smoke/launch.png
           ditto -c -k --keepParent "$app" ../../artifacts/ios-smoke/inout-simulator.zip
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Verify native progress and manual entry on iPhone
+        env:
+          MAESTRO_CLI_NO_ANALYTICS: "1"
+        run: |
+          curl -fL https://github.com/mobile-dev-inc/maestro/releases/download/cli-2.10.0/maestro.zip -o "$RUNNER_TEMP/maestro.zip"
+          unzip -q "$RUNNER_TEMP/maestro.zip" -d "$RUNNER_TEMP/maestro"
+          cli=$(find "$RUNNER_TEMP/maestro" -type f -path '*/bin/maestro' -print -quit)
+          chmod +x "$cli"
+          device=$(xcrun simctl list devices booted -j | python3 -c 'import json,sys; print(next(d["udid"] for group in json.load(sys.stdin)["devices"].values() for d in group if d["state"] == "Booted"))')
+          "$cli" --device "$device" test --test-output-dir artifacts/ios-smoke/progress --debug-output artifacts/ios-smoke/progress --format junit --output artifacts/ios-smoke/progress/results.xml .maestro/progress.yaml
       - uses: actions/upload-artifact@v4
         if: always()
         with:
