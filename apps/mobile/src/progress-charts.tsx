@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { ScrollView, View, useWindowDimensions } from "react-native";
 import { colors } from "@inout/design-tokens";
 import { Button, Card, Copy, Label, s } from "./ui";
@@ -12,12 +12,19 @@ function ChartFrame({ buckets, ticks, selected, select, description, column }: {
   const dimensions = useWindowDimensions();
   const [width, setWidth] = useState(Math.max(160, dimensions.width - 88));
   const layout = chartLayout(width, buckets.length, dimensions.fontScale);
+  const scrollView = useRef<ScrollView>(null);
+  const revealSelection = useCallback(() => {
+    const visibleWidth = width - layout.axisWidth - 8;
+    const center = (selected + 0.5) * layout.plotWidth / Math.max(1, buckets.length);
+    scrollView.current?.scrollTo({ x: layout.scroll ? Math.max(0, center - visibleWidth / 2) : 0, animated: false });
+  }, [selected, width, layout.axisWidth, layout.plotWidth, layout.scroll, buckets.length]);
+  useEffect(revealSelection, [revealSelection]);
   return <View onLayout={event => setWidth(event.nativeEvent.layout.width)} style={{ gap: 10 }}>
     <View style={{ flexDirection: "row", gap: 8 }}>
       <View accessible={false} style={{ width: layout.axisWidth, height: 128, justifyContent: "space-between" }}>
         {ticks.map((tick, index) => <Copy key={index} style={{ fontSize: 11, color: colors.secondaryText }}>{tick}</Copy>)}
       </View>
-      <ScrollView horizontal scrollEnabled={layout.scroll} showsHorizontalScrollIndicator={layout.scroll} style={{ flex: 1 }}>
+      <ScrollView ref={scrollView} horizontal scrollEnabled={layout.scroll} showsHorizontalScrollIndicator={layout.scroll} onContentSizeChange={revealSelection} style={{ flex: 1 }}>
         <View accessible accessibilityRole="adjustable" accessibilityLabel={description}
           accessibilityHint="Swipe up or down to inspect another period, or use the Previous and Next buttons."
           accessibilityValue={{ min: 1, max: buckets.length, now: selected + 1 }}
