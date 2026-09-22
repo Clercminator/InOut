@@ -12,6 +12,9 @@ import Stats from "../app/stats";
 import AddSession from "../app/add-session";
 import History from "../app/history";
 import { dayKey } from "../src/progress";
+import { PracticeChart } from "../src/progress-charts";
+import { manualSession } from "../src/manual-session";
+import { chartColors } from "../src/chart-layout";
 import { RoutineEditor } from "../src/routine-editor";
 import { SessionController } from "../src/session-controller";
 import type { LocalStore } from "../src/storage";
@@ -135,6 +138,35 @@ test("dedicated stats screen switches periods and labels scoped totals", async (
   }
   expect(screen.getByText("Longest session duration")).toBeTruthy();
   expect(screen.getAllByText("Period total")).toHaveLength(2);
+});
+
+test("chart colors stay attached to goals and accessible controls inspect periods", async () => {
+  const calm = manualSession({ goal: "Calm", startedAt: 0, durationMs: 60000 }, "calm", 300000);
+  const focus = manualSession({ goal: "Focus", startedAt: 0, durationMs: 120000 }, "focus", 300000);
+  const buckets = [{ key: "first", label: "First day", records: [calm, focus] }, { key: "second", label: "Second day", records: [calm] }];
+  await render(<PracticeChart title="Time" buckets={buckets} metric="time" by="goal" />);
+  expect(screen.getByTestId("segment-first-Calm")).toHaveStyle({ backgroundColor: chartColors.Calm });
+  expect(screen.getByTestId("segment-first-Focus")).toHaveStyle({ backgroundColor: chartColors.Focus });
+  expect(screen.getByRole("button", { name: "Next period" })).toBeDisabled();
+  await fireEvent.press(screen.getByRole("button", { name: "Previous period" }));
+  expect(screen.getByRole("adjustable", { name: "First day: 3m" })).toBeTruthy();
+  await fireEvent(screen.getByRole("adjustable"), "accessibilityAction", { nativeEvent: { actionName: "increment" } });
+  expect(screen.getByRole("adjustable", { name: "Second day: 1m" })).toBeTruthy();
+  await screen.rerender(<PracticeChart title="Time" buckets={[{ ...buckets[0], records: [calm] }]} metric="time" by="goal" />);
+  expect(screen.getByTestId("segment-first-Calm")).toHaveStyle({ backgroundColor: chartColors.Calm });
+});
+
+test("leaving a failed manual draft cancels its pending write", async () => {
+  now = Date.now();
+  const rendered = await render(<AddSession />);
+  mockDiskFull = true;
+  await fireEvent.press(screen.getByRole("button", { name: "Save session" }));
+  expect(mockController.error).toBeTruthy();
+  await rendered.unmount();
+  mockDiskFull = false;
+  mockController.retry();
+  expect(mockController.history()).toHaveLength(0);
+  expect(mockController.error).toBeNull();
 });
 
 test("native picker cancellation keeps the original timestamp", async () => {

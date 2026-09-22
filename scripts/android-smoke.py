@@ -23,9 +23,11 @@ def tree():
 def bounds(node):
     return tuple(map(int, re.findall(r'\d+', node.attrib['bounds'])))
 
-def visible_target(root, text):
+def visible_target(root, text, class_name=None):
     parents = {child: parent for parent in root.iter() for child in parent}
     for node in root.iter('node'):
+        if class_name and node.get('class') != class_name:
+            continue
         if text not in (node.get('text', '') + ' ' + node.get('content-desc', '')):
             continue
         left, top, right, bottom = bounds(node)
@@ -43,7 +45,7 @@ def visible_target(root, text):
             return node
     return None
 
-def find(text, timeout=15):
+def find(text, timeout=15, class_name=None):
     until = time.monotonic() + timeout
     while time.monotonic() < until:
         try:
@@ -51,19 +53,19 @@ def find(text, timeout=15):
         except (subprocess.CalledProcessError, subprocess.TimeoutExpired, ET.ParseError):
             time.sleep(.3)
             continue
-        node = visible_target(root, text)
+        node = visible_target(root, text, class_name)
         if node is not None:
             print(f'Found {text}', flush=True)
             return node
         time.sleep(.3)
     raise AssertionError(f'Native screen did not show {text!r}')
 
-def tap(text):
-    node = find(text)
+def tap(text, class_name=None):
+    node = find(text, class_name=class_name)
     # Wait for scroll momentum/layout to settle before using screen coordinates.
     for _ in range(5):
         time.sleep(.4)
-        settled = find(text)
+        settled = find(text, class_name=class_name)
         if bounds(settled) == bounds(node):
             break
         node = settled
@@ -73,10 +75,10 @@ def tap(text):
     print(f'Tap {text}: {bounds(settled)}', flush=True)
     adb('shell', 'input', 'tap', str((x1+x2)//2), str((y1+y2)//2))
 
-def scroll_to(text):
+def scroll_to(text, class_name=None):
     for _ in range(20):
         try:
-            find(text, 2)
+            find(text, 2, class_name)
             return
         except AssertionError:
             root = tree()
@@ -198,8 +200,8 @@ try:
     adb('shell', 'input', 'keyevent', 'KEYCODE_BACK')
     scroll_to('Add session')
     tap('Add session')
-    scroll_to('Minutes')
-    tap('Minutes')
+    scroll_to('Minutes', 'android.widget.EditText')
+    tap('Minutes', 'android.widget.EditText')
     shot('15-manual-keyboard')
     scroll_to('Done editing')
     tap('Done editing')
