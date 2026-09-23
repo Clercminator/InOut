@@ -71,6 +71,9 @@ try:
     for _ in range(25):
         root = tree()
         text = ' '.join(n.get('text', '') + ' ' + n.get('content-desc', '') for n in root.iter('node'))
+        if 'SDK version:' in text and 'Go home' in text:
+            tap('Close')
+            continue
         if 'Skip introduction' in text:
             break
         for label in ['Continue', 'Got it']:
