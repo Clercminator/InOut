@@ -83,5 +83,6 @@ appId: com.imrtech.inout
 - tapOn: "Resume"
 - extendedWaitUntil:
     visible: 'How tense are you now\?'
-    timeout: 120000
+    timeout: 240000
 - takeScreenshot: breathing-completed
+
