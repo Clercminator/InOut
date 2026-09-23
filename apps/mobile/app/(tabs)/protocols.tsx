@@ -27,7 +27,7 @@ export default function Protocols() {
       <Label>PROTOCOLS</Label>
       <Title>Find your rhythm.</Title>
       <Copy>Choose a cadence for the moment ahead.</Copy>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+      <ScrollView horizontal style={{ flexGrow: 0 }} showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, alignItems: "center" }}>
         {["All", "Saved", "Calm", "Focus", "Perform", "Recover", "Sleep", "Energize"].map((goal) => <Chip key={goal} title={goal} selected={filter === goal} onPress={() => setFilter(goal)} />)}
       </ScrollView>
       {!filtered.length && <Card><Title>Your collection starts here.</Title><Copy>Save a protocol from its detail screen to find it here.</Copy></Card>}

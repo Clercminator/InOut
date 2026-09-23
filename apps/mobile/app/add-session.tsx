@@ -30,7 +30,7 @@ export default function AddSession() {
       onFocus={() => setEditing(true)} selectTextOnFocus maxLength={2}
       style={{ ...s.copy, backgroundColor: colors.raised, borderWidth: 1, borderColor: submitted && durationError ? colors.danger : colors.border, borderRadius: 8, padding: 14, minHeight: 48 }} />
   </View>;
-  if (record) return <BackScreen title="ADD SESSION">
+  if (record) return <BackScreen key="saved-session" title="ADD SESSION">
     <Title>Session saved</Title><Copy accessibilityLiveRegion="polite">Saved on this phone.</Copy>
     <Card><Label>{record.goal.toUpperCase()}</Label><Title>{practiceDuration(record.engine.elapsedAtAnchor)}</Title><Copy>{new Date(record.engine.startedAt).toLocaleString()}</Copy></Card>
     <Button title="View session history" onPress={() => router.replace("/history")} />

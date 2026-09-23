@@ -23,7 +23,7 @@ export default function History() {
       </View>
       <Button title="Add session" secondary onPress={() => router.push("/add-session")} />
       {date && <View><Copy>Sessions on {date}</Copy><Button title="Show all dates" secondary onPress={() => router.replace("/history")} /></View>}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+      <ScrollView horizontal style={{ flexGrow: 0 }} showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, alignItems: "center" }}>
         {["All", "Calm", "Focus", "Perform", "Recover", "Sleep", "Energize"].map((goal) => (
           <Chip key={goal} title={goal} selected={filter === goal} onPress={() => setFilter(goal)} />
         ))}
