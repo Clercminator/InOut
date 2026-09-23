@@ -210,6 +210,7 @@ try:
     tap('Choose date')
     shot('16-native-date-picker')
     adb('shell', 'input', 'keyevent', 'KEYCODE_BACK')
+    scroll_to('Choose time')
     tap('Choose time')
     shot('17-native-time-picker')
     adb('shell', 'input', 'keyevent', 'KEYCODE_BACK')

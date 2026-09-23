@@ -7,13 +7,14 @@
     "packages/*"
   ],
   "scripts": {
-    "start": "npm run start -w @inout/mobile",
+    "start": "npm run start -w @inout/mobile --",
     "typecheck": "tsc --noEmit -p apps/mobile/tsconfig.json",
     "test": "tsx --test tests/*.test.ts",
     "verify": "npm run typecheck && npm test && npm run test:mobile",
     "test:mobile": "npm test -w @inout/mobile",
     "release:check": "node scripts/check-release.mjs",
-    "release:pages": "node scripts/build-public-pages.mjs"
+    "release:pages": "node scripts/build-public-pages.mjs",
+    "start:go": "npm run start -w @inout/mobile -- --go"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

@@ -6,6 +6,12 @@ on:
         description: Native verification run containing the iOS simulator app
         required: true
         type: string
+      flow:
+        description: Interaction flow to verify
+        required: true
+        default: store
+        type: choice
+        options: [store, progress]
 permissions:
   contents: read
   actions: read
@@ -14,6 +20,7 @@ jobs:
     runs-on: macos-26
     timeout-minutes: 25
     env:
+      CAPTURE_FLOW: ${{ inputs.flow }}
       MAESTRO_CLI_NO_ANALYTICS: "1"
     steps:
       - uses: actions/checkout@v4
@@ -46,10 +53,13 @@ jobs:
           app=$(find artifacts/simulator/app -maxdepth 1 -name '*.app' -print -quit)
           xcrun simctl install "$device" "$app"
           mkdir -p artifacts/ios-capture
+          flow=.maestro/ios-store.yaml
+          if [ "$CAPTURE_FLOW" = progress ]; then flow=.maestro/progress.yaml; fi
           for attempt in 1 2; do
             output="$PWD/artifacts/ios-capture/attempt-$attempt"
             mkdir -p "$output"
-            if "$MAESTRO_BIN" --device "$device" test --test-output-dir "$output/debug" --debug-output "$output/debug" --format junit --output "$output/results.xml" .maestro/ios-store.yaml; then
+            if "$MAESTRO_BIN" --device "$device" test --test-output-dir "$output/debug" --debug-output "$output/debug" --format junit --output "$output/results.xml" "$flow"; then
+              if [ "$CAPTURE_FLOW" = progress ]; then echo "PASS progress and breathing" > artifacts/ios-capture/result.txt; exit 0; fi
               for name in 01-today 02-pre 03-session 04-post 05-result 06-history; do
                 matches=$(find "$output/debug" -path '*/takeScreenshot/*' -name "$name.png")
                 test "$(printf '%s\n' "$matches" | sed '/^$/d' | wc -l | tr -d ' ')" = "1"

@@ -273,3 +273,17 @@ test("silent guidance repeats tactile phases without cue backlogs or taps after 
   await act(async () => { mockController.pause(); now = 12000; mockController.tick(); });
   expect(mockHaptic).toHaveBeenCalledTimes(3);
 });
+
+test("ending a session removes every breath loop and never restarts it on later ticks", async () => {
+  mockController.start(null);
+  await render(<NativeSessionEffects />);
+  const texture = mockPlayers.find(p => p.loop && !p.listener)!;
+  await act(async () => { now = 1000; mockController.tick(); });
+  expect(texture.volume).toBeGreaterThan(0);
+  await act(async () => { mockController.end("unwell"); });
+  expect(texture.volume).toBe(0);
+  expect(texture.remove).toHaveBeenCalledTimes(1);
+  const playCount = texture.play.mock.calls.length;
+  await act(async () => { now = 999999; jest.advanceTimersByTime(10000); });
+  expect(texture.play).toHaveBeenCalledTimes(playCount);
+});

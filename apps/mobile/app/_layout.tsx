@@ -10,8 +10,19 @@ import { SpaceGrotesk_700Bold } from "@expo-google-fonts/space-grotesk/700Bold";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { SessionProvider } from "../src/provider";
 import { colors } from "@inout/design-tokens";
-import { Screen, Copy } from "../src/ui";
-export { ErrorBoundary } from "expo-router";
+import { Screen, Copy, Button } from "../src/ui";
+
+export function ErrorBoundary({ error, retry }: { error: Error; retry: () => void }) {
+  return (
+    <SafeAreaProvider>
+      <Screen>
+        <Copy accessibilityRole="alert">{error.message || "Unknown application error"}</Copy>
+        {__DEV__ && error.stack ? <Copy>{error.stack}</Copy> : null}
+        <Button title="Reload" onPress={retry} />
+      </Screen>
+    </SafeAreaProvider>
+  );
+}
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
