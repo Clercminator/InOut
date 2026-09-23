@@ -79,6 +79,13 @@ export default function Pre() {
         <Copy>Breathe comfortably in a safe place. Never practice while driving or in water. Stop if dizzy or unwell.</Copy>
         {protocol.safetyCategory === "retention" && <Copy>Keep holds comfortable. Return to natural breathing whenever you need to.</Copy>}
       </Card>
+      <Card>
+        <Label>FOLLOW THE BREATH</Label>
+        <Copy>The guide grows as you breathe in, rests during holds, and settles as you breathe out.</Copy>
+        {controller.preferences.audio !== "silent" && <Copy>{controller.preferences.audio === "voice" ? "Spoken cues and breath sounds" : "Breath sounds"} follow each phase. Airflow goes quiet during holds.</Copy>}
+        {controller.preferences.haptics && <Copy>Touch: two quick taps for in; one for out. Three quick taps mean hold after inhale; two spaced taps mean hold after exhale.</Copy>}
+        <Button title="Audio & haptics" secondary onPress={() => router.push("/settings")} />
+      </Card>
       <SaveError />
       <Button
         title="START RESET  →"

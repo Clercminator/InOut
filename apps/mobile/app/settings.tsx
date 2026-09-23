@@ -33,12 +33,13 @@ export default function Settings() {
         {(["tones", "voice", "silent"] as const).map((audio) => (
           <Button
             key={audio}
-            title={`${preferences.audio === audio ? "✓ " : ""}${audio === "tones" ? "Sound cues" : audio === "voice" ? "Concise voice" : "Silent"}`}
+            title={`${preferences.audio === audio ? "✓ " : ""}${audio === "tones" ? "Breath sounds" : audio === "voice" ? "Voice & breath sounds" : "Silent"}`}
             secondary={preferences.audio !== audio}
             onPress={() => controller.setPreferences({ ...preferences, audio })}
           />
         ))}
         <Copy style={s.small}>
+          Breath sounds swell on inhale and soften on exhale. Airflow stops during holds. Voice adds spoken phase cues.
           Audio follows your phone volume and iPhone silent switch. Audible
           guidance pauses other audio while the session runs. Headphone
           disconnection or audio interruption pauses guidance.
@@ -47,7 +48,7 @@ export default function Settings() {
       <Card>
         {(
           [
-            { key: "haptics", label: "Phase haptics" },
+            { key: "haptics", label: "Breathing haptics" },
             { key: "keepAwake", label: "Keep screen awake" },
           ] as const
         ).map((item) => (
@@ -64,6 +65,7 @@ export default function Settings() {
           </View>
         ))}
         <Copy style={s.small}>
+          Touch repeats the pattern: two quick taps for inhale, one for exhale, three quick taps for a hold after inhale, and two spaced taps for a hold after exhale. Hold cues repeat every two seconds.
           App switching and screen lock pause sessions. Reduced motion follows
           your system setting.
         </Copy>

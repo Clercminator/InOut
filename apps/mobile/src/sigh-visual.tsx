@@ -1,16 +1,18 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AccessibilityInfo,
   Animated,
   Easing,
   StyleSheet,
   View,
+  useWindowDimensions,
 } from "react-native";
 import { colors as c, typography as f } from "@inout/design-tokens";
 import type { snapshot } from "@inout/breathing-engine";
 import type { Protocol, Phase } from "@inout/shared-types";
 import { Copy } from "./ui";
 import { BoxVisual } from "./box-visual";
+import { breathingGuidance, smoothBreath } from "./breathing-guidance";
 type Snapshot = ReturnType<typeof snapshot>;
 export function SighVisual({
   view,
@@ -24,7 +26,14 @@ export function SighVisual({
   phases?: Phase[];
 }) {
   const [reduced, setReduced] = useState(true);
-  const scale = useRef(new Animated.Value(0.7)).current;
+  const progress = useRef(new Animated.Value(0)).current;
+  const { fontScale, width } = useWindowDimensions();
+  const separateReadout = fontScale > 1.3 || width < 350;
+  const guidance = breathingGuidance(phases.length ? phases : [view.phase], phases.length ? view.phaseIndex : 0, view.phaseElapsedMs);
+  const scale = useMemo(() => progress.interpolate({
+    inputRange: Array.from({ length: 61 }, (_, i) => i / 60),
+    outputRange: Array.from({ length: 61 }, (_, i) => 0.60 + 0.40 * (guidance.from + (guidance.to - guidance.from) * smoothBreath(i / 60))),
+  }), [progress, guidance.from, guidance.to]);
   const ripple = useRef(new Animated.Value(0)).current;
   const phaseProgress = Math.min(
     1,
@@ -56,37 +65,18 @@ export function SighVisual({
     return () => animation.stop();
   }, [running, reduced, view.cueKey, animationType, ripple]);
   useEffect(() => {
-    scale.stopAnimation();
-    let previous = 1;
-    for (let offset = 1; offset <= phases.length; offset++) {
-      const phase = phases[(view.phaseIndex - offset + phases.length) % phases.length];
-      if (["exhale", "hum"].includes(phase.type)) { previous = 0.65; break; }
-      if (["inhale", "inhaleTopUp"].includes(phase.type)) break;
-    }
-    const from =
-      view.phase.type === "inhale"
-        ? 0.65
-        : view.phase.type === "inhaleTopUp"
-          ? 0.9
-          : previous;
-    const to =
-      view.phase.type === "inhale"
-        ? animationType === "sigh" ? 0.9 : 1
-        : view.phase.type === "inhaleTopUp"
-          ? 1
-          : view.phase.type === "exhale" || view.phase.type === "hum" ? 0.65 : from;
-    if (animationType === "box") { scale.setValue(1); return; }
-    scale.setValue(reduced ? 1 : from + (to - from) * phaseProgress);
+    progress.stopAnimation();
+    progress.setValue(phaseProgress);
     if (!running || reduced) return;
-    const animation = Animated.timing(scale, {
-      toValue: to,
+    const animation = Animated.timing(progress, {
+      toValue: 1,
       duration: view.phaseRemainingMs,
       easing: Easing.linear,
       useNativeDriver: true,
     });
     animation.start();
     return () => animation.stop();
-  }, [view.cueKey, running, reduced, scale, animationType]);
+  }, [view.cueKey, running, reduced, progress]);
   const shapeStyle =
     animationType === "ripple"
           ? styles.ripple
@@ -95,15 +85,22 @@ export function SighVisual({
             : animationType === "wave"
               ? styles.orb
               : styles.ring;
-  const phaseColor = view.phase.type === "inhale" || view.phase.type === "inhaleTopUp"
-    ? c.inhale : view.phase.type === "exhale" || view.phase.type === "hum"
-      ? c.exhale : view.phaseIndex === 3 ? c.rest : c.hold;
+  const phaseColor = guidance.inward ? c.inhale : guidance.outward ? c.exhale : guidance.full ? c.hold : c.rest;
+  const breathScale = reduced ? 1 : scale;
+  const readout = <View style={[styles.readout, separateReadout && { maxWidth: "100%" }]}
+    accessible accessibilityLabel={`${running ? guidance.label : "Paused"}. ${Math.ceil(view.phaseRemainingMs / 1000)} seconds remaining. Cycle ${view.currentCycle} of ${view.totalCycles}${view.phase.nostril ? `. ${view.phase.nostril} nostril` : ""}`}>
+    <Copy style={[styles.phase, { color: running ? phaseColor : c.secondaryText }]}>{running ? guidance.label.toUpperCase() : "PAUSED"}</Copy>
+    {view.phase.nostril && <Copy>{view.phase.nostril.toUpperCase()} NOSTRIL</Copy>}
+    <Copy style={styles.timer}>{Math.ceil(view.phaseRemainingMs / 1000).toString().padStart(2, "0")}</Copy>
+    <Copy style={styles.cycle}>CYCLE {view.currentCycle}/{view.totalCycles}</Copy>
+  </View>;
   return (
-    <View style={styles.area}>
-      {animationType !== "box" && animationType !== "alternating" && animationType !== "ripple" && <Animated.View
+    <View style={{ gap: 16 }}>
+    <View style={[styles.area, separateReadout && { maxWidth: 180 }]}>
+      {animationType !== "alternating" && animationType !== "ripple" && <Animated.View
         accessible={false}
         importantForAccessibility="no-hide-descendants"
-        style={[shapeStyle, { borderColor: phaseColor, transform: [{ scale }] }]}
+        style={[shapeStyle, { borderColor: phaseColor, transform: [{ scale: breathScale }] }]}
       />}
       {animationType === "box" && <BoxVisual view={view} running={running} reduced={reduced} />}
       {animationType === "alternating" && (["left", "right"] as const).map((side) => (
@@ -113,7 +110,7 @@ export function SighVisual({
             borderColor: view.phase.nostril === side ? phaseColor : c.sessionBorder,
             backgroundColor: view.phase.nostril === side ? phaseColor + "15" : "transparent",
             opacity: view.phase.nostril === side ? 1 : 0.4,
-            transform: [{ scaleY: view.phase.nostril === side ? scale : 0.65 }],
+            transform: [{ scaleY: view.phase.nostril === side ? breathScale : 0.65 }],
           }]} />
       ))}
       {animationType === "ripple" && [0, 1, 2].map((index) => (
@@ -121,38 +118,27 @@ export function SighVisual({
           style={[styles.ripple, {
             borderColor: phaseColor,
             opacity: reduced || !running || view.phase.type !== "hum" ? 0.3 : ripple.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0.35, 0.2, 0] }),
-            transform: [{ scale: reduced ? 0.72 + index * 0.13 : ripple.interpolate({ inputRange: [0, 1], outputRange: [0.6 + index * 0.12, 0.78 + index * 0.12] }) }],
+            transform: [{ scale: breathScale }, { scale: reduced || view.phase.type !== "hum" ? 0.72 + index * 0.13 : ripple.interpolate({ inputRange: [0, 1], outputRange: [0.72 + index * 0.13, 0.80 + index * 0.13] }) }],
           }]} />
       ))}
       {animationType === "sigh" && (
         <Animated.View
           accessible={false}
           importantForAccessibility="no-hide-descendants"
-          style={[styles.sighCore, { backgroundColor: phaseColor, transform: [{ scale }] }]}
+          style={[styles.sighCore, { backgroundColor: phaseColor, transform: [{ scale: breathScale }] }]}
         />
       )}
       {animationType === "wave" && (
         <Animated.View
           accessible={false}
           importantForAccessibility="no-hide-descendants"
-          style={[styles.orbHighlight, { transform: [{ scale }] }]}
+          style={[styles.orbHighlight, { transform: [{ scale: breathScale }] }]}
         />
       )}
-      <View
-        style={styles.readout}
-        accessibilityLabel={`${view.phase.label}. Cycle ${view.currentCycle} of ${view.totalCycles}`}
-      >
-        <Copy style={[styles.phase, { color: running ? phaseColor : c.secondaryText }]}>{running ? view.phase.label.toUpperCase() : "PAUSED"}</Copy>
-        {view.phase.nostril && <Copy>{view.phase.nostril.toUpperCase()} NOSTRIL</Copy>}
-        <Copy style={styles.timer}>
-          {Math.ceil(view.phaseRemainingMs / 1000)
-            .toString()
-            .padStart(2, "0")}
-        </Copy>
-        <Copy style={styles.cycle}>
-          CYCLE {view.currentCycle}/{view.totalCycles}
-        </Copy>
-      </View>
+      {!separateReadout && readout}
+    </View>
+    {separateReadout && readout}
+    <Copy style={{ color: c.secondaryText, textAlign: "center" }}>{running ? guidance.instruction : "Breathe naturally while paused"}</Copy>
     </View>
   );
 }

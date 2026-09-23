@@ -9,6 +9,7 @@ import {
 import * as Haptics from "expo-haptics";
 import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
 import { useSession } from "./session-context";
+import { breathingGuidance } from "./breathing-guidance";
 
 const sources = {
   voice: [
@@ -33,7 +34,7 @@ const sources = {
     require("../assets/audio/tone-complete.wav"),
     require("../assets/audio/tone-top.wav"),
     require("../assets/audio/tone-out.wav"),
-    require("../assets/audio/tone-top.wav"),
+    require("../assets/audio/tone-out.wav"),
     require("../assets/audio/tone-in.wav"),
     require("../assets/audio/tone-out.wav"),
   ],
@@ -48,12 +49,16 @@ export function NativeSessionEffects() {
   const focus = useRef<AudioPlayer | null>(null);
   const generation = useRef(0);
   const cue = useRef("");
-  const cycle = useRef(-1);
+  const tactile = useRef("");
+  const announced = useRef("");
+  const breath = useRef<AudioPlayer | null>(null);
   const completedId = useRef("");
   const audioKey = `${audio}:${running}:${session?.stage}`;
   const [readyAudioKey, setReadyAudioKey] = useState<string | null>(null);
   const audioReady = audio === "silent" || readyAudioKey === audioKey;
   const view = controller.view();
+  const phases = session && view ? session.engine.plan.blocks[view.blockIndex].phases : [];
+  const guidance = view ? breathingGuidance(phases, view.phaseIndex, view.phaseElapsedMs) : null;
 
   useEffect(() => {
     if (!running) return;
@@ -93,7 +98,7 @@ export function NativeSessionEffects() {
   useEffect(() => {
     const gen = ++generation.current;
     cue.current = "";
-    cycle.current = -1;
+
     if (audio === "silent") return;
     const bank = sources[audio].map((source) =>
       createAudioPlayer(source, {
@@ -176,33 +181,17 @@ export function NativeSessionEffects() {
     if (cue.current === key) return;
     cue.current = key;
     const gen = ++generation.current;
-    const newCycle = cycle.current >= 0 && cycle.current !== view.currentCycle;
-    cycle.current = view.currentCycle;
-    if (haptics) {
-      if (newCycle)
-        void Haptics.notificationAsync(
-          Haptics.NotificationFeedbackType.Success,
-        ).catch(() => {});
-      else
-        void Haptics.impactAsync(
-          view.phase.hapticCue === "soft"
-            ? Haptics.ImpactFeedbackStyle.Soft
-            : view.phase.hapticCue === "medium"
-              ? Haptics.ImpactFeedbackStyle.Medium
-              : Haptics.ImpactFeedbackStyle.Light,
-        ).catch(() => {});
-    }
-    AccessibilityInfo.announceForAccessibility(`${view.phase.label}${view.phase.nostril ? ` ${view.phase.nostril}` : ""}`);
+    players.current.forEach((p) => p.pause());
     // Skip expired cues after stalls. Only the current phase is announced, never a backlog.
     if (view.phaseRemainingMs > 750 && audio !== "silent" && audioReady) {
       const indexes = { inhale: 0, inhaleTopUp: 1, exhale: 2, hold: 4, hum: 5, retention: 6, recovery: 7, freeBreathing: 8 };
       let index = indexes[view.phase.type];
+      if (guidance?.holding && !guidance.full) index = 6;
       if (audio === "voice" && (view.phase.nostril === "left" || view.phase.nostril === "right")) {
         if (view.phase.type === "inhale") index = view.phase.nostril === "left" ? 9 : 10;
         if (view.phase.type === "exhale") index = view.phase.nostril === "left" ? 11 : 12;
       }
       const player = players.current[index];
-      players.current.forEach((p) => p.pause());
       if (player)
         void player
           .seekTo(0)
@@ -231,6 +220,60 @@ export function NativeSessionEffects() {
     haptics,
     controller,
   ]);
+
+  // Touch and screen-reader guidance work independently of audio activation.
+  useEffect(() => {
+    if (!running || !view || !guidance || AppState.currentState !== "active") {
+      tactile.current = "";
+      announced.current = "";
+      return;
+    }
+    const phaseKey = `${session?.id}:${view.cueKey}`;
+    if (announced.current !== phaseKey) {
+      announced.current = phaseKey;
+      AccessibilityInfo.announceForAccessibility(`${guidance.label}${view.phase.nostril ? `, ${view.phase.nostril} nostril` : ""}`);
+    }
+    const pulseKey = `${phaseKey}:${guidance.pulseKey}`;
+    if (haptics && guidance.pulseKey !== null && tactile.current !== pulseKey) {
+      tactile.current = pulseKey;
+      void Haptics.impactAsync(guidance.holding ? Haptics.ImpactFeedbackStyle.Soft
+        : guidance.volume > 0.5 ? Haptics.ImpactFeedbackStyle.Medium : Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    }
+  }, [running, session?.id, view?.cueKey, view?.phaseElapsedMs, haptics]);
+
+  useEffect(() => {
+    if (!running || audio === "silent" || !audioReady || !view || !guidance?.texture || AppState.currentState !== "active") return;
+    const textures = {
+      in: require("../assets/audio/breath-in.wav"),
+      out: require("../assets/audio/breath-out.wav"),
+      hum: require("../assets/audio/breath-hum.wav"),
+    };
+    const player = createAudioPlayer(textures[guidance.texture], { updateInterval: 100, keepAudioSessionActive: false });
+    breath.current = player;
+    player.loop = true;
+    player.volume = 0;
+    let disposed = false;
+    void player.seekTo((view.phaseElapsedMs % 1000) / 1000).then(() => {
+      const currentView = controller.view();
+      if (disposed || controller.current?.id !== session?.id || controller.current?.engine.status !== "running"
+        || currentView?.cueKey !== view.cueKey || AppState.currentState !== "active") return;
+      const currentGuidance = breathingGuidance(phases, currentView.phaseIndex, currentView.phaseElapsedMs);
+      player.volume = currentGuidance.envelope * (audio === "voice" ? 0.45 : 1);
+      player.play();
+    }).catch(() => { if (!disposed) controller.pause("interruption"); });
+    return () => {
+      disposed = true;
+      player.volume = 0;
+      player.pause();
+      player.remove();
+      if (breath.current === player) breath.current = null;
+    };
+  }, [running, session?.id, view?.cueKey, audio, audioReady, controller]);
+
+  useEffect(() => {
+    if (breath.current) breath.current.volume = running && AppState.currentState === "active"
+      ? (guidance?.envelope ?? 0) * (audio === "voice" ? 0.45 : 1) : 0;
+  }, [running, view?.phaseElapsedMs, audio]);
 
   useEffect(() => {
     if (

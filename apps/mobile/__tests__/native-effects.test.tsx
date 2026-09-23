@@ -13,6 +13,7 @@ const mockAwake = jest.fn(() => Promise.resolve());
 const mockSleep = jest.fn(() => Promise.resolve());
 const mockActivate = jest.fn((_active: boolean) => Promise.resolve());
 const mockPlayers: {
+  volume: number;
   loop: boolean;
   play: jest.Mock;
   pause: jest.Mock;
@@ -45,6 +46,7 @@ jest.mock("expo-audio", () => ({
   setIsAudioActiveAsync: (active: boolean) => mockActivate(active),
   createAudioPlayer: () => {
     const player = {
+      volume: 1,
       loop: false,
       play: jest.fn(),
       pause: jest.fn(),
@@ -224,8 +226,50 @@ test("starting from Today waits for native audio activation before the first cue
     mockController.start(null);
   });
   expect(mockPlayers[0].play).not.toHaveBeenCalled();
+  expect(mockHaptic).toHaveBeenCalled();
   await act(async () => {
     activate();
   });
   expect(mockPlayers[0].play).toHaveBeenCalledTimes(1);
+});
+
+test("airflow follows phase progress, stops for both holds and resumes from the paused position", async () => {
+  mockController.start(null, 2, protocols.find(p => p.id === "box")!);
+  await render(<NativeSessionEffects />);
+  const inhalation = mockPlayers.find(p => p.loop && !p.listener)!;
+  expect(inhalation.play).toHaveBeenCalled();
+  expect(inhalation.volume).toBe(0);
+  await act(async () => { now = 2000; mockController.tick(); });
+  expect(inhalation.volume).toBeCloseTo(0.5);
+  await act(async () => { mockController.pause(); });
+  expect(inhalation.volume).toBe(0);
+  expect(inhalation.remove).toHaveBeenCalled();
+  await act(async () => { now = 50000; mockController.resume(); });
+  const resumed = mockPlayers.filter(p => p.loop && !p.listener).at(-1)!;
+  expect(resumed.volume).toBeCloseTo(0.5);
+  await act(async () => { now = 52000; mockController.tick(); });
+  expect(resumed.remove).toHaveBeenCalled();
+  expect(mockPlayers[4].play).toHaveBeenCalled();
+  await act(async () => { now = 56000; mockController.tick(); });
+  const exhalation = mockPlayers.filter(p => p.loop && !p.listener).at(-1)!;
+  expect(exhalation).not.toBe(resumed);
+  await act(async () => { now = 60000; mockController.tick(); });
+  expect(exhalation.remove).toHaveBeenCalled();
+  expect(mockPlayers[6].play).toHaveBeenCalled();
+});
+
+test("silent guidance repeats tactile phases without cue backlogs or taps after pause", async () => {
+  mockController.preferences.audio = "silent";
+  mockController.start(null, 1, protocols.find(p => p.id === "box")!);
+  await render(<NativeSessionEffects />);
+  expect(mockPlayers).toHaveLength(0);
+  expect(mockHaptic).toHaveBeenCalledTimes(1);
+  await act(async () => { now = 200; mockController.tick(); });
+  expect(mockHaptic).toHaveBeenCalledTimes(2);
+  await act(async () => { now = 5500; mockController.tick(); });
+  expect(mockHaptic).toHaveBeenCalledTimes(2);
+  await act(async () => { now = 6000; mockController.tick(); });
+  expect(mockHaptic).toHaveBeenCalledTimes(3);
+  await act(async () => { mockController.pause(); now = 12000; mockController.tick(); });
+  expect(mockHaptic).toHaveBeenCalledTimes(3);
 });

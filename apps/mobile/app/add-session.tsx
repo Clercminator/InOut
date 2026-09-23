@@ -36,12 +36,11 @@ export default function AddSession() {
     <Button title="View session history" onPress={() => router.replace("/history")} />
     <Button title="View progress" secondary onPress={() => router.replace("/(tabs)/progress")} />
   </BackScreen>;
-  return <BackScreen title="ADD SESSION">
+  return <BackScreen title="ADD SESSION" avoidKeyboard footer={editing ? <View style={{ padding: 12 }}><Button title="Done editing" secondary onPress={() => { Keyboard.dismiss(); setEditing(false); }} /></View> : undefined}>
     <Title>Log your breathing practice.</Title><Copy style={s.small}>Manual entries count toward your time, streaks and milestones.</Copy>
     <Card><Label>GOAL</Label><View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>{practiceGoals.map(value => <Chip key={value} title={value} selected={goal === value} onPress={() => { if (!pending) setGoal(value); }} />)}</View></Card>
     <Card><Label>DURATION</Label><View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>{field("Hours", hours, setHours)}{field("Minutes", minutes, setMinutes)}{field("Seconds", seconds, setSeconds)}</View>
       {submitted && !!durationError && <Copy accessibilityRole="alert" style={{ color: colors.danger }}>{durationError}</Copy>}
-      {editing && <Button title="Done editing" secondary onPress={() => { Keyboard.dismiss(); setEditing(false); }} />}
     </Card>
     <Card><SessionDatePicker value={startedAt} onChange={setStartedAt} disabled={pending} /><Copy style={s.small}>Your phone’s local time.</Copy>
       {submitted && !durationError && !!dateError && <Copy accessibilityRole="alert" style={{ color: colors.danger }}>{dateError}</Copy>}

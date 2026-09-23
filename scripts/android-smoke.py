@@ -202,6 +202,7 @@ try:
     tap('Add session')
     scroll_to('Minutes', 'android.widget.EditText')
     tap('Minutes', 'android.widget.EditText')
+    time.sleep(1)
     shot('15-manual-keyboard')
     scroll_to('Done editing')
     tap('Done editing')
@@ -229,6 +230,19 @@ try:
     tap('See all stats')
     scroll_to('TIME PER DAY')
     shot('20-chart-compact')
+    # Capture a real native four-phase cycle, including the two distinct holds.
+    adb('shell', 'am', 'start', '-W', '-a', 'android.intent.action.VIEW', '-d', 'inout://pre?id=box', APP)
+    scroll_to('Skip rating & start')
+    tap('Skip rating & start')
+    recording = subprocess.Popen(['adb', 'shell', 'screenrecord', '--time-limit', '20', '/sdcard/breathing-cycle.mp4'])
+    for step in range(8):
+        time.sleep(2)
+        shot(f'21-breathing-{step:02}')
+    recording.wait(timeout=30)
+    adb('pull', '/sdcard/breathing-cycle.mp4', str(OUT / 'breathing-cycle.mp4'))
+    tap('Pause')
+    find('PAUSED')
+    shot('22-breathing-paused')
     (OUT / 'result.txt').write_text('PASS: native offline slice, background pause, process recovery, post recovery, durable history, saved patterns and mixes, progress detail navigation, compact phone, large text, charts, native picker cancellation, keyboard, manual session save and logs.\n')
 finally:
     shot('last-screen')

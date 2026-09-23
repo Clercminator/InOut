@@ -6,6 +6,8 @@ import { Screen, Label, Title, Copy, Button, s } from "../src/ui";
 import { useSession, SaveError } from "../src/provider";
 import { SighVisual } from "../src/sigh-visual";
 import { colors } from "@inout/design-tokens";
+import { breathingGuidance } from "../src/breathing-guidance";
+import { practiceDuration } from "../src/format";
 import { protocols } from "@inout/protocols";
 
 export default function Session() {
@@ -33,6 +35,15 @@ export default function Session() {
   const animationType =
     protocols.find((protocol) => protocol.id === record.engine.plan.blocks[view.blockIndex].protocolId)
       ?.animationType ?? record.protocol?.animationType ?? "wave";
+  const block = record.engine.plan.blocks[view.blockIndex];
+  let nextPhases = block.phases;
+  let nextIndex = block.phases.findIndex((phase, i) => i > view.phaseIndex && phase.durationMs > 0);
+  if (nextIndex < 0 && view.currentCycle < view.totalCycles) nextIndex = block.phases.findIndex(p => p.durationMs > 0);
+  if (nextIndex < 0 && record.engine.plan.blocks[view.blockIndex + 1]) {
+    nextPhases = record.engine.plan.blocks[view.blockIndex + 1].phases;
+    nextIndex = nextPhases.findIndex(p => p.durationMs > 0);
+  }
+  const nextLabel = nextIndex < 0 ? "Session complete" : `${breathingGuidance(nextPhases, nextIndex).label} � ${practiceDuration(nextPhases[nextIndex].durationMs)}`;
   const end = () => {
     controller.pause();
     Alert.alert(
@@ -88,7 +99,7 @@ export default function Session() {
     >
       <Title>{record.protocolName}</Title>
       <Label>
-        {record.goal.toUpperCase()} · {Math.ceil(view.sessionRemainingMs / 1000)} SEC LEFT
+        {record.goal.toUpperCase()} · {practiceDuration(view.sessionRemainingMs)} LEFT
       </Label>
       <SaveError />
       {unavailable && <Copy>This older routine is not available in this release. End this session to choose another practice.</Copy>}
@@ -113,8 +124,9 @@ export default function Session() {
           animationType={animationType}
           phases={record.engine.plan.blocks[view.blockIndex].phases}
         />
+        <Copy style={[s.small, { textAlign: "center" }]}>Next: {nextLabel}</Copy>
         <View style={s.row}>
-          {record.engine.plan.blocks[view.blockIndex].phases.map((phase, i) => (
+          {record.engine.plan.blocks[view.blockIndex].phases.map((phase, i) => phase.durationMs > 0 && (
             <View key={i} style={{ flex: 1, gap: 8, minWidth: 48 }}>
               <View
                 style={{
@@ -124,7 +136,7 @@ export default function Session() {
                     i === view.phaseIndex ? colors.accent : colors.border,
                 }}
               />
-              <Copy style={[s.small, { color: i === view.phaseIndex ? colors.text : colors.muted }]}>{phase.label.toUpperCase()}</Copy>
+              <Copy style={[s.small, { color: i === view.phaseIndex ? colors.text : colors.muted }]}>{breathingGuidance(record.engine.plan.blocks[view.blockIndex].phases, i).label.toUpperCase()}</Copy>
               <Copy style={[s.small, { color: colors.muted }]}>{phase.durationMs / 1000}s</Copy>
             </View>
           ))}

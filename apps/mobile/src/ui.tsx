@@ -1,6 +1,8 @@
 import React, { type PropsWithChildren } from "react";
 import {
   Pressable,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -93,15 +95,18 @@ export function Screen({
   headerAction,
   scroll = true,
   footer,
+  avoidKeyboard = false,
 }: PropsWithChildren<{
   back?: () => void;
   title?: string;
   headerAction?: React.ReactNode;
   scroll?: boolean;
   footer?: React.ReactNode;
+  avoidKeyboard?: boolean;
 }>) {
   return (
     <SafeAreaView style={s.safe} edges={["top", "left", "right", "bottom"]}>
+      <KeyboardAvoidingView style={{ flex: 1 }} enabled={avoidKeyboard} behavior={Platform.OS === "ios" ? "padding" : "height"}>
       <View style={s.header}>
         {back ? (
           <Pressable
@@ -121,21 +126,26 @@ export function Screen({
         {headerAction}
       </View>
       {scroll ? (
-        <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" automaticallyAdjustKeyboardInsets showsVerticalScrollIndicator={false} contentContainerStyle={s.content}>{children}</ScrollView>
+        <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" automaticallyAdjustKeyboardInsets={!avoidKeyboard} showsVerticalScrollIndicator={false} contentContainerStyle={s.content}>{children}</ScrollView>
       ) : (
         children
       )}
       {footer}
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 export function BackScreen({
   children,
   title,
-}: PropsWithChildren<{ title?: string }>) {
+  footer,
+  avoidKeyboard,
+}: PropsWithChildren<{ title?: string; footer?: React.ReactNode; avoidKeyboard?: boolean }>) {
   return (
     <Screen
       title={title}
+      footer={footer}
+      avoidKeyboard={avoidKeyboard}
       back={() =>
         router.canGoBack() ? router.back() : router.replace("/(tabs)")
       }

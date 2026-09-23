@@ -3,7 +3,7 @@ appId: com.imrtech.inout
 - launchApp:
     clearState: true
 - tapOn: "Skip introduction"
-- tapOn: "Progress"
+- tapOn: "Progress, tab, 4 of 4"
 - assertVisible: "CURRENT STREAK"
 - takeScreenshot: progress-overview
 - scrollUntilVisible:
@@ -53,3 +53,28 @@ appId: com.imrtech.inout
 - tapOn: "View session history"
 - assertVisible: "Manual breathing"
 - takeScreenshot: manual-history
+
+- openLink: "inout://pre?id=box"
+- scrollUntilVisible:
+    element:
+      text: "Skip rating & start"
+    direction: DOWN
+- tapOn:
+    text: "Skip rating & start"
+    waitToSettleTimeoutMs: 100
+- extendedWaitUntil:
+    visible: "Hold after inhale.*"
+    timeout: 25000
+- takeScreenshot: breathing-hold-after-inhale
+- extendedWaitUntil:
+    visible: "Hold after exhale.*"
+    timeout: 25000
+- takeScreenshot: breathing-hold-after-exhale
+- tapOn: "Pause"
+- assertVisible: "Paused.*"
+- takeScreenshot: breathing-paused
+- tapOn: "Resume"
+- extendedWaitUntil:
+    visible: 'How tense are you now\?'
+    timeout: 120000
+- takeScreenshot: breathing-completed
