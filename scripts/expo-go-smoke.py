@@ -23,12 +23,24 @@ def locate(text, scroll=False, timeout=60):
     until = time.monotonic() + timeout
     while time.monotonic() < until:
         root = tree()
+        parents = {child: parent for parent in root.iter() for child in parent}
         for node in root.iter('node'):
             label = node.get('text', '') + ' ' + node.get('content-desc', '')
             if text not in label:
                 continue
             bounds = list(map(int, re.findall(r'\d+', node.get('bounds', ''))))
-            if len(bounds) == 4 and bounds[2] > bounds[0] and 150 < bounds[1] < bounds[3] < 1700:
+            if len(bounds) != 4 or bounds[2] <= bounds[0] or not 0 <= bounds[1] < bounds[3] <= 1820:
+                continue
+            parent = parents.get(node)
+            clipped = False
+            while parent is not None:
+                if parent.get('class') == 'android.widget.ScrollView':
+                    clip = list(map(int, re.findall(r'\d+', parent.get('bounds', ''))))
+                    if len(clip) == 4 and (bounds[1] < clip[1] + 8 or bounds[3] > clip[3] - 8):
+                        clipped = True
+                        break
+                parent = parents.get(parent)
+            if not clipped:
                 return bounds
         if scroll:
             adb('shell', 'input', 'swipe', '540', '1450', '540', '450', '400')
@@ -46,7 +58,8 @@ def shot(name):
     (OUT / f'{name}.png').write_bytes(subprocess.check_output(['adb', 'exec-out', 'screencap', '-p']))
 
 try:
-    data = json.load(urllib.request.urlopen('https://exp.host/--/api/v2/versions'))['data']
+    data = json.load(urllib.request.urlopen('https://exp.host/--/api/v2/versions'))
+    data = data.get('data', data)
     url = data['sdkVersions']['57.0.0']['androidClientUrl']
     urllib.request.urlretrieve(url, OUT / 'expo-go.apk')
     adb('install', '-r', str(OUT / 'expo-go.apk'))
