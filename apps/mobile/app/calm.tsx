@@ -1,6 +1,9 @@
+import { useLanguage } from "../src/use-language";
 import { router } from "expo-router";
-import { BackScreen, Title, Label, Card, Copy, Button, s } from "../src/ui";
+import { BackScreen, Title, Label, Card, Copy, Button, useStyles } from "../src/ui";
 export default function Calm() {
+  const s = useStyles();
+  useLanguage();
   return (
     <BackScreen title="CALM NOW">
       <Title>Make room for calm.</Title>

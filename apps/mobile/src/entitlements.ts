@@ -9,8 +9,7 @@ export const commercialPolicy = Object.freeze({
 });
 export const proCapabilities = [
   "adFree", "unlimitedCustomPatterns", "unlimitedMixes", "unlimitedSavedRoutines",
-  "advancedProgress", "advancedInsights", "advancedReminders", "advancedGuidance",
-  "premiumAudioVisuals", "futureCloudSync",
+  "advancedProgress", "advancedInsights", "advancedReminders",
 ] as const;
 export type Capability = typeof proCapabilities[number];
 export type SubscriptionStatus = "free" | "trial" | "active" | "cancelled" | "billingRetry" | "grace" | "expired";
@@ -36,6 +35,9 @@ export function validGrant(value: unknown): value is EntitlementGrant {
 }
 
 export class EntitlementService {
+  accessReady = true;
+  private reviewer: { verifiedAt: number; expiresAt: number } | null = null;
+  private highWater = 0;
   private grant: EntitlementGrant | null = null;
   private listeners = new Set<() => void>();
   private revision = 0;
@@ -44,6 +46,7 @@ export class EntitlementService {
     private now: () => number = Date.now,
     private cache?: EntitlementCache,
   ) {
+    if (development && typeof __DEV__ !== "undefined" && !__DEV__) throw new Error("Development entitlements are disabled in release builds");
     try {
       const saved = cache?.read();
       // Legacy preferences.pro and any persisted mock are never purchase evidence.
@@ -59,19 +62,26 @@ export class EntitlementService {
   get state() {
     const g = this.grant;
     const now = this.now();
+    const rollback = now < this.highWater;
+    this.highWater = Math.max(this.highWater, now);
     const deadline = g?.status === "grace" ? Math.max(g.expiresAt, g.graceUntil ?? 0) : g?.expiresAt ?? 0;
-    const fresh = !!g && now >= g.verifiedAt && now - g.verifiedAt < commercialPolicy.maxOfflineAgeMs;
+    const fresh = !!g && !rollback && now >= g.verifiedAt && now - g.verifiedAt < commercialPolicy.maxOfflineAgeMs;
     const pro = !!g && g.active && fresh && now < deadline && !["free", "expired"].includes(g.status);
+    const reviewer = !rollback && !!this.reviewer && now >= this.reviewer.verifiedAt && now < this.reviewer.expiresAt && now - this.reviewer.verifiedAt < 3600000;
     return {
-      pro,
-      source: g?.source ?? "unconfigured",
-      status: pro ? g!.status : g && g.status !== "free" ? "expired" as const : "free" as const,
-      expiresAt: deadline || null,
+      pro: pro || reviewer,
+      source: pro ? g!.source : reviewer ? "reviewer" : g?.source ?? "unconfigured",
+      status: pro ? g!.status : reviewer ? "active" as const : g && g.status !== "free" ? "expired" as const : "free" as const,
+      expiresAt: pro ? deadline : reviewer ? this.reviewer!.expiresAt : deadline || null,
       needsRefresh: !!g && !fresh,
     };
   }
+  acceptReviewerGrant(grant: { verifiedAt: number; expiresAt: number } | null) {
+    this.reviewer = grant && Number.isFinite(grant.verifiedAt) && Number.isFinite(grant.expiresAt) ? { ...grant } : null;
+    this.refresh();
+  }
   has(capability: Capability): boolean { return proCapabilities.includes(capability) && this.state.pro; }
-  /** Only an isolated store adapter may call this after obtaining CustomerInfo. */
+  /** Accept normalized provider evidence; never a UI preference. */
   acceptStoreGrant(grant: EntitlementGrant) {
     if (!validGrant(grant) || grant.source !== "store") throw new Error("Invalid store entitlement");
     this.grant = { ...grant };

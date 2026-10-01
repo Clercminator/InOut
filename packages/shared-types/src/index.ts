@@ -64,6 +64,8 @@ export interface EngineState {
     | "clockChange";
 }
 export interface SessionRecord {
+  safetyConfirmed?: boolean;
+  source?: "app" | "manual";
   protocol?: Protocol;
   id: string;
   protocolId: string;
@@ -79,12 +81,45 @@ export interface SessionRecord {
   endReason: "completed" | "ended" | "unwell" | null;
 }
 export interface Preferences {
+  theme?: "system" | "light" | "dark";
+  language?: "en" | "es" | "pt";
+  experience?: Experience;
   audio: "voice" | "tones" | "silent";
   haptics: boolean;
+  hapticMode?: "transitions" | "rhythm";
   keepAwake: boolean;
   favoriteProtocolIds?: string[];
   onboardingComplete?: boolean;
   pro?: boolean;
+}
+export interface Experience {
+  name: string;
+  bio: string;
+  intention: string;
+  avatar: "spa" | "air" | "nightlight" | "wb-sunny";
+  photo?: string;
+  pinnedBadges: string[];
+  weeklyGoal: number;
+  palette: "sky" | "mint" | "dusk" | "sunrise";
+  texture: "glass" | "halo" | "orbit";
+  background: "midnight" | "deep-sea" | "plum";
+  frame: "simple" | "glow" | "laurel";
+  celebration: "quiet" | "gentle" | "playful";
+  celebrationStyle: "sparks" | "confetti";
+  chime: "bell" | "bloom" | "off";
+  breathSound: "air" | "ocean" | "warm";
+  guidanceVolume: number;
+  celebrationVolume: number;
+  favoriteRitualId?: string;
+  rituals: PersonalRitual[];
+}
+export interface PersonalRitual {
+  id: string;
+  name: string;
+  protocol: Protocol;
+  cycles: number;
+  audio: Preferences["audio"];
+  appearance: Pick<Experience, "palette" | "texture" | "background" | "breathSound" | "guidanceVolume">;
 }
 export interface SavedRoutine {
   id: string;

@@ -1,0 +1,90 @@
+Practice reminders	Recordatorios de práctica	Lembretes de prática
+REMINDERS	RECORDATORIOS	LEMBRETES
+Reminders are unavailable.	Los recordatorios no están disponibles.	Os lembretes estão indisponíveis.
+Save reminder	Guardar recordatorio	Salvar lembrete
+Make room for your practice.	Haz espacio para tu práctica.	Reserve um momento para sua prática.
+Choose your days and local time. Reminders stay on this phone, use a neutral message, and never start a session automatically. Delivery may be delayed by your phone.	Elige los días y la hora local. Los recordatorios se guardan en este teléfono, usan un mensaje neutro y nunca inician una sesión automáticamente. Tu teléfono puede retrasar su entrega.	Escolha os dias e o horário local. Os lembretes ficam neste celular, usam uma mensagem neutra e nunca iniciam uma sessão automaticamente. Seu celular pode atrasar a entrega.
+REMINDER NAME	NOMBRE DEL RECORDATORIO	NOME DO LEMBRETE
+Reminder name	Nombre del recordatorio	Nome do lembrete
+REMINDER TIME	HORA DEL RECORDATORIO	HORÁRIO DO LEMBRETE
+Morning focus	Enfoque por la mañana	Foco pela manhã
+Midday reset	Pausa al mediodía	Pausa ao meio-dia
+Wind down	Bajar el ritmo	Desacelerar
+REPEAT ON	REPETIR LOS DÍAS	REPETIR NOS DIAS
+Quick breathing practice	Práctica breve de respiración	Prática rápida de respiração
+Enabled	Activado	Ativado
+This ritual was removed. Edit the reminder to choose another practice; it will not be scheduled until then.	Este ritual fue eliminado. Edita el recordatorio para elegir otra práctica; hasta entonces no se programará.	Este ritual foi excluído. Edite o lembrete para escolher outra prática; até lá, ele não será agendado.
+Edit reminder	Editar recordatorio	Editar lembrete
+Pause reminder	Pausar recordatorio	Pausar lembrete
+Enable reminder	Activar recordatorio	Ativar lembrete
+Delete reminder	Eliminar recordatorio	Excluir lembrete
+Delete reminder?	¿Eliminar recordatorio?	Excluir lembrete?
+This removes its scheduled notifications from this phone.	Se eliminarán sus notificaciones programadas de este teléfono.	As notificações agendadas serão removidas deste celular.
+No reminders yet. Start with a time that fits your day.	Aún no tienes recordatorios. Elige un horario que encaje en tu día.	Você ainda não tem lembretes. Escolha um horário que combine com seu dia.
+Add reminder	Agregar recordatorio	Adicionar lembrete
+My daily practice	Mi práctica diaria	Minha prática diária
+Free includes one reminder. Pro includes up to five. Existing reminders remain available.	La versión gratuita incluye un recordatorio. Pro incluye hasta cinco. Los recordatorios existentes siguen disponibles.	A versão gratuita inclui um lembrete. O Pro inclui até cinco. Os lembretes existentes continuam disponíveis.
+Retry reminder scheduling	Volver a programar recordatorios	Tentar agendar os lembretes novamente
+Open notification settings	Abrir configuración de notificaciones	Abrir configurações de notificações
+Could not open phone settings.	No se pudo abrir la configuración del teléfono.	Não foi possível abrir as configurações do celular.
+Choose up to five reminders.	Elige hasta cinco recordatorios.	Escolha até cinco lembretes.
+Check the reminder time and days.	Revisa la hora y los días del recordatorio.	Confira o horário e os dias do lembrete.
+Reminders could not be read. Your saved data has been preserved.	No se pudieron leer los recordatorios. Tus datos guardados se conservaron.	Não foi possível ler os lembretes. Seus dados salvos foram preservados.
+Notifications are off. Enable them in phone settings, then try again.	Las notificaciones están desactivadas. Actívalas en la configuración del teléfono y vuelve a intentarlo.	As notificações estão desativadas. Ative-as nas configurações do celular e tente novamente.
+Reminder changes saved on this phone.	Cambios del recordatorio guardados en este teléfono.	Alterações do lembrete salvas neste celular.
+Reminders could not be scheduled. Try again.	No se pudieron programar los recordatorios. Vuelve a intentarlo.	Não foi possível agendar os lembretes. Tente novamente.
+Reminders need an installed native build. They are unavailable in Expo Go.	Los recordatorios requieren la app nativa instalada. No están disponibles en Expo Go.	Os lembretes exigem uma versão nativa instalada. Eles não estão disponíveis no Expo Go.
+A moment to breathe, when it suits you.	Un momento para respirar, cuando te venga bien.	Um momento para respirar, quando for bom para você.
+Practice insights	Tendencias de tu práctica	Tendências da sua prática
+PRACTICE INSIGHTS	TENDENCIAS DE TU PRÁCTICA	TENDÊNCIAS DA SUA PRÁTICA
+Notice your own patterns.	Descubre tus propios patrones.	Perceba seus próprios padrões.
+Private on this phone. These observations describe your practice and voluntary ratings; they do not show cause, predict results, or measure medical benefit.	Solo en este teléfono. Estas observaciones describen tu práctica y tus evaluaciones voluntarias; no explican causas, predicen resultados ni miden beneficios médicos.	Somente neste celular. Estas observações descrevem sua prática e suas avaliações voluntárias; não explicam causas, preveem resultados nem medem benefícios médicos.
+Compare your recent practice rhythm and see which completed patterns you return to. Tension summaries appear only after enough paired check-ins.	Compara tu ritmo de práctica reciente y descubre qué patrones completos repites. Los resúmenes de tensión aparecen solo cuando hay suficientes evaluaciones antes y después.	Compare seu ritmo recente de prática e veja quais padrões completos você repete. Os resumos de tensão aparecem apenas quando há avaliações suficientes de antes e depois.
+YOUR RECENT RHYTHM	TU RITMO RECIENTE	SEU RITMO RECENTE
+Last 7 days: {0} · {1}	Últimos 7 días: {0} · {1}	Últimos 7 dias: {0} · {1}
+Previous 7 days: {0} · {1}	7 días anteriores: {0} · {1}	7 dias anteriores: {0} · {1}
+Includes saved practice and manual logs. Today is still in progress. Rest days are part of a sustainable routine.	Incluye prácticas guardadas y registros manuales. El día de hoy aún no termina. Los días de descanso también forman parte de una rutina sostenible.	Inclui práticas salvas e registros manuais. O dia de hoje ainda não terminou. Os dias de descanso também fazem parte de uma rotina sustentável.
+MOST PRACTICED · LAST 30 DAYS	LO MÁS PRACTICADO · ÚLTIMOS 30 DÍAS	MAIS PRATICADO · ÚLTIMOS 30 DIAS
+Complete the same pattern at least three times to see the one you return to most.	Completa el mismo patrón al menos tres veces para ver cuál repites más.	Complete o mesmo padrão pelo menos três vezes para ver qual você repete mais.
+YOUR CHECK-INS · LAST 30 DAYS	TUS EVALUACIONES · ÚLTIMOS 30 DÍAS	SUAS AVALIAÇÕES · ÚLTIMOS 30 DIAS
+Each summary needs at least 5 completed sessions with both ratings across 3 different days. Different cadences and session lengths are counted separately. Manual and early-ended sessions are excluded here.	Cada resumen necesita al menos 5 sesiones completas con ambas evaluaciones en 3 días distintos. Los ritmos y duraciones diferentes se cuentan por separado. Aquí se excluyen los registros manuales y las sesiones terminadas antes de tiempo.	Cada resumo precisa de pelo menos 5 sessões completas com as duas avaliações em 3 dias diferentes. Ritmos e durações diferentes são contados separadamente. Registros manuais e sessões encerradas antes do fim não entram aqui.
+{0} paired check-ins across {1} days	{0} evaluaciones antes y después en {1} días	{0} avaliações de antes e depois em {1} dias
+Not enough check-ins yet. Rating your practice is always optional.	Aún no hay suficientes evaluaciones. Evaluar tu práctica siempre es opcional.	Ainda não há avaliações suficientes. Avaliar sua prática é sempre opcional.
+Median tension change: {0}	Mediana del cambio de tensión: {0}	Mediana da mudança de tensão: {0}
+Lower: {0} · Unchanged: {1} · Higher: {2}	Menor: {0} · Sin cambio: {1} · Mayor: {2}	Menor: {0} · Sem mudança: {1} · Maior: {2}
+Positive means lower reported tension. Your circumstances and the sessions you chose to rate can affect this pattern.	Un valor positivo indica menor tensión reportada. Tus circunstancias y las sesiones que elegiste evaluar pueden influir en este patrón.	Um valor positivo indica menor tensão relatada. Suas circunstâncias e as sessões que você escolheu avaliar podem influenciar esse padrão.
+Unlimited saved patterns and mixes, no ads, private practice insights, and up to five reminders. Free keeps basic Progress and one reminder.	Patrones y mezclas guardados sin límite, sin anuncios, tendencias privadas de práctica y hasta cinco recordatorios. La versión gratuita mantiene el progreso básico y un recordatorio.	Padrões e sequências salvos sem limite, sem anúncios, tendências privadas de prática e até cinco lembretes. A versão gratuita mantém o progresso básico e um lembrete.
+Share this exercise	Compartir este ejercicio	Compartilhar este exercício
+Try this breathing practice in your browser.	Prueba esta práctica de respiración en tu navegador.	Experimente esta prática de respiração no seu navegador.
+Exercise sharing is not available online yet. Please try again later.	El uso compartido de ejercicios aún no está disponible en línea. Vuelve a intentarlo más tarde.	O compartilhamento de exercícios ainda não está disponível online. Tente novamente mais tarde.
+This exercise link is invalid or unsupported.	Este enlace de ejercicio no es válido o no es compatible.	Este link de exercício é inválido ou incompatível.
+This exercise is too large to share. Try a shorter pattern or mix.	Este ejercicio es demasiado largo para compartir. Prueba un patrón o una mezcla más breve.	Este exercício é grande demais para compartilhar. Tente um padrão ou uma sequência mais curta.
+SHARED EXERCISE	EJERCICIO COMPARTIDO	EXERCÍCIO COMPARTILHADO
+Shared breathing practice	Práctica de respiración compartida	Prática de respiração compartilhada
+This cadence was shared by another person. Keep breaths comfortable and stop if unwell.	Otra persona compartió este ritmo. Respira de forma cómoda y detente si te sientes mal.	Outra pessoa compartilhou este ritmo. Respire de forma confortável e pare se sentir mal-estar.
+Review & start	Revisar y empezar	Revisar e começar
+Only the breathing cadence is uploaded. Names, ratings and notes stay private. Links expire after 30 days and can be revoked from Shared links.	Solo se envía el ritmo de respiración. Los nombres, evaluaciones y notas se mantienen privados. Los enlaces vencen a los 30 días y se pueden revocar en Enlaces compartidos.	Apenas o ritmo de respiração é enviado. Nomes, avaliações e anotações ficam privados. Os links expiram após 30 dias e podem ser revogados em Links compartilhados.
+Manage shared links	Administrar enlaces compartidos	Gerenciar links compartilhados
+Shared links	Enlaces compartidos	Links compartilhados
+SHARED LINKS	ENLACES COMPARTIDOS	LINKS COMPARTILHADOS
+Manage your exercise links.	Administra tus enlaces de ejercicios.	Gerencie seus links de exercícios.
+Links expire after 30 days. Revoke a link to prevent future opens. Copies or exercises already loaded cannot be erased. Keep this phone's data to retain your revocation controls.	Los enlaces vencen a los 30 días. Revoca un enlace para impedir nuevas aperturas. No se pueden borrar las copias ni los ejercicios ya cargados. Conserva los datos de este teléfono para mantener los controles de revocación.	Os links expiram após 30 dias. Revogue um link para impedir novas aberturas. Não é possível apagar cópias ou exercícios já carregados. Mantenha os dados deste celular para conservar os controles de revogação.
+No shared links yet.	Aún no tienes enlaces compartidos.	Você ainda não tem links compartilhados.
+Link creation is unconfirmed. Retry or revoke it before removing local data.	No se confirmó la creación del enlace. Vuelve a intentarlo o revócalo antes de borrar los datos locales.	A criação do link não foi confirmada. Tente novamente ou revogue-o antes de apagar os dados locais.
+Expired	Vencido	Expirado
+Active link	Enlace activo	Link ativo
+Retry creating link	Volver a crear el enlace	Tentar criar o link novamente
+Share link	Compartir enlace	Compartilhar link
+Revoke link	Revocar enlace	Revogar link
+Reload shared links	Volver a cargar enlaces compartidos	Recarregar links compartilhados
+Link revoked. It can no longer be opened.	Enlace revocado. Ya no se puede abrir.	Link revogado. Ele não pode mais ser aberto.
+Could not revoke the link. Your controls are preserved; try again online.	No se pudo revocar el enlace. Tus controles se conservaron; vuelve a intentarlo con conexión.	Não foi possível revogar o link. Seus controles foram preservados; tente novamente com conexão.
+Shared links could not be read. Your data has been preserved.	No se pudieron leer los enlaces compartidos. Tus datos se conservaron.	Não foi possível ler os links compartilhados. Seus dados foram preservados.
+Revoke an existing link before creating another.	Revoca un enlace existente antes de crear otro.	Revogue um link existente antes de criar outro.
+Could not create the link. Try again.	No se pudo crear el enlace. Vuelve a intentarlo.	Não foi possível criar o link. Tente novamente.
+Could not verify the shared link.	No se pudo verificar el enlace compartido.	Não foi possível verificar o link compartilhado.
+Loading exercise…	Cargando ejercicio…	Carregando exercício…
+Too many links were created recently. Please try again later.	Se crearon demasiados enlaces recientemente. Vuelve a intentarlo más tarde.	Muitos links foram criados recentemente. Tente novamente mais tarde.
+This link has expired or been revoked.	Este enlace venció o fue revocado.	Este link expirou ou foi revogado.
+Sharing is temporarily unavailable. Please try again online.	El uso compartido no está disponible temporalmente. Vuelve a intentarlo con conexión.	O compartilhamento está temporariamente indisponível. Tente novamente com conexão.
+This permanently removes sessions, ratings, routines, favorites and settings on this phone, including the current session. Revoke shared links first in Shared links; otherwise they remain accessible until expiry and you lose their controls.	Esto elimina permanentemente las sesiones, evaluaciones, rutinas, favoritos y configuración de este teléfono, incluida la sesión actual. Revoca primero los enlaces en Enlaces compartidos; de lo contrario, seguirán accesibles hasta su vencimiento y perderás sus controles.	Isso exclui permanentemente sessões, avaliações, rotinas, favoritos e configurações deste celular, incluindo a sessão atual. Revogue primeiro os links em Links compartilhados; caso contrário, eles continuarão acessíveis até expirarem e você perderá seus controles.

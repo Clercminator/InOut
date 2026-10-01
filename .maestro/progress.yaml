@@ -1,0 +1,91 @@
+appId: com.imrtech.inout
+---
+- launchApp:
+    clearState: true
+- tapOn: "Skip introduction"
+- tapOn: "Progress, tab, 4 of 4"
+- assertVisible: "CURRENT STREAK"
+- takeScreenshot: progress-overview
+- scrollUntilVisible:
+    element:
+      text: "Add session"
+    direction: DOWN
+    centerElement: true
+- tapOn: "Add session"
+- scrollUntilVisible:
+    element:
+      text: "Choose date"
+    direction: DOWN
+    centerElement: true
+- tapOn: "Choose date"
+- takeScreenshot: native-date-picker
+- tapOn: "Cancel picker"
+- tapOn: "Choose time"
+- takeScreenshot: native-time-picker
+- tapOn: "Done"
+- scrollUntilVisible:
+    element:
+      text: "Save session"
+    direction: DOWN
+    centerElement: true
+- tapOn: "Save session"
+- assertVisible: "Session saved"
+- takeScreenshot: manual-saved
+- tapOn: "View progress"
+- scrollUntilVisible:
+    element:
+      text: "See all stats"
+    direction: DOWN
+    centerElement: true
+- tapOn: "See all stats"
+- assertVisible: "MY STATS"
+- tapOn: "Weeks"
+- takeScreenshot: stats-weekly
+- scrollUntilVisible:
+    element:
+      text: "Previous period"
+    direction: DOWN
+    centerElement: true
+- tapOn:
+    text: "Previous period"
+    index: 0
+- takeScreenshot: chart-selected-period
+- tapOn: "Go back"
+- scrollUntilVisible:
+    element:
+      text: "View session history"
+    direction: DOWN
+    centerElement: true
+- tapOn: "View session history"
+- assertVisible: "Manual breathing"
+- takeScreenshot: manual-history
+
+- openLink: "inout://pre?id=box"
+- tapOn:
+    text: "Open"
+    optional: true
+- scrollUntilVisible:
+    element:
+      text: "Skip rating & start"
+    direction: DOWN
+    centerElement: false
+- tapOn:
+    text: "Skip rating & start"
+    waitToSettleTimeoutMs: 100
+- extendedWaitUntil:
+    visible: "Hold after inhale.*"
+    timeout: 25000
+- takeScreenshot: breathing-hold-after-inhale
+- extendedWaitUntil:
+    visible: "Hold after exhale.*"
+    timeout: 25000
+- takeScreenshot: breathing-hold-after-exhale
+- tapOn: "Pause"
+- assertVisible: "Paused.*"
+- takeScreenshot: breathing-paused
+- tapOn: "Resume"
+- extendedWaitUntil:
+    visible: 'How tense are you now\?'
+    timeout: 240000
+- takeScreenshot: breathing-completed
+

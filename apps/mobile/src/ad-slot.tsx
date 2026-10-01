@@ -1,3 +1,4 @@
+import { useLanguage } from "./use-language";
 import { useEffect, useRef, useState } from "react";
 import { AppState, Platform } from "react-native";
 import { usePathname } from "expo-router";
@@ -7,6 +8,7 @@ import type { AdPlacement } from "./ads";
 import { Card, Copy, Button, Label } from "./ui";
 
 export function AdSlot({ placement }: { placement: AdPlacement }) {
+  useLanguage();
   const services = useCommercial();
   const controller = useSession();
   const path = usePathname();

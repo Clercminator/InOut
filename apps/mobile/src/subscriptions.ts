@@ -1,10 +1,12 @@
-import type { CustomerInfo, PurchasesPackage } from "react-native-purchases";
-import { commercialPolicy, EntitlementService, type EntitlementGrant } from "./entitlements";
+import { EntitlementService, type EntitlementGrant } from "./entitlements";
 import { AnalyticsService } from "./analytics";
 
 export type PlanId = "monthly" | "annual";
-export interface SubscriptionOffer { id: PlanId; title: string; price: string; period: string; }
-export interface SubscriptionAdapter {
+export interface SubscriptionOffer { id: PlanId; title: string; price: string; period: string; introductoryOffer?: { price: string; periods: number; period: string }; }
+export class SubscriptionError extends Error {
+  constructor(readonly reason: "cancelled" | "pending" | "unavailable" | "failed", message: string) { super(message); }
+}
+export interface SubscriptionProvider {
   readonly mode: "development" | "store" | "unavailable";
   offers(): Promise<SubscriptionOffer[]>;
   refresh(): Promise<EntitlementGrant>;
@@ -14,75 +16,7 @@ export interface SubscriptionAdapter {
   listen?(listener: (grant: EntitlementGrant) => void): () => void;
 }
 
-export function grantFromCustomerInfo(info: CustomerInfo): EntitlementGrant {
-  const entitlement = info.entitlements.all[commercialPolicy.entitlementId];
-  const subscription = entitlement ? info.subscriptionsByProductIdentifier?.[entitlement.productIdentifier] : undefined;
-  const expiresAt = entitlement?.expirationDate ? Date.parse(entitlement.expirationDate) : 0;
-  const graceUntil = subscription?.gracePeriodExpiresDate ? Date.parse(subscription.gracePeriodExpiresDate) : null;
-  const verifiedAt = Date.parse(info.requestDate);
-  const active = entitlement?.isActive === true;
-  return { source: "store", active, verifiedAt, expiresAt, graceUntil,
-    status: !entitlement ? "free" : !active ? "expired" : entitlement.billingIssueDetectedAt
-      ? graceUntil && graceUntil > verifiedAt ? "grace" : "billingRetry"
-      : !entitlement.willRenew ? "cancelled" : entitlement.periodType.toLowerCase() === "trial" ? "trial" : "active" };
-}
-
-export function revenueCatAdapter(apiKey: string): SubscriptionAdapter {
-  // Native module stays out of Expo Go execution paths; provider-specific types never reach UI.
-  const Purchases = (require("react-native-purchases") as typeof import("react-native-purchases")).default;
-  Purchases.configure({ apiKey });
-  let packages: Partial<Record<PlanId, PurchasesPackage>> = {};
-  const customer = async () => grantFromCustomerInfo(await Purchases.getCustomerInfo());
-  return {
-    mode: "store",
-    async offers() {
-      const current = (await Purchases.getOfferings()).current;
-      packages = { monthly: current?.monthly ?? undefined, annual: current?.annual ?? undefined };
-      return (["monthly", "annual"] as const).flatMap((id) => {
-        const item = packages[id];
-        return item ? [{ id, title: id === "monthly" ? "Monthly Pro" : "Annual Pro", price: item.product.priceString, period: id === "monthly" ? "month" : "year" }] : [];
-      });
-    },
-    refresh: customer,
-    async purchase(id) {
-      const item = packages[id];
-      if (!item) throw new Error("This store plan is unavailable. Refresh the plans.");
-      return grantFromCustomerInfo((await Purchases.purchasePackage(item)).customerInfo);
-    },
-    async restore() { return grantFromCustomerInfo(await Purchases.restorePurchases()); },
-    async managementUrl() { return (await Purchases.getCustomerInfo()).managementURL; },
-    listen(listener) {
-      const callback = (info: CustomerInfo) => listener(grantFromCustomerInfo(info));
-      Purchases.addCustomerInfoUpdateListener(callback);
-      return () => Purchases.removeCustomerInfoUpdateListener(callback);
-    },
-  };
-}
-
-export class DevelopmentSubscriptionAdapter implements SubscriptionAdapter {
-  readonly mode = "development";
-  outcome: "success" | "cancel" | "failure" = "success";
-  trial = false;
-  private owned: EntitlementGrant | null = null;
-  constructor(private now: () => number = Date.now) {}
-  async offers(): Promise<SubscriptionOffer[]> {
-    return [{ id: "monthly", title: "Monthly Pro", price: "Demo — no charge", period: "month" }, { id: "annual", title: "Annual Pro", price: "Demo — no charge", period: "year" }];
-  }
-  async refresh(): Promise<EntitlementGrant> {
-    return this.owned ?? { source: "development", status: "free", active: false, verifiedAt: this.now(), expiresAt: 0, graceUntil: null };
-  }
-  async purchase(id: PlanId): Promise<EntitlementGrant> {
-    if (this.outcome === "cancel") throw { userCancelled: true };
-    if (this.outcome === "failure") throw new Error("Simulated store failure. No charge was made.");
-    this.owned = { source: "development", status: this.trial ? "trial" : "active", active: true,
-      verifiedAt: this.now(), expiresAt: this.now() + (this.trial ? 7 : id === "monthly" ? 30 : 365) * 86400000, graceUntil: null };
-    return this.owned;
-  }
-  async restore() { return this.refresh(); }
-  async managementUrl() { return null; }
-}
-
-export const unavailableSubscriptions: SubscriptionAdapter = {
+export const unavailableSubscriptions: SubscriptionProvider = {
   mode: "unavailable", offers: async () => [],
   refresh: async () => { throw new Error("Store billing is not configured in this build."); },
   purchase: async () => { throw new Error("Store billing is not configured in this build."); },
@@ -96,7 +30,7 @@ export class SubscriptionService {
   message = "";
   private listeners = new Set<() => void>();
   private revision = 0;
-  constructor(readonly adapter: SubscriptionAdapter, private entitlements: EntitlementService, private analytics: AnalyticsService) {}
+  constructor(readonly adapter: SubscriptionProvider, private entitlements: EntitlementService, private analytics: AnalyticsService) {}
   subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; };
   getRevision = () => this.revision;
   private emit() { this.revision++; this.listeners.forEach((fn) => fn()); }
@@ -111,7 +45,7 @@ export class SubscriptionService {
     this.busy = true; this.message = ""; this.emit();
     try { await action(); }
     catch (error) {
-      this.message = (error as { userCancelled?: boolean })?.userCancelled ? "Purchase cancelled. Nothing changed." : error instanceof Error ? error.message : "The store could not complete this request. Try again.";
+      this.message = error instanceof SubscriptionError && error.reason === "cancelled" ? "Purchase cancelled. Nothing changed." : error instanceof Error ? error.message : "The store could not complete this request. Try again.";
     } finally { this.busy = false; this.emit(); }
   }
   async load() { await this.operation(async () => {

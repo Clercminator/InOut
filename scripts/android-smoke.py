@@ -23,9 +23,11 @@ def tree():
 def bounds(node):
     return tuple(map(int, re.findall(r'\d+', node.attrib['bounds'])))
 
-def visible_target(root, text):
+def visible_target(root, text, class_name=None):
     parents = {child: parent for parent in root.iter() for child in parent}
     for node in root.iter('node'):
+        if class_name and node.get('class') != class_name:
+            continue
         if text not in (node.get('text', '') + ' ' + node.get('content-desc', '')):
             continue
         left, top, right, bottom = bounds(node)
@@ -43,7 +45,7 @@ def visible_target(root, text):
             return node
     return None
 
-def find(text, timeout=15):
+def find(text, timeout=15, class_name=None):
     until = time.monotonic() + timeout
     while time.monotonic() < until:
         try:
@@ -51,19 +53,19 @@ def find(text, timeout=15):
         except (subprocess.CalledProcessError, subprocess.TimeoutExpired, ET.ParseError):
             time.sleep(.3)
             continue
-        node = visible_target(root, text)
+        node = visible_target(root, text, class_name)
         if node is not None:
             print(f'Found {text}', flush=True)
             return node
         time.sleep(.3)
     raise AssertionError(f'Native screen did not show {text!r}')
 
-def tap(text):
-    node = find(text)
+def tap(text, class_name=None):
+    node = find(text, class_name=class_name)
     # Wait for scroll momentum/layout to settle before using screen coordinates.
     for _ in range(5):
         time.sleep(.4)
-        settled = find(text)
+        settled = find(text, class_name=class_name)
         if bounds(settled) == bounds(node):
             break
         node = settled
@@ -73,10 +75,10 @@ def tap(text):
     print(f'Tap {text}: {bounds(settled)}', flush=True)
     adb('shell', 'input', 'tap', str((x1+x2)//2), str((y1+y2)//2))
 
-def scroll_to(text):
-    for _ in range(7):
+def scroll_to(text, class_name=None):
+    for _ in range(20):
         try:
-            find(text, 2)
+            find(text, 2, class_name)
             return
         except AssertionError:
             root = tree()
@@ -176,7 +178,76 @@ try:
     tap('Saved Mixes')
     find('My Mix')
     shot('10-saved-mix')
-    (OUT / 'result.txt').write_text('PASS: native offline slice, background pause, process recovery, post recovery, durable history, saved patterns and mixes.\n')
+    # Exercise the progress refinements on a compact phone with large text.
+    adb('shell', 'wm', 'size', '720x1280')
+    adb('shell', 'wm', 'density', '360')
+    adb('shell', 'settings', 'put', 'system', 'font_scale', '1.6')
+    adb('shell', 'am', 'force-stop', APP)
+    launch()
+    tap('Progress')
+    find('CURRENT STREAK')
+    shot('11-progress-small-large-text')
+    scroll_to('See all stats')
+    tap('See all stats')
+    find('MY STATS')
+    shot('12-stats-small-large-text')
+    tap('Weeks')
+    scroll_to('TIME PER WEEK')
+    shot('13-chart-small-large-text')
+    scroll_to('Previous period')
+    tap('Previous period')
+    shot('14-chart-selected-period')
+    adb('shell', 'input', 'keyevent', 'KEYCODE_BACK')
+    scroll_to('Add session')
+    tap('Add session')
+    scroll_to('Minutes', 'android.widget.EditText')
+    tap('Minutes', 'android.widget.EditText')
+    time.sleep(1)
+    shot('15-manual-keyboard')
+    scroll_to('Done editing')
+    tap('Done editing')
+    scroll_to('Choose date')
+    tap('Choose date')
+    shot('16-native-date-picker')
+    adb('shell', 'input', 'keyevent', 'KEYCODE_BACK')
+    scroll_to('Choose time')
+    tap('Choose time')
+    shot('17-native-time-picker')
+    adb('shell', 'input', 'keyevent', 'KEYCODE_BACK')
+    scroll_to('Save session')
+    tap('Save session')
+    find('Session saved')
+    shot('18-manual-saved')
+    scroll_to('View session history')
+    tap('View session history')
+    scroll_to('Manually logged')
+    shot('19-manual-history')
+    # Repeat the chart at normal font size without horizontal scrolling.
+    adb('shell', 'settings', 'put', 'system', 'font_scale', '1.0')
+    adb('shell', 'am', 'force-stop', APP)
+    launch()
+    tap('Progress')
+    scroll_to('See all stats')
+    tap('See all stats')
+    scroll_to('TIME PER DAY')
+    shot('20-chart-compact')
+    # Capture a real native four-phase cycle, including the two distinct holds.
+    adb('shell', 'am', 'start', '-W', '-a', 'android.intent.action.VIEW', '-d', 'inout://pre?id=box', APP)
+    scroll_to('Skip rating & start')
+    tap('Skip rating & start')
+    recording = subprocess.Popen(['adb', 'shell', 'screenrecord', '--time-limit', '20', '/sdcard/breathing-cycle.mp4'])
+    for step in range(8):
+        time.sleep(2)
+        shot(f'21-breathing-{step:02}')
+    recording.wait(timeout=30)
+    adb('pull', '/sdcard/breathing-cycle.mp4', str(OUT / 'breathing-cycle.mp4'))
+    tap('Pause')
+    find('PAUSED')
+    shot('22-breathing-paused')
+    (OUT / 'result.txt').write_text('PASS: native offline slice, background pause, process recovery, post recovery, durable history, saved patterns and mixes, progress detail navigation, compact phone, large text, charts, native picker cancellation, keyboard, manual session save and logs.\n')
 finally:
     shot('last-screen')
+    adb('shell', 'settings', 'put', 'system', 'font_scale', '1.0')
+    adb('shell', 'wm', 'size', 'reset')
+    adb('shell', 'wm', 'density', 'reset')
     (OUT / 'logcat.txt').write_text(adb('logcat', '-d'))

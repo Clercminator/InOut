@@ -1,14 +1,16 @@
-import { useState } from "react";
+import { useTheme } from "../src/theme";
+import { useLanguage } from "../src/use-language";
+import { useState, useEffect } from "react";
 import { router } from "expo-router";
 import { View } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { Screen, Title, Label, Card, Copy, Button, s } from "../src/ui";
+import { Screen, Title, Label, Card, Copy, Button, useStyles } from "../src/ui";
 import { useSession, SaveError } from "../src/provider";
 
 const pages = [
   {
     icon: "air",
-    label: "A SMALL RESET, ON PURPOSE",
+    label: "A SMALL PRACTICE, ON PURPOSE",
     title: "Come back to your breath.",
     copy: "IN/OUT helps you move from the state you are in to the state you need next.",
   },
@@ -27,7 +29,11 @@ const pages = [
 ] as const;
 
 export default function Onboarding() {
+  const { colors } = useTheme();
+  const s = useStyles();
+  useLanguage();
   const controller = useSession();
+  useEffect(() => { controller.analytics.track("onboarding_started"); }, [controller]);
   const [page, setPage] = useState(0);
   const current = pages[page];
   const finish = () => {
@@ -37,7 +43,7 @@ export default function Onboarding() {
   return (
     <Screen headerAction={<Label>{page + 1} / {pages.length}</Label>}>
       <View style={s.onboardingBody}>
-        <View style={s.onboardingIcon}><MaterialIcons name={current.icon} size={38} color="#adc6ff" /></View>
+        <View style={s.onboardingIcon}><MaterialIcons name={current.icon} size={38} color={colors.accent} /></View>
         <Label>{current.label}</Label>
         <Title>{current.title}</Title>
         <Copy style={s.onboardingCopy}>{current.copy}</Copy>

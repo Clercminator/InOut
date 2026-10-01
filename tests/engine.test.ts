@@ -4,6 +4,49 @@ import * as e from "../packages/breathing-engine/src/index";
 import { planFor, sigh, protocols } from "../packages/protocols/src/index";
 import { makeMixProtocol } from "../apps/mobile/src/custom-protocol";
 
+test("cyclic rounds include 30 breaths, optional retention and recovery with bounded round counts", () => {
+  const p = protocols.find(p => p.id === "high-intensity-cyclic")!;
+  for (const rounds of [1, 2, 3]) {
+    const plan = planFor(p, rounds);
+    assert.equal(plan.blocks.length, rounds * 3);
+    assert.equal(e.totalDuration(plan), rounds * 216000);
+    assert.equal(plan.blocks[0].cycles, 30);
+    assert.deepEqual(plan.blocks[2].phases.map(p => p.type), ["inhale", "hold", "exhale", "freeBreathing"]);
+  }
+  for (const rounds of [0, 4, 1.5, NaN]) assert.throws(() => planFor(p, rounds));
+});
+
+test("releasing retention early preserves actual elapsed time and later rounds", () => {
+  const p = protocols.find(p => p.id === "high-intensity-cyclic")!;
+  const initial = e.start(planFor(p, 2), 0);
+  const released = e.releaseHold(initial, 130000);
+  assert.equal(e.snapshot(released, 130000).phase.type, "inhale");
+  assert.equal(e.snapshot(released, 130000).sessionElapsedMs, 130000);
+  assert.equal(e.totalDuration(released.plan), 382000);
+  assert.equal(released.plan.blocks[4].phases[0].durationMs, 60000);
+  const recovery = e.releaseHold(released, 138000);
+  assert.equal(e.snapshot(recovery, 138000).phase.type, "exhale");
+  assert.equal(e.totalDuration(recovery.plan), 372000);
+  const done = e.checkpoint(recovery, 372000);
+  assert.equal(done.elapsedAtAnchor, 372000);
+  assert.equal(done.status, "completed");
+  assert.equal(initial.plan.blocks[1].phases[0].durationMs, 60000);
+});
+
+test("immediate hold release advances cues and survives recovery without crediting idle time", () => {
+  const p = protocols.find(p => p.id === "high-intensity-cyclic")!;
+  const state = e.start(planFor(p, 1), 0);
+  const before = e.snapshot(state, 120000);
+  const released = e.releaseHold(state, 120000);
+  assert.equal(e.snapshot(released, 120000).phase.type, "inhale");
+  assert.notEqual(e.snapshot(released, 120000).cueKey, before.cueKey);
+  assert.equal(e.totalDuration(released.plan), 156000);
+  const recovered = e.recover(JSON.parse(JSON.stringify(released)), 999999);
+  assert.equal(recovered.elapsedAtAnchor, 120000);
+  assert.equal(recovered.status, "paused");
+  assert.equal(e.snapshot(e.resume(recovered, 999999), 1000999).sessionElapsedMs, 121000);
+});
+
 test("mixes preserve selection order, complete cycles, repeats and block boundaries", () => {
   const coherent = protocols.find((p) => p.id === "coherent")!;
   const mix = makeMixProtocol([coherent, sigh]);
@@ -90,7 +133,7 @@ test("all ten definitions validate and duration metadata reconciles", () => {
   }
   assert.equal(
     protocols.find((p) => p.safetyCategory === "highIntensity")?.availability,
-    "definitionOnly",
+    "enabled",
   );
 });
 test("invalid plans and corrupted engine state are rejected", () => {

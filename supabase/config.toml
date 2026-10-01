@@ -1,0 +1,4 @@
+[functions.inout-shares]
+verify_jwt = false
+[functions.inout-reviewer]
+verify_jwt = false
