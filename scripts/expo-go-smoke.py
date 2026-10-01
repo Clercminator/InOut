@@ -82,7 +82,7 @@ try:
         time.sleep(2)
     shot('01-loaded')
     tap('Skip introduction')
-    tap('Start reset')
+    tap('Start practice', scroll=True)
     tap('Skip rating & start', scroll=True)
     time.sleep(2)
     shot('02-breathing')

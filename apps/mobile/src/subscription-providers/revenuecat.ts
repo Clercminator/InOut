@@ -28,7 +28,7 @@ export function revenueCatAdapter(apiKey: string): SubscriptionProvider {
       packages = { monthly: current?.monthly ?? undefined, annual: current?.annual ?? undefined };
       return (["monthly", "annual"] as const).flatMap((id) => {
         const item = packages[id];
-        return item ? [{ id, title: id === "monthly" ? "Monthly Pro" : "Annual Pro", price: item.product.priceString, period: id === "monthly" ? "month" : "year", introductoryOffer: item.product.introPrice ? { price: item.product.introPrice.priceString, periods: item.product.introPrice.cycles, period: item.product.introPrice.periodUnit } : undefined }] : [];
+        return item ? [{ id, title: id === "monthly" ? "Monthly Pro" : "Annual Pro", price: item.product.priceString, period: id === "monthly" ? "month" : "year", introductoryOffer: item.product.introPrice ? { price: item.product.introPrice.priceString, periods: item.product.introPrice.cycles, period: item.product.introPrice.period } : undefined }] : [];
       });
     },
     refresh: customer,

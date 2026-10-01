@@ -2,7 +2,7 @@
 
 This is the single list of manual work needed to enable full **approved commercial-v1 functionality**, let Codex build/test/inspect the native app, and publish on Android and iOS. Work top to bottom; account enrollment and tester recruitment can start together. Mark an item done only after completing it, or record why a conditional item does not apply.
 
-**Updated September 30, 2026 against current source/configuration and the September 29–30 verification evidence. Not ready for store submission.** This is the only manual launch checklist. README owns engineering work/evidence; PROJECT_CONTEXT owns product decisions. No additional launch document is needed. Complete unchecked items below; account status not verified here stays unchecked.
+**Updated October 1, 2026 against the release-hardening source and recorded verification. Not ready for store submission.** This is the only manual launch checklist. README owns engineering work/evidence; PROJECT_CONTEXT owns product decisions. No additional launch document is needed. Complete unchecked items below; account status not verified here stays unchecked.
 
 Already completed (do not repeat setup):
 
@@ -41,6 +41,17 @@ Current tooling: [native build/verification](.github/workflows/verify.yml), [And
 - [ ] **RevenueCat products, entitlement and offering:** import/map store products, attach both durations to entitlement **`pro`**, and configure an offering as **current/default with the standard monthly and annual packages populated for each platform**. The app reads `getOfferings().current.monthly` and `.annual`; arbitrary package names alone will not populate its offers. **Return:** offering ID and platform product/package mappings. [Offerings](https://www.revenuecat.com/docs/offerings/overview), [entitlements](https://www.revenuecat.com/docs/getting-started/entitlements).
 - [ ] **Billing testers:** create Apple sandbox testers as needed; configure Play license testers and add their Google accounts to the app's test track. Accept invitations and sign in on the devices using the intended test accounts. **Return:** confirmation of access, not passwords. Codex then verifies actual offerings, no-charge sandbox purchases, restoration, renewal/cancellation, pending/grace/expiry/refund and offline cache behavior on each platform. Development mock Pro does not close this item.
 
+### Provider-independent reviewer access
+
+- [ ] **Activate server configuration:** the `inout-reviewer` function and private migration are deployed in the existing InOut project; it remains disabled until secrets are set. In a private PowerShell 7 terminal, run `pwsh -File .\scripts\new-reviewer-code.ps1 -Days 14`. The script generates a 192-bit random code, copies it to the clipboard and prints only the four server configuration fields below. Paste the code into your password manager; never paste it into chat, Git, public notes, Expo configuration or `EXPO_PUBLIC_*`. Review code lifetime should cover the entire review window; regenerate before expiry if review is delayed. Clear clipboard/history after transfer (`Set-Clipboard -Value ''` clears the current clipboard, not necessarily OS clipboard history).
+- [ ] **Supabase → InOut → Edge Functions → Secrets:** add `REVIEWER_ENABLED=true`, `REVIEWER_CODE_SHA256=<script hash>`, `REVIEWER_CODE_EXPIRES_AT=<script UTC ISO timestamp>`, `REVIEWER_GENERATION=<script UUID>`. These are server-only values. Built-in `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` remain server-side. Secret updates take effect without app release. [Supabase secret setup](https://supabase.com/docs/guides/functions/secrets). Test valid/invalid code, effective Pro quotas and no ads on both installed candidates; the current live disabled-response test is not a positive activation test.
+- [ ] **Rotate/revoke:** run the generator again, replace hash, expiry **and generation**, and update private review fields in both stores. Old codes stop redeeming; old grants fail their next validation. To disable all review access set `REVIEWER_ENABLED=false`. To revoke all current grants while retaining the reusable code, change `REVIEWER_GENERATION` to a new UUID. For one known grant, set `revoked=true` on its exact token-hash row in `inout_private.reviewer_grants` via authorized SQL; never expose raw tokens to obtain that hash. Offline validated access may last up to one hour, bounded by grant/code expiry as last approved. Do not disable or expire the code during an active store review.
+- [ ] **Google Play Console → App content → App access → Sign in details → Any other information required to access your app:** mark some content restricted and paste the English text below, then add the actual code in this private console field. Labels can vary by console. Use a reusable code with no personal login, MFA, location restriction or purchase requirement. Save and verify instructions from a fresh installation.
+
+> No account or login is required. To review Pro features, open Settings → Pro & subscriptions → Reviewer access. Enter the review code provided below and tap Unlock Pro. This grants access to all Pro features without purchase. Internet is required to activate and periodically validate reviewer access. Pro includes no ads, unlimited saved patterns and mixes, private practice insights and up to five reminders. Core breathing works offline. Reviewer access does not create a subscription. If access expires, reconnect and enter the same valid code again. Review code: [paste the private code here].
+
+- [ ] **Apple → App Store Connect → App → App Review Information → Notes:** paste the same instructions and private code; no IN/OUT sign-in is required. Add: “Monthly and annual subscriptions are available on Pro & subscriptions, with Restore purchases and Manage subscription. Reviewer access grants the same implemented Pro features without creating a subscription. Trial eligibility and localized terms appear in the store confirmation. State Shift is self-reported, not biometric; high-intensity breathing requires safety confirmation.” Supply review contact details privately. Use the same notes in TestFlight beta review if requested. Subscription products still need Apple's own product review metadata/screenshots.
+
 ## 4. Enable advertising and consent testing
 
 - [ ] **AdMob apps/units:** register separate iOS/Android apps and create banner units for the approved browsing placements. Complete app/store-link and verification requirements when available. **Return:** platform app IDs (`ca-app-pub-…~…`) and banner IDs (`ca-app-pub-…/…`). Google demo IDs are enough for initial native ad development.
@@ -53,7 +64,7 @@ Current tooling: [native build/verification](.github/workflows/verify.yml), [And
 - [ ] **Revocation expectations:** accept that removing local data/uninstalling loses local management controls without automatically revoking links; users should revoke first. Already opened/copied content cannot be erased. Confirm how support handles lost controls/abuse through authorized server administration. **Return:** accepted support procedure, with no private management secrets in chat.
 - [ ] **Verified-link origin:** choose an HTTPS origin you control that can serve association files at the domain root. The current Pages project lives at `/InOut/`; its deployment alone does not establish control of `https://clercminator.github.io/.well-known/`. Reuse that host only after confirming root-file deployment, or authorize a suitable custom domain and DNS/deployment access. **Return:** origin and access confirmation. Existing browser sharing already works; this choice unblocks verified native links.
 - [ ] **Verified links and store destinations:** provide Apple Team ID plus app identifier, and Play App Signing's production **app-signing certificate SHA-256** (not just the upload-key fingerprint). Provide preview/test fingerprints separately when needed. Authorize publishing `/.well-known/apple-app-site-association` and `/.well-known/assetlinks.json`; Codex adds native association settings and verifies routing. **Return:** real App Store/Play URLs once available. The current completion action uses `inout://shared?id=…` for an installed app; it has no real store destination yet. Verify the missing-app fallback and add only actual store URLs when available. [iOS Universal Links](https://docs.expo.dev/linking/ios-universal-links/).
-- [ ] **Analytics choice:** explicitly retain the local-only logger, or approve a provider/project, purpose, permitted collection, consent/opt-out and retention. If remote measurement is chosen, create the project and supply its public client identifier/endpoint plus authorized console access; server secrets stay server-side. **Return:** decision and settings. Remote collection is optional; core event wiring exists but there is no clipboard/install conversion measurement. Approve actual trigger semantics from the README event map; ratings, notes, private routines and wellbeing inferences remain excluded.
+- [ ] **Analytics acceptance:** the October 1 instruction keeps remote production product analytics disabled for v1. Confirm the candidate has no remote transport and accept the README event semantics; provider billing/ad processing still belongs in privacy declarations. No new provider/project or SDK is required. The gate remains pending evidence acceptance, not an undecided integration choice.
 
 ## 6. Authorize signing and distribute test candidates
 
@@ -73,7 +84,35 @@ Current tooling: [native build/verification](.github/workflows/verify.yml), [And
 - [ ] **Sharing:** create/share from the native candidate; open in phone Safari/Chrome in all three languages, finish or pause/background/resume/stop, then follow the native action. Exercise app installed/absent, verified links, malformed/expired/revoked links, offline/slow-network errors, interrupted creation/retry, share-sheet cancel, wrong-secret rejection and revoke failure/retry. Confirm cadence-only payload, high-intensity exclusion and the reset warning about lost controls. Revoke test links afterward. Desktop browser evidence does not replace native routing acceptance.
 - [ ] **Support and final acceptance:** verify support email delivery, privacy/safety/subscription terms, manage/restore actions and truthful guest/account behavior. Collect beta feedback, resolve blocking failures and approve each platform with named reviewer/date. Retain final screenshot/build artifacts; complete the gate record in section 7.
 
-**Build dependency:** the checked-in EAS `production` profile sets `INOUT_RELEASE=1`, so it intentionally refuses a build until every readiness gate and approved metadata is present. Initial store-distributed acceptance needs a separately configured, correctly signed store test candidate; Codex must prepare that build path without marking unverified gates true. Existing `preview` is internal distribution and `simulator` is simulator-only. You provide signing/testing access; the missing acceptance profile/configuration is engineering work, not another console task for you.
+**Build dependency:** the checked-in EAS `production` profile sets `INOUT_RELEASE=1`, so it intentionally refuses a build until every readiness gate and approved metadata is present. The implemented `store-test` profile provides store-distributed AAB/TestFlight candidates without changing those gates. Existing `preview` is internal and `simulator` is simulator-only. Supply the real EAS project and signing/provider configuration; the candidate profile itself is complete.
+
+### Produce acceptance candidates after configuration
+
+Use the EAS **preview** environment for `store-test`: set the project UUID, platform RevenueCat public keys and real AdMob **app** IDs from the configuration table. The profile explicitly uses test banners. Keep store private keys/upload keystores in EAS credentials or provider consoles. In `apps/mobile`, run:
+
+```powershell
+npx eas-cli credentials --platform android
+npx eas-cli credentials --platform ios
+npx eas-cli build --profile store-test --platform android
+npx eas-cli build --profile store-test --platform ios
+```
+
+Choose the enrolled Play upload key and Apple distribution certificate/provisioning team through EAS; complete login/MFA yourself. Upload the resulting AAB to Play internal testing and the signed IPA through EAS Submit/Transporter to App Store Connect. Do not upload CI preview APKs or simulator ZIPs. Record build/version and source revision. Production uses the separate EAS **production** environment and remains blocked by readiness checks.
+
+### Recommended store declarations to review and attest
+
+Use the [source data inventory](README.md#privacy-and-store-data-inventory-october-1-2026-source); these answers are prepared, not submitted.
+
+| Console area | Recommended answer / remaining decision |
+| --- | --- |
+| Play Data Safety | Data collected: **Yes**. Include purchase history, device/other identifiers, ad interactions/diagnostics and approximate location inferred by ad SDK IP processing. Review optional shared cadence/user content and support contact/email categories. Identify Google advertising sharing; evaluate Supabase/RevenueCat service-provider exceptions using the actual contracts. Do not label all data ephemeral or claim no collection. Mark local-only photos/ratings/history as not uploaded by IN/OUT. Confirm encrypted-in-transit, retention and deletion wording against final provider settings. |
+| Play Ads | **Yes, contains ads**, even though Pro suppresses them and test candidates use demo inventory. |
+| Play Health | Declare breathing/wellbeing/stress-management features in the applicable health/fitness form category. No Health Connect, biometric measurement, clinical diagnosis/treatment or medical-device claim. Approve audience/age and high-intensity safety disclosures. |
+| Play App access | **Some functionality restricted**; reusable private reviewer code/instructions above, no purchase/login needed. |
+| Apple App Privacy | **Data collected**: Purchases for functionality and RevenueCat provider analytics; include applicable Google ad identifiers/coarse location/usage/diagnostics and optional support/user content. Named profile and photo remain local. Reconcile linked-to-user/tracking answers with the actual anonymous identity and ad policy; non-personalized requests alone do not prove no tracking. |
+| Apple review/subscriptions | Private code and contact in App Review Information; actual monthly/annual products, review screenshots and restore/manage explanation. Reviewer grant is independent of Apple billing and must not be described as a promotional subscription. |
+
+No remote product analytics SDK/transport will be enabled for v1. Consent/tracking configuration, provider retention, store definitions and final declarations still require owner approval; do not infer acceptance from source checks.
 
 ## 7. Approve and publish
 
@@ -81,10 +120,10 @@ Record gate sign-off here, not in another launch report. Current status: **all p
 
 | Gate in `release/readiness.json` | Evidence required | Candidate/evidence/approver |
 | --- | --- | --- |
-| `billingVerified` | Section 3 configured products + section 6 real purchase/lifecycle/restore/cache acceptance on both stores | Pending |
+| `billingVerified` | Section 3 configured products + section 6 real purchase/lifecycle/restore/cache acceptance on both stores, plus reusable reviewer activation/expiry/revocation/Pro suppression | Pending |
 | `adsAndConsentVerified` | Section 4 approved configuration/data policy + section 6 native banners/consent/Pro suppression | Pending |
 | `sharingVerified` | Deployed API/browser evidence + section 5 associations/destinations + section 6 signed native/phone-browser acceptance | Pending; live backend/browser portion passed September 29–30 |
-| `analyticsDecisionVerified` | Explicitly retain disabled production collection, or approve and verify the chosen provider/data/consent/retention; accept event semantics | Pending |
+| `analyticsDecisionVerified` | Accept evidence that remote product collection is disabled for v1 and confirm event semantics | Pending acceptance; disabled direction explicitly instructed October 1 |
 | `nativeDeviceAcceptance` | Matching signed candidates pass section 6 core, UI/accessibility/languages, effects, reminders and insights checks | Pending |
 | `metadataAndLegalApproved` | Actual feature/SDK data inventory, final public copy, store forms/listings/screenshots and owner approval below | Pending |
 
@@ -107,11 +146,11 @@ Public identifiers are visible in the compiled app. Put local values in ignored 
 | AdMob app IDs | `ADMOB_IOS_APP_ID`, `ADMOB_ANDROID_APP_ID` | Public build configuration consumed by the native plugin |
 | AdMob banner IDs | `EXPO_PUBLIC_ADMOB_IOS_BANNER_ID`, `EXPO_PUBLIC_ADMOB_ANDROID_BANNER_ID` | Public client configuration |
 | Ad mode | `EXPO_PUBLIC_ADS_MODE=test` during initial testing; `live` only with configured IDs/consent and accepted production behavior | Do not treat live configuration as permission to click live ads |
-| Expo project | `extra.eas.projectId` in mobile app configuration | Non-secret UUID; owner/slug also confirmed |
+| Expo project | `EXPO_PUBLIC_EAS_PROJECT_ID` in the selected EAS environment, consumed as `extra.eas.projectId` | Non-secret UUID; owner/slug also confirmed |
 | Store products/offering/entitlement | Store and RevenueCat consoles; current offering monthly/annual packages and entitlement `pro` | Current app discovers products through RevenueCat; no invented product env variable |
 | Sharing API | `release/sharing.json` → `apiUrl` | Public deployed InOut Edge endpoint; never a service-role key |
-| Public sharing origin | `release/public-info.json` → `privacyUrl`; native sharing resolves sibling `reset.html` from this URL | Review association files and regenerate/redeploy pages when changing origin |
-| Analytics project | None configured; explicit owner decision before adding a provider | Current production/browser transport stays disabled |
+| Verified sharing | `release/links.json`: `origin`, `path`, `appleTeamId`, `androidSha256`, `iosStoreUrl`, `androidStoreUrl` | Blank retains current browser origin from privacyUrl. Supply actual values, generate/host root association files, rebuild and accept on phones |
+| Analytics project | None; remote production product analytics disabled for v1 as instructed | Accept disabled-transport evidence/event semantics; no analytics SDK is needed |
 | Apple signing keys, upload keystore/password, store API keys | EAS credential/submission management or approved secure local tooling | Private; never commit or put in `EXPO_PUBLIC_*` |
 | RevenueCat store-connection `.p8`/service-account JSON | RevenueCat secure console | Private; no mobile/client copy |
 | Supabase server credentials | Edge Function server environment (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`) | Private service-role key stays server-side; never copy another project's credentials into InOut |

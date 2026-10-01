@@ -7,7 +7,12 @@ export class ReviewerError extends Error { constructor(readonly status: number) 
 export type ReviewerRequest = (body: object) => Promise<{ token: string; expiresAt: number; serverTime: number }>;
 export class ReviewerService {
   busy = false;
-  message = "";
+  private notice = "";
+  get message() {
+    return this.notice === "Reviewer access enabled. Pro features are now available on this device." && !this.entitlements.state.reviewerPro
+      ? "Reviewer access has expired. Connect and enter a valid review code." : this.notice;
+  }
+  set message(value: string) { this.notice = value; }
   ready = false;
   private saved: SavedReviewer | null = null;
   private revision = 0;
@@ -57,7 +62,7 @@ export class ReviewerService {
     } : null);
   }
   async checkpoint() {
-    if (!this.saved) return;
+    if (!this.saved?.grant) return;
     if (this.now() < this.saved.highWater) { this.saved.grant = null; this.entitlements.acceptReviewerGrant(null); }
     this.saved.highWater = Math.max(this.saved.highWater, this.now());
     try { await this.persist(); } catch { this.saved.grant = null; this.entitlements.acceptReviewerGrant(null); }

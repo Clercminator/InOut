@@ -57,14 +57,14 @@ export class SubscriptionService {
   async purchase(id: PlanId) { await this.operation(async () => {
     if (!this.offers.some((o) => o.id === id)) throw new Error("Choose an available plan.");
     const grant = await this.adapter.purchase(id); this.apply(grant);
-    if (!this.entitlements.state.pro) { this.message = "The store has not activated Pro. Try restoring after the purchase finishes."; return; }
+    if (!this.entitlements.state.subscriptionPro) { this.message = "The store has not activated Pro. Try restoring after the purchase finishes."; return; }
     this.message = this.adapter.mode === "development" ? "Demo Pro activated. No purchase or charge occurred." : "Pro is active.";
     if (grant.source === "store") this.analytics.track(grant.status === "trial" ? "trial_started" : "subscription_started");
   }); }
   async restore() { await this.operation(async () => {
     const grant = await this.adapter.restore(); this.apply(grant);
-    this.message = this.entitlements.state.pro ? "Pro access restored." : "No active Pro subscription was found.";
-    if (grant.source === "store" && this.entitlements.state.pro) this.analytics.track("subscription_restored");
+    this.message = this.entitlements.state.subscriptionPro ? "Pro access restored." : "No active Pro subscription was found.";
+    if (grant.source === "store" && this.entitlements.state.subscriptionPro) this.analytics.track("subscription_restored");
   }); }
   listen() { return this.adapter.listen?.((grant) => {
     const previous = this.entitlements.state.status;

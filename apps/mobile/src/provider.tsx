@@ -71,7 +71,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
     void commercial.reviewer?.refresh();
     if (commercial.subscriptions.adapter.mode !== "unavailable") void commercial.subscriptions.load();
     commercial.analytics.track("app_open");
-    const timer = setInterval(() => { commercial.entitlements.refresh(); }, 1000);
+    const timer = setInterval(commercial.entitlements.checkExpiry, 1000);
     const checkpointTimer = setInterval(() => { void commercial.reviewer?.checkpoint(); }, 30000);
     const reviewerTimer = setInterval(() => { void commercial.reviewer?.refresh(); }, 15 * 60000);
     const foreground = AppState.addEventListener("change", (state) => {

@@ -5,7 +5,11 @@ appId: com.imrtech.inout
 - tapOn: "Skip introduction"
 - assertVisible: "Breathe for what's next."
 - takeScreenshot: 01-today
-- tapOn: "Start reset"
+- scrollUntilVisible:
+    element:
+      text: "Start practice"
+    direction: DOWN
+- tapOn: "Start practice"
 - assertVisible: 'How tense are you right now\?'
 - tapOn: "7 of 10"
 - takeScreenshot: 02-pre

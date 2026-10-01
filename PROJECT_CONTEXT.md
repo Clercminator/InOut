@@ -26,7 +26,7 @@ The September 17 commercial-v1 direction, with subsequent implemented additions 
 | Progress/insights | Basic Progress retained | Implemented sample-limited insights; device acceptance open |
 | Profiles, rituals, themes and EN/ES/PT content | Implemented local experience | Included |
 
-Pro uses monthly/annual store subscriptions with an optional store-configured trial. No native card-entry forms. Central capabilities include `adFree`, `unlimitedCustomPatterns`, `unlimitedMixes`, `unlimitedSavedRoutines`, `advancedProgress`, `advancedInsights`, `advancedReminders`, `advancedGuidance`, `premiumAudioVisuals` and `futureCloudSync`. Reserved flags are not product availability.
+Pro uses monthly/annual store subscriptions with an optional store-configured trial. No native card-entry forms. Central implemented capabilities are `adFree`, `unlimitedCustomPatterns`, `unlimitedMixes`, `unlimitedSavedRoutines`, `advancedInsights` and `advancedReminders`. Reserved advanced guidance, audiovisual and cloud-sync concepts do not grant access or imply product availability.
 
 Ads never appear during active practice, State Shift, onboarding or safety, or as a post-reset interstitial. Ratings, notes, routine content and inferred wellbeing states are excluded from targeting and analytics. Provider integrations remain isolated; demo purchases and test ads are not production acceptance.
 

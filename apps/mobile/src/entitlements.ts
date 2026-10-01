@@ -9,7 +9,7 @@ export const commercialPolicy = Object.freeze({
 });
 export const proCapabilities = [
   "adFree", "unlimitedCustomPatterns", "unlimitedMixes", "unlimitedSavedRoutines",
-  "advancedProgress", "advancedInsights", "advancedReminders",
+  "advancedInsights", "advancedReminders",
 ] as const;
 export type Capability = typeof proCapabilities[number];
 export type SubscriptionStatus = "free" | "trial" | "active" | "cancelled" | "billingRetry" | "grace" | "expired";
@@ -41,6 +41,7 @@ export class EntitlementService {
   private grant: EntitlementGrant | null = null;
   private listeners = new Set<() => void>();
   private revision = 0;
+  private stateKey = "";
   constructor(
     readonly development = false,
     private now: () => number = Date.now,
@@ -58,7 +59,8 @@ export class EntitlementService {
     return () => { this.listeners.delete(listener); };
   };
   getRevision = () => this.revision;
-  refresh = () => { this.revision++; this.listeners.forEach((fn) => fn()); };
+  refresh = () => { this.stateKey = JSON.stringify(this.state); this.revision++; this.listeners.forEach((fn) => fn()); };
+  checkExpiry = () => { if (JSON.stringify(this.state) !== this.stateKey) this.refresh(); };
   get state() {
     const g = this.grant;
     const now = this.now();
@@ -70,6 +72,8 @@ export class EntitlementService {
     const reviewer = !rollback && !!this.reviewer && now >= this.reviewer.verifiedAt && now < this.reviewer.expiresAt && now - this.reviewer.verifiedAt < 3600000;
     return {
       pro: pro || reviewer,
+      subscriptionPro: pro,
+      reviewerPro: reviewer,
       source: pro ? g!.source : reviewer ? "reviewer" : g?.source ?? "unconfigured",
       status: pro ? g!.status : reviewer ? "active" as const : g && g.status !== "free" ? "expired" as const : "free" as const,
       expiresAt: pro ? deadline : reviewer ? this.reviewer!.expiresAt : deadline || null,
