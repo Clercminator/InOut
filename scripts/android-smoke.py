@@ -250,7 +250,7 @@ try:
     # The animated timer never becomes idle for uiautomator. This fixed footer
     # target is verified in the 720x1280, font=1 capture above; assert the result.
     adb('shell', 'input', 'tap', '360', '826')
-    find('PAUSED')
+    find('Paused. Continue when you are ready.')
     shot('22-breathing-paused')
     # Reconnect only after the offline flow. Exercise the real secure-storage/HTTPS
     # reviewer path with a deliberately invalid code, never an owner credential.
