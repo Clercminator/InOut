@@ -1,0 +1,35 @@
+appId: com.imrtech.inout
+---
+- launchApp:
+    clearState: true
+- tapOn: "Skip introduction"
+- tapOn: "Open settings"
+- tapOn: "Plan & privacy"
+- tapOn: "Pro & subscriptions"
+- assertNotVisible: "DEVELOPMENT DEMO"
+- scrollUntilVisible:
+    element:
+      text: "Reviewer access"
+    direction: DOWN
+    centerElement: true
+- tapOn: "Reviewer access"
+- scrollUntilVisible:
+    element:
+      text: "Review code"
+    direction: DOWN
+    centerElement: true
+- tapOn: "Review code"
+# Public negative-test input, never a usable reviewer credential.
+- inputText: "invalid-native-review-probe"
+- hideKeyboard
+- scrollUntilVisible:
+    element:
+      text: "Unlock Pro"
+    direction: DOWN
+    centerElement: true
+- tapOn: "Unlock Pro"
+- extendedWaitUntil:
+    visible: "Invalid or unavailable review code."
+    timeout: 20000
+- takeScreenshot: reviewer-invalid-code
+- assertNotVisible: "Reviewer access enabled.*"

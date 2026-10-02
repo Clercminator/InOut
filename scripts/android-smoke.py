@@ -242,6 +242,21 @@ try:
     tap('Pause')
     find('PAUSED')
     shot('22-breathing-paused')
+    # Reconnect only after the offline flow. Exercise the real secure-storage/HTTPS
+    # reviewer path with a deliberately invalid code, never an owner credential.
+    adb('shell', 'svc', 'wifi', 'enable')
+    adb('shell', 'svc', 'data', 'enable')
+    adb('shell', 'am', 'start', '-W', '-a', 'android.intent.action.VIEW', '-d', 'inout://pro', APP)
+    scroll_to('Reviewer access')
+    tap('Reviewer access')
+    scroll_to('Review code', 'android.widget.EditText')
+    tap('Review code', 'android.widget.EditText')
+    adb('shell', 'input', 'text', 'invalid-native-review-probe')
+    adb('shell', 'input', 'keyevent', 'KEYCODE_BACK')
+    scroll_to('Unlock Pro')
+    tap('Unlock Pro')
+    find('Invalid or unavailable review code.', timeout=25)
+    shot('23-reviewer-invalid-code')
     (OUT / 'result.txt').write_text('PASS: native offline slice, background pause, process recovery, post recovery, durable history, saved patterns and mixes, progress detail navigation, compact phone, large text, charts, native picker cancellation, keyboard, manual session save and logs.\n')
 finally:
     shot('last-screen')

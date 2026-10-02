@@ -11,7 +11,7 @@ on:
         required: true
         default: store
         type: choice
-        options: [store, progress]
+        options: [store, progress, reviewer]
 permissions:
   contents: read
   actions: read
@@ -55,11 +55,12 @@ jobs:
           mkdir -p artifacts/ios-capture
           flow=.maestro/ios-store.yaml
           if [ "$CAPTURE_FLOW" = progress ]; then flow=.maestro/progress.yaml; fi
+          if [ "$CAPTURE_FLOW" = reviewer ]; then flow=.maestro/reviewer.yaml; fi
           for attempt in 1 2; do
             output="$PWD/artifacts/ios-capture/attempt-$attempt"
             mkdir -p "$output"
             if "$MAESTRO_BIN" --device "$device" test --test-output-dir "$output/debug" --debug-output "$output/debug" --format junit --output "$output/results.xml" "$flow"; then
-              if [ "$CAPTURE_FLOW" = progress ]; then echo "PASS progress and breathing" > artifacts/ios-capture/result.txt; exit 0; fi
+              if [ "$CAPTURE_FLOW" != store ]; then echo "PASS $CAPTURE_FLOW" > artifacts/ios-capture/result.txt; exit 0; fi
               for name in 01-today 02-pre 03-session 04-post 05-result 06-history; do
                 matches=$(find "$output/debug" -path '*/takeScreenshot/*' -name "$name.png")
                 test "$(printf '%s\n' "$matches" | sed '/^$/d' | wc -l | tr -d ' ')" = "1"
