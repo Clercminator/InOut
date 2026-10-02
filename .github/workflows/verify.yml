@@ -97,6 +97,7 @@ jobs:
           xcrun simctl boot "$device"
           xcrun simctl bootstatus "$device" -b
           app=$(find ios/build/Build/Products/Release-iphonesimulator -maxdepth 1 -name '*.app' -print -quit)
+          bash ../../scripts/sign-ios-simulator.sh "$app"
           xcrun simctl install "$device" "$app"
           xcrun simctl launch "$device" com.imrtech.inout
           sleep 15
