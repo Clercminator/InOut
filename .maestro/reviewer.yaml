@@ -11,13 +11,17 @@ appId: com.imrtech.inout
     element:
       text: "Reviewer access"
     direction: DOWN
-    centerElement: true
+    timeout: 60000
+    waitToSettleTimeoutMs: 1000
+    centerElement: false
 - tapOn: "Reviewer access"
 - scrollUntilVisible:
     element:
       text: "Review code"
     direction: DOWN
-    centerElement: true
+    timeout: 60000
+    waitToSettleTimeoutMs: 1000
+    centerElement: false
 - tapOn: "Review code"
 # Public negative-test input, never a usable reviewer credential.
 - inputText: "invalid-native-review-probe"
@@ -26,7 +30,9 @@ appId: com.imrtech.inout
     element:
       text: "Unlock Pro"
     direction: DOWN
-    centerElement: true
+    timeout: 60000
+    waitToSettleTimeoutMs: 1000
+    centerElement: false
 - tapOn: "Unlock Pro"
 - extendedWaitUntil:
     visible: "Invalid or unavailable review code."

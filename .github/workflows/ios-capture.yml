@@ -62,7 +62,7 @@ jobs:
             if "$MAESTRO_BIN" --device "$device" test --test-output-dir "$output/debug" --debug-output "$output/debug" --format junit --output "$output/results.xml" "$flow"; then
               if [ "$CAPTURE_FLOW" != store ]; then echo "PASS $CAPTURE_FLOW" > artifacts/ios-capture/result.txt; exit 0; fi
               for name in 01-today 02-pre 03-session 04-post 05-result 06-history; do
-                matches=$(find "$output/debug" -path '*/takeScreenshot/*' -name "$name.png")
+                matches=$(find "$output/debug" -type f -name "step-*-takeScreenshot-$name.png")
                 test "$(printf '%s\n' "$matches" | sed '/^$/d' | wc -l | tr -d ' ')" = "1"
                 cp "$matches" "$output/$name.png"
               done

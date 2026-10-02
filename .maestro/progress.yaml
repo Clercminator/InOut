@@ -10,13 +10,17 @@ appId: com.imrtech.inout
     element:
       text: "Add session"
     direction: DOWN
-    centerElement: true
+    timeout: 60000
+    waitToSettleTimeoutMs: 1000
+    centerElement: false
 - tapOn: "Add session"
 - scrollUntilVisible:
     element:
       text: "Choose date"
     direction: DOWN
-    centerElement: true
+    timeout: 60000
+    waitToSettleTimeoutMs: 1000
+    centerElement: false
 - tapOn: "Choose date"
 - takeScreenshot: native-date-picker
 - tapOn: "Cancel picker"
@@ -27,7 +31,9 @@ appId: com.imrtech.inout
     element:
       text: "Save session"
     direction: DOWN
-    centerElement: true
+    timeout: 60000
+    waitToSettleTimeoutMs: 1000
+    centerElement: false
 - tapOn: "Save session"
 - assertVisible: "Session saved"
 - takeScreenshot: manual-saved
@@ -36,7 +42,9 @@ appId: com.imrtech.inout
     element:
       text: "See all stats"
     direction: DOWN
-    centerElement: true
+    timeout: 60000
+    waitToSettleTimeoutMs: 1000
+    centerElement: false
 - tapOn: "See all stats"
 - assertVisible: "MY STATS"
 - tapOn: "Weeks"
@@ -45,7 +53,9 @@ appId: com.imrtech.inout
     element:
       text: "Previous period"
     direction: DOWN
-    centerElement: true
+    timeout: 60000
+    waitToSettleTimeoutMs: 1000
+    centerElement: false
 - tapOn:
     text: "Previous period"
     index: 0
@@ -55,7 +65,9 @@ appId: com.imrtech.inout
     element:
       text: "View session history"
     direction: DOWN
-    centerElement: true
+    timeout: 60000
+    waitToSettleTimeoutMs: 1000
+    centerElement: false
 - tapOn: "View session history"
 - assertVisible: "Manual breathing"
 - takeScreenshot: manual-history
@@ -68,6 +80,8 @@ appId: com.imrtech.inout
     element:
       text: "Skip rating & start"
     direction: DOWN
+    timeout: 60000
+    waitToSettleTimeoutMs: 1000
     centerElement: false
 - tapOn:
     text: "Skip rating & start"

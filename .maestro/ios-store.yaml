@@ -9,6 +9,8 @@ appId: com.imrtech.inout
     element:
       text: "Start practice"
     direction: DOWN
+    timeout: 60000
+    waitToSettleTimeoutMs: 1000
 - tapOn: "Start practice"
 - assertVisible: 'How tense are you right now\?'
 - tapOn: "7 of 10"
@@ -17,6 +19,8 @@ appId: com.imrtech.inout
     element:
       text: "START PRACTICE.*"
     direction: DOWN
+    timeout: 60000
+    waitToSettleTimeoutMs: 1000
 - tapOn:
     text: "START PRACTICE.*"
     waitToSettleTimeoutMs: 500
@@ -28,12 +32,16 @@ appId: com.imrtech.inout
     element:
       text: "3 of 10"
     direction: DOWN
+    timeout: 60000
+    waitToSettleTimeoutMs: 1000
 - tapOn: "3 of 10"
 - takeScreenshot: 04-post
 - scrollUntilVisible:
     element:
       text: "SEE MY STATE SHIFT.*"
     direction: DOWN
+    timeout: 60000
+    waitToSettleTimeoutMs: 1000
 - tapOn: "SEE MY STATE SHIFT.*"
 - assertVisible: "Tension down 4 points"
 - takeScreenshot: 05-result
@@ -41,6 +49,8 @@ appId: com.imrtech.inout
     element:
       text: ".*VIEW HISTORY.*"
     direction: DOWN
+    timeout: 60000
+    waitToSettleTimeoutMs: 1000
 - tapOn: ".*VIEW HISTORY.*"
 - assertVisible: "HISTORY"
 - takeScreenshot: 06-history
