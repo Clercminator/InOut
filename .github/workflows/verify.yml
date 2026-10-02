@@ -1,5 +1,14 @@
 name: Native mobile verification
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: Native build target
+        type: choice
+        default: all
+        options: [all, ios, android]
 permissions:
   contents: read
 concurrency:
@@ -23,6 +32,7 @@ jobs:
       - run: npx expo export --platform all --output-dir ../../artifacts/mobile-export
         working-directory: apps/mobile
   android-preview:
+    if: inputs.platform != 'ios'
     needs: verify
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -67,6 +77,7 @@ jobs:
           path: artifacts/android-smoke/
 
   ios-simulator:
+    if: inputs.platform != 'android'
     needs: verify
     runs-on: macos-26
     timeout-minutes: 60
@@ -89,7 +100,18 @@ jobs:
         run: |
           workspace=$(find ios -maxdepth 1 -name '*.xcworkspace' -print -quit)
           scheme=$(basename "$workspace" .xcworkspace)
-          xcodebuild -workspace "$workspace" -scheme "$scheme" -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath ios/build ARCHS=arm64 ONLY_ACTIVE_ARCH=YES CODE_SIGNING_ALLOWED=NO > ../../artifacts-ios-build.log 2>&1 || { tail -120 ../../artifacts-ios-build.log; exit 1; }
+          # Xcode embeds simulator Keychain entitlements at link time. Signing an
+          # already unsigned executable cannot replace that simulated-entitlement section.
+          python3 - "$scheme" <<'PY'
+          import plistlib, sys
+          from pathlib import Path
+          path = Path('ios') / sys.argv[1] / (sys.argv[1] + '.entitlements')
+          entitlements = plistlib.loads(path.read_bytes())
+          entitlements['application-identifier'] = 'com.imrtech.inout'
+          entitlements['keychain-access-groups'] = ['com.imrtech.inout']
+          path.write_bytes(plistlib.dumps(entitlements))
+          PY
+          xcodebuild -workspace "$workspace" -scheme "$scheme" -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath ios/build ARCHS=arm64 ONLY_ACTIVE_ARCH=YES CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM= > ../../artifacts-ios-build.log 2>&1 || { tail -120 ../../artifacts-ios-build.log; exit 1; }
       - name: Launch on iPhone simulator
         working-directory: apps/mobile
         run: |
@@ -97,7 +119,6 @@ jobs:
           xcrun simctl boot "$device"
           xcrun simctl bootstatus "$device" -b
           app=$(find ios/build/Build/Products/Release-iphonesimulator -maxdepth 1 -name '*.app' -print -quit)
-          bash ../../scripts/sign-ios-simulator.sh "$app"
           xcrun simctl install "$device" "$app"
           xcrun simctl launch "$device" com.imrtech.inout
           sleep 15
