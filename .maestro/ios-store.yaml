@@ -15,10 +15,10 @@ appId: com.imrtech.inout
 - takeScreenshot: 02-pre
 - scrollUntilVisible:
     element:
-      text: "START RESET.*"
+      text: "START PRACTICE.*"
     direction: DOWN
 - tapOn:
-    text: "START RESET.*"
+    text: "START PRACTICE.*"
     waitToSettleTimeoutMs: 500
 - takeScreenshot: 03-session
 - extendedWaitUntil:

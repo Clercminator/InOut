@@ -3,7 +3,7 @@ appId: com.imrtech.inout
 - launchApp:
     clearState: true
 - tapOn: "Skip introduction"
-- tapOn: "Progress, tab, 4 of 4"
+- tapOn: ".*Progress"
 - assertVisible: "CURRENT STREAK"
 - takeScreenshot: progress-overview
 - scrollUntilVisible:

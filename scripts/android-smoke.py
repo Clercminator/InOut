@@ -110,8 +110,8 @@ try:
     find('How tense are you right now?')
     shot('02-pre')
     tap('7 of 10')
-    scroll_to('START RESET')
-    tap('START RESET')
+    scroll_to('START PRACTICE')
+    tap('START PRACTICE')
     # Avoid waiting for accessibility-tree idleness during the animated timer.
     time.sleep(2)
     shot('03-active')

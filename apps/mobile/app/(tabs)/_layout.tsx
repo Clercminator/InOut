@@ -45,8 +45,9 @@ export default function TabLayout() {
         name="index"
         options={{
           title: t("Today"),
+          tabBarAccessibilityLabel: t("Today"),
           tabBarIcon: ({ color, size }) => (
-            <MaterialIcons name="bolt" color={color} size={size} />
+            <MaterialIcons accessible={false} name="bolt" color={color} size={size} />
           ),
         }}
       />
@@ -54,8 +55,9 @@ export default function TabLayout() {
         name="protocols"
         options={{
           title: t("Protocols"),
+          tabBarAccessibilityLabel: t("Protocols"),
           tabBarIcon: ({ color, size }) => (
-            <MaterialIcons name="grid-view" color={color} size={size} />
+            <MaterialIcons accessible={false} name="grid-view" color={color} size={size} />
           ),
         }}
       />
@@ -63,8 +65,9 @@ export default function TabLayout() {
         name="custom"
         options={{
           title: t("Custom"),
+          tabBarAccessibilityLabel: t("Custom"),
           tabBarIcon: ({ color, size }) => (
-            <MaterialIcons name="tune" color={color} size={size} />
+            <MaterialIcons accessible={false} name="tune" color={color} size={size} />
           ),
         }}
       />
@@ -72,8 +75,9 @@ export default function TabLayout() {
         name="progress"
         options={{
           title: t("Progress"),
+          tabBarAccessibilityLabel: t("Progress"),
           tabBarIcon: ({ color, size }) => (
-            <MaterialIcons name="equalizer" color={color} size={size} />
+            <MaterialIcons accessible={false} name="equalizer" color={color} size={size} />
           ),
         }}
       />
