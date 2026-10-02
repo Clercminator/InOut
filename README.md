@@ -316,7 +316,7 @@ Google Health declaration: disclose breathing/wellbeing/stress-management functi
 
 Sources for final console reconciliation: [Google Data Safety definitions](https://support.google.com/googleplay/android-developer/answer/10787469), [Google Mobile Ads disclosure](https://developers.google.com/admob/android/privacy/play-data-disclosure), [RevenueCat Apple privacy guidance](https://www.revenuecat.com/docs/platform-resources/apple-platform-resources/apple-app-privacy), [Expo SecureStore behavior](https://docs.expo.dev/versions/latest/sdk/securestore/). Installed AdMob wrapper pins Android SDK 25.4.0 and iOS SDK 13.5.0; verify final native resolution, since Google's current disclosure page describes its latest SDK. Store forms are recommendations pending owner attestation, not submissions.
 
-## October 1 release-hardening verification
+## October 2 release-hardening verification
 
 - `npm run verify`: 100 domain/backend tests + 111 mobile tests in ten suites passed, including provider isolation, pending/restore/refund behavior, reviewer SQL role denial, rotation/revocation/rate limits, secure cache/rollback/reset and reviewer UI states. TypeScript and EN/ES/PT catalog checks passed. `artifacts/release-hardening-verify.log`.
 - Expo Doctor: 21/21. Android/iOS JavaScript exports passed. `artifacts/release-hardening-doctor.log`, `artifacts/release-hardening-export.log`. These do not establish native signing or device acceptance.

@@ -53,6 +53,12 @@ def find(text, timeout=15, class_name=None):
         except (subprocess.CalledProcessError, subprocess.TimeoutExpired, ET.ParseError):
             time.sleep(.3)
             continue
+        if any(n.get('text') == "Quickstep isn't responding" for n in root.iter('node')):
+            # Dismiss only the hosted emulator launcher failure, never an app ANR.
+            close = next(n for n in root.iter('node') if n.get('text') == 'Close app')
+            left, top, right, bottom = bounds(close)
+            adb('shell', 'input', 'tap', str((left + right)//2), str((top + bottom)//2))
+            continue
         node = visible_target(root, text, class_name)
         if node is not None:
             print(f'Found {text}', flush=True)
@@ -134,7 +140,7 @@ try:
     tap('3 of 10')
     scroll_to('SEE MY STATE SHIFT')
     tap('SEE MY STATE SHIFT')
-    find('Tension down 4 points')
+    scroll_to('Tension down 4 points')
     shot('06-result')
     scroll_to('VIEW HISTORY')
     tap('VIEW HISTORY')

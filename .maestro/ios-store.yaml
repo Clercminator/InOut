@@ -43,7 +43,12 @@ appId: com.imrtech.inout
     timeout: 60000
     waitToSettleTimeoutMs: 1000
 - tapOn: "SEE MY STATE SHIFT.*"
-- assertVisible: "Tension down 4 points"
+- scrollUntilVisible:
+    element:
+      text: "Tension down 4 points"
+    direction: DOWN
+    timeout: 60000
+    waitToSettleTimeoutMs: 1000
 - takeScreenshot: 05-result
 - scrollUntilVisible:
     element:
