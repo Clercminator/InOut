@@ -71,6 +71,11 @@ try:
     for _ in range(25):
         root = tree()
         text = ' '.join(n.get('text', '') + ' ' + n.get('content-desc', '') for n in root.iter('node'))
+        # Hosted emulator launcher ANRs must not mask the Expo app. Never
+        # dismiss an IN/OUT or Expo Go ANR; those remain test failures.
+        if "Quickstep isn't responding" in text:
+            tap('Close app')
+            continue
         if 'SDK version:' in text and 'Go home' in text:
             tap('Close')
             continue

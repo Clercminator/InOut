@@ -24,6 +24,10 @@ appId: com.imrtech.inout
 - extendedWaitUntil:
     visible: 'How tense are you now\?'
     timeout: 70000
+- scrollUntilVisible:
+    element:
+      text: "3 of 10"
+    direction: DOWN
 - tapOn: "3 of 10"
 - takeScreenshot: 04-post
 - scrollUntilVisible:

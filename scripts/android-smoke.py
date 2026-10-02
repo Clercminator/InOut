@@ -130,6 +130,7 @@ try:
     adb('shell', 'am', 'force-stop', APP)
     launch()
     find('How tense are you now?')
+    scroll_to('3 of 10')
     tap('3 of 10')
     scroll_to('SEE MY STATE SHIFT')
     tap('SEE MY STATE SHIFT')
