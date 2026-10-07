@@ -21,6 +21,9 @@ app=$(find artifacts/app/unpacked -maxdepth 1 -name '*.app' -print -quit)
 du -sk "$app" > artifacts/rc-visual/app-size-kib.txt
 xcrun simctl install "$device" "$app"
 xcrun simctl ui "$device" appearance light
+export MAESTRO_DRIVER_STARTUP_TIMEOUT=600000
+xcrun simctl launch "$device" com.imrtech.inout
+sleep 15
 "$cli" --device "$device" test --test-output-dir artifacts/rc-visual/light --debug-output artifacts/rc-visual/light --format junit --output artifacts/rc-visual/light/results.xml .maestro/rc-visual.yaml
 xcrun simctl ui "$device" appearance dark
 xcrun simctl openurl "$device" inout://profile

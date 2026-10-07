@@ -6,8 +6,6 @@ on:
         description: Native verification run containing the release artifacts
         required: true
         type: string
-  push:
-    paths: ['.github/workflows/rc-visual.yml', '.maestro/rc-visual.yaml', 'scripts/rc-*-visual.sh']
 permissions:
   contents: read
   actions: read

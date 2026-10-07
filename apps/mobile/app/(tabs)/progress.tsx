@@ -19,6 +19,7 @@ export default function Progress() {
   const now = useProgressDate();
   const { view } = useLocalSearchParams<{ view?: string }>();
   const [section, setSection] = useState(view === "Badges" ? "Badges" : "Overview"), [notice, setNotice] = useState("");
+  useEffect(() => { if (view === "Badges") setSection("Badges"); }, [view]);
   useEffect(() => { controller.analytics.track("progress_viewed"); }, [controller]);
   useEffect(() => { if (section === "Calendar") controller.analytics.track("calendar_viewed"); }, [controller, section]);
   const records = controller.history();

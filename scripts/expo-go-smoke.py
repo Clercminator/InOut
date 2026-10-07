@@ -77,6 +77,8 @@ try:
             tap('Close app')
             continue
         if 'SDK version:' in text and 'Go home' in text:
+            if 'Tools button' in text:
+                tap('Tools button')
             tap('Close')
             continue
         if 'Start breathing' in text:

@@ -9,7 +9,7 @@ import ProtocolDetail from "../app/protocol";
 import { setLanguage, t } from "../src/i18n";
 import React from "react";
 import { SafeAreaInsetsContext } from "react-native-safe-area-context";
-import { AccessibilityInfo, AppState, Alert } from "react-native";
+import { AccessibilityInfo, AppState, Alert, Platform, Share } from "react-native";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 import type { Preferences, SessionRecord } from "@inout/shared-types";
 import type { LocalStore } from "../src/storage";
@@ -358,6 +358,7 @@ test("personalization resumes from saved value screen and paywall dismissal ente
 });
 
 test("earned milestone shares a private image through native sharing and offers both aspect ratios", async () => {
+  jest.replaceProperty(Platform, "OS", "android");
   mockController.addManualSession({ goal: "Calm", startedAt: Date.now()-120000, durationMs:60000 });
   mockParams = { badge: "sessions-1" };
   await render(wrap(<Milestone />));
@@ -365,4 +366,17 @@ test("earned milestone shares a private image through native sharing and offers 
   await fireEvent.press(screen.getByRole("button", { name: "Share achievement" }));
   await waitFor(() => expect(mockShare).toHaveBeenCalledWith("file:///card.png", { mimeType:"image/png", dialogTitle:"My IN/OUT practice" }));
   expect(screen.queryByText("Finding my rhythm")).toBeNull();
+});
+test("iOS badge sharing records completion but never records a dismissal as shared", async () => {
+  jest.replaceProperty(Platform, "OS", "ios");
+  const share = jest.spyOn(Share, "share").mockResolvedValueOnce({ action: Share.dismissedAction }).mockResolvedValueOnce({ action: Share.sharedAction });
+  mockController.addManualSession({ goal: "Calm", startedAt: Date.now()-120000, durationMs:60000 });
+  mockParams = { badge: "sessions-1" };
+  const track = jest.spyOn(mockController.analytics, "track");
+  await render(wrap(<Milestone />));
+  await fireEvent.press(screen.getByRole("button", { name: "Share achievement" }));
+  await waitFor(() => expect(share).toHaveBeenCalledTimes(1));
+  expect(track).not.toHaveBeenCalledWith("badge_shared");
+  await fireEvent.press(screen.getByRole("button", { name: "Share achievement" }));
+  await waitFor(() => expect(track).toHaveBeenCalledWith("badge_shared"));
 });

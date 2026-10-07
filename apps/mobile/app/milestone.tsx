@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { View, useWindowDimensions } from "react-native";
+import { Platform, Share, View, useWindowDimensions } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useLocalSearchParams } from "expo-router";
 import { captureRef, releaseCapture } from "react-native-view-shot";
@@ -43,7 +43,14 @@ export default function Milestone() {
       void (async () => { let uri: string | undefined;
         try { if (!await Sharing.isAvailableAsync()) throw Error("Sharing unavailable");
           uri = await captureRef(card, { format: "png", quality: 1, result: "tmpfile", width: 1080, height: story ? 1920 : 1080 });
-          controller.analytics.track("native_share_opened"); await Sharing.shareAsync(uri, { mimeType: "image/png", dialogTitle: t("My IN/OUT practice") });
+          controller.analytics.track("native_share_opened");
+          if (Platform.OS === "ios") {
+            const result = await Share.share({ url: uri }, { subject: t("My IN/OUT practice") });
+            if (result.action === Share.sharedAction) controller.analytics.track("badge_shared");
+          } else {
+            // Android's image-share API cannot distinguish completion from dismissal.
+            await Sharing.shareAsync(uri, { mimeType: "image/png", dialogTitle: t("My IN/OUT practice") });
+          }
         } catch { setError("Could not share. Please try again."); }
         finally { if (uri) releaseCapture(uri); busyRef.current = false; setBusy(false); }
       })();

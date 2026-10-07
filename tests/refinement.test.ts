@@ -108,6 +108,20 @@ test("welcome requires consent and completed onboarding, and templates escape us
   const email=welcomeTemplate(input,"InOut <hello@example.test>"); assert.doesNotMatch(email.html,/<script>/); assert.match(email.html,/inout:\/\/pre\?id=coherent/);
   assert.throws(()=>validateWelcome({...input,consent:false}));
 });
+test("welcome rejects oversized streams before storage or provider access", async () => {
+  let calls = 0;
+  const handler = welcomeHandler(async () => { calls++; }, { send: async () => { calls++; return "unused"; } }, () => ({ enabled: true, from: "a@example.test", hashSalt: "fixture" }));
+  const body = new ReadableStream({ start(c) { c.enqueue(new Uint8Array(1024)); c.enqueue(new Uint8Array(1025)); c.close(); } });
+  const request = new Request("https://example.test", { method: "POST", body, duplex: "half" } as RequestInit);
+  assert.equal((await handler(request)).status, 413);
+  assert.equal(calls, 0);
+});
+test("paywall source analytics accepts only finite values without private context", () => {
+  const calls: unknown[] = [];
+  const analytics = new AnalyticsService({ record: (...args) => calls.push(args) });
+  analytics.paywallSource("profile"); analytics.paywallSource("private free text");
+  assert.deepEqual(calls, [["paywall_source", { source: "profile" }], ["paywall_source", { source: "other" }]]);
+});
 test("welcome delivery SQL deduplicates, restricts roles, leases retries and bounds uncertain delivery", async () => {
   const db=new PGlite();
   try {

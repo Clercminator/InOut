@@ -2,8 +2,13 @@ appId: com.imrtech.inout
 ---
 - launchApp:
     clearState: true
-- assertVisible: "Start breathing"
+- scrollUntilVisible:
+    element: { text: "Start breathing" }
+    direction: DOWN
 - takeScreenshot: 01-welcome
+- scrollUntilVisible:
+    element: { text: "Personalize InOut" }
+    direction: DOWN
 - tapOn: "Personalize InOut"
 - tapOn: "Reduce stress & anxiety"
 - takeScreenshot: 02-goals
@@ -54,8 +59,7 @@ appId: com.imrtech.inout
 - takeScreenshot: 15-native-share
 - launchApp:
     stopApp: true
-- openLink: "inout://profile"
-- tapOn: { text: "Open", optional: true }
+- tapOn: "My practice profile"
 - takeScreenshot: 16-profile
 - scrollUntilVisible:
     element: { text: "Edit profile" }
@@ -88,6 +92,7 @@ appId: com.imrtech.inout
     direction: DOWN
 - tapOn: "Skip & save session"
 - takeScreenshot: 21-result
-- openLink: "inout://settings"
-- tapOn: { text: "Open", optional: true }
+- launchApp:
+    stopApp: true
+- tapOn: "Open settings"
 - takeScreenshot: 22-settings
