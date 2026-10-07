@@ -1,10 +1,18 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import policy from './build-policy.cjs';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const info = JSON.parse(readFileSync(root + 'release/public-info.json', 'utf8'));
 const listing = JSON.parse(readFileSync(root + 'release/store-listing.json', 'utf8'));
 const readiness = JSON.parse(readFileSync(root + 'release/readiness.json', 'utf8'));
-const errors = [];
+const sharing = JSON.parse(readFileSync(root + 'release/sharing.json', 'utf8'));
+const errors = policy.buildPolicy(process.env, readiness.gates, listing.status);
+if (sharing.apiUrl || readiness.gates?.sharingVerified || process.env.INOUT_RELEASE === '1') {
+  try {
+    const url = new URL(sharing.apiUrl);
+    if (url.protocol !== 'https:' || url.username || url.password || !url.pathname.endsWith('/functions/v1/inout-shares')) throw new Error();
+  } catch { errors.push('A deployed HTTPS sharing API is required before sharing acceptance.'); }
+}
 if (process.env.INOUT_RELEASE === '1') {
   for (const key of ['EXPO_PUBLIC_REVENUECAT_IOS_KEY', 'EXPO_PUBLIC_REVENUECAT_ANDROID_KEY', 'ADMOB_IOS_APP_ID', 'ADMOB_ANDROID_APP_ID', 'EXPO_PUBLIC_ADMOB_IOS_BANNER_ID', 'EXPO_PUBLIC_ADMOB_ANDROID_BANNER_ID']) {
     if (!process.env[key] || process.env[key].includes('3940256099942544')) errors.push(`Production configuration is missing or uses demo values: ${key}`);

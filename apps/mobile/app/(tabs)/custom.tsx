@@ -1,30 +1,35 @@
-import { Alert, View } from "react-native";
+import { FeatureCard } from "../../src/feature-card";
+import { useLanguage } from "../../src/use-language";
+import { Alert } from "../../src/localized-native";
+import { View } from "react-native";
 import { router } from "expo-router";
-import { Screen, Title, Copy, Label, Card, Button } from "../../src/ui";
+import { Screen, Title, Copy, Label, Card, Button, ActionRow } from "../../src/ui";
 import { protocols } from "@inout/protocols";
 import { useSession } from "../../src/provider";
 
 export default function Custom() {
+  useLanguage();
   const controller = useSession();
   const saved = protocols.filter((protocol) => protocol.availability === "enabled" && controller.isFavorite(protocol.id));
 
   return (
-    <Screen>
+    <Screen tabScreen>
+      <View style={{ gap: 8 }}>
       <Label>CUSTOM</Label>
       <Title>Your saved cadence.</Title>
       <Copy>
         Build a pattern for the moment, or combine routines into a mix that is
         yours.
       </Copy>
-      <View style={{ gap: 10 }}>
-        <Button title="Create Pattern" onPress={() => router.push("/custom-pattern")} />
-        <Button title="Create Mix" secondary onPress={() => router.push("/custom-mix")} />
+      </View>
+      <View style={{ gap: 12 }}>
+        <FeatureCard title="Create Pattern" description="Choose your own breathing phases and timing." icon="tune" action="Create Pattern" onPress={() => router.push("/custom-pattern")} />
+        <FeatureCard title="Create Mix" description="Bring your favorite routines together in one practice." icon="playlist-play" tone="exhale" action="Create Mix" onPress={() => router.push("/custom-mix")} />
       </View>
       <Card>
         <Label>SAVED</Label>
-        <Copy>Presets and mixes you create will live here.</Copy>
-        <Button title="Saved Presets" secondary onPress={() => router.push("/presets")} />
-        <Button title="Saved Mixes" secondary onPress={() => router.push("/mixes")} />
+        <ActionRow icon="bookmark-border" title="Saved Presets" onPress={() => router.push("/presets")} />
+        <ActionRow icon="queue-music" title="Saved Mixes" onPress={() => router.push("/mixes")} />
       </Card>
       {!saved.length && (
         <Card>

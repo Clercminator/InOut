@@ -1,4 +1,5 @@
-import type { SavedRoutine } from "@inout/shared-types";
+import type { SavedRoutine, Protocol } from "@inout/shared-types";
+import { productConfig } from "./product-config";
 
 export const commercialPolicy = Object.freeze({
   freeSavedPatterns: 1,
@@ -9,8 +10,7 @@ export const commercialPolicy = Object.freeze({
 });
 export const proCapabilities = [
   "adFree", "unlimitedCustomPatterns", "unlimitedMixes", "unlimitedSavedRoutines",
-  "advancedProgress", "advancedInsights", "advancedReminders", "advancedGuidance",
-  "premiumAudioVisuals", "futureCloudSync",
+  "advancedInsights", "advancedReminders",
 ] as const;
 export type Capability = typeof proCapabilities[number];
 export type SubscriptionStatus = "free" | "trial" | "active" | "cancelled" | "billingRetry" | "grace" | "expired";
@@ -36,14 +36,19 @@ export function validGrant(value: unknown): value is EntitlementGrant {
 }
 
 export class EntitlementService {
+  accessReady = true;
+  private reviewer: { verifiedAt: number; expiresAt: number } | null = null;
+  private highWater = 0;
   private grant: EntitlementGrant | null = null;
   private listeners = new Set<() => void>();
   private revision = 0;
+  private stateKey = "";
   constructor(
     readonly development = false,
     private now: () => number = Date.now,
     private cache?: EntitlementCache,
   ) {
+    if (development && typeof __DEV__ !== "undefined" && !__DEV__) throw new Error("Development entitlements are disabled in release builds");
     try {
       const saved = cache?.read();
       // Legacy preferences.pro and any persisted mock are never purchase evidence.
@@ -55,23 +60,42 @@ export class EntitlementService {
     return () => { this.listeners.delete(listener); };
   };
   getRevision = () => this.revision;
-  refresh = () => { this.revision++; this.listeners.forEach((fn) => fn()); };
+  refresh = () => { this.stateKey = JSON.stringify(this.state); this.revision++; this.listeners.forEach((fn) => fn()); };
+  checkExpiry = () => { if (JSON.stringify(this.state) !== this.stateKey) this.refresh(); };
   get state() {
     const g = this.grant;
     const now = this.now();
+    const rollback = now < this.highWater;
+    this.highWater = Math.max(this.highWater, now);
     const deadline = g?.status === "grace" ? Math.max(g.expiresAt, g.graceUntil ?? 0) : g?.expiresAt ?? 0;
-    const fresh = !!g && now >= g.verifiedAt && now - g.verifiedAt < commercialPolicy.maxOfflineAgeMs;
+    const fresh = !!g && !rollback && now >= g.verifiedAt && now - g.verifiedAt < commercialPolicy.maxOfflineAgeMs;
     const pro = !!g && g.active && fresh && now < deadline && !["free", "expired"].includes(g.status);
+    const reviewer = !rollback && !!this.reviewer && now >= this.reviewer.verifiedAt && now < this.reviewer.expiresAt && now - this.reviewer.verifiedAt < 3600000;
     return {
-      pro,
-      source: g?.source ?? "unconfigured",
-      status: pro ? g!.status : g && g.status !== "free" ? "expired" as const : "free" as const,
-      expiresAt: deadline || null,
+      pro: pro || reviewer,
+      subscriptionPro: pro,
+      reviewerPro: reviewer,
+      source: pro ? g!.source : reviewer ? "reviewer" : g?.source ?? "unconfigured",
+      status: pro ? g!.status : reviewer ? "active" as const : g && g.status !== "free" ? "expired" as const : "free" as const,
+      expiresAt: pro ? deadline : reviewer ? this.reviewer!.expiresAt : deadline || null,
       needsRefresh: !!g && !fresh,
     };
   }
-  has(capability: Capability): boolean { return proCapabilities.includes(capability) && this.state.pro; }
-  /** Only an isolated store adapter may call this after obtaining CustomerInfo. */
+  acceptReviewerGrant(grant: { verifiedAt: number; expiresAt: number } | null) {
+    this.reviewer = grant && Number.isFinite(grant.verifiedAt) && Number.isFinite(grant.expiresAt) ? { ...grant } : null;
+    this.refresh();
+  }
+  has(capability: Capability): boolean { return proCapabilities.includes(capability) && (!productConfig.proFeatures.includes(capability) || this.state.pro); }
+  protocolAccess(protocol: Pick<Protocol, "id" | "plan">) {
+    const locked = [protocol.id, ...(protocol.plan?.blocks.map(b => b.protocolId) ?? [])].some(id => productConfig.proProtocolIds.includes(id));
+    return { allowed: !locked || this.state.pro, requiresPro: locked };
+  }
+  guidedAccess(used: number) {
+    const limit = productConfig.guidedSessionsPerMonth;
+    const remaining = limit === null || this.state.pro ? null : Math.max(0, limit - used);
+    return { allowed: remaining === null || remaining > 0, remaining, limit };
+  }
+  /** Accept normalized provider evidence; never a UI preference. */
   acceptStoreGrant(grant: EntitlementGrant) {
     if (!validGrant(grant) || grant.source !== "store") throw new Error("Invalid store entitlement");
     this.grant = { ...grant };

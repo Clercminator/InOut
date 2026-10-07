@@ -1,9 +1,11 @@
+import { DevelopmentSubscriptionProvider } from "../apps/mobile/src/subscription-providers/test";
+import { grantFromCustomerInfo } from "../apps/mobile/src/subscription-providers/revenuecat";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { EntitlementService, commercialPolicy, proCapabilities, type EntitlementGrant } from "../apps/mobile/src/entitlements";
 import { AnalyticsService } from "../apps/mobile/src/analytics";
 import { AdService } from "../apps/mobile/src/ads";
-import { DevelopmentSubscriptionAdapter, SubscriptionService, grantFromCustomerInfo, type SubscriptionAdapter } from "../apps/mobile/src/subscriptions";
+import { SubscriptionService, type SubscriptionProvider } from "../apps/mobile/src/subscriptions";
 import { protocols } from "../packages/protocols/src/index";
 import type { SavedRoutine } from "../packages/shared-types/src/index";
 import type { CustomerInfo } from "react-native-purchases";
@@ -85,7 +87,7 @@ test("analytics sends allowlisted names only, ignoring extra runtime payloads an
 test("demo purchase/restore/cancel/failure work without producing real conversion events", async () => {
   let now = 1000;
   const e = new EntitlementService(true, () => now);
-  const adapter = new DevelopmentSubscriptionAdapter(() => now);
+  const adapter = new DevelopmentSubscriptionProvider(() => now);
   const events: string[] = [];
   const s = new SubscriptionService(adapter, e, new AnalyticsService({ record: (event) => events.push(event) }));
   await s.load(); assert.equal(s.offers.length, 2); assert.equal(e.state.pro, false);
@@ -100,7 +102,7 @@ test("demo purchase/restore/cancel/failure work without producing real conversio
 test("store refresh failure preserves unexpired cached access; repeated purchase is serialized", async () => {
   const e = new EntitlementService(false, () => 1000); e.acceptStoreGrant(grant());
   let release!: (g: EntitlementGrant) => void, calls = 0;
-  const adapter: SubscriptionAdapter = {
+  const adapter: SubscriptionProvider = {
     mode: "store", offers: async () => [], refresh: async () => { throw Error("offline"); },
     purchase: () => { calls++; return new Promise((resolve) => { release = resolve; }); },
     restore: async () => grant(), managementUrl: async () => null,
@@ -122,4 +124,10 @@ test("RevenueCat mapping preserves expiry, grace and cancelled-active states", (
     subscriptionsByProductIdentifier: { monthly: { gracePeriodExpiresDate: new Date(20000).toISOString() } } } as unknown as CustomerInfo;
   assert.equal(grantFromCustomerInfo(withGrace).status, "grace");
   assert.equal(grantFromCustomerInfo(withGrace).graceUntil, 20000);
+  assert.equal(grantFromCustomerInfo({ ...info, entitlements: { all: {} } } as CustomerInfo).status, "free");
+  for (const active of [false, true]) {
+    const refunded = { ...info, entitlements: { all: { pro: { ...info.entitlements.all.pro, isActive: active } } }, subscriptionsByProductIdentifier: { monthly: { refundedAt: new Date(2000).toISOString() } } } as unknown as CustomerInfo;
+    assert.equal(grantFromCustomerInfo(refunded).active, false);
+    assert.equal(grantFromCustomerInfo(refunded).status, "expired");
+  }
 });

@@ -2,37 +2,73 @@ appId: com.imrtech.inout
 ---
 - launchApp:
     clearState: true
-- tapOn: "Skip introduction"
-- assertVisible: "Breathe for what's next."
+- tapOn: "Personalize InOut"
+- tapOn: "Reduce stress & anxiety"
+- scrollUntilVisible:
+    element:
+      text: "Continue"
+    direction: DOWN
+- tapOn: "Continue"
+- tapOn: "Let's get started"
+- scrollUntilVisible:
+    element:
+      text: "I understand"
+    direction: DOWN
+- tapOn: "I understand"
+- tapOn: "Close subscription offer"
+- assertVisible: "FOR YOU"
 - takeScreenshot: 01-today
-- tapOn: "Start reset"
+- scrollUntilVisible:
+    element:
+      text: "48-second reset"
+    direction: DOWN
+    timeout: 60000
+    waitToSettleTimeoutMs: 1000
+- tapOn: "48-second reset"
 - assertVisible: 'How tense are you right now\?'
 - tapOn: "7 of 10"
 - takeScreenshot: 02-pre
 - scrollUntilVisible:
     element:
-      text: "START RESET.*"
+      text: "START PRACTICE.*"
     direction: DOWN
+    timeout: 60000
+    waitToSettleTimeoutMs: 1000
 - tapOn:
-    text: "START RESET.*"
+    text: "START PRACTICE.*"
     waitToSettleTimeoutMs: 500
 - takeScreenshot: 03-session
 - extendedWaitUntil:
     visible: 'How tense are you now\?'
     timeout: 70000
+- scrollUntilVisible:
+    element:
+      text: "3 of 10"
+    direction: DOWN
+    timeout: 60000
+    waitToSettleTimeoutMs: 1000
 - tapOn: "3 of 10"
 - takeScreenshot: 04-post
 - scrollUntilVisible:
     element:
       text: "SEE MY STATE SHIFT.*"
     direction: DOWN
+    timeout: 60000
+    waitToSettleTimeoutMs: 1000
 - tapOn: "SEE MY STATE SHIFT.*"
-- assertVisible: "Tension down 4 points"
+- scrollUntilVisible:
+    element:
+      text: "Tension down 4 points"
+    direction: DOWN
+    timeout: 60000
+    waitToSettleTimeoutMs: 1000
 - takeScreenshot: 05-result
 - scrollUntilVisible:
     element:
       text: ".*VIEW HISTORY.*"
     direction: DOWN
+    timeout: 60000
+    waitToSettleTimeoutMs: 1000
 - tapOn: ".*VIEW HISTORY.*"
 - assertVisible: "HISTORY"
 - takeScreenshot: 06-history

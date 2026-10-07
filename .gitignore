@@ -9,3 +9,5 @@ build/
 apps/mobile/android/
 apps/mobile/ios/
 artifacts/
+
+supabase/.temp/

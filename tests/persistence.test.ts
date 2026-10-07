@@ -1,4 +1,5 @@
 import test from "node:test";
+import { AnalyticsService, type ProductEvent } from "../apps/mobile/src/analytics";
 import assert from "node:assert/strict";
 import { DatabaseSync } from "node:sqlite";
 import { LocalStore, type Database } from "../apps/mobile/src/storage";
@@ -8,6 +9,7 @@ import * as engine from "../packages/breathing-engine/src/index";
 import { makeMixProtocol } from "../apps/mobile/src/custom-protocol";
 import { protocols, planFor } from "../packages/protocols/src/index";
 import { EntitlementService } from "../apps/mobile/src/entitlements";
+import { experienceFor, weeklyPractice } from "../apps/mobile/src/experience";
 function setup() {
   const db = new DatabaseSync(":memory:");
   const adapter: Database = {
@@ -48,12 +50,192 @@ function setup() {
   };
 }
 
+test("personal profiles, weekly goals, audio choices and one-tap rituals survive cold launch", () => {
+  const env = setup();
+  try {
+    const c = env.controller();
+    assert.equal(c.updateExperience({ name: "Sam", bio: "Making time for myself", weeklyGoal: 4, breathSound: "warm", guidanceVolume: 0.25, celebration: "quiet" }), true);
+    const box = protocols.find(p => p.id === "box")!;
+    assert.equal(c.saveRitual("Before sleep", box, 2), true);
+    const reopened = env.controller();
+    const e = experienceFor(reopened.preferences);
+    assert.equal(e.name, "Sam"); assert.equal(e.weeklyGoal, 4); assert.equal(e.rituals.length, 1);
+    assert.equal(reopened.startRitual(e.rituals[0].id), true);
+    assert.equal(reopened.current?.pre, null); assert.equal(reopened.current?.protocolId, "box");
+    assert.equal(reopened.current?.engine.plan.blocks[0].cycles, 2);
+    assert.equal(experienceFor(reopened.preferences).breathSound, "warm");
+    assert.equal(reopened.startRitual(e.rituals[0].id), false);
+  } finally { env.db.close(); }
+});
+
+test("badges and cosmetic unlocks are durable, idempotent and independent of tension ratings", () => {
+  const env = setup();
+  try {
+    const c = env.controller();
+    assert.equal(c.updateExperience({ palette: "mint" }), false);
+    c.start(1); env.now(49000); c.tick(); c.answer(10, "Worse");
+    assert.ok(c.rewards().badges.some(b => b.id === "sessions-1"));
+    assert.ok(c.latestAwards.some(b => b.id === "sessions-1"));
+    assert.equal(c.updateExperience({ palette: "mint" }), true);
+    const count = c.rewards().badges.length;
+    env.store.save(c.current!);
+    assert.equal(env.controller().rewards().badges.length, count);
+    c.clearHistory();
+    const reopened = env.controller();
+    assert.equal(reopened.history().length, 0);
+    assert.equal(reopened.rewards().badges.length, count);
+    assert.equal(experienceFor(reopened.preferences).palette, "mint");
+    reopened.resetLocalData();
+    assert.equal(env.controller().rewards().badges.length, 0);
+    assert.equal(experienceFor(env.controller().preferences).palette, "sky");
+  } finally { env.db.close(); }
+});
+
+test("result and rewards commit together; failed reward write retries without duplicate badges", () => {
+  const env = setup();
+  try {
+    const c = env.controller(); c.start(null); env.now(49000); c.tick();
+    const run = env.adapter.runSync;
+    env.adapter.runSync = (sql, ...params) => { if (sql.includes("rewards-v1")) throw new Error("disk full"); return run(sql, ...params); };
+    c.answer(null, null);
+    assert.ok(c.error); assert.equal(c.history().length, 0); assert.equal(c.latestAwards.length, 0);
+    assert.equal(env.store.pending()?.stage, "post");
+    env.adapter.runSync = run; c.retry();
+    assert.equal(c.error, null); assert.equal(c.history().length, 1);
+    assert.equal(c.rewards().badges.filter(b => b.id === "sessions-1").length, 1);
+  } finally { env.db.close(); }
+});
+
+test("weekly goals count distinct local days and freeze the target for an active week", () => {
+  const env = setup();
+  try {
+    const c = env.controller(); c.updateExperience({ weeklyGoal: 2 });
+    const monday = new Date(2026, 8, 14, 12).getTime();
+    env.now(monday + 60000);
+    c.addManualSession({ goal: "Calm", startedAt: monday, durationMs: 1000 });
+    c.addManualSession({ goal: "Calm", startedAt: monday + 10000, durationMs: 1000 });
+    let weekly = weeklyPractice(c.history(), c.rewards(), 2, new Date(monday));
+    assert.equal(weekly.count, 1); assert.equal(weekly.goal, 2);
+    c.updateExperience({ weeklyGoal: 7 });
+    const tuesday = new Date(2026, 8, 15, 12).getTime(); env.now(tuesday + 60000);
+    c.addManualSession({ goal: "Focus", startedAt: tuesday, durationMs: 1000 });
+    weekly = weeklyPractice(c.history(), c.rewards(), 7, new Date(tuesday + 60000));
+    assert.equal(weekly.count, 2); assert.equal(weekly.goal, 2);
+    assert.ok(c.latestAwards.some(b => b.id.startsWith("week-")));
+    const nextMonday = new Date(2026, 8, 21, 12).getTime(); env.now(nextMonday + 60000);
+    c.addManualSession({ goal: "Calm", startedAt: nextMonday, durationMs: 1000 });
+    assert.equal(weeklyPractice(c.history(), c.rewards(), 7, new Date(nextMonday + 60000)).goal, 7);
+  } finally { env.db.close(); }
+});
+
+test("manual logs persist across controllers without replacing an active session and refresh/delete correctly", () => {
+  const env = setup();
+  try {
+    env.now(10000000);
+    const c = env.controller(); c.start(7);
+    const active = c.current?.id;
+    assert.deepEqual(c.history(), []);
+    const id = c.addManualSession({ goal: "Focus", durationMs: 7200000, startedAt: 1000 });
+    assert.ok(id); assert.equal(c.current?.id, active);
+    const other = env.controller();
+    assert.equal(other.history()[0].source, "manual"); assert.equal(other.history()[0].engine.elapsedAtAnchor, 7200000);
+    assert.equal(other.current?.id, active);
+    assert.equal(c.history().length, 1);
+    other.remove(id); assert.equal(c.history().length, 1);
+    c.refreshHistory(); assert.equal(c.history().length, 0);
+  } finally { env.db.close(); }
+});
+
+test("failed manual writes can retry and resubmit without duplicating a log", () => {
+  const env = setup();
+  try {
+    env.now(100000);
+    const c = env.controller();
+    const run = env.adapter.runSync;
+    env.adapter.runSync = () => { throw new Error("disk full"); };
+    const input = { goal: "Calm" as const, startedAt: 1000, durationMs: 60000 };
+    assert.equal(c.addManualSession(input, "manual-draft"), null);
+    assert.ok(c.error); assert.equal(c.history().length, 0);
+    env.adapter.runSync = run;
+    c.retry(); assert.equal(c.error, null);
+    assert.equal(c.addManualSession(input, "manual-draft"), "manual-draft");
+    assert.equal(env.controller().history().length, 1);
+  } finally { env.db.close(); }
+});
+
+test("failed history deletion retains its retry even when another delete, clear or refresh is requested", () => {
+  const env = setup();
+  try {
+    env.now(100000);
+    const c = env.controller();
+    const first = c.addManualSession({ goal: "Calm", startedAt: 1000, durationMs: 1000 })!;
+    const second = c.addManualSession({ goal: "Focus", startedAt: 3000, durationMs: 1000 })!;
+    const run = env.adapter.runSync;
+    env.adapter.runSync = () => { throw new Error("disk full"); };
+    c.remove(first);
+    assert.ok(c.error);
+    assert.equal(c.history().length, 2);
+    c.remove(second);
+    c.clearHistory();
+    assert.equal(c.refreshHistory(), false);
+    assert.ok(c.error);
+    env.adapter.runSync = run;
+    c.retry();
+    assert.equal(c.error, null);
+    assert.deepEqual(env.controller().history().map(r => r.id), [second]);
+  } finally { env.db.close(); }
+});
+
+test("cyclic rituals require fresh confirmation and shortened holds persist through a cold launch", () => {
+  const env = setup();
+  try {
+    const p = protocols.find(p => p.id === "high-intensity-cyclic")!;
+    const c = env.controller();
+    assert.equal(c.saveRitual("My breathing rounds", p, 1), true);
+    const reopened = env.controller();
+    const id = experienceFor(reopened.preferences).rituals[0].id;
+    assert.equal(reopened.startRitual(id), false);
+    assert.equal(reopened.startRitual(id, true), true);
+    env.now(131000);
+    reopened.releaseHold();
+    assert.equal(reopened.view()?.sessionElapsedMs, 130000);
+    const resumed = env.controller();
+    assert.equal(resumed.current?.safetyConfirmed, true);
+    assert.equal(resumed.view()?.phase.type, "inhale");
+    resumed.resume();
+    env.now(167000);
+    resumed.tick();
+    assert.equal(resumed.current?.stage, "post");
+    resumed.answer(null, null);
+    assert.equal(env.controller().history()[0].engine.elapsedAtAnchor, 166000);
+    const replay = env.controller();
+    replay.start(null, 1, replay.history()[0].protocol!);
+    assert.equal(replay.current, null);
+    replay.start(null, 1, replay.history()[0].protocol!, true);
+    assert.equal(replay.view()?.sessionRemainingMs, 216000);
+  } finally { env.db.close(); }
+});
+
+test("vibration style survives a cold launch and legacy preferences remain usable", () => {
+  const env = setup();
+  try {
+    const c = env.controller();
+    assert.equal(c.preferences.hapticMode, undefined);
+    c.setPreferences({ ...c.preferences, haptics: true, hapticMode: "rhythm" });
+    assert.equal(env.controller().preferences.hapticMode, "rhythm");
+    c.setPreferences({ ...c.preferences, haptics: false, hapticMode: "transitions" });
+    const reopened = env.controller();
+    assert.equal(reopened.preferences.hapticMode, "transitions");
+    assert.equal(reopened.preferences.haptics, false);
+  } finally { env.db.close(); }
+});
+
 for (const protocol of protocols.filter((p) => p.availability === "enabled")) {
   test(`${protocol.name}: offline completion, post recovery and durable history`, () => {
     const env = setup();
     try {
       const c = env.controller();
-      c.start(7, protocol.defaultCycles, protocol);
+      c.start(7, protocol.defaultCycles, protocol, protocol.safetyCategory === "highIntensity");
       assert.equal(c.current?.protocolId, protocol.id);
       env.now(1000 + engine.totalDuration(planFor(protocol)));
       c.tick();
@@ -376,9 +558,121 @@ test("history is not reread on every timer render and invalidates after new resu
   assert.equal(reads, 1);
   c.end("ended");
   assert.equal(c.history().length, 1);
-  assert.equal(reads, 2);
+  assert.equal(reads, 3); // Result persistence also reconciles earned rewards once.
+  for (let i = 0; i < 10; i++) { c.history(); c.rewards(); }
+  assert.equal(reads, 3);
   c.remove(c.history()[0].id);
   assert.equal(c.history().length, 0);
-  assert.equal(reads, 3);
+  assert.equal(reads, 5); // Preserve/backfill earned badges before removing their source session.
   env.db.close();
+});
+
+
+test("language choice survives cold launch without changing practice data; legacy preferences default to English", () => {
+  const env = setup();
+  try {
+    const c = env.controller();
+    assert.equal(c.preferences.language, "en");
+    c.updateExperience({ name: "Focus", bio: "Sleep", intention: "A moment for myself" });
+    c.start(7); env.now(48000 + 1000); c.tick(); c.answer(4, null);
+    const history = JSON.stringify(c.history());
+    for (const language of ["es", "pt", "en"] as const) {
+      c.setPreferences({ ...c.preferences, language });
+      const reopened = env.controller();
+      assert.equal(reopened.preferences.language, language);
+      assert.equal(experienceFor(reopened.preferences).name, "Focus");
+      assert.equal(JSON.stringify(reopened.history()), history);
+    }
+    const { language, ...legacy } = c.preferences;
+    env.store.savePreferences(legacy);
+    assert.equal(env.controller().preferences.language, "en");
+  } finally { env.db.close(); }
+});
+
+
+test("failed language saves keep the current choice and retry persists the requested language", () => {
+  const env = setup();
+  try {
+    const c = env.controller();
+    const save = env.store.savePreferences.bind(env.store);
+    env.store.savePreferences = () => { throw new Error("disk full"); };
+    c.setPreferences({ ...c.preferences, language: "pt" });
+    assert.equal(c.preferences.language, "en");
+    assert.ok(c.error);
+    env.store.savePreferences = save;
+    c.retry();
+    assert.equal(c.preferences.language, "pt");
+    assert.equal(env.controller().preferences.language, "pt");
+    c.setPreferences({ ...c.preferences, language: "en" });
+  } finally { env.db.close(); }
+});
+
+test("theme choices survive reload, default to system for old settings, and preserve an active practice", () => {
+  const env = setup();
+  try {
+    const c = env.controller();
+    assert.equal(c.preferences.theme, "system");
+    c.start(5);
+    const activeId = c.current!.id;
+    for (const theme of ["light", "dark", "system"] as const) {
+      c.setPreferences({ ...c.preferences, theme });
+      assert.equal(env.store.preferences().theme, theme);
+      assert.equal(c.current!.id, activeId);
+      assert.equal(c.current!.engine.status, "running");
+    }
+    assert.equal(env.controller().preferences.theme, "system");
+    const { theme, ...legacy } = c.preferences;
+    env.store.savePreferences(legacy);
+    assert.equal(env.store.preferences().theme, "system");
+    env.db.prepare("UPDATE settings SET payload=? WHERE key='preferences'").run(JSON.stringify({ ...legacy, theme: "invalid" }));
+    assert.equal(env.store.preferences().theme, "system");
+  } finally { env.db.close(); }
+});
+
+test("failed theme persistence retains the visible choice and can retry", () => {
+  const env = setup();
+  try {
+    const c = env.controller();
+    const save = env.store.savePreferences.bind(env.store);
+    env.store.savePreferences = () => { throw new Error("disk full"); };
+    c.setPreferences({ ...c.preferences, theme: "light" });
+    assert.equal(c.preferences.theme, "system");
+    assert.ok(c.error);
+    env.store.savePreferences = save;
+    c.retry();
+    assert.equal(c.preferences.theme, "light");
+    assert.equal(env.controller().preferences.theme, "light");
+  } finally { env.db.close(); }
+});
+
+
+test("measurement emits event names once after durable results and never includes personal values", () => {
+  const env = setup(); const events: ProductEvent[] = [];
+  try {
+    let now = 1000;
+    const controller = new SessionController(env.store, () => now, () => "private-id", undefined, new AnalyticsService({ record: event => events.push(event) }));
+    controller.setPreferences({ ...controller.preferences, onboardingComplete: true });
+    controller.setPreferences({ ...controller.preferences, onboardingComplete: true });
+    controller.start(7, 1);
+    now += engine.totalDuration(controller.current!.engine.plan); controller.tick(); controller.tick();
+    assert.equal(events.includes("protocol_completed"), false);
+    const save = env.store.save.bind(env.store); env.store.save = () => { throw Error("Disk full"); };
+    controller.answer(4, "private report");
+    assert.equal(events.includes("protocol_completed"), false);
+    env.store.save = save; controller.retry(); controller.retry();
+    assert.deepEqual(events, ["onboarding_completed", "protocol_started", "state_shift_pre_recorded", "badge_earned", "protocol_completed", "state_shift_post_recorded"]);
+    assert.equal(JSON.stringify(events).includes("private"), false);
+  } finally { env.db.close(); }
+});
+
+test("reminder settings survive a cold launch and are removed by full local reset", () => {
+  const env = setup();
+  try {
+    env.store.writeReminders([{ id: "a", label: "Quiet moment", hour: 22, minute: 15, weekdays: [1, 3], enabled: true }]);
+    assert.equal(new LocalStore(env.adapter).readReminders()[0].hour, 22);
+    const controller = env.controller(); let invalidated = false;
+    controller.onLocalDataReset = () => { invalidated = true; };
+    assert.equal(controller.resetLocalData(), true); assert.equal(invalidated, true);
+    assert.deepEqual(env.store.readReminders(), []);
+  } finally { env.db.close(); }
 });
