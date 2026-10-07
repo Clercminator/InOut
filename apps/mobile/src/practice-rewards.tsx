@@ -25,7 +25,7 @@ export function WeeklyGoal({ compact = false }: { compact?: boolean }) {
       if (!mounted) return;
       if (reduced) fill.setValue(progress);
       else { animation = Animated.timing(fill, { toValue: progress, duration: 650, useNativeDriver: false }); animation.start(); }
-    });
+    }).catch(() => { if (mounted) fill.setValue(progress); });
     return () => { mounted = false; animation?.stop(); };
   }, [progress, fill]);
   const next = cosmetics.find(item => !controller.rewards().badges.some(b => b.id === item.badge));

@@ -1,5 +1,5 @@
 import { View } from "react-native";
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { AchievementMark } from "./achievement-mark";
 import { router } from "expo-router";
 import { useSession } from "./provider";
 import { achievementProgress } from "./achievements";
@@ -12,8 +12,8 @@ export function AchievementGallery() {
   const definitions = achievementProgress(controller.history());
   return <View style={{ gap: 16 }}>{definitions.map(badge => {
     const earned = ledger.badges.find(b => b.id === badge.id);
-    return <Card key={badge.id} style={{ backgroundColor: earned ? colors.gold + "0C" : colors.card }}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}><MaterialIcons accessible={false} name={earned ? badge.icon : "lock-outline"} size={30} color={earned ? colors.gold : colors.muted} /><View style={{ flex: 1, gap: 4 }}><Label>{badge.title}</Label><Copy>{badge.description}</Copy></View></View>
+    return <Card key={badge.id} style={{ backgroundColor: earned ? colors.reward + "0C" : colors.card }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}><AchievementMark earned={!!earned} icon={badge.icon} size={64} /><View style={{ flex: 1, gap: 4 }}><Label>{badge.title}</Label><Copy>{badge.description}</Copy></View></View>
       <Copy>{earned ? message("Earned {0}", [earned.date]) : message("{0} / {1}", [Math.floor(badge.progress), badge.conditionValue])}</Copy>
       {!earned && <View accessibilityRole="progressbar" accessibilityLabel={badge.title} accessibilityValue={{ min: 0, max: badge.conditionValue, now: badge.progress }} style={{ height: 6, borderRadius: 3, backgroundColor: colors.border }}><View style={{ height: 6, borderRadius: 3, width: `${100 * badge.progress / badge.conditionValue}%`, backgroundColor: colors.accent }} /></View>}
       {earned && <Button title="Share achievement" secondary onPress={() => router.push({ pathname: "/milestone", params: { badge: badge.id } })} />}

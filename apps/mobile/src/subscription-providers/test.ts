@@ -17,7 +17,7 @@ export class DevelopmentSubscriptionProvider implements SubscriptionProvider {
   async purchase(id: PlanId): Promise<EntitlementGrant> {
     if (this.outcome === "pending") throw new SubscriptionError("pending", "Purchase is pending store approval. Refresh or restore when it completes.");
     if (this.outcome === "cancel") throw new SubscriptionError("cancelled", "Purchase cancelled.");
-    if (this.outcome === "failure") throw new Error("Simulated store failure. No charge was made.");
+    if (this.outcome === "failure") throw new SubscriptionError("failed", "Simulated store failure. No charge was made.");
     this.owned = { source: "development", status: this.trial ? "trial" : "active", active: true,
       verifiedAt: this.now(), expiresAt: this.now() + (this.trial ? 7 : id === "monthly" ? 30 : 365) * 86400000, graceUntil: null };
     return this.owned;

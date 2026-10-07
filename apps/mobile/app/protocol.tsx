@@ -21,7 +21,7 @@ export default function ProtocolDetail() {
   const [showSafety, setShowSafety] = useState(false);
   const { id } = useLocalSearchParams<{ id?: string }>();
   const protocol = protocols.find((item) => item.id === id) ?? sigh;
-  useEffect(() => { if (!id || protocols.some(p => p.id === id)) controller.analytics.track("protocol_opened"); }, [controller, id]);
+  useEffect(() => { if (!id || protocols.some(p => p.id === id)) controller.analytics.track("protocol_viewed"); }, [controller, id]);
   const available = protocol.availability === "enabled";
   if (id && !protocols.some(item => item.id === id)) return <BackScreen title="PROTOCOL"><Title>Session unavailable</Title><Button title="Browse protocols" onPress={() => router.replace("/(tabs)/protocols")} /></BackScreen>;
   if (!available) return <BackScreen title="PROTOCOL"><Title>Not in this release.</Title><Button title="Browse protocols" onPress={() => router.replace("/(tabs)/protocols")} /></BackScreen>;

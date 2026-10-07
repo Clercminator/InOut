@@ -22,9 +22,9 @@ export interface SubscriptionProvider {
 
 export const unavailableSubscriptions: SubscriptionProvider = {
   mode: "unavailable", offers: async () => [],
-  refresh: async () => { throw new Error("Store billing is not configured in this build."); },
-  purchase: async () => { throw new Error("Store billing is not configured in this build."); },
-  restore: async () => { throw new Error("Store billing is not configured in this build."); },
+  refresh: async () => { throw new SubscriptionError("unavailable", "Subscriptions are unavailable right now. You can keep breathing for free."); },
+  purchase: async () => { throw new SubscriptionError("unavailable", "Subscriptions are unavailable right now. You can keep breathing for free."); },
+  restore: async () => { throw new SubscriptionError("unavailable", "Subscriptions are unavailable right now. You can keep breathing for free."); },
   managementUrl: async () => null,
 };
 
@@ -49,7 +49,7 @@ export class SubscriptionService {
     this.busy = true; this.message = ""; this.emit();
     try { await action(); }
     catch (error) {
-      this.message = error instanceof SubscriptionError && error.reason === "cancelled" ? "Purchase cancelled. Nothing changed." : error instanceof Error ? error.message : "The store could not complete this request. Try again.";
+      this.message = error instanceof SubscriptionError && error.reason === "cancelled" ? "Purchase cancelled. Nothing changed." : error instanceof SubscriptionError ? error.message : "Could not connect to the store. Check your connection and try again.";
     } finally { this.busy = false; this.emit(); }
   }
   async load() { await this.operation(async () => {
@@ -79,7 +79,7 @@ export class SubscriptionService {
   }); }
   listen() { return this.adapter.listen?.((grant) => {
     const previous = this.entitlements.state.status;
-    this.apply(grant);
+    try { this.apply(grant); } catch { this.message = "Could not refresh your subscription. Try restoring purchases."; this.emit(); return; }
     if (grant.status === "cancelled" && previous !== "cancelled") this.analytics.track("subscription_cancelled");
   }) ?? (() => {}); }
 }

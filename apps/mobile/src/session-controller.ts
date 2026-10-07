@@ -14,6 +14,7 @@ import type { LocalStore } from "./storage";
 import { EntitlementService } from "./entitlements";
 import { AnalyticsService } from "./analytics";
 import { manualSession, type ManualSessionInput } from "./manual-session";
+import { practiceStats } from "./progress";
 import { productConfig } from "./product-config";
 
 export class SessionController {
@@ -59,9 +60,9 @@ export class SessionController {
     };
     // Recovery does not synthesize starts; completion follows a persisted terminal result.
     if (c.stage === "result") {
-      if (c.endReason === "completed") { once("protocol_completed"); if (c.protocol?.plan && c.protocolId !== "shared-practice") once("mix_completed"); }
-      else once("protocol_abandoned");
-      if (c.post !== null) once("state_shift_post_recorded");
+      if (c.endReason === "completed") { once("session_completed"); if (c.protocol?.plan && c.protocolId !== "shared-practice") once("mix_completed"); }
+      else once("session_abandoned");
+      if (c.post !== null) once("state_after_logged");
     }
   }
   constructor(
@@ -109,9 +110,11 @@ export class SessionController {
     try {
       if (this.current) {
         const previous = this.current.stage === "result" ? this.rewards() : null;
+        const streakBefore = previous ? practiceStats(this.history(), new Date(this.now())).current : null;
         this.store.save(this.current);
         if (this.current.stage === "result") this.historyCache = null;
         if (previous) this.captureRewards(previous);
+        if (streakBefore !== null && practiceStats(this.history(), new Date(this.now())).current > streakBefore) this.analytics.track("streak_extended");
       }
       this.sessionError = null;
       this.measureSession();
@@ -176,8 +179,8 @@ export class SessionController {
       endReason: null,
     };
     this.save();
-    this.analytics.track("protocol_started");
-    if (pre !== null) this.analytics.track("state_shift_pre_recorded");
+    this.analytics.track("session_started");
+    if (pre !== null) this.analytics.track("state_before_logged");
     if (protocol.plan && protocol.id !== "shared-practice") this.analytics.track("mix_started");
     else if (protocol.id !== "shared-practice" && !protocols.some(p => p.id === protocol.id)) this.analytics.track("custom_started");
   }
@@ -302,9 +305,11 @@ export class SessionController {
     this.pendingManualId = id;
     return this.mutate(() => {
       const previous = this.rewards();
+      const streakBefore = practiceStats(this.history(), new Date(this.now())).current;
       this.store.save(record);
       this.historyCache = null;
       this.captureRewards(previous);
+      if (practiceStats(this.history(), new Date(this.now())).current > streakBefore) this.analytics.track("streak_extended");
       this.pendingManualId = null;
     }) ? record.id : null;
   }

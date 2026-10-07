@@ -11,8 +11,8 @@ test("hosted share lifecycle runs against Postgres with ownership, revocation, e
   const db = new PGlite();
   try {
     await db.exec("create role anon; create role authenticated; create role service_role bypassrls;");
-    await db.exec(readFileSync(new URL("../supabase/migrations/20260929161245_inout_revocable_sharing.sql", import.meta.url), "utf8"));
-    await db.exec(readFileSync(new URL("../supabase/migrations/20260929212852_inout_share_deny_client_policies.sql", import.meta.url), "utf8"));
+    await db.exec(readFileSync(new URL("../supabase/migrations/20260929212743_inout_revocable_sharing.sql", import.meta.url), "utf8"));
+    await db.exec(readFileSync(new URL("../supabase/migrations/20260929212911_inout_share_deny_client_policies.sql", import.meta.url), "utf8"));
     for (const role of ["anon", "authenticated"]) {
       await db.exec(`set role ${role}`);
       await assert.rejects(db.query("select * from inout_private.shares"), /permission denied/);

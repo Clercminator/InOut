@@ -18,7 +18,7 @@ export function WelcomeEmailOptIn() {
     <Copy>Optional. Send your email address, first name and selected goal to our email service for one welcome message. No marketing sequence.</Copy>
     {saved ? <><Copy>{saved.status === "sent" ? "Welcome email sent." : saved.status === "review" ? "Delivery could not be confirmed. Contact support if you need help." : "Your request is saved. Delivery will be retried when available."}</Copy>
       <Button title="Remove email from this phone" secondary onPress={() => controller.setPreferences({ ...controller.preferences, welcomeEmail: undefined })} /></> : <>
-      <TextInput accessibilityLabel={t("Email address")} placeholder="Email address" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} maxLength={254} style={{ ...styles.copy, minHeight: 52, padding: 14, borderWidth: 1, borderRadius: 12 }} />
+      <TextInput accessibilityLabel={t("Email address")} placeholder="Email address" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} maxLength={254} style={styles.input} />
       <Button title="Email my first practice" secondary disabled={!validEmail(email.trim())} onPress={() => controller.setPreferences({ ...controller.preferences, welcomeEmail: { email: email.trim().toLowerCase(), consentAt: Date.now(), status: "pending" } })} />
     </>}
   </Card>;

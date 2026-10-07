@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Linking, View } from "react-native";
 import { router } from "expo-router";
 import { randomUUID } from "expo-crypto";
-import { BackScreen, Button, Card, Chip, Copy, Label, Title, ActionFooter } from "../src/ui";
+import { BackScreen, Button, Card, Chip, Copy, Label, Title, ActionFooter, useStyles } from "../src/ui";
 import { Alert, TextInput } from "../src/localized-native";
 import { useReminders } from "../src/reminder-context";
 import { useSession } from "../src/provider";
@@ -14,6 +14,7 @@ import { SessionDatePicker } from "../src/session-date-picker";
 
 export default function Reminders() {
   useLanguage();
+  const styles = useStyles();
   const service = useReminders();
   const controller = useSession();
   const rituals = experienceFor(controller.preferences).rituals;
@@ -32,7 +33,7 @@ export default function Reminders() {
     {!!service.message && <Copy accessibilityRole="alert">{service.message}</Copy>}
     {!!notice && <Copy accessibilityRole="alert">{notice}</Copy>}
     {draft ? <>
-      <Label>REMINDER NAME</Label><TextInput accessibilityLabel={t("Reminder name")} maxLength={40} value={draft.label} onChangeText={label => setDraft({ ...draft, label })} style={{ padding: 12 }} />
+      <Label>REMINDER NAME</Label><TextInput accessibilityLabel={t("Reminder name")} maxLength={40} value={draft.label} onChangeText={label => setDraft({ ...draft, label })} style={styles.input} />
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
         {([ ["Morning focus", 8], ["Midday reset", 13], ["Wind down", 21] ] as const).map(([label, hour]) => <Chip key={label} title={label} selected={draft.hour === hour && draft.minute === 0} onPress={() => setDraft({ ...draft, label: t(label), hour, minute: 0 })} />)}
       </View>

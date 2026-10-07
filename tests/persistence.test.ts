@@ -655,12 +655,12 @@ test("measurement emits event names once after durable results and never include
     controller.setPreferences({ ...controller.preferences, onboardingComplete: true });
     controller.start(7, 1);
     now += engine.totalDuration(controller.current!.engine.plan); controller.tick(); controller.tick();
-    assert.equal(events.includes("protocol_completed"), false);
+    assert.equal(events.includes("session_completed"), false);
     const save = env.store.save.bind(env.store); env.store.save = () => { throw Error("Disk full"); };
     controller.answer(4, "private report");
-    assert.equal(events.includes("protocol_completed"), false);
+    assert.equal(events.includes("session_completed"), false);
     env.store.save = save; controller.retry(); controller.retry();
-    assert.deepEqual(events, ["onboarding_completed", "protocol_started", "state_shift_pre_recorded", "badge_earned", "protocol_completed", "state_shift_post_recorded"]);
+    assert.deepEqual(events, ["onboarding_completed", "session_started", "state_before_logged", "badge_earned", "streak_extended", "session_completed", "state_after_logged"]);
     assert.equal(JSON.stringify(events).includes("private"), false);
   } finally { env.db.close(); }
 });

@@ -1,0 +1,93 @@
+appId: com.imrtech.inout
+---
+- launchApp:
+    clearState: true
+- assertVisible: "Start breathing"
+- takeScreenshot: 01-welcome
+- tapOn: "Personalize InOut"
+- tapOn: "Reduce stress & anxiety"
+- takeScreenshot: 02-goals
+- scrollUntilVisible:
+    element: { text: "Continue" }
+    direction: DOWN
+- tapOn: "Continue"
+- takeScreenshot: 03-value
+- scrollUntilVisible:
+    element: { text: "Let's get started" }
+    direction: DOWN
+- tapOn: "Let's get started"
+- takeScreenshot: 04-safety
+- scrollUntilVisible:
+    element: { text: "I understand" }
+    direction: DOWN
+- tapOn: "I understand"
+- takeScreenshot: 05-paywall
+- assertNotVisible: "DEVELOPMENT DEMO"
+- tapOn: "Close subscription offer"
+- takeScreenshot: 06-home
+- tapOn: "Protocols"
+- takeScreenshot: 07-library
+- tapOn: "Progress"
+- takeScreenshot: 08-progress-empty
+- tapOn: "Calendar"
+- takeScreenshot: 09-calendar-empty
+- tapOn: "Badges"
+- takeScreenshot: 10-badges-locked
+- openLink: "inout://add-session"
+- tapOn: { text: "Open", optional: true }
+- takeScreenshot: 11-manual-entry
+- scrollUntilVisible:
+    element: { text: "Save session" }
+    direction: DOWN
+- tapOn: "Save session"
+- assertVisible: "Session saved"
+- takeScreenshot: 12-achievement-earned
+- openLink: "inout://milestone?badge=sessions-1"
+- tapOn: { text: "Open", optional: true }
+- takeScreenshot: 13-story-card
+- tapOn: "Square.*"
+- takeScreenshot: 14-square-card
+- scrollUntilVisible:
+    element: { text: "Share achievement" }
+    direction: DOWN
+- tapOn: "Share achievement"
+- takeScreenshot: 15-native-share
+- launchApp:
+    stopApp: true
+- openLink: "inout://profile"
+- tapOn: { text: "Open", optional: true }
+- takeScreenshot: 16-profile
+- scrollUntilVisible:
+    element: { text: "Edit profile" }
+    direction: DOWN
+- tapOn: "Edit profile"
+- tapOn: "Display name"
+- inputText: "Alex"
+- takeScreenshot: 17-profile-keyboard
+- hideKeyboard
+- scrollUntilVisible:
+    element: { text: "Save profile" }
+    direction: DOWN
+- tapOn: "Save profile"
+- openLink: "inout://pre?id=physiological-sigh"
+- tapOn: { text: "Open", optional: true }
+- scrollUntilVisible:
+    element: { text: "Skip rating & start" }
+    direction: DOWN
+- tapOn: "Skip rating & start"
+- takeScreenshot: 18-session
+- tapOn: "Pause"
+- takeScreenshot: 19-paused
+- tapOn: "Resume"
+- extendedWaitUntil:
+    visible: 'How tense are you now\?'
+    timeout: 80000
+- takeScreenshot: 20-post
+- scrollUntilVisible:
+    element: { text: "Skip & save session" }
+    direction: DOWN
+- tapOn: "Skip & save session"
+- takeScreenshot: 21-result
+- openLink: "inout://settings"
+- tapOn: { text: "Open", optional: true }
+- takeScreenshot: 22-settings

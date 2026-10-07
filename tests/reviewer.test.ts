@@ -12,7 +12,7 @@ test("reviewer backend uses real SQL for access, expiry, revocation, rotation, l
   const db = new PGlite();
   try {
     await db.exec("create role anon; create role authenticated; create role service_role bypassrls;");
-    await db.exec(readFileSync(new URL("../supabase/migrations/20261001183202_inout_reviewer_access.sql", import.meta.url), "utf8"));
+    await db.exec(readFileSync(new URL("../supabase/migrations/20261001184153_inout_reviewer_access.sql", import.meta.url), "utf8"));
     for (const role of ["anon", "authenticated"]) {
       await db.exec(`set role ${role}`);
       await assert.rejects(db.query("select * from inout_private.reviewer_grants"), /permission denied/);

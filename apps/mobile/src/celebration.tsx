@@ -27,7 +27,7 @@ export function Celebration({ title, message, variant = "complete", awards = [] 
   const feedbackAttempted = useRef(false);
   useEffect(() => {
     let mounted = true;
-    void AccessibilityInfo.isReduceMotionEnabled().then(value => { if (mounted) setReduced(value); });
+    void AccessibilityInfo.isReduceMotionEnabled().then(value => { if (mounted) setReduced(value); }).catch(() => {});
     const listener = AccessibilityInfo.addEventListener("reduceMotionChanged", setReduced);
     return () => { mounted = false; listener.remove(); };
   }, []);

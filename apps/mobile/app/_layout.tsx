@@ -18,7 +18,7 @@ export function ErrorBoundary({ error, retry }: { error: Error; retry: () => voi
   return (
     <SafeAreaProvider>
       <Screen>
-        <Copy accessibilityRole="alert">{error.message || "Unknown application error"}</Copy>
+        <Copy accessibilityRole="alert">Something went wrong. Your saved practice is still on this phone. Try reopening this screen.</Copy>
         {__DEV__ && error.stack ? <Copy>{error.stack}</Copy> : null}
         <Button title="Reload" onPress={retry} />
       </Screen>

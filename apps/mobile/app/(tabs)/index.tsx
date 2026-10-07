@@ -4,7 +4,7 @@ import { useTheme } from "../../src/theme";
 import { t, protocolTitle, message, countLabel } from "../../src/i18n";
 import { useLanguage } from "../../src/use-language";
 import { router } from "expo-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ScrollView, View } from "react-native";
 import { Screen, Title, Label, Copy, Button, Card, ActionRow, IconButton, Chip, Disclosure } from "../../src/ui";
 import { useSession } from "../../src/provider";
@@ -31,8 +31,10 @@ export default function Today() {
   const goal = moment ?? primary ?? "stress";
   const content = goalContent[goal];
   const records = controller.history();
-  const stats = practiceStats(records);
-  const recommendation = recommendPractice(goal, records, id => controller.entitlements.protocolAccess({ id }).allowed);
+  const today = new Date().toDateString();
+  const pro = controller.entitlements.state.pro;
+  const stats = useMemo(() => practiceStats(records), [records, today]);
+  const recommendation = useMemo(() => recommendPractice(goal, records, id => controller.entitlements.protocolAccess({ id }).allowed), [goal, records, pro, controller]);
   const recent = records.find(r => r.source !== "manual" && protocols.some(p => p.id === r.protocolId));
   const returning = welcomeMessage(records);
   return <Screen tabScreen headerAction={<View style={{ flexDirection: "row" }}><IconButton title="My practice profile" icon="person-outline" onPress={() => router.push("/profile")} /><IconButton title="Open settings" icon="settings" onPress={() => router.push("/settings")} /></View>}>

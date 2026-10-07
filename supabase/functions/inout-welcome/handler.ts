@@ -34,7 +34,15 @@ export function welcomeHandler(rpc: Rpc, provider: EmailProvider, config: () => 
     const settings = config();
     if (!settings.enabled || !settings.from || !settings.hashSalt) return reply(503, { status: "disabled" });
     let input: WelcomeInput;
-    try { const text = await request.text(); if (text.length > 2048) return reply(413, { error: "Request too large" }); input = validateWelcome(JSON.parse(text)); }
+    try {
+      const reader = request.body?.getReader(); if (!reader) return reply(400, { error: "Invalid request" });
+      const chunks: Uint8Array[] = []; let size = 0;
+      while (true) { const part = await reader.read(); if (part.done) break; size += part.value.length;
+        if (size > 2048) { await reader.cancel(); return reply(413, { error: "Request too large" }); } chunks.push(part.value); }
+      const bytes = new Uint8Array(size); let offset = 0;
+      for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.length; }
+      input = validateWelcome(JSON.parse(new TextDecoder().decode(bytes)));
+    }
     catch { return reply(400, { error: "Invalid request" }); }
     const emailHash = await hash(`${settings.hashSalt}:${input.email}`), lease = crypto.randomUUID();
     try {

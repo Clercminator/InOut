@@ -18,7 +18,7 @@ export default function EditProfile() {
   const e = experienceFor(controller.preferences);
   const [name, setName] = useState(e.name), [bio, setBio] = useState(e.bio), [intention, setIntention] = useState(controller.preferences.experience?.intention ?? t(e.intention));
   const [busy, setBusy] = useState(false);
-  const fieldStyle = { ...s.copy, borderWidth: 1, borderColor: colors.accent + "50", backgroundColor: colors.card, padding: 14, borderRadius: 12, minHeight: 48 };
+  const fieldStyle = s.input;
   return <BackScreen title="EDIT PROFILE" avoidKeyboard>
     <Label>DISPLAY NAME</Label><TextInput accessibilityLabel={t("Display name")} style={fieldStyle} value={name} onChangeText={setName} maxLength={40} />
     <Label>ABOUT YOU</Label><TextInput accessibilityLabel={t("About you")} style={fieldStyle} value={bio} onChangeText={setBio} maxLength={180} multiline />

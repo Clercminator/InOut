@@ -112,7 +112,7 @@ test("welcome delivery SQL deduplicates, restricts roles, leases retries and bou
   const db=new PGlite();
   try {
     await db.exec("create role anon; create role authenticated; create role service_role bypassrls; create schema auth; create table auth.users(id uuid primary key);");
-    await db.exec(readFileSync(new URL("../supabase/migrations/20261006211441_inout_lifecycle_and_allowance.sql",import.meta.url),"utf8"));
+    await db.exec(readFileSync(new URL("../supabase/migrations/20261007031007_inout_lifecycle_and_allowance.sql",import.meta.url),"utf8"));
     for (const role of ["anon","authenticated"]) { await db.exec(`set role ${role}`); await assert.rejects(db.query("select * from inout_private.welcome_delivery"),/permission denied/); await assert.rejects(db.query("select public.inout_guided_allowance(null,null,5,false)"),/permission denied/); await db.exec("reset role"); }
     await db.exec("set role service_role");
     const rpc=async(name:string,args:Record<string,unknown>)=>(await db.query<{value:any}>(`select public.${name}(${Object.keys(args).map((k,i)=>`${k} => $${i+1}`).join(",")}) as value`,Object.values(args))).rows[0]?.value;

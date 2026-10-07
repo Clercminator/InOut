@@ -1,5 +1,7 @@
 node_modules/
 .expo/
+.expo-export*/
+__pycache__/
 dist/
 build/
 .env

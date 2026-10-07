@@ -78,9 +78,9 @@ test("ads are denied outside explicit surfaces, during practice/post, in backgro
 test("analytics sends allowlisted names only, ignoring extra runtime payloads and sink failures", () => {
   const received: unknown[] = [];
   const a = new AnalyticsService({ record: (...args) => { received.push(args); } });
-  (a.track as Function)("state_shift_pre_recorded", { rating: 7, note: "private" });
+  (a.track as Function)("state_before_logged", { rating: 7, note: "private" });
   (a.track as Function)("secret_routine");
-  assert.deepEqual(received, [["state_shift_pre_recorded"]]);
+  assert.deepEqual(received, [["state_before_logged"]]);
   assert.doesNotThrow(() => new AnalyticsService({ record: () => { throw Error(); } }).track("app_open"));
 });
 

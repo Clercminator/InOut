@@ -57,7 +57,7 @@ export function SighVisual({
     let mounted = true;
     void AccessibilityInfo.isReduceMotionEnabled().then((value) => {
       if (mounted) setReduced(value);
-    });
+    }).catch(() => {});
     const sub = AccessibilityInfo.addEventListener(
       "reduceMotionChanged",
       setReduced,

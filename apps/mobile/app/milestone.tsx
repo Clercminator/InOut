@@ -23,16 +23,17 @@ export default function Milestone() {
   const title = earned?.label ?? message("{0} day streak", [stats.current]);
   useEffect(() => { controller.analytics.track("achievement_view"); }, [controller]);
   if ((badge && !earned) || (!badge && stats.current < 3)) return <BackScreen title="MILESTONE"><Title>Your next milestone is ahead.</Title><Copy>Share after earning a badge or reaching a three-day streak.</Copy></BackScreen>;
-  const cardWidth = Math.min(360, Math.max(240, width - 40));
+  const cardWidth = Math.min(360, Math.max(200, width - 40));
+  const scale = cardWidth / 360;
   return <BackScreen title="SHARE YOUR PRACTICE"><Title>A moment worth keeping.</Title>
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}><Chip title="Story · 9:16" selected={story} onPress={() => setStory(true)} /><Chip title="Square · 1:1" selected={!story} onPress={() => setStory(false)} /></View>
-    <View ref={card} collapsable={false} style={{ alignSelf: "center", width: cardWidth, aspectRatio: story ? 9 / 16 : 1, padding: 26, borderRadius: 24, backgroundColor: "#EAF5F6", justifyContent: "space-between", overflow: "hidden" }}>
-      <Copy allowFontScaling={false} style={{ color: "#124F59", fontSize: 20, fontWeight: "800", letterSpacing: 3 }}>IN/OUT</Copy>
-      <View style={{ alignItems: "center", gap: story ? 20 : 10 }}><View style={{ padding: story ? 28 : 14, borderRadius: 80, backgroundColor: "#F5B52C" }}><MaterialIcons name="workspace-premium" size={story ? 68 : 36} color="#124F59" /></View>
-        <Copy allowFontScaling={false} style={{ color: "#124F59", fontSize: story ? 32 : 25, lineHeight: story ? 38 : 30, textAlign: "center", fontWeight: "800" }}>{title}</Copy>
-        {includeTime && <Copy allowFontScaling={false} style={{ color: "#41636A", textAlign: "center" }}>{statsDuration(stats.totalMs)} · {t("total breathing time")}</Copy>}
+    <View ref={card} collapsable={false} style={{ alignSelf: "center", width: cardWidth, aspectRatio: story ? 9 / 16 : 1, padding: 26 * scale, borderRadius: 24, backgroundColor: "#EAF5F6", justifyContent: "space-between", overflow: "hidden" }}>
+      <Copy allowFontScaling={false} style={{ color: "#124F59", fontSize: 20 * scale, lineHeight: 24 * scale, fontWeight: "800", letterSpacing: 3 }}>IN/OUT</Copy>
+      <View style={{ alignItems: "center", gap: (story ? 20 : 10) * scale }}><View style={{ padding: (story ? 28 : 14) * scale, borderRadius: 80, backgroundColor: "#F5B52C" }}><MaterialIcons name="workspace-premium" size={(story ? 68 : 36) * scale} color="#124F59" /></View>
+        <Copy numberOfLines={3} adjustsFontSizeToFit minimumFontScale={0.7} allowFontScaling={false} style={{ color: "#124F59", fontSize: (story ? 36 : 26) * scale, lineHeight: (story ? 42 : 30) * scale, textAlign: "center", fontWeight: "800" }}>{title}</Copy>
+        {includeTime && <Copy allowFontScaling={false} style={{ color: "#41636A", fontSize: 14 * scale, lineHeight: 18 * scale, textAlign: "center" }}>{statsDuration(stats.totalMs)} · {t("total breathing time")}</Copy>}
       </View>
-      <View style={{ gap: 8 }}><Copy allowFontScaling={false} style={{ color: "#124F59", fontSize: 13, textAlign: "center" }}>Small breaths. Consistent practice.</Copy><Copy allowFontScaling={false} style={{ color: "#41636A", fontSize: 10, textAlign: "center" }}>{new URL("support.html", info.supportUrl).href.replace("https://", "")}</Copy></View>
+      <View style={{ gap: 8 }}><Copy allowFontScaling={false} style={{ color: "#124F59", fontSize: 13 * scale, lineHeight: 17 * scale, textAlign: "center" }}>Small breaths. Consistent practice.</Copy><Copy allowFontScaling={false} style={{ color: "#41636A", fontSize: 10 * scale, lineHeight: 14 * scale, textAlign: "center" }}>{new URL("support.html", info.supportUrl).href.replace("https://", "")}</Copy></View>
     </View>
     <Chip title="Include total breathing time" selected={includeTime} onPress={() => setIncludeTime(v => !v)} />
     <Copy>Only the preview is shared. Your name, photo, tension ratings and notes stay private.</Copy>

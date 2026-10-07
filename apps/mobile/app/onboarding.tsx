@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { View } from "react-native";
+import { BackHandler, View } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useEffect } from "react";
 import { Screen, Title, Label, Card, Copy, Button, IconButton } from "../src/ui";
@@ -24,10 +24,15 @@ export default function Onboarding() {
     controller.setPreferences(completeJourney(controller.preferences, Date.now()));
     if (!controller.error) router.replace(journey.quickStart ? { pathname: "/pre", params: { id: recommendPractice(goal).id } } : "/(tabs)");
   };
+  const back = journey.step === "welcome" ? undefined : () => save({ step: journey.step === "goals" ? "welcome" : journey.step === "value" ? "goals" : journey.quickStart ? "welcome" : "value" });
+  useEffect(() => {
+    if (!back || journey.step === "offer" || journey.step === "complete") return;
+    const listener = BackHandler.addEventListener("hardwareBackPress", () => { back(); return true; });
+    return () => listener.remove();
+  }, [controller, journey.step, journey.quickStart]);
   if (journey.step === "offer") return <Paywall entry="onboarding" onClose={finish} completionError={controller.error} />;
   if (journey.step === "complete") return <Screen><Title>Your next breath is ready.</Title><Button title="Enter IN/OUT" onPress={finish} /></Screen>;
-  const back = journey.step === "welcome" ? undefined : () => save({ step: journey.step === "goals" ? "welcome" : journey.step === "value" ? "goals" : journey.quickStart ? "welcome" : "value" });
-  return <Screen back={back} headerAction={<IconButton icon="help-outline" title="Breathing safety" onPress={() => router.push("/safety")} />}>
+  return <Screen avoidKeyboard back={back} headerAction={<IconButton icon="help-outline" title="Breathing safety" onPress={() => router.push("/safety")} />}>
     <View style={{ width: 88, height: 88, borderRadius: 44, backgroundColor: colors.accentSurface, alignItems: "center", justifyContent: "center", marginTop: 12 }}>
       <MaterialIcons accessible={false} name={journey.step === "safety" ? "health-and-safety" : content.icon} size={40} color={colors.accent} />
     </View>

@@ -9,7 +9,7 @@ import { useRef, useState } from "react";
 import { router } from "expo-router";
 import { Image, View } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { BackScreen, Title, Label, Card, Copy, Button, useStyles } from "../src/ui";
+import { BackScreen, Title, Label, Card, ActionRow, Copy, Button, useStyles } from "../src/ui";
 import { useSession } from "../src/provider";
 import { practiceDuration } from "../src/format";
 import { experienceFor } from "../src/experience";
@@ -69,16 +69,15 @@ export default function Profile() {
       })().catch(() => Alert.alert("Could not share", "Please try again.")).finally(() => setSharing(false));
     }} />
     {controller.preferences.journey?.primaryGoal && <Card><Label>YOUR MAIN GOAL</Label><Copy>{goalContent[controller.preferences.journey.primaryGoal].title}</Copy></Card>}
-    <Button title="Pro & subscriptions" secondary onPress={() => router.push("/pro")} />
-    <Button title="Reminders" secondary onPress={() => router.push("/reminders")} />
-    <Button title="View progress" secondary onPress={() => router.push("/(tabs)/progress")} />
+    <Card><ActionRow title="Pro & subscriptions" icon="workspace-premium" onPress={() => router.push("/pro")} /><ActionRow title="Reminders" icon="notifications-none" onPress={() => router.push("/reminders")} /><ActionRow title="View progress" icon="insights" onPress={() => router.push("/(tabs)/progress")} /></Card>
     <WeeklyGoal />
     <Button title="Personalize my experience" secondary onPress={() => router.push("/personalize")} />
     <Button title="My rituals" secondary onPress={() => router.push("/rituals")} />
     <Card><Label>YOUR MILESTONE TIMELINE</Label>
       {!badges.length && <Copy>Your first practice starts your collection.</Copy>}
-      {badges.map(b => <View key={b.id} style={{ gap: 4 }}><Copy style={s.subtitle}>{b.label}</Copy><Copy style={s.small}>{new Date(b.date + "T12:00:00").toLocaleDateString(locale())}</Copy></View>)}
+      {badges.slice(0, 3).map(b => <View key={b.id} style={{ gap: 4 }}><Copy style={s.subtitle}>{b.label}</Copy><Copy style={s.small}>{new Date(b.date + "T12:00:00").toLocaleDateString(locale())}</Copy></View>)}
     </Card>
+    {badges.length > 3 && <Button title="View all badges" secondary onPress={() => router.push({ pathname: "/(tabs)/progress", params: { view: "Badges" } })} />}
     <Button title="Settings" secondary onPress={() => router.push("/settings")} />
     <WelcomeEmailOptIn />
   </BackScreen>;

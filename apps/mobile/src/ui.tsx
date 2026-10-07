@@ -9,7 +9,7 @@ import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View, typ
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { typography as f, radii } from "@inout/design-tokens";
+import { typography as f, radii, spacing } from "@inout/design-tokens";
 import type { Protocol } from "@inout/shared-types";
 import { duration } from "./format";
 import { useExperience } from "./experience-context";
@@ -348,7 +348,7 @@ export function ProtocolRow({
 }
 const createStyles = (c: ThemeColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: c.background },
-  content: { padding: 20, gap: 20, flexGrow: 1, paddingBottom: 24 },
+  content: { padding: spacing.gutter, gap: spacing.lg, flexGrow: 1, paddingBottom: spacing.lg },
   header: {
     minHeight: 56,
     paddingHorizontal: 16,
@@ -364,7 +364,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     color: c.text,
     letterSpacing: -1.3,
   },
-  copy: { color: c.text, fontFamily: f.body, fontSize: 15, lineHeight: 22, flexShrink: 1 },
+  copy: { color: c.text, fontFamily: f.body, fontSize: 16, lineHeight: 24, flexShrink: 1 },
   label: {
     color: c.accent,
     fontFamily: f.label,
@@ -374,8 +374,8 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   },
   title: {
     fontFamily: f.heading,
-    fontSize: 26,
-    lineHeight: 31,
+    fontSize: 28,
+    lineHeight: 34,
     letterSpacing: -0.96,
   },
   subtitle: { fontFamily: f.heading, fontSize: 18, lineHeight: 23 },
@@ -400,6 +400,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
   },
+  input: { color: c.text, fontFamily: f.body, fontSize: 16, lineHeight: 24, minHeight: 56, padding: 16, borderWidth: 1, borderColor: c.border, backgroundColor: c.card, borderRadius: radii.button },
   secondaryButton: { backgroundColor: c.card },
   buttonText: {
     maxWidth: "100%",

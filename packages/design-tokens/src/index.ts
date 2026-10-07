@@ -1,4 +1,5 @@
 export const darkColors = {
+  reward: "#F5B62D", onReward: "#164F59",
   background: "#060F20", lowest: "#040B18", card: "#0D2038", raised: "#142E4A",
   border: "#284764", text: "#F5FAFF", secondaryText: "#BDD0E5", muted: "#93AEC8",
   accent: "#5EA9FF", blue: "#246FF0", onAccent: "#041426", danger: "#FF918A",
@@ -8,6 +9,7 @@ export const darkColors = {
 };
 export type ThemeColors = typeof darkColors;
 export const lightColors: ThemeColors = {
+  reward: "#F5B62D", onReward: "#164F59",
   background: "#FAFCFC", lowest: "#FFFFFF", card: "#FFFFFF", raised: "#EAF5F6",
   border: "#D7E7E8", text: "#123E46", secondaryText: "#41636A", muted: "#527078",
   accent: "#124F59", blue: "#205CB3", onAccent: "#FFFFFF", danger: "#B42F46",
@@ -27,6 +29,9 @@ export const spacing = {
   lg: 24,
   xl: 32,
   xxl: 48,
+  compact: 12,
+  gutter: 20,
+  spacious: 40,
 } as const;
 export const radii = { button: 16, card: 22, pill: 9999 } as const;
 export const typography = {

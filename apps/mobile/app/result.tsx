@@ -12,6 +12,7 @@ import { shiftText, practiceDuration as duration } from "../src/format";
 import { stateShift } from "@inout/shared-types";
 import { snapshot } from "@inout/breathing-engine";
 
+import { AchievementMark } from "../src/achievement-mark";
 import { Celebration } from "../src/celebration";
 import { WeeklyGoal } from "../src/practice-rewards";
 import { ShareExercise } from "../src/share-exercise";
@@ -86,7 +87,7 @@ export default function Result() {
           <Copy>Stopped for discomfort. Breathe naturally and rest.</Copy>
         )}
       </Card>}
-      {saved === "1" && !controller.error && controller.latestAwards.length > 0 && <Card><Label>NEW ACHIEVEMENT</Label><Title>{controller.latestAwards[0].label}</Title><Copy>Your earned badges stay with you. Take a moment to enjoy your progress.</Copy><Button title="Share achievement" onPress={() => router.push({ pathname: "/milestone", params: { badge: controller.latestAwards[0].id } })} /><Button title="Close celebration" secondary onPress={() => controller.dismissAwards()} /></Card>}
+      {saved === "1" && !controller.error && controller.latestAwards.length > 0 && <Card style={{ backgroundColor: colors.accentSurface }}><AchievementMark /><Label>NEW ACHIEVEMENT</Label><Title>{controller.latestAwards[0].label}</Title><Copy>Your earned badges stay with you. Take a moment to enjoy your progress.</Copy><Button title="Share achievement" onPress={() => router.push({ pathname: "/milestone", params: { badge: controller.latestAwards[0].id } })} /><Button title="Close celebration" secondary onPress={() => controller.dismissAwards()} /></Card>}
       {!!record.note && <Card><Label>NOTE</Label><Copy translate={false}>{record.note}</Copy></Card>}
       <SaveError />
       {record.source !== "manual" && record.protocol && <ShareExercise protocol={record.protocol} />}

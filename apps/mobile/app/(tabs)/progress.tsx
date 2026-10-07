@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { View } from "react-native";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { Screen, Title, Label, Card, Copy, Button, Chip, Disclosure, ActionRow, IconButton } from "../../src/ui";
 import { addDays, dayKey, periodStats, practiceStats, statsDuration } from "../../src/progress";
 import { useSession, SaveError } from "../../src/provider";
@@ -17,7 +17,8 @@ export default function Progress() {
   const controller = useSession(), { colors } = useTheme();
   const language = useLanguage();
   const now = useProgressDate();
-  const [section, setSection] = useState("Overview"), [notice, setNotice] = useState("");
+  const { view } = useLocalSearchParams<{ view?: string }>();
+  const [section, setSection] = useState(view === "Badges" ? "Badges" : "Overview"), [notice, setNotice] = useState("");
   useEffect(() => { controller.analytics.track("progress_viewed"); }, [controller]);
   useEffect(() => { if (section === "Calendar") controller.analytics.track("calendar_viewed"); }, [controller, section]);
   const records = controller.history();

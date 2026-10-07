@@ -51,12 +51,14 @@ jobs:
       - run: npx expo prebuild --platform android --no-install
         working-directory: apps/mobile
       # Expo's generated development key signs this internal preview, not a store release.
-      - run: ./gradlew :app:assembleRelease -PreactNativeArchitectures=arm64-v8a,x86_64 --max-workers=2
+      - run: ./gradlew :app:assembleRelease :app:bundleRelease -PreactNativeArchitectures=arm64-v8a,x86_64 --max-workers=2
         working-directory: apps/mobile/android
       - uses: actions/upload-artifact@v4
         with:
           name: inout-android-preview
-          path: apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+          path: |
+            apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+            apps/mobile/android/app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
       - name: Enable emulator acceleration
         run: |

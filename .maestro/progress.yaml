@@ -26,7 +26,10 @@ appId: com.imrtech.inout
     timeout: 60000
     waitToSettleTimeoutMs: 1000
     centerElement: false
-- tapOn: "Add session"
+- tapOn:
+    text: "Add session"
+    retryTapIfNoChange: true
+- assertVisible: "Log your breathing practice."
 - scrollUntilVisible:
     element:
       text: "Choose date"
