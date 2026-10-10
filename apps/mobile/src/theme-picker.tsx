@@ -9,7 +9,7 @@ import { t } from "./i18n";
 const choices = [
   { id: "system", label: "System", description: "Automatically match your phone", icon: "brightness-auto" },
   { id: "light", label: "Light", description: "Warm ivory, crisp white & soft color", icon: "light-mode" },
-  { id: "dark", label: "Dark", description: "Deep navy with vivid color", icon: "dark-mode" },
+  { id: "dark", label: "Dark", description: "Charcoal with luminous violet", icon: "dark-mode" },
 ] as const;
 
 export function ThemePicker({ value, onChange }: { value: ThemePreference; onChange: (value: ThemePreference) => void }) {

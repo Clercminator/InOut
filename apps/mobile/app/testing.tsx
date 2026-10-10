@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AppState, View } from "react-native";
+import { AppState, View, useWindowDimensions } from "react-native";
 import { useFocusEffect } from "expo-router";
 import { pause, resume, snapshot, start } from "@inout/breathing-engine";
 import type { EngineState, SessionPlan } from "@inout/shared-types";
@@ -18,6 +18,8 @@ const ready = () => { const now = Date.now(); return pause(start(testingPlan, no
 export default function Testing() {
   useLanguage();
   const { colors } = useTheme();
+  const { height, fontScale } = useWindowDimensions();
+  const orbSize = Math.max(100, Math.min(260, (height - 470) / fontScale));
   const engine = useRef<EngineState | null>(null);
   if (!engine.current) engine.current = ready();
   const [view, setView] = useState(() => snapshot(engine.current!, Date.now()));
@@ -42,14 +44,15 @@ export default function Testing() {
       onPress={() => view.completed ? restart() : update(running ? pause(engine.current!, Date.now()) : resume(engine.current!, Date.now()))} />
     <Button title="Restart" secondary onPress={restart} />
   </ActionFooter>}>
-    <View style={{ gap: 8 }}><Label>EXPERIMENTAL</Label><Title>Testing · Pulse</Title>
-      <Copy>A quiet space to try the new breathing sphere.</Copy></View>
-    <Card style={{ backgroundColor: colors.lowest, borderColor: colors.sessionBorder, gap: 8 }}>
-      <PulseOrb key={generation} view={view} running={running} phases={testingPlan.blocks[0].phases} motionEnabled={motionEnabled} />
-      <View accessible accessibilityLabel={message("{0}. {1} seconds remaining.", [t(view.completed ? "Complete" : running ? view.phase.label : "Paused"), Math.ceil(view.phaseRemainingMs / 1000)])}
+    <View style={{ gap: 8 }}><Label>EXPERIMENTAL</Label><Title>Testing · Pulse</Title></View>
+    <Card style={{ backgroundColor: colors.lowest, borderColor: colors.sessionBorder, gap: 8, padding: 12 }}>
+      <PulseOrb key={generation} view={view} running={running} phases={testingPlan.blocks[0].phases} motionEnabled={motionEnabled} size={orbSize} />
+      <View accessible accessibilityLabel={message("{0}. {1} seconds remaining.", [t(view.completed ? "Completed" : running ? view.phase.label : "Paused"), Math.ceil(view.phaseRemainingMs / 1000)])}
         style={{ alignItems: "center", gap: 4 }}>
-        <Label>{view.completed ? "Complete" : running ? view.phase.label : "Paused"}</Label>
-        <Copy style={{ fontFamily: typography.metric, fontSize: 40, lineHeight: 48 }}>{Math.ceil(view.phaseRemainingMs / 1000).toString().padStart(2, "0")}</Copy>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 16, flexWrap: "wrap", justifyContent: "center" }}>
+          <Label>{view.completed ? "Completed" : running ? view.phase.label : "Paused"}</Label>
+          <Copy style={{ fontFamily: typography.metric, fontSize: 40, lineHeight: 48 }}>{Math.ceil(view.phaseRemainingMs / 1000).toString().padStart(2, "0")}</Copy>
+        </View>
         <Copy>{message("Cycle {0} of {1}", [view.currentCycle, view.totalCycles])}</Copy>
       </View>
     </Card>
@@ -58,6 +61,7 @@ export default function Testing() {
       <Chip title="Still sphere" selected={!motionEnabled} onPress={() => setMotionEnabled(false)} />
     </View>
     <Copy>Inhale 5s · Exhale 5s · 1 minute</Copy>
+    <Copy>A quiet space to try the new breathing sphere.</Copy>
     <Copy>{running ? "Breathe comfortably. Follow the guide without forcing." : "Breathe naturally while paused"}</Copy>
     <Copy>Visual test only. This does not save a session or count toward progress. Your reduced-motion setting is respected.</Copy>
   </BackScreen>;

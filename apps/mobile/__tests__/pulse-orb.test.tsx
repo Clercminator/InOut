@@ -52,4 +52,10 @@ test("testing starts on demand, pauses in background, resumes without counting b
   await fireEvent.press(screen.getByText("Restart"));
   expect(screen.getByText("Start testing")).toBeTruthy();
   expect(screen.getByLabelText("Paused. 5 seconds remaining.")).toBeTruthy();
+  await fireEvent.press(screen.getByText("Start testing"));
+  await act(() => jest.advanceTimersByTime(60000));
+  expect(screen.getByLabelText("Completed. 0 seconds remaining.")).toBeTruthy();
+  expect(screen.getByText("Try again")).toBeTruthy();
+  await fireEvent.press(screen.getByText("Try again"));
+  expect(screen.getByText("Start testing")).toBeTruthy();
 });
