@@ -54,7 +54,7 @@ export function PulseOrb({ view, phases, running, motionEnabled = true, size = 2
     // Phase boundaries and resume resync from the authoritative snapshot; timer ticks do not restart native animation.
   }, [view.cueKey, running, reduced, motionEnabled, volume, turn]);
   return <View testID="pulse-orb" accessible={false} importantForAccessibility="no-hide-descendants"
-    style={{ width: "100%", maxWidth: size, aspectRatio: 1, alignSelf: "center" }}>
+    style={{ width: size, height: size, maxWidth: "100%", alignSelf: "center" }}>
     <Animated.Image source={artwork} resizeMode="contain" style={[StyleSheet.absoluteFill,
       { width: "100%", height: "100%", transform: [{ scale: reduced || !motionEnabled ? 1 : scale }, { rotate }] }]} />
   </View>;

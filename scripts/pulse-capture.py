@@ -105,17 +105,21 @@ try:
     find('Start testing')
     tap('Still sphere', True)
     shot('lab-still')
+    # Check isolation before resizing, which recreates the Android activity.
+    route('session')
+    find('PAUSED')
+    shot('box-paused-after-lab')
     adb('shell', 'wm', 'size', '720x1280')
     adb('shell', 'wm', 'density', '360')
+    # Startup recovery can first restore the paused production session.
+    time.sleep(5)
+    route('testing')
+    time.sleep(3)
     route('testing')
     find('Start testing')
     shot('lab-compact')
     adb('shell', 'wm', 'size', '1080x1920')
     adb('shell', 'wm', 'density', '400')
-    # Re-entering the existing protocol still shows its paused breathing guide.
-    route('session')
-    find('PAUSED')
-    shot('box-paused-after-lab')
     (OUT / 'result.json').write_text(json.dumps({'passed': True, 'runtime': 'Android API 35 emulator; native release build with development signing', 'screenshots': '1080x1920 PNG; unaltered screencap', 'physicalDeviceSmoothness': 'not verified'}, indent=2))
 finally:
     shot('last-screen')
