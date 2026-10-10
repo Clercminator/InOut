@@ -1,0 +1,67 @@
+name: Pulse native asset capture
+on:
+  push:
+    branches: ['codex/pulse-capture-*']
+  workflow_dispatch:
+    inputs:
+      build_run:
+        description: Reuse a Pulse emulator APK from this workflow run
+        required: false
+        type: string
+permissions:
+  contents: read
+  actions: read
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+      - run: npm ci
+        if: inputs.build_run == ''
+      - run: npm run locales:check && npm run typecheck && npm test && npm run test:mobile
+        if: inputs.build_run == ''
+      - run: npx expo prebuild --platform android --no-install
+        if: inputs.build_run == ''
+        working-directory: apps/mobile
+      - run: ./gradlew :app:assembleRelease -PreactNativeArchitectures=x86_64 --max-workers=2
+        if: inputs.build_run == ''
+        working-directory: apps/mobile/android
+      - uses: actions/upload-artifact@v4
+        if: inputs.build_run == ''
+        with:
+          name: pulse-emulator-apk
+          path: apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+      - uses: actions/download-artifact@v4
+        if: inputs.build_run != ''
+        with:
+          name: pulse-emulator-apk
+          run-id: ${{ inputs.build_run }}
+          github-token: ${{ github.token }}
+          path: apps/mobile/android/app/build/outputs/apk/release
+      - name: Enable emulator acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: false
+          script: python scripts/pulse-capture.py apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pulse-native-captures
+          path: artifacts/pulse-native

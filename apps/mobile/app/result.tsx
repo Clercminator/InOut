@@ -1,19 +1,45 @@
-import { Alert, Share, View } from "react-native";
-import { router, useLocalSearchParams } from "expo-router";
+import { useTheme } from "../src/theme";
+import { recordTitle, message, t, countLabel } from "../src/i18n";
+import { useLanguage } from "../src/use-language";
+import { Alert, Switch } from "../src/localized-native";
+import { useCallback, useState } from "react";
+import { AppState, Share, View } from "react-native";
+import { useCommercial } from "../src/commercial-context";
+import { router, useLocalSearchParams, useFocusEffect } from "expo-router";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { Screen, Title, Label, Card, Copy, Button, s } from "../src/ui";
+import { Screen, Title, Label, Card, Copy, Button, useStyles } from "../src/ui";
 import { useSession, SaveError } from "../src/provider";
-import { shiftText, duration } from "../src/format";
+import { shiftText, practiceDuration as duration } from "../src/format";
 import { stateShift } from "@inout/shared-types";
 import { snapshot } from "@inout/breathing-engine";
-import { colors } from "@inout/design-tokens";
+
+import { AchievementMark } from "../src/achievement-mark";
+import { Celebration } from "../src/celebration";
+import { WeeklyGoal } from "../src/practice-rewards";
+import { ShareExercise } from "../src/share-exercise";
 export default function Result() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { colors } = useTheme();
+  const s = useStyles();
+  useLanguage();
+  const { id, saved } = useLocalSearchParams<{ id: string; saved?: string }>();
+  const [shareRatingsFor, setShareRatingsFor] = useState<string | null>(null);
   const controller = useSession();
+  const commercial = useCommercial();
+  const [leaving, setLeaving] = useState(false);
+  const completion = controller.challenges().find(s => s.status === "completed" && !s.celebrationSeen && s.completedSteps.some(step => step.sessionId === id));
+  const completionId = completion?.challengeId;
+  useFocusEffect(useCallback(() => { if (saved === "1" && completionId && !controller.error) router.push({ pathname: "/challenge-complete", params: { id: completionId } }); }, [saved, completionId, controller.error]));
   const record =
     controller.current?.id === id
       ? controller.current
       : controller.history().find((r) => r.id === id);
+  const adEligible = saved === "1" && controller.current?.id === id && record?.stage === "result" && record.endReason === "completed" && record.source !== "manual" && !completionId && !controller.error;
+  useFocusEffect(useCallback(() => {
+    if (!commercial || !adEligible) return;
+    commercial.ads.setContext({ path: "/result", foreground: AppState.currentState === "active", sessionStage: "result", challengeActive: !!controller.pendingTest?.() });
+    commercial.ads.prepareCompletion(id);
+    return () => commercial.ads.cancelCompletion();
+  }, [commercial, adEligible, id, controller, commercial?.ads.ready]));
   if (!record || record.stage !== "result")
     return (
       <Screen>
@@ -26,6 +52,13 @@ export default function Result() {
   const view = snapshot(record.engine, record.engine.anchorAt);
   return (
     <Screen title="STATE SHIFT">
+      {saved === "1" && controller.current?.id === id && !controller.error && record.endReason === "completed" && <Celebration
+        variant="saved"
+        awards={controller.latestAwards}
+        title={shift !== null && shift > 0 ? "A little lighter." : "Session saved!"}
+        message={shift !== null && shift > 0 ? "You reported less tension. A moment worth celebrating — your session is saved." : "Your practice is part of your progress. Nicely done."}
+      />}
+      {saved === "1" && !controller.error && <WeeklyGoal compact />}
       <View style={s.resultHeader}>
         <View style={s.row}>
           <View style={s.inlineLabel}>
@@ -34,8 +67,8 @@ export default function Result() {
           </View>
           <Copy style={s.small}>SELF-REPORTED</Copy>
         </View>
-        <Copy style={s.resultMeta}>
-          {record.protocolName} · {duration(view.sessionElapsedMs)} · {view.completedCycles} cycles
+        <Copy translate={false} style={s.resultMeta}>
+          {recordTitle(record)} · {duration(view.sessionElapsedMs)} · {record.source === "manual" ? t("Manually logged") : countLabel(view.completedCycles, "cycle")}
         </Copy>
       </View>
       <Card style={{ ...s.resultHero, borderColor: resultColor + "50", padding: 24 }}>
@@ -55,7 +88,7 @@ export default function Result() {
         <Title>{shiftText(record)}</Title>
         <Copy style={s.small}>Self-reported tension · 1–10</Copy>
       </Card>
-      <Card>
+      {record.source !== "manual" && <Card>
         <Label>CADENCE</Label>
         <Copy>
           {record.engine.plan.blocks.flatMap((block) => block.phases)
@@ -66,36 +99,55 @@ export default function Result() {
         {record.endReason === "unwell" && (
           <Copy>Stopped for discomfort. Breathe naturally and rest.</Copy>
         )}
-      </Card>
+      </Card>}
+      {saved === "1" && !controller.error && controller.latestAwards.length > 0 && <Card style={{ backgroundColor: colors.accentSurface }}><AchievementMark /><Label>NEW ACHIEVEMENT</Label><Title>{controller.latestAwards[0].label}</Title><Copy>Your earned badges stay with you. Take a moment to enjoy your progress.</Copy><Button title="Share achievement" onPress={() => router.push({ pathname: "/milestone", params: { badge: controller.latestAwards[0].id } })} /><Button title="Close celebration" secondary onPress={() => controller.dismissAwards()} /></Card>}
+      {!!record.note && <Card><Label>NOTE</Label><Copy translate={false}>{record.note}</Copy></Card>}
       <SaveError />
-      <Button
-        title="DONE · VIEW HISTORY  →"
-        disabled={!!controller.error}
-        onPress={() => router.replace("/history")}
-      />
-      <Button
-        title="Share result"
-        secondary
-        disabled={!!controller.error}
-        onPress={() => {
-          void Share.share({
-            message: `IN/OUT · ${record.protocolName}\n${duration(view.sessionElapsedMs)} · ${shiftText(record)} (self-reported).`,
-          }).catch(() =>
-            Alert.alert("Sharing unavailable", "Please try again."),
-          );
-        }}
-      />
-      <Button
-        title="Do it again"
-        secondary
-        disabled={!!controller.error}
-        onPress={() => {
-          if (record.protocol) {
-            controller.setCustomProtocol(record.protocol);
-            router.replace({ pathname: "/pre", params: { id: "custom" } });
-          } else router.replace({ pathname: "/pre", params: { id: record.protocolId } });
-        }}
-      />
+      {record.source !== "manual" && record.protocol && <ShareExercise protocol={record.protocol} />}
+      {shift !== null && <View style={s.row}>
+        <Copy>Include my tension change when sharing</Copy>
+        <Switch accessibilityLabel={t("Include my tension change when sharing")} value={shareRatingsFor === record.id} onValueChange={enabled => setShareRatingsFor(enabled ? record.id : null)} />
+      </View>}
+      <Copy style={s.small}>Sharing includes your practice name and duration. Tension ratings stay private unless you choose to include them.</Copy>
+      <View style={{ gap: 8 }}>
+        <Button
+          title="DONE · VIEW HISTORY  →"
+          disabled={!!controller.error || leaving}
+          onPress={() => {
+            if (leaving) return;
+            setLeaving(true);
+            void (adEligible ? commercial?.ads.showCompletion(id) : Promise.resolve())?.finally(() => { setLeaving(false); router.replace("/history"); });
+            if (!commercial) { setLeaving(false); router.replace("/history"); }
+          }}
+        />
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+        <View style={{ flexGrow: 1, flexBasis: 140 }}>
+        <Button
+          title="Share result"
+          secondary
+          disabled={!!controller.error}
+          onPress={() => {
+            void Share.share({
+              message: `IN/OUT · ${recordTitle(record)}\n${duration(view.sessionElapsedMs)}${shareRatingsFor === record.id && shift !== null ? ` · ${t(shiftText(record))} (${t("self-reported")})` : ""}`,
+            }).catch(() =>
+              Alert.alert("Sharing unavailable", "Please try again."),
+            );
+          }}
+        />
+        </View>
+        {record.source !== "manual" && <View style={{ flexGrow: 1, flexBasis: 140 }}><Button
+          title="Do it again"
+          secondary
+          disabled={!!controller.error}
+          onPress={() => {
+            if (record.protocol) {
+              controller.setCustomProtocol(record.protocol);
+              router.replace({ pathname: "/pre", params: { id: "custom" } });
+            } else router.replace({ pathname: "/pre", params: { id: record.protocolId } });
+          }}
+        /></View>}
+        </View>
+      </View>
     </Screen>
   );
 }

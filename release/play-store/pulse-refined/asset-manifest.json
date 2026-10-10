@@ -1,0 +1,74 @@
+{
+  "brand": "IN/OUT — Pulse Refined",
+  "assets": [
+    {
+      "file": "app-icon-512.png",
+      "width": 512,
+      "height": 512,
+      "bytes": 401171,
+      "alpha": true
+    },
+    {
+      "file": "feature-graphic-en-US-1024x500.png",
+      "width": 1024,
+      "height": 500,
+      "bytes": 436008,
+      "alpha": false
+    },
+    {
+      "file": "feature-graphic-es-419-1024x500.png",
+      "width": 1024,
+      "height": 500,
+      "bytes": 438370,
+      "alpha": false
+    },
+    {
+      "file": "feature-graphic-pt-BR-1024x500.png",
+      "width": 1024,
+      "height": 500,
+      "bytes": 438861,
+      "alpha": false
+    },
+    {
+      "file": "phone-en-US/01-today-dark.png",
+      "width": 1080,
+      "height": 1920,
+      "bytes": 490790,
+      "alpha": false
+    },
+    {
+      "file": "phone-en-US/02-protocols-dark.png",
+      "width": 1080,
+      "height": 1920,
+      "bytes": 147737,
+      "alpha": false
+    },
+    {
+      "file": "phone-en-US/03-coherent-dark.png",
+      "width": 1080,
+      "height": 1920,
+      "bytes": 109616,
+      "alpha": false
+    },
+    {
+      "file": "phone-en-US/04-box-session-dark.png",
+      "width": 1080,
+      "height": 1920,
+      "bytes": 124503,
+      "alpha": false
+    }
+  ],
+  "source": "Google Play preview asset requirements",
+  "requirementsUrl": "https://support.google.com/googleplay/android-developer/answer/9866151",
+  "artwork": {
+    "tool": "Built-in image_gen",
+    "prompt": "Single luminous spherical orb for IN/OUT. Deep violet glass/plasma, flowing S-shaped ribbons of purple, lavender, electric blue and restrained pink; pearlescent rim, soft glow, dark core, transparent background. No text, tile, frame or watermark. Designed to rotate slowly and expand with breathing."
+  },
+  "screenshotSource": {
+    "runtime": "Android API 35 emulator, native internal release build",
+    "workflowRun": "38074343496",
+    "workflowUrl": "https://github.com/Clercminator/InOut/actions/runs/38074343496",
+    "processing": "Lossless removal of the unused alpha channel only; screenshot pixels are unchanged",
+    "physicalDeviceAcceptance": false
+  }
+}

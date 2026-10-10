@@ -1,0 +1,121 @@
+appId: com.imrtech.inout
+---
+- launchApp:
+    clearState: true
+- tapOn: "Personalize InOut"
+- tapOn: "Reduce stress & anxiety"
+- scrollUntilVisible:
+    element:
+      text: "Continue"
+    direction: DOWN
+- tapOn: "Continue"
+- tapOn: "Let's get started"
+- scrollUntilVisible:
+    element:
+      text: "I understand"
+    direction: DOWN
+- tapOn: "I understand"
+- tapOn: "Close subscription offer"
+- tapOn: ".*Results"
+- assertVisible: "DAY STREAK"
+- takeScreenshot: progress-overview
+- scrollUntilVisible:
+    element:
+      text: "Add session"
+    direction: DOWN
+    timeout: 60000
+    waitToSettleTimeoutMs: 1000
+    centerElement: false
+- tapOn:
+    text: "Add session"
+    retryTapIfNoChange: true
+- assertVisible: "Log your breathing practice."
+- scrollUntilVisible:
+    element:
+      text: "Choose date"
+    direction: DOWN
+    timeout: 60000
+    waitToSettleTimeoutMs: 1000
+    centerElement: false
+- tapOn: "Choose date"
+- takeScreenshot: native-date-picker
+- tapOn: "Cancel picker"
+- tapOn: "Choose time"
+- takeScreenshot: native-time-picker
+- tapOn: "Done"
+- scrollUntilVisible:
+    element:
+      text: "Save session"
+    direction: DOWN
+    timeout: 60000
+    waitToSettleTimeoutMs: 1000
+    centerElement: false
+- tapOn: "Save session"
+- assertVisible: "Session saved"
+- takeScreenshot: manual-saved
+- tapOn: "View progress"
+- scrollUntilVisible:
+    element:
+      text: "See all stats"
+    direction: DOWN
+    timeout: 60000
+    waitToSettleTimeoutMs: 1000
+    centerElement: false
+- tapOn: "See all stats"
+- assertVisible: "MY STATS"
+- tapOn: "Weeks"
+- takeScreenshot: stats-weekly
+- scrollUntilVisible:
+    element:
+      text: "Previous period"
+    direction: DOWN
+    timeout: 60000
+    waitToSettleTimeoutMs: 1000
+    centerElement: false
+- tapOn:
+    text: "Previous period"
+    index: 0
+- takeScreenshot: chart-selected-period
+- tapOn: "Go back"
+- scrollUntilVisible:
+    element:
+      text: "View session history"
+    direction: DOWN
+    timeout: 60000
+    waitToSettleTimeoutMs: 1000
+    centerElement: false
+- tapOn: "View session history"
+- assertVisible: "Manual breathing"
+- takeScreenshot: manual-history
+
+- openLink: "inout://pre?id=box"
+- tapOn:
+    text: "Open"
+    optional: true
+- scrollUntilVisible:
+    element:
+      text: "Skip rating & start"
+    direction: DOWN
+    timeout: 60000
+    waitToSettleTimeoutMs: 1000
+    centerElement: false
+- tapOn:
+    text: "Skip rating & start"
+    waitToSettleTimeoutMs: 100
+- extendedWaitUntil:
+    visible: "Next: Exhale.*"
+    timeout: 25000
+- takeScreenshot: breathing-hold-after-inhale
+- extendedWaitUntil:
+    visible: "Next: Inhale.*"
+    timeout: 25000
+- takeScreenshot: breathing-hold-after-exhale
+- tapOn: "Pause"
+- assertVisible: "Paused.*"
+- takeScreenshot: breathing-paused
+- tapOn: "Resume"
+- extendedWaitUntil:
+    visible: 'How tense are you now\?'
+    timeout: 240000
+- takeScreenshot: breathing-completed
+

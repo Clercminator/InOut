@@ -1,0 +1,73 @@
+appId: com.imrtech.inout
+---
+- launchApp:
+    clearState: true
+- tapOn: "Personalize InOut"
+- tapOn: "Reduce stress & anxiety"
+- scrollUntilVisible:
+    element: { text: "Continue" }
+    direction: DOWN
+- tapOn: "Continue"
+- tapOn: "Let's get started"
+- scrollUntilVisible:
+    element: { text: "I understand" }
+    direction: DOWN
+- tapOn: "I understand"
+- tapOn: "Close subscription offer"
+- tapOn: "Challenges"
+- takeScreenshot: challenges-catalog
+- scrollUntilVisible:
+    element: { text: "First Breath.*" }
+    direction: DOWN
+- tapOn: "First Breath.*"
+- takeScreenshot: challenge-first-breath
+- scrollUntilVisible:
+    element: { text: "Start challenge" }
+    direction: DOWN
+- tapOn: "Start challenge"
+- scrollUntilVisible:
+    element: { text: "Skip rating & start" }
+    direction: DOWN
+- tapOn: "Skip rating & start"
+- extendedWaitUntil:
+    visible: 'How tense are you now\?'
+    timeout: 180000
+- scrollUntilVisible:
+    element: { text: "Skip & save session" }
+    direction: DOWN
+- tapOn: "Skip & save session"
+- repeat:
+    times: 2
+    commands:
+      - openLink: "inout://challenge?id=first-breath"
+      - tapOn: { text: "Open", optional: true }
+      - takeScreenshot: challenge-active-progress
+      - scrollUntilVisible:
+          element: { text: "Start today's practice" }
+          direction: DOWN
+      - tapOn: "Start today's practice"
+      - scrollUntilVisible:
+          element: { text: "Skip rating & start" }
+          direction: DOWN
+      - tapOn: "Skip rating & start"
+      - extendedWaitUntil:
+          visible: 'How tense are you now\?'
+          timeout: 240000
+      - scrollUntilVisible:
+          element: { text: "Skip & save session" }
+          direction: DOWN
+      - tapOn: "Skip & save session"
+- assertVisible: "CHALLENGE COMPLETE"
+- takeScreenshot: challenge-completed
+- scrollUntilVisible:
+    element: { text: "Share achievement" }
+    direction: DOWN
+- tapOn: "Share achievement"
+- takeScreenshot: challenge-share-story
+- tapOn: "Square.*"
+- takeScreenshot: challenge-share-square
+- scrollUntilVisible:
+    element: { text: "Share achievement" }
+    direction: DOWN
+- tapOn: "Share achievement"
+- takeScreenshot: challenge-native-share-sheet

@@ -1,14 +1,25 @@
+import { useTheme } from "../src/theme";
+import { recordTitle, message, t } from "../src/i18n";
+import { useLanguage } from "../src/use-language";
+import { Alert } from "../src/localized-native";
 import { useCallback, useEffect } from "react";
-import { Alert, BackHandler, View } from "react-native";
+import { BackHandler, View, useWindowDimensions } from "react-native";
 import { Redirect, router, useFocusEffect } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
-import { Screen, Label, Title, Copy, Button, s } from "../src/ui";
+import { Screen, Label, Title, Copy, Button, useStyles } from "../src/ui";
 import { useSession, SaveError } from "../src/provider";
 import { SighVisual } from "../src/sigh-visual";
-import { colors } from "@inout/design-tokens";
-import { protocols } from "@inout/protocols";
+
+import { breathingGuidance } from "../src/breathing-guidance";
+import { practiceDuration } from "../src/format";
+import { protocols, isCyclic } from "@inout/protocols";
 
 export default function Session() {
+  const { colors } = useTheme();
+  const s = useStyles();
+  const { width, fontScale } = useWindowDimensions();
+  const stackedControls = width < 360 || fontScale > 1.3;
+  useLanguage();
   const controller = useSession();
   useFocusEffect(
     useCallback(() => () => controller.pause("interruption"), [controller]),
@@ -29,10 +40,22 @@ export default function Session() {
       <Redirect href={{ pathname: "/result", params: { id: record.id } }} />
     );
   const running = record.engine.status === "running";
-  const unavailable = record.protocol?.safetyCategory === "highIntensity" || record.engine.plan.blocks.some((b) => b.protocolId === "high-intensity-cyclic");
+  const unavailable = !controller.canContinue();
+  const intense = !!record.protocol && isCyclic(record.protocol);
+  const holding = view.phase.type === "retention" || view.phase.type === "hold";
+  const round = record.engine.plan.blocks.slice(0, view.blockIndex + 1).filter(b => b.cycles === 30).length;
   const animationType =
     protocols.find((protocol) => protocol.id === record.engine.plan.blocks[view.blockIndex].protocolId)
       ?.animationType ?? record.protocol?.animationType ?? "wave";
+  const block = record.engine.plan.blocks[view.blockIndex];
+  let nextPhases = block.phases;
+  let nextIndex = block.phases.findIndex((phase, i) => i > view.phaseIndex && phase.durationMs > 0);
+  if (nextIndex < 0 && view.currentCycle < view.totalCycles) nextIndex = block.phases.findIndex(p => p.durationMs > 0);
+  if (nextIndex < 0 && record.engine.plan.blocks[view.blockIndex + 1]) {
+    nextPhases = record.engine.plan.blocks[view.blockIndex + 1].phases;
+    nextIndex = nextPhases.findIndex(p => p.durationMs > 0);
+  }
+  const nextLabel = nextIndex < 0 ? "Session complete" : `${breathingGuidance(nextPhases, nextIndex).label} · ${practiceDuration(nextPhases[nextIndex].durationMs)}`;
   const end = () => {
     controller.pause();
     Alert.alert(
@@ -70,29 +93,31 @@ export default function Session() {
             gap: 8,
           }}
         >
+          {intense && running && holding && <Button title={view.phase.type === "retention" ? "Breathe in now" : "Release now"} onPress={() => controller.releaseHold()} />}
           <Button
             title={running ? "Pause" : "Resume"}
             disabled={!!controller.error || unavailable}
             onPress={() => (running ? controller.pause() : controller.resume())}
           />
-          <View style={{ flexDirection: "row", gap: 8 }}>
-            <View style={{ flex: 1 }}>
+          <View style={{ flexDirection: stackedControls ? "column" : "row", gap: 8 }}>
+            <View style={{ flex: stackedControls ? undefined : 1 }}>
               <Button title="End session" secondary onPress={end} />
             </View>
-            <View style={{ flex: 1 }}>
+            <View style={{ flex: stackedControls ? undefined : 1 }}>
               <Button title="I feel unwell" danger onPress={unwell} />
             </View>
           </View>
         </View>
       }
     >
-      <Title>{record.protocolName}</Title>
+      <Title translate={false}>{recordTitle(record)}</Title>
       <Label>
-        {record.goal.toUpperCase()} · {Math.ceil(view.sessionRemainingMs / 1000)} SEC LEFT
+        {intense ? message("Up to {0} remaining", [practiceDuration(view.sessionRemainingMs)]) : `${record.goal.toUpperCase()} · ${practiceDuration(view.sessionRemainingMs)} REMAINING`}
       </Label>
       <SaveError />
       {unavailable && <Copy>This older routine is not available in this release. End this session to choose another practice.</Copy>}
-      {record.engine.plan.blocks.length > 1 && <Copy>
+      {intense && <><Label>{message("Round {0} of {1}", [round, record.protocol!.defaultCycles])}</Label><Copy>{!running || view.phase.type === "freeBreathing" ? "Breathe naturally" : holding ? "Breathe as soon as you need to. The timer is a limit, not a target." : "Deep, unforced inhale. Let the exhale go without pushing."}</Copy></>}
+      {!intense && record.engine.plan.blocks.length > 1 && <Copy>
         Block {view.blockIndex + 1}/{record.engine.plan.blocks.length} · {protocols.find((p) => p.id === record.engine.plan.blocks[view.blockIndex].protocolId)?.name ?? "Custom"}
         {record.engine.plan.blocks[view.blockIndex + 1] ? ` · Next: ${protocols.find((p) => p.id === record.engine.plan.blocks[view.blockIndex + 1].protocolId)?.name ?? "Custom"}` : " · Final block"}
       </Copy>}
@@ -112,10 +137,12 @@ export default function Session() {
           running={running}
           animationType={animationType}
           phases={record.engine.plan.blocks[view.blockIndex].phases}
+          cycleLabel={intense ? block.cycles === 30 ? message("Breath {0} of 30", [view.currentCycle]) : view.phase.type === "retention" ? "Optional retention" : "Recovery breath" : undefined}
         />
+        <Copy style={[s.small, { textAlign: "center" }]}>Next: {nextLabel}</Copy>
         <View style={s.row}>
-          {record.engine.plan.blocks[view.blockIndex].phases.map((phase, i) => (
-            <View key={i} style={{ flex: 1, gap: 8, minWidth: 48 }}>
+          {record.engine.plan.blocks[view.blockIndex].phases.map((phase, i) => phase.durationMs > 0 && (
+            <View key={i} style={{ flexGrow: 1, flexBasis: 100 * fontScale, maxWidth: "100%", gap: 8 }}>
               <View
                 style={{
                   height: 4,
@@ -124,7 +151,7 @@ export default function Session() {
                     i === view.phaseIndex ? colors.accent : colors.border,
                 }}
               />
-              <Copy style={[s.small, { color: i === view.phaseIndex ? colors.text : colors.muted }]}>{phase.label.toUpperCase()}</Copy>
+              <Copy style={[s.small, { color: i === view.phaseIndex ? colors.text : colors.muted }]}>{breathingGuidance(record.engine.plan.blocks[view.blockIndex].phases, i).label.toUpperCase()}</Copy>
               <Copy style={[s.small, { color: colors.muted }]}>{phase.durationMs / 1000}s</Copy>
             </View>
           ))}

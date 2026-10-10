@@ -5,7 +5,7 @@
     "scheme": "inout",
     "version": "1.0.0",
     "orientation": "portrait",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "automatic",
     "platforms": [
       "ios",
       "android"
@@ -22,7 +22,7 @@
       "package": "com.imrtech.inout",
       "predictiveBackGestureEnabled": false,
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/adaptive-pulse.png",
         "monochromeImage": "./assets/monochrome-icon.png",
         "backgroundColor": "#111317"
       },
@@ -44,7 +44,7 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#111317",
-          "image": "./assets/splash.png",
+          "image": "./assets/pulse-orb.png",
           "imageWidth": 200
         }
       ],
@@ -58,6 +58,6 @@
         }
       ]
     ],
-    "icon": "./assets/icon.png"
+    "icon": "./assets/icon-pulse.png"
   }
 }

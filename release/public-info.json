@@ -1,6 +1,10 @@
 {
-  "publisherName": "David Clerc",
+  "publisherName": "IMR Tech SpA",
   "supportEmail": "davidclerc@imrtech.xyz",
-  "privacyUrl": "https://clercminator.github.io/InOut/privacy.html",
-  "supportUrl": "https://clercminator.github.io/InOut/support.html"
+  "privacyUrl": "https://inout.imrtech.xyz/privacy",
+  "supportUrl": "https://inout.imrtech.xyz/support",
+  "termsUrl": "https://inout.imrtech.xyz/terms",
+  "safetyUrl": "https://inout.imrtech.xyz/safety",
+  "deleteAccountUrl": "https://inout.imrtech.xyz/delete-account",
+  "deleteDataUrl": "https://inout.imrtech.xyz/delete-data"
 }

@@ -109,7 +109,7 @@ export function snapshot(state: EngineState, now: number) {
     sessionRemainingMs: duration - elapsed,
     paused: state.status === "paused",
     completed,
-    cueKey: `${blockIndex}:${cycleIndex}:${phaseIndex}`,
+    cueKey: `${blockIndex}:${cycleIndex}:${phaseIndex}:${phase.type}`,
   };
 }
 export function checkpoint(state: EngineState, now: number): EngineState {
@@ -121,6 +121,20 @@ export function checkpoint(state: EngineState, now: number): EngineState {
     elapsedAtAnchor: view.sessionElapsedMs,
     status: view.completed ? "completed" : state.status,
   };
+}
+/** Shorten a one-cycle hold to actual elapsed time, without crediting skipped time. */
+export function releaseHold(state: EngineState, now: number): EngineState {
+  const view = snapshot(state, now);
+  if (view.completed || (state.status !== "running" && state.status !== "paused") ||
+    !["retention", "hold"].includes(view.phase.type) || state.plan.blocks[view.blockIndex].cycles !== 1) return state;
+  const next = checkpoint(state, now);
+  const plan = { blocks: state.plan.blocks.map((block, index) => index !== view.blockIndex ? block : {
+    ...block, phases: block.phases.map((phase, index) => index !== view.phaseIndex ? phase : { ...phase, durationMs: Math.floor(view.phaseElapsedMs) }),
+  }) };
+  // An immediately released retention block has no remaining duration.
+  const nonempty = { blocks: plan.blocks.filter(block => cycleDuration(block.phases) > 0) };
+  validatePlan(nonempty);
+  return { ...next, plan: nonempty };
 }
 export function pause(
   state: EngineState,

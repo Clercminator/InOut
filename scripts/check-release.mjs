@@ -1,37 +1,48 @@
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import policy from './build-policy.cjs';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const info = JSON.parse(readFileSync(root + 'release/public-info.json', 'utf8'));
 const listing = JSON.parse(readFileSync(root + 'release/store-listing.json', 'utf8'));
 const readiness = JSON.parse(readFileSync(root + 'release/readiness.json', 'utf8'));
-const errors = [];
+const sharing = JSON.parse(readFileSync(root + 'release/sharing.json', 'utf8'));
+const app = JSON.parse(readFileSync(root + 'apps/mobile/app.json', 'utf8')).expo;
+const errors = policy.buildPolicy(process.env, readiness.gates, listing.status);
+if (sharing.apiUrl || readiness.gates?.sharingVerified || process.env.INOUT_RELEASE === '1') {
+  try {
+    const url = new URL(sharing.apiUrl);
+    if (url.protocol !== 'https:' || url.username || url.password || !url.pathname.endsWith('/functions/v1/inout-shares')) throw new Error();
+  } catch { errors.push('A deployed HTTPS sharing API is required before sharing acceptance.'); }
+}
 if (process.env.INOUT_RELEASE === '1') {
-  for (const key of ['EXPO_PUBLIC_REVENUECAT_IOS_KEY', 'EXPO_PUBLIC_REVENUECAT_ANDROID_KEY', 'ADMOB_IOS_APP_ID', 'ADMOB_ANDROID_APP_ID', 'EXPO_PUBLIC_ADMOB_IOS_BANNER_ID', 'EXPO_PUBLIC_ADMOB_ANDROID_BANNER_ID']) {
+  for (const key of ['EXPO_PUBLIC_REVENUECAT_IOS_KEY', 'EXPO_PUBLIC_REVENUECAT_ANDROID_KEY']) {
     if (!process.env[key] || process.env[key].includes('3940256099942544')) errors.push(`Production configuration is missing or uses demo values: ${key}`);
   }
   if (process.env.EXPO_PUBLIC_ADS_MODE !== 'live') errors.push('Production ads must be explicitly configured after acceptance.');
   if (listing.status !== 'approved-commercial-v1') errors.push('Commercial store metadata is still a draft. Do not submit the former free-only release.');
-  for (const gate of ['billingVerified', 'adsAndConsentVerified', 'sharingVerified', 'analyticsDecisionVerified', 'nativeDeviceAcceptance', 'metadataAndLegalApproved']) {
+  for (const gate of ['billingVerified', 'adsAndConsentVerified', 'sharingVerified', 'analyticsDecisionVerified', 'nativeDeviceAcceptance', 'metadataAndLegalApproved', 'accountsAndDeletionVerified']) {
     if (readiness.gates?.[gate] !== true) errors.push(`Commercial launch gate is open: ${gate}`);
   }
 }
 if (!info.publisherName.trim()) errors.push('Publisher name is missing.');
 if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(info.supportEmail)) errors.push('A verified public support email is required.');
-for (const key of ['privacyUrl','supportUrl']) {
-  try { if (new URL(info[key]).protocol !== 'https:') throw new Error(); }
-  catch { errors.push(`${key} must point to a published HTTPS page.`); }
+for (const [key, path] of Object.entries({ privacyUrl:'/privacy', supportUrl:'/support', termsUrl:'/terms', safetyUrl:'/safety', deleteAccountUrl:'/delete-account', deleteDataUrl:'/delete-data' })) {
+  if (info[key] !== `https://inout.imrtech.xyz${path}`) errors.push(`${key} must use the canonical In/Out subdomain and route.`);
 }
 for (const [key,max] of [['name',30],['subtitle',30],['shortDescription',80],['description',4000],['keywords',100]]) {
   if (!listing[key] || listing[key].length > max) errors.push(`${key} must contain 1–${max} characters.`);
 }
-for (const file of ['icon.png','adaptive-icon.png','monochrome-icon.png']) if (!existsSync(root + 'apps/mobile/assets/' + file)) errors.push(`Missing ${file}`);
+const mobileAsset = (file) => typeof file === 'string' ? resolve(root, 'apps/mobile', file) : '';
 for (const [file,width,height,colorType] of [
-  ['apps/mobile/assets/icon.png',1024,1024,2],
+  [mobileAsset(app.icon),1024,1024,2],
+  [mobileAsset(app.android?.adaptiveIcon?.foregroundImage),1024,1024,6],
+  [mobileAsset(app.android?.adaptiveIcon?.monochromeImage),1024,1024,6],
   ['release/assets/google-play-icon.png',512,512,6],
   ['release/assets/google-play-feature.png',1024,500,2],
 ]) {
   try {
-    const png = readFileSync(root + file);
+    const png = readFileSync(resolve(root, file));
     if (png.length < 33 || png.subarray(0,8).toString('hex') !== '89504e470d0a1a0a' ||
       png.readUInt32BE(16) !== width || png.readUInt32BE(20) !== height || png[24] !== 8 || png[25] !== colorType)
       errors.push(`${file} has the wrong PNG dimensions or color format.`);

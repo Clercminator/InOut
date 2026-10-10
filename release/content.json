@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-29",
+  "updated": "2026-10-08",
   "privacy": [
     {
       "title": "Development build and launch scope",
@@ -31,7 +31,15 @@
     },
     {
       "title": "Public privacy and support website",
-      "body": "The public privacy and support pages are hosted on GitHub Pages. Opening them sends ordinary web requests, which may include your IP address and browser information, to that hosting provider. These pages use no IN/OUT analytics, cookies or advertising. The privacy and help text bundled inside the app can be read offline without opening the website."
+      "body": "The public privacy and support pages are hosted on Vercel. Opening them sends ordinary web requests, which may include your IP address and browser information, to that hosting provider. These pages use no IN/OUT analytics, cookies or advertising. The privacy and help text bundled inside the app can be read offline without opening the website."
+    },
+    {
+      "title": "Reviewer access and advertising data",
+      "body": "Optional store-review access sends a review code and a random installation identifier to our Supabase service over HTTPS. The service checks a code hash and stores hashed installation and grant identifiers, expiry and revocation status. Codes are not logged or stored in plaintext by our function. The temporary grant stays in protected device storage and can be used offline for at most one hour, never beyond its approved expiry. Local reset removes reviewer access; iOS protected storage can otherwise survive reinstall. Expired server records are removed on subsequent reviewer requests; provider logs/backups have separate retention. AdMob may process IP-derived approximate location, device identifiers, ad interactions and diagnostics for advertising, measurement and fraud prevention, even when non-personalized ads are requested. Pro access suppresses ad requests. IN/OUT remote product analytics remain disabled; billing and advertising providers still process their service data."
+    },
+    {
+      "title": "Optional welcome email and milestone cards",
+      "body": "If you request a welcome email, InOut sends your email address, first name, selected goal, language and random installation identifier to our Supabase service and email delivery provider. This is one requested message, not a marketing subscription. The pending delivery body is kept privately for retries and removed on successful delivery or when an uncertain request is reviewed after 23 hours. A salted email hash and delivery status remain to prevent repeat sends; daily hashed network and installation counters limit abuse. Provider logs and backups have their own retention. Removing the email from your phone stops future local retries but cannot undo an in-flight request or delete provider records. Contact support to request server-side deletion. Milestone image sharing includes only the displayed achievement or streak and, if selected, total breathing time. Your name, photo, ratings and notes are excluded."
     }
   ],
   "safety": [

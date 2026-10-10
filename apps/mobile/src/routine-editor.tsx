@@ -1,15 +1,19 @@
+import { useTheme } from "./theme";
+import { t, protocolTitle, message } from "./i18n";
+import { useLanguage } from "./use-language";
+import { Pressable, TextInput } from "./localized-native";
 import { useState } from "react";
-import { Pressable, TextInput, View } from "react-native";
+import { View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { randomUUID } from "expo-crypto";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { protocols, planFor } from "@inout/protocols";
 import { totalDuration, validatePlan } from "@inout/breathing-engine";
 import type { PhaseType, Protocol, SavedRoutine } from "@inout/shared-types";
-import { colors } from "@inout/design-tokens";
+
 import { useSession, SaveError } from "./provider";
 import { makeCustomProtocol, makeMixProtocol, customPhase } from "./custom-protocol";
-import { BackScreen, Button, Card, Copy, Label, Title, s } from "./ui";
+import { BackScreen, Button, Card, Copy, Label, Title, useStyles } from "./ui";
 import { duration } from "./format";
 
 function integer(value: string, min: number, max: number, name: string) {
@@ -18,7 +22,10 @@ function integer(value: string, min: number, max: number, name: string) {
   return Number(value);
 }
 function Field({ label, value, onChange, numeric = false }: { label: string; value: string; onChange: (value: string) => void; numeric?: boolean }) {
-  return <View style={{ gap: 8 }}><Label>{label}</Label><TextInput accessibilityLabel={label} value={value} onChangeText={onChange}
+  const { colors } = useTheme();
+  const s = useStyles();
+  useLanguage();
+  return <View style={{ gap: 8 }}><Label>{label}</Label><TextInput accessibilityLabel={t(label)} value={value} onChangeText={onChange}
     keyboardType={numeric ? "number-pad" : "default"} maxLength={numeric ? 3 : 60} selectTextOnFocus={numeric}
     style={{ ...s.copy, minHeight: 48, borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: 12, backgroundColor: colors.lowest }} /></View>;
 }
@@ -26,11 +33,14 @@ type Row = { protocol?: Protocol; type: PhaseType; value: string };
 const phaseTypes: PhaseType[] = ["inhale", "inhaleTopUp", "hold", "exhale", "hum", "freeBreathing"];
 
 export function RoutineEditor({ kind }: { kind: SavedRoutine["kind"] }) {
+  const { colors } = useTheme();
+  const s = useStyles();
+  useLanguage();
   const controller = useSession();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const saved = id ? controller.routines().find((item) => item.id === id && item.kind === kind) : undefined;
   const [key] = useState(() => id ?? randomUUID());
-  const [name, setName] = useState(saved?.protocol.name ?? (kind === "mix" ? "My Mix" : "My Pattern"));
+  const [name, setName] = useState(saved?.protocol.name ?? t(kind === "mix" ? "My Mix" : "My Pattern"));
   const [count, setCount] = useState(String(saved?.protocol.defaultCycles ?? (kind === "mix" ? 1 : 6)));
   const [rows, setRows] = useState<Row[]>(() => kind === "pattern"
     ? saved?.protocol.phases.map((p) => ({ type: p.type, value: String(p.durationMs / 1000) })) ?? [{ type: "inhale", value: "4" }, { type: "exhale", value: "6" }]
@@ -60,19 +70,20 @@ export function RoutineEditor({ kind }: { kind: SavedRoutine["kind"] }) {
       { icon: "content-copy", label: "Duplicate", disabled: rows.length >= 20, run: () => changeRows([...rows.slice(0,index+1), { ...rows[index] }, ...rows.slice(index+1)]) },
       { icon: "delete-outline", label: "Remove", disabled: false, run: () => changeRows(rows.filter((_,i) => i !== index)) },
     ] as const;
-    return <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>{options.map((a) => <Pressable key={a.label} accessibilityRole="button" accessibilityLabel={`${a.label} ${index+1}`} accessibilityState={{ disabled: a.disabled }} disabled={a.disabled} onPress={a.run} style={[s.iconButton, { opacity: a.disabled ? 0.3 : 1 }]}><MaterialIcons name={a.icon} size={22} color={colors.accent} /></Pressable>)}</View>;
+    return <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>{options.map((a) => <Pressable key={a.label} accessibilityRole="button" accessibilityLabel={t(`${a.label} ${index+1}`)} accessibilityState={{ disabled: a.disabled }} disabled={a.disabled} onPress={a.run} style={[s.iconButton, { opacity: a.disabled ? 0.3 : 1 }]}><MaterialIcons name={a.icon} size={22} color={colors.accent} /></Pressable>)}</View>;
   };
-  return <BackScreen title={kind === "mix" ? "MIX BUILDER" : "PATTERN BUILDER"}>
+  return <BackScreen title={kind === "mix" ? "MIX BUILDER" : "PATTERN BUILDER"} avoidKeyboard>
     <Title>{saved ? "Edit your routine." : "Make it yours."}</Title>
     <Field label="Name" value={name} onChange={(value) => { setNotice(""); setName(value); }} />
     <Card><Field label={kind === "mix" ? "Repeats" : "Cycles"} value={count} numeric onChange={(value) => { setNotice(""); setCount(value); }} />
       <Copy>{draft ? `${duration(draft.defaultDuration)} total` : "Set your cadence below"}</Copy></Card>
     {rows.map((row,index) => <Card key={index}><Label>{kind === "mix" ? `BLOCK ${index+1}` : `PHASE ${index+1}`}</Label>
-      <Copy style={s.subtitle}>{row.protocol?.name ?? customPhase(row.type,1).label}</Copy>
+      <Copy translate={false} style={s.subtitle}>{row.protocol ? protocolTitle(row.protocol) : t(customPhase(row.type,1).label)}</Copy>
       <Field label={`${kind === "mix" ? "Block" : "Phase"} ${index+1} ${kind === "mix" ? "cycles" : "seconds"}`} value={row.value} numeric onChange={(value) => changeRows(rows.map((r,i) => i === index ? { ...r, value } : r))} />{actions(index)}</Card>)}
     <Label>{kind === "pattern" ? "ADD PHASE" : "ADD BLOCK"} · {rows.length}/20</Label>
     {kind === "pattern" ? phaseTypes.map((type) => <Button key={type} title={`Add ${customPhase(type,1).label.toLowerCase()}`} secondary disabled={rows.length >= 20} onPress={() => changeRows([...rows, { type, value: "4" }])} />)
-      : [...protocols.filter((p) => p.availability === "enabled"), ...controller.routines().filter((r) => r.kind === "pattern").map((r) => r.protocol)].map((p) => <Button key={p.id} title={`Add ${p.name}`} secondary disabled={rows.length >= 20} onPress={() => changeRows([...rows, { protocol: p, type: "inhale", value: String(p.defaultCycles) }])} />)}
+      : [...protocols.filter((p) => p.availability === "enabled" && p.safetyCategory !== "highIntensity"), ...controller.routines().filter((r) => r.kind === "pattern").map((r) => r.protocol)].map((p) => <Button key={p.id} translate={false} title={message("Add {0}", [protocolTitle(p)])} secondary disabled={rows.length >= 20} onPress={() => changeRows([...rows, { protocol: p, type: "inhale", value: String(p.defaultCycles) }])} />)}
+    {kind === "mix" && <Copy>Cyclic Breathwork is available as a separate practice, with its own safety check and hold controls.</Copy>}
     {!!validation && <Copy accessibilityRole="alert">{validation}</Copy>}
     <Copy>Breathe comfortably. Use easy holds and stop if you feel unwell.</Copy>
     <Button title="Audio & haptics" secondary onPress={() => router.push("/settings")} />
