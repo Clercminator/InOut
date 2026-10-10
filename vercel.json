@@ -1,0 +1,36 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "buildCommand": "",
+  "installCommand": "",
+  "outputDirectory": "apps/web/public",
+  "cleanUrls": false,
+  "redirects": [
+    {"source":"/security","destination":"/privacy","permanent":true},
+    {"source":"/security.html","destination":"/privacy","permanent":true},
+    {"source":"/help","destination":"/support","permanent":true},
+    {"source":"/help.html","destination":"/support","permanent":true},
+    {"source":"/privacy-data","destination":"/delete-data","permanent":true},
+    {"source":"/data-deletion","destination":"/delete-data","permanent":true},
+    {"source":"/account-deletion","destination":"/delete-account","permanent":true}
+  ],
+  "rewrites": [
+    {"source":"/privacy","destination":"/privacy.html"},
+    {"source":"/terms","destination":"/terms.html"},
+    {"source":"/support","destination":"/support.html"},
+    {"source":"/delete-account","destination":"/delete-account.html"},
+    {"source":"/delete-data","destination":"/delete-data.html"},
+    {"source":"/safety","destination":"/safety.html"}
+  ],
+  "headers": [
+    {"source": "/(.*)", "headers": [
+      {"key":"X-Content-Type-Options","value":"nosniff"},
+      {"key":"Referrer-Policy","value":"no-referrer"},
+      {"key":"X-Frame-Options","value":"DENY"},
+      {"key":"Permissions-Policy","value":"camera=(), microphone=(), geolocation=()"},
+      {"key":"Content-Security-Policy","value":"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src https://jvmrsoxknaidcbqoasst.supabase.co; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; object-src 'none'"}
+    ]},
+    {"source":"/.well-known/(.*)","headers":[{"key":"Content-Type","value":"application/json"},{"key":"Cache-Control","value":"public, max-age=300"}]},
+    {"source":"/delete-:kind","headers":[{"key":"Cache-Control","value":"no-store"}]}
+  ]
+}

@@ -99,6 +99,7 @@ export function decimal(value: number, digits = 1) {
 
 const countUnits = {
   session: ['session', 'sessions'], day: ['day', 'days'],
+  week: ['week', 'weeks'], month: ['month', 'months'], year: ['year', 'years'],
   practiceDay: ['practice day', 'practice days'], consecutiveDay: ['consecutive day', 'consecutive days'],
   milestone: ['milestone', 'milestones'], cycle: ['cycle', 'cycles'], repeat: ['repeat', 'repeats'],
 } as const;

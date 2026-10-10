@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { publicError } from "./public-error";
 import { Share } from "react-native";
 import { router } from "expo-router";
 import type { Protocol } from "@inout/shared-types";
@@ -36,7 +37,7 @@ export function ShareExercise({ protocol }: { protocol: Protocol }) {
         if (!link) throw new Error(links.message || "Could not create the link. Try again.");
         const result = await Share.share({ message: `${t("Try this breathing practice in your browser.")}\n${shareUrl(link.id)}` });
         if (result.action === Share.sharedAction) controller.analytics.track("share_created");
-      })().catch(error => setError(error instanceof Error ? error.message : "Sharing unavailable")).finally(() => setBusy(false));
+      })().catch(error => setError(publicError(error, "Sharing is temporarily unavailable. Please try again online."))).finally(() => setBusy(false));
     }} />
     <Copy>Only the breathing cadence is uploaded. Names, ratings and notes stay private. Links expire after 30 days and can be revoked from Shared links.</Copy>
     <Button title="Manage shared links" secondary onPress={() => router.push("/shared-links")} />

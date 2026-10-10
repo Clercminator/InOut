@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-07",
+  "updated": "2026-10-08",
   "privacy": [
     {
       "title": "Development build and launch scope",
@@ -31,7 +31,7 @@
     },
     {
       "title": "Public privacy and support website",
-      "body": "The public privacy and support pages are hosted on GitHub Pages. Opening them sends ordinary web requests, which may include your IP address and browser information, to that hosting provider. These pages use no IN/OUT analytics, cookies or advertising. The privacy and help text bundled inside the app can be read offline without opening the website."
+      "body": "The public privacy and support pages are hosted on Vercel. Opening them sends ordinary web requests, which may include your IP address and browser information, to that hosting provider. These pages use no IN/OUT analytics, cookies or advertising. The privacy and help text bundled inside the app can be read offline without opening the website."
     },
     {
       "title": "Reviewer access and advertising data",

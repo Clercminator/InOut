@@ -1,6 +1,8 @@
 import { resolveSharedLink } from "../../../packages/sharing/src/client";
 import sharingConfig from "../../../release/sharing.json";
 import links from "../../../release/links.json";
+declare const __IOS_STORE_URL__: string;
+declare const __ANDROID_STORE_URL__: string;
 import { t, localizePage } from "./messages";
 import { sharedProtocol } from "@inout/sharing";
 import { start, pause, resume, snapshot, totalDuration, createClock } from "@inout/breathing-engine";
@@ -27,8 +29,9 @@ try {
   element("length").textContent = `${format(totalDuration(plan))} · ${t("Shared breathing practice")}`;
   const native = element<HTMLAnchorElement>("native");
   native.href = `inout://shared?id=${id}`;
+  element("next").hidden = false;
   native.addEventListener("click", () => analytics.track("shared_web_app_open_clicked"));
-  for (const [label, href, host] of [["App Store", links.iosStoreUrl, "apps.apple.com"], ["Google Play", links.androidStoreUrl, "play.google.com"]]) {
+  for (const [label, href, host] of [["App Store", __IOS_STORE_URL__ || links.iosStoreUrl, "apps.apple.com"], ["Google Play", __ANDROID_STORE_URL__ || links.androidStoreUrl, "play.google.com"]]) {
     if (!href) continue;
     const url = new URL(href);
     if (url.protocol !== "https:" || url.hostname !== host) continue;

@@ -32,7 +32,7 @@ export default function Onboarding() {
   }, [controller, journey.step, journey.quickStart]);
   if (journey.step === "offer") return <Paywall entry="onboarding" onClose={finish} completionError={controller.error} />;
   if (journey.step === "complete") return <Screen><Title>Your next breath is ready.</Title><Button title="Enter IN/OUT" onPress={finish} /></Screen>;
-  return <Screen avoidKeyboard back={back} headerAction={<IconButton icon="help-outline" title="Breathing safety" onPress={() => router.push("/safety")} />}>
+  return <Screen key={journey.step} avoidKeyboard back={back} headerAction={<IconButton icon="help-outline" title="Breathing safety" onPress={() => router.push("/safety")} />}>
     <View style={{ width: 88, height: 88, borderRadius: 44, backgroundColor: colors.accentSurface, alignItems: "center", justifyContent: "center", marginTop: 12 }}>
       <MaterialIcons accessible={false} name={journey.step === "safety" ? "health-and-safety" : content.icon} size={40} color={colors.accent} />
     </View>

@@ -94,7 +94,7 @@ try:
     tap("Let's get started", scroll=True)
     tap('I understand', scroll=True)
     tap('Close subscription offer')
-    tap('48-second reset', scroll=True)
+    tap('Quick reset', scroll=True)
     tap('Skip rating & start', scroll=True)
     time.sleep(2)
     shot('02-breathing')

@@ -25,12 +25,12 @@ export default function Post() {
   if (record.stage === "active") return <Redirect href="/session" />;
   if (record.stage === "result")
     return (
-      <Redirect href={{ pathname: "/result", params: { id: record.id, saved: "1" } }} />
+      <Redirect href={{ pathname: record.challengeTest && controller.testAttempts().some(a => a.id === record.id) ? "/challenge-attempt" : "/result", params: { id: record.id, attempt: record.id, fresh: "1", saved: "1" } }} />
     );
   const finish = (post: number | null) => {
     controller.answer(post, post === null ? null : effect);
     if (!controller.error)
-      router.replace({ pathname: "/result", params: { id: record.id, saved: "1" } });
+      router.replace({ pathname: record.challengeTest && controller.testAttempts().some(a => a.id === record.id) ? "/challenge-attempt" : "/result", params: { id: record.id, attempt: record.id, fresh: "1", saved: "1" } });
   };
   return (
     <Screen title="STATE SHIFT · POST" footer={<ActionFooter>

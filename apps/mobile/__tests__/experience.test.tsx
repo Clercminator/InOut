@@ -1,3 +1,12 @@
+import { emptyTestStore, appendAttempt, selectDaily, type TestStore, type PendingTest, type ChallengeAttempt, type TestId } from "../src/challenge-tests";
+import ChallengeTest from "../app/challenge-test";
+import ChallengeAttemptResult from "../app/challenge-attempt";
+import ChallengeBest from "../app/challenge-best";
+import Challenges from "../app/(tabs)/challenges";
+import ChallengeDetail from "../app/challenge";
+import ChallengeComplete from "../app/challenge-complete";
+import ChallengeShare from "../app/challenge-share";
+import { challengeCatalog, enrollChallenge, type UserChallenge } from "../src/challenges";
 import Onboarding from "../app/onboarding";
 import Milestone from "../app/milestone";
 import ProtocolLibrary from "../app/(tabs)/protocols";
@@ -34,7 +43,7 @@ jest.mock("../src/breath-haptics", () => ({
   emitBreathHaptic: () => mockTouch(),
 }));
 const mockChoosePhoto = jest.fn(), mockRemovePhoto = jest.fn();
-const mockShare = jest.fn(async () => {}), mockCapture = jest.fn(async () => "file:///card.png");
+const mockShare = jest.fn(async () => {}), mockCapture = jest.fn(async (..._args: unknown[]) => "file:///card.png");
 const mockPlayers: { volume: number; play: jest.Mock; pause: jest.Mock; remove: jest.Mock; addListener: jest.Mock }[] = [];
 jest.mock("expo-router", () => ({
   Redirect: ({ href }: { href: string }) => require("react").createElement(require("react-native").Text, null, `Redirect: ${href}`),
@@ -52,7 +61,7 @@ jest.mock("../src/provider", () => ({
 }));
 jest.mock("../src/profile-photo", () => ({ chooseProfilePhoto: () => mockChoosePhoto(), removeProfilePhoto: (...args: unknown[]) => mockRemovePhoto(...args), photoUri: (name: string) => `file:///${name}` }));
 jest.mock("expo-sharing", () => ({ isAvailableAsync: async () => true, shareAsync: (...args: unknown[]) => mockShare(...args as []) }));
-jest.mock("react-native-view-shot", () => ({ captureRef: () => mockCapture(), releaseCapture: jest.fn() }));
+jest.mock("react-native-view-shot", () => ({ captureRef: (...args: unknown[]) => mockCapture(...args), releaseCapture: jest.fn() }));
 jest.mock("expo-audio", () => ({
   setAudioModeAsync: async () => {}, setIsAudioActiveAsync: async () => {},
   createAudioPlayer: () => {
@@ -72,8 +81,16 @@ beforeEach(() => {
   let preferences: Preferences = { audio: "tones", haptics: false, keepAwake: false };
   const history = new Map<string, SessionRecord>();
   let id = 0;
+  let challenges: UserChallenge[] = [];
+  let testState = emptyTestStore();
   mockController = new SessionController({
+    testStore: () => testState, setPendingTest: (pending: PendingTest | null) => { testState = { ...testState, pending }; },
+    saveTestAttempt: (a: ChallengeAttempt) => { testState = { ...appendAttempt(testState, a), pending: null }; },
+    excludeTest: (id: TestId, excluded: boolean) => { testState = { ...testState, excluded: excluded ? [...testState.excluded, id] : testState.excluded.filter(v => v !== id) }; },
+    dailyChallenge: (pro: boolean, now: number) => { testState = selectDaily(testState, pro, challenges, now); return testState.daily.at(-1)?.id; },
     preferences: () => preferences, pending: () => null,
+    challenges: () => challenges, enrollChallenge: (id: string, pro: boolean, at: number) => { challenges = enrollChallenge(id, challenges, pro, at); },
+    acknowledgeChallenge: (id: string) => { challenges = challenges.map(s => s.challengeId === id ? { ...s, celebrationSeen: true } : s); },
     savePreferences: (p: Preferences) => { preferences = p; },
     history: () => [...history.values()].filter(r => r.stage === "result"),
     save: (r: SessionRecord) => history.set(r.id, r), routines: () => [],
@@ -185,18 +202,19 @@ test("profile shares a captured image through the OS sheet", async () => {
 
 test("Settings changes the whole interface immediately and can switch back to English", async () => {
   await render(wrap(<><Settings /><Today /></>));
+  await fireEvent.press(screen.getByRole("button", { name: "Appearance & language" }));
   await fireEvent.press(screen.getByRole("button", { name: "Español" }));
   expect(mockController.preferences.language).toBe("es");
-  expect(screen.getByText("Respira para lo que viene.")).toBeTruthy();
+  expect(screen.getByText("Un espacio para respirar.")).toBeTruthy();
   expect(screen.getByText("¿QUÉ NECESITAS?")).toBeTruthy();
   expect(screen.getByRole("button", { name: "Español" }).props.accessibilityState.selected).toBe(true);
   await fireEvent.press(screen.getByRole("button", { name: "Português" }));
   expect(mockController.preferences.language).toBe("pt");
-  expect(screen.getByText("Respire para o que vem a seguir.")).toBeTruthy();
+  expect(screen.getByText("Um espaço para respirar.")).toBeTruthy();
   expect(screen.getByText("CONFIGURAÇÕES")).toBeTruthy();
   await fireEvent.press(screen.getByRole("button", { name: "English" }));
   expect(mockController.preferences.language).toBe("en");
-  expect(screen.getByText("Breathe for what's next.")).toBeTruthy();
+  expect(screen.getByText("A little space to breathe.")).toBeTruthy();
 });
 
 test("translated profile preserves user-written text even when it matches English UI copy", async () => {
@@ -236,6 +254,7 @@ test("settings disclosures hide secondary controls, retain language choice, and 
   await fireEvent.press(screen.getByRole("button", { name: "Sound" }));
   expect(mockPlayers.every(player => player.remove.mock.calls.length === 1)).toBe(true);
   expect(screen.queryByRole("button", { name: "Stop preview" })).toBeNull();
+  await fireEvent.press(screen.getByRole("button", { name: "Appearance & language" }));
   await fireEvent.press(screen.getByRole("button", { name: "Português" }));
   await fireEvent.press(screen.getByRole("button", { name: "Som" }));
   expect(screen.getByRole("button", { name: "Ouvir prévia · 6 s" })).toBeTruthy();
@@ -244,6 +263,7 @@ test("settings disclosures hide secondary controls, retain language choice, and 
 
 test("Settings saves the selected appearance preference", async () => {
   await render(wrap(<Settings />));
+  await fireEvent.press(screen.getByRole("button", { name: "Appearance & language" }));
   expect(screen.getByRole("radio", { name: "System", selected: true })).toBeTruthy();
   for (const [label, theme] of [["Light", "light"], ["Dark", "dark"], ["System", "system"]] as const) {
     await fireEvent.press(screen.getByRole("radio", { name: label }));
@@ -308,7 +328,7 @@ test("mounted tabs update their titles when the language changes", async () => {
   await render(wrap(<SafeAreaInsetsContext.Provider value={{ top: 0, left: 0, right: 0, bottom: 24 }}><TabLayout /></SafeAreaInsetsContext.Provider>));
   for (const language of ["es", "pt", "en"] as const) {
     await act(() => mockController.setPreferences({ ...mockController.preferences, language }));
-    for (const title of ["Today", "Protocols", "Custom", "Progress"]) {
+    for (const title of ["Results", "Home", "Challenges"]) {
       expect(screen.getByText(t(title))).toBeTruthy();
     }
   }
@@ -326,7 +346,7 @@ test("an unknown protocol link cannot offer a different breathing practice", asy
   expect(screen.getByText("Session unavailable")).toBeTruthy();
   expect(screen.queryByRole("button", { name: "Start practice  →" })).toBeNull();
   await fireEvent.press(screen.getByRole("button", { name: "Browse protocols" }));
-  expect(mockReplace).toHaveBeenCalledWith("/(tabs)/protocols");
+  expect(mockReplace).toHaveBeenCalledWith("/protocols");
 });
 
 
@@ -379,4 +399,120 @@ test("iOS badge sharing records completion but never records a dismissal as shar
   expect(track).not.toHaveBeenCalledWith("badge_shared");
   await fireEvent.press(screen.getByRole("button", { name: "Share achievement" }));
   await waitFor(() => expect(track).toHaveBeenCalledWith("badge_shared"));
+});
+
+test.each(["en", "es", "pt"] as const)("challenge catalog opens details before a paywall in %s", async language => {
+  mockController.setPreferences({ ...mockController.preferences, language });
+  const view = await render(wrap(<Challenges />));
+  expect(screen.getByText(t("First Breath"))).toBeTruthy();
+  await fireEvent.press(screen.getByRole("button", { name: `${t("Sleep Reset")}. ${t("Requires Pro")}` }));
+  expect(mockPush).toHaveBeenLastCalledWith({ pathname: "/challenge", params: { id: "sleep-reset" } });
+  mockParams = { id: "sleep-reset" };
+  await view.rerender(wrap(<ChallengeDetail />));
+  expect(screen.getByText(t("Build a consistent wind-down routine."))).toBeTruthy();
+  await fireEvent.press(screen.getByRole("button", { name: t("Unlock with InOut Pro") }));
+  expect(mockPush).toHaveBeenLastCalledWith({ pathname: "/pro", params: { source: "challenges" } });
+});
+test("joining a challenge starts the recommended existing practice and retains enrollment", async () => {
+  mockParams = { id: "first-breath" };
+  await render(wrap(<ChallengeDetail />));
+  await fireEvent.press(screen.getByRole("button", { name: "Start challenge" }));
+  expect(mockController.challenges()[0].progress).toBe(0);
+  expect(mockPush).toHaveBeenCalledWith({ pathname: "/pre", params: { id: "diaphragmatic", minSeconds: "60" } });
+});
+test("challenge completion shows its reward and shares only the generated card", async () => {
+  const nativeShare = jest.spyOn(Share, "share").mockResolvedValue({ action: Share.sharedAction });
+  mockController.enrollChallenge("first-breath");
+  const state = mockController.challenges()[0];
+  state.status = "completed"; state.progress = 3; state.completedAt = Date.now();
+  state.completedSteps = [0, 1, 2].map(i => ({ sessionId: String(i), protocolId: "coherent", localDay: "2026-10-07", finishedAt: Date.now(), elapsedMs: 120000 }));
+  mockParams = { id: "first-breath" };
+  const view = await render(wrap(<ChallengeComplete />));
+  expect(screen.getByText("CHALLENGE COMPLETE")).toBeTruthy();
+  await fireEvent.press(screen.getByRole("button", { name: "Share achievement" }));
+  expect(mockPush).toHaveBeenLastCalledWith({ pathname: "/challenge-share", params: { id: "first-breath" } });
+  await view.rerender(wrap(<ChallengeShare />));
+  expect(screen.getByTestId("challenge-share-card").props.style.aspectRatio).toBe(9 / 16);
+  await fireEvent.press(screen.getByRole("button", { name: "Square · 1:1" }));
+  expect(screen.getByTestId("challenge-share-card").props.style.aspectRatio).toBe(1);
+  await fireEvent.press(screen.getByRole("button", { name: "Share achievement" }));
+  await waitFor(() => expect(Platform.OS === "ios" ? nativeShare : mockShare).toHaveBeenCalled());
+  expect(mockCapture).toHaveBeenLastCalledWith(expect.anything(), expect.objectContaining({ width: 1080, height: 1080, format: "png" }));
+  await view.rerender(wrap(<ChallengeComplete />));
+  await fireEvent.press(screen.getByRole("button", { name: "Close" }));
+  expect(mockController.challenges()[0].celebrationSeen).toBe(true);
+});
+test("Home exposes profile and practice gateways without Settings or a personalization prompt", async () => {
+  await render(wrap(<Today />));
+  expect(screen.queryByRole("button", { name: "Open settings" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Personalize InOut" })).toBeNull();
+  await fireEvent.press(screen.getByRole("button", { name: "Explore protocols" }));
+  expect(mockPush).toHaveBeenLastCalledWith("/protocols");
+  await fireEvent.press(screen.getByRole("button", { name: "Create" }));
+  expect(mockPush).toHaveBeenLastCalledWith("/custom");
+  await fireEvent.press(screen.getByRole("button", { name: "Explore challenges" }));
+  expect(mockPush).toHaveBeenLastCalledWith("/(tabs)/challenges");
+});
+
+test.each(["en", "es", "pt"] as const)("Long Exhale saves an actual timed attempt with a localized result in %s", async language => {
+  mockController.setPreferences({ ...mockController.preferences, language }); mockParams = { id: "long-exhale" };
+  const view = await render(wrap(<ChallengeTest />));
+  expect(screen.getByRole("button", { name: t("Ready · Start") })).toBeDisabled();
+  await fireEvent.press(screen.getByRole("button", { name: t("I have read the precautions and I am in a safe place") }));
+  await fireEvent.press(screen.getByRole("button", { name: t("Ready · Start") }));
+  await act(() => jest.advanceTimersByTime(28400));
+  await fireEvent.press(screen.getByRole("button", { name: t("Finish") }));
+  expect(mockController.testState().pending?.value).toBe(28.4);
+  await fireEvent.press(screen.getByRole("button", { name: t("Save result") }));
+  expect(mockController.testAttempts()).toHaveLength(1);
+  expect(mockReplace).toHaveBeenCalledWith({ pathname: "/challenge-attempt", params: { attempt: "id-1", fresh: "1" } });
+  await view.unmount(); mockParams = { attempt: "id-1" };
+  await render(wrap(<ChallengeAttemptResult />));
+  expect(screen.queryByText(t("NEW PERSONAL BEST"))).toBeNull();
+});
+
+test("Comfort Hold is centrally gated; eligibility is remembered and background cancels running tests", async () => {
+  mockParams = { id: "comfort-hold" }; const view = await render(wrap(<ChallengeTest />));
+  await fireEvent.press(screen.getByRole("button", { name: "Unlock with InOut Pro" }));
+  expect(mockPush).toHaveBeenCalledWith({ pathname: "/pro", params: { source: "challenges" } });
+  await view.unmount(); mockParams = { id: "long-exhale" };
+  let onState: ((s: import("react-native").AppStateStatus) => void) | undefined;
+  jest.spyOn(AppState, "addEventListener").mockImplementation((_type, listener) => { onState = listener; return { remove: jest.fn() }; });
+  await render(wrap(<ChallengeTest />));
+  await fireEvent.press(screen.getByRole("button", { name: "This test is not suitable for me" }));
+  expect(mockController.testState().excluded).toContain("long-exhale");
+  await fireEvent.press(screen.getByRole("button", { name: "Review my eligibility" }));
+  await fireEvent.press(screen.getByRole("button", { name: "I have read the precautions and I am in a safe place" }));
+  await fireEvent.press(screen.getByRole("button", { name: "Ready · Start" }));
+  await act(() => onState?.("background"));
+  expect(mockController.testState().pending).toBeNull(); expect(mockController.testAttempts()).toHaveLength(0);
+});
+
+test("Nasal 10 asks for confirmation and records an unsuccessful attempt without pretending completion", async () => {
+  mockParams = { id: "nasal-10" }; await render(wrap(<ChallengeTest />));
+  await fireEvent.press(screen.getByRole("button", { name: "I am somewhere safe for an easy walk" }));
+  await fireEvent.press(screen.getByRole("button", { name: "Ready · Start" }));
+  await act(() => jest.advanceTimersByTime(600000));
+  expect(screen.getByText("Did you complete all 10 minutes breathing only through your nose?")).toBeTruthy();
+  await fireEvent.press(screen.getByRole("button", { name: "Not this time" }));
+  expect(mockController.testAttempts()[0].completed).toBe(false);
+});
+
+test("State Shift share cards exclude ratings unless explicitly selected", async () => {
+  const a: ChallengeAttempt = { id: "shift", challengeId: "state-shift-60", definitionVersion: 1, startedAt: Date.now() - 60000, finishedAt: Date.now(), localDay: "2026-10-08", before: 4, after: 7, value: 3, completed: true };
+  jest.spyOn(mockController, "testAttempts").mockReturnValue([a]); mockParams = { attempt: "shift" };
+  await render(wrap(<ChallengeShare />));
+  expect(screen.queryByText("4 → 7")).toBeNull();
+  await fireEvent.press(screen.getByRole("button", { name: "Include my self-reported ratings on this card" }));
+  expect(screen.getByText("4 → 7")).toBeTruthy();
+  await fireEvent.press(screen.getByRole("button", { name: "Square · 1:1" }));
+  await fireEvent.press(screen.getByRole("button", { name: "Share achievement" }));
+  await waitFor(() => expect(mockCapture).toHaveBeenLastCalledWith(expect.anything(), expect.objectContaining({ width: 1080, height: 1080 })));
+});
+
+test("a pending breath test recovered without foreground timing is discarded safely", async () => {
+  mockController.beginTest("long-exhale", true); mockParams = { id: "long-exhale" };
+  await render(wrap(<ChallengeTest />));
+  expect(mockController.testState().pending).toBeNull();
+  expect(screen.getByText("Interrupted test. Breathe normally and start again when ready.")).toBeTruthy();
 });

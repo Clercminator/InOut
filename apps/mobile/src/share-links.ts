@@ -1,4 +1,5 @@
 import { validateShare, type SharedPractice } from "@inout/sharing";
+import { publicError } from "./public-error";
 export interface ManagedShare { id: string; secret: string; createdAt: number; expiresAt: number; label?: string; snapshot?: SharedPractice }
 export function validateManagedShares(value: unknown): asserts value is ManagedShare[] {
   if (!Array.isArray(value) || value.length > 100) throw Error("Shared links could not be read. Your data has been preserved.");
@@ -40,7 +41,7 @@ export class ShareLinksService {
       // Persist the revocation secret before any network write, including uncertain responses.
       this.persist([...active, item]);
       return await this.publish(item);
-    } catch (error) { this.message = error instanceof Error ? error.message : "Could not create the link. Try again."; return null; }
+    } catch (error) { this.message = publicError(error, "Could not create the link. Try again."); return null; }
     finally { this.busy = false; this.emit(); }
   }
   private async publish(item: ManagedShare) {
@@ -55,7 +56,7 @@ export class ShareLinksService {
     if (this.busy || !this.readable || !item) return null;
     this.busy = true; this.message = ""; this.emit();
     try { return await this.publish(item); }
-    catch (error) { this.message = error instanceof Error ? error.message : "Could not create the link. Try again."; return null; }
+    catch (error) { this.message = publicError(error, "Could not create the link. Try again."); return null; }
     finally { this.busy = false; this.emit(); }
   }
   async revoke(id: string) {

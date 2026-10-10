@@ -12,8 +12,8 @@ const translations: Record<string, [string, string]> = {
   "Stop · I feel unwell": ["Detener · Me siento mal", "Parar · Estou me sentindo mal"],
   "Practice again": ["Volver a practicar", "Praticar novamente"],
   "Keep your practice close.": ["Ten tu práctica a mano.", "Tenha sua prática por perto."],
-  "Open this exercise in IN/OUT": ["Abrir este ejercicio en IN/OUT", "Abrir este exercício no IN/OUT"],
-  "If IN/OUT is not installed, you can keep practicing here.": ["Si no tienes IN/OUT instalado, puedes seguir practicando aquí.", "Se o IN/OUT não estiver instalado, você pode continuar praticando aqui."],
+  "Open this exercise in In/Out": ["Abrir este ejercicio en In/Out", "Abrir este exercício no In/Out"],
+  "If In/Out is not installed, you can keep practicing here.": ["Si no tienes In/Out instalado, puedes seguir practicando aquí.", "Se o In/Out não estiver instalado, você pode continuar praticando aqui."],
   "Privacy": ["Privacidad", "Privacidade"],
   "Support": ["Ayuda", "Ajuda"],
   "Practice complete. Return to your natural breathing.": ["Práctica completada. Vuelve a tu respiración natural.", "Prática concluída. Volte à sua respiração natural."],
@@ -48,7 +48,7 @@ export const language = preferred === "es" || preferred === "pt" ? preferred : "
 export const t = (text: string) => translations[text]?.[language === "es" ? 0 : 1] && language !== "en" ? translations[text][language === "es" ? 0 : 1] : text;
 export function localizePage() {
   document.documentElement.lang = language;
-  document.title = `IN/OUT · ${t("Shared breathing practice")}`;
+  document.title = `In/Out · ${t("Shared breathing practice")}`;
   const walker = document.createTreeWalker(document.querySelector("main")!, NodeFilter.SHOW_TEXT);
   let node: Node | null;
   while ((node = walker.nextNode())) {

@@ -18,6 +18,12 @@ import { AnalyticsService, type ProductEvent } from "../apps/mobile/src/analytic
 import { welcomeRequest } from "../apps/mobile/src/welcome-email";
 import { welcomeHandler, welcomeTemplate, validateWelcome } from "../supabase/functions/inout-welcome/handler";
 import { protocols } from "../packages/protocols/src/index";
+import { publicError } from "../apps/mobile/src/public-error";
+
+test("private native/provider diagnostics never become user-facing errors", () => {
+  assert.equal(publicError(new Error("SQLite /private/path: token=secret"), "Try again."), "Try again.");
+  assert.equal(publicError(new Error("This link has expired or been revoked."), "Try again."), "This link has expired or been revoked.");
+});
 
 function fixture() {
   const db = new DatabaseSync(":memory:");

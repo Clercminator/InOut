@@ -1,4 +1,5 @@
 import { useTheme } from "../src/theme";
+import { publicError } from "../src/public-error";
 import { t } from "../src/i18n";
 import { useLanguage } from "../src/use-language";
 import { Alert, TextInput } from "../src/localized-native";
@@ -35,7 +36,7 @@ export default function EditProfile() {
           if (!photo) return;
           const old = experienceFor(controller.preferences).photo;
           if (controller.updateExperience({ photo })) { try { removeProfilePhoto(old); } catch {} }
-        }).catch(error => Alert.alert("Photo unavailable", error instanceof Error ? error.message : "Try another photo.")).finally(() => setBusy(false));
+        }).catch(error => Alert.alert("Photo unavailable", publicError(error, "Try another photo."))).finally(() => setBusy(false));
       }} />
       <Copy style={s.small}>Photo and avatar choices save immediately. Your profile stays on this phone.</Copy>
     </Card>

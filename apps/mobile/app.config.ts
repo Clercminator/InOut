@@ -5,6 +5,7 @@ export default ({ config }: ConfigContext) => {
   const errors = buildPolicy(process.env, require("../../release/readiness.json").gates, require("../../release/store-listing.json").status);
   if (errors.length) throw new Error(errors.join("\n"));
   const links = require("../../release/links.json");
+  const { admob } = require("../../release/monetization.json");
   return ({
   ...config,
   extra: { ...config.extra, ...(process.env.EXPO_PUBLIC_EAS_PROJECT_ID ? { eas: { projectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID } } : {}) },
@@ -19,8 +20,8 @@ export default ({ config }: ConfigContext) => {
     ["expo-build-properties", { android: { kotlinVersion: "2.2.21" } }],
     "./plugins/with-kotlin-compiler.cjs",
     ["react-native-google-mobile-ads", {
-    androidAppId: process.env.ADMOB_ANDROID_APP_ID || "ca-app-pub-3940256099942544~3347511713",
-    iosAppId: process.env.ADMOB_IOS_APP_ID || "ca-app-pub-3940256099942544~1458002511",
+    androidAppId: admob.android.app,
+    iosAppId: admob.ios.app,
     delayAppMeasurementInit: true,
   }]],
 });

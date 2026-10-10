@@ -1,4 +1,4 @@
-import { t, locale } from "./i18n";
+import { t, locale, message, countLabel } from "./i18n";
 import { useLanguage } from "./use-language";
 import { Pressable, Switch, TextInput } from "./localized-native";
 import { useEffect, useState } from "react";
@@ -11,7 +11,12 @@ import { Screen, IconButton, Title, Label, Card, Copy, Button, Disclosure, Actio
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useTheme } from "./theme";
 import { productConfig } from "./product-config";
-import { annualIsBetterValue, type PlanId } from "./subscriptions";
+import { annualIsBetterValue, defaultPlan, type PlanId } from "./subscriptions";
+function introDuration(period: string) {
+  const match = /^P(\d+)([DWMY])$/.exec(period);
+  const unit = { D: "day", W: "week", M: "month", Y: "year" }[match?.[2] ?? ""] as "day" | "week" | "month" | "year";
+  return match && unit ? countLabel(Number(match[1]), unit) : period;
+}
 export function Paywall({ entry = "profile", onClose, completionError }: { entry?: string; onClose?: () => void; completionError?: string | null }) {
   const { colors } = useTheme();
   const styles = useStyles();
@@ -22,6 +27,7 @@ export function Paywall({ entry = "profile", onClose, completionError }: { entry
   const [trial, setTrial] = useState(false);
   const [reviewerOpen, setReviewerOpen] = useState(false);
   const [reviewCode, setReviewCode] = useState("");
+  useEffect(() => services?.ads.paywallOpened(), [services]);
   const close = () => { services?.analytics.track("paywall_dismissed"); if (onClose) onClose(); else if (router.canGoBack()) router.back(); else router.replace("/(tabs)"); };
   useEffect(() => { const listener = BackHandler.addEventListener("hardwareBackPress", () => { close(); return true; }); return () => listener.remove(); }, [onClose, services]);
   useEffect(() => {
@@ -35,7 +41,7 @@ export function Paywall({ entry = "profile", onClose, completionError }: { entry
   const state = entitlements.state;
   const demo = subscriptions.adapter.mode === "development";
   const recommended = productConfig.emphasizeAnnual && annualIsBetterValue(subscriptions.offers);
-  const chosen = subscriptions.offers.find(o => o.id === selected) ?? subscriptions.offers.find(o => o.id === (recommended ? "annual" : "monthly")) ?? subscriptions.offers[0];
+  const chosen = subscriptions.offers.find(o => o.id === selected) ?? defaultPlan(subscriptions.offers, productConfig.defaultPlan);
   return <Screen title="InOut Pro" avoidKeyboard headerAction={<IconButton icon="close" title="Close subscription offer" onPress={close} />} footer={chosen ? <ActionFooter>
     <Button title={`${demo ? "Simulate" : "Continue with"} ${chosen.title}`} disabled={subscriptions.busy} onPress={() => { void subscriptions.purchase(chosen.id); }} />
     {onClose && <Button title={state.pro ? "Continue to Home" : "Continue for free"} variant="quiet" disabled={subscriptions.busy} onPress={close} />}
@@ -46,14 +52,17 @@ export function Paywall({ entry = "profile", onClose, completionError }: { entry
     {entry === "onboarding" && <Copy>Build a practice that fits you. You can also continue for free.</Copy>}
     {entry === "quota" && <Copy>Your guided allowance is used. Keep breathing with tones, or explore Pro.</Copy>}
     {entry === "protocol" && <Copy>Unlock this protocol and make more room for your practice.</Copy>}
+    {productConfig.proChallengeIds.length > 0 && <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}><MaterialIcons accessible={false} name="emoji-events" size={26} color={colors.gold} /><Copy style={{ flex: 1 }}>More challenges for sleep, focus and consistent practice.</Copy></View>}
     <Copy>{productConfig.proProtocolIds.length || productConfig.guidedSessionsPerMonth !== null ? "Core breathing, State Shift and safety remain Free. Explore Pro for more options." : "All ten breathing protocols, cues, State Shift and safety remain Free. Pro removes ads and saved-routine limits."}</Copy>
     <View style={{ gap: 12 }}>{[["tune", "Unlimited saved patterns & mixes"], ["insights", "Private practice insights"], ["notifications-none", "Up to five personal reminders"], ["spa", "A practice without ads"]].map(([icon, label]) => <View key={label} style={{ flexDirection: "row", gap: 12, alignItems: "center" }}><MaterialIcons accessible={false} name={icon as "tune"} size={22} color={colors.accent} /><Copy style={{ flex: 1 }}>{label}</Copy></View>)}</View>
     {demo && <Card><Label>DEVELOPMENT DEMO</Label><Copy>No money is charged. These plans and optional trial simulate store behavior; they are not real offers.</Copy></Card>}
-    {subscriptions.adapter.mode === "unavailable" && <Copy>Purchases are unavailable right now. You can keep breathing for free.</Copy>}
-    <View style={{ gap: 12 }}>{subscriptions.offers.slice().sort((a, b) => Number(b.id === "annual") - Number(a.id === "annual")).map(offer => <Pressable key={offer.id} accessibilityRole="button" accessibilityLabel={t(offer.title)} accessibilityState={{ selected: chosen?.id === offer.id }} onPress={() => { setSelected(offer.id); services.analytics.track("plan_selected"); }} style={{ padding: 20, gap: 12, borderRadius: 22, borderWidth: 2, borderColor: chosen?.id === offer.id ? colors.accent : colors.border, backgroundColor: chosen?.id === offer.id ? colors.accentSurface : colors.card }}>
+    {subscriptions.adapter.testStore && <Card><Label>TEST STORE</Label><Copy>RevenueCat Test Store. No real charge or store subscription.</Copy></Card>}
+    {subscriptions.adapter.mode === "unavailable" && !subscriptions.message && <Copy>Purchases are unavailable right now. You can keep breathing for free.</Copy>}
+    <View style={{ gap: 12 }}>{subscriptions.offers.slice().sort((a, b) => productConfig.planOrder.indexOf(a.id) - productConfig.planOrder.indexOf(b.id)).map(offer => <Pressable key={offer.id} disabled={subscriptions.busy} accessibilityRole="button" accessibilityLabel={t(offer.title)} accessibilityState={{ selected: chosen?.id === offer.id }} onPress={() => { setSelected(offer.id); services.analytics.track("plan_selected"); }} style={{ padding: 20, gap: 12, borderRadius: 22, borderWidth: 2, borderColor: chosen?.id === offer.id ? colors.accent : colors.border, backgroundColor: chosen?.id === offer.id ? colors.accentSurface : colors.card }}>
       {offer.id === "annual" && recommended && <Label>BEST VALUE</Label>}
       <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}><View style={{ flex: 1, gap: 4 }}><Copy style={styles.subtitle}>{offer.title}</Copy><Copy><Copy style={{ fontSize: 24, lineHeight: 30, fontWeight: "700" }}>{offer.price}</Copy>{!demo ? ` / ${t(offer.period)}` : ""}</Copy></View><MaterialIcons accessible={false} name={chosen?.id === offer.id ? "radio-button-checked" : "radio-button-unchecked"} size={26} color={colors.accent} /></View>
-      {offer.trialEligible && offer.introductoryOffer && <><Label>FREE TRIAL AVAILABLE</Label><Copy style={styles.small}>Review your eligible trial duration and renewal price in the store confirmation.</Copy></>}
+      {offer.trialEligible && <Label>FREE TRIAL AVAILABLE</Label>}
+      {offer.introductoryOffer && <Copy style={styles.small}>{message("Introductory price: {0} / {1}, for {2} billing periods.", [offer.introductoryOffer.price, introDuration(offer.introductoryOffer.period), offer.introductoryOffer.periods])}</Copy>}
     </Pressable>)}</View>
     {!chosen && onClose && <Button title="Continue for free" onPress={close} />}
     {!demo && subscriptions.offers.length > 0 && <Copy>Subscriptions renew automatically unless cancelled through your store. Review the store confirmation for final price, any eligible introductory offer, and renewal terms.</Copy>}
@@ -88,6 +97,7 @@ export function Paywall({ entry = "profile", onClose, completionError }: { entry
         const code = reviewCode; setReviewCode(""); void services.reviewer?.activate(code);
       }} />
       {services.reviewer?.busy && <Copy accessibilityRole="alert">Verifying review code…</Copy>}
+      {state.reviewerPro && <Button title="Remove reviewer access" secondary disabled={services.reviewer?.busy} onPress={() => { void services.reviewer?.clear().catch(() => setNotice("Could not remove reviewer access. Please retry.")); }} />}
       {!!services.reviewer?.message && <Copy accessibilityRole="alert">{services.reviewer.message}</Copy>}
     </Card>}
     {__DEV__ && entitlements.development && <Card><Label>DEVELOPER CONTROLS · NO PURCHASE</Label>

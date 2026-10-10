@@ -28,7 +28,7 @@ export default function Pre() {
   const { colors } = useTheme();
   useLanguage();
   const controller = useSession();
-  const { id, ritualId } = useLocalSearchParams<{ id?: string; ritualId?: string }>();
+  const { id, ritualId, minSeconds } = useLocalSearchParams<{ id?: string; ritualId?: string; minSeconds?: string }>();
   const ritual = experienceFor(controller.preferences).rituals.find(r => r.id === ritualId);
   const protocol = ritual?.protocol ?? (id === "custom" && controller.customProtocol
     ? controller.customProtocol
@@ -40,24 +40,25 @@ export default function Pre() {
     (total, phase) => total + phase.durationMs,
     0,
   );
-  const [cycles, setCycles] = useState(ritual?.cycles ?? protocol.defaultCycles);
+  const [cycles, setCycles] = useState(ritual?.cycles ?? Math.max(protocol.defaultCycles, Math.ceil(Math.min(180, Math.max(0, Number(minSeconds) || 0)) * 1000 / cycleDuration)));
   const locked = !controller.entitlements.protocolAccess(protocol).allowed;
   useEffect(() => { if (locked) controller.analytics.track("premium_lock_tapped"); }, [controller, locked, protocol.id]);
   if (ritualId && !ritual) return <BackScreen title="RITUAL"><Copy>This ritual is no longer available.</Copy></BackScreen>;
   if (id && ((id === "custom" && !controller.customProtocol) || (id !== "custom" && !protocols.some((p) => p.id === id))))
-    return <BackScreen title="SESSION UNAVAILABLE"><Title>This pattern is unavailable.</Title><Copy>Choose a protocol or create a new session draft.</Copy><Button title="Browse protocols" onPress={() => router.replace("/(tabs)/protocols")} /></BackScreen>;
+    return <BackScreen title="SESSION UNAVAILABLE"><Title>This pattern is unavailable.</Title><Copy>Choose a protocol or create a new session draft.</Copy><Button title="Browse protocols" onPress={() => router.replace("/protocols")} /></BackScreen>;
   const durationLabel = (durationMs: number) => {
     const seconds = Math.round(durationMs / 1000);
     return seconds < 60
       ? `${seconds} sec`
       : `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
   };
+  if (controller.pendingTest()) return <Redirect href={{ pathname: "/challenge-test", params: { id: controller.pendingTest()!.challengeId } }} />;
   if (controller.current?.stage === "active")
     return <Redirect href="/session" />;
   if (controller.current?.stage === "post") return <Redirect href="/post" />;
-  if (locked) return <BackScreen title="IN/OUT PRO"><Title>{protocolTitle(protocol)}</Title><Copy>This protocol offers another rhythm to explore. It requires InOut Pro in this build.</Copy><Button title="Unlock with InOut Pro" onPress={() => router.push({ pathname: "/pro", params: { source: "protocol" } })} /><Button title="Browse protocols" secondary onPress={() => router.replace("/(tabs)/protocols")} /></BackScreen>;
+  if (locked) return <BackScreen title="IN/OUT PRO"><Title>{protocolTitle(protocol)}</Title><Copy>This protocol offers another rhythm to explore. It requires InOut Pro in this build.</Copy><Button title="Unlock with InOut Pro" onPress={() => router.push({ pathname: "/pro", params: { source: "protocol" } })} /><Button title="Browse protocols" secondary onPress={() => router.replace("/protocols")} /></BackScreen>;
   if (!availableForPractice(protocol))
-    return <BackScreen title="PROTOCOL"><Title>Not in this release.</Title><Copy>This routine includes a protocol that is currently unavailable. Choose another breathing practice.</Copy><Button title="Browse protocols" onPress={() => router.replace("/(tabs)/protocols")} /></BackScreen>;
+    return <BackScreen title="PROTOCOL"><Title>Not in this release.</Title><Copy>This routine includes a protocol that is currently unavailable. Choose another breathing practice.</Copy><Button title="Browse protocols" onPress={() => router.replace("/protocols")} /></BackScreen>;
   const start = (value: number | null) => {
     if (ritual) controller.startRitual(ritual.id, confirmed, value, cycles);
     else controller.start(

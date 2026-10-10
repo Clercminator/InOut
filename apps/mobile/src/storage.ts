@@ -1,3 +1,4 @@
+import { emptyTestStore, validateTestStore, appendAttempt, stateShiftAttempt, selectDaily, type TestStore, type ChallengeAttempt, type PendingTest, type TestId } from "./challenge-tests";
 import { validateManagedShares, type ManagedShare } from "./share-links";
 import type { Preferences, SessionRecord, SavedRoutine } from "@inout/shared-types";
 import { planFor } from "@inout/protocols";
@@ -11,6 +12,8 @@ import { validateJourney } from "./personalization";
 import { currentUsage, reserveGuidance, type GuidedUsage } from "./guided-quota";
 import { productConfig } from "./product-config";
 import { validEmail } from "./welcome-email";
+import { dayKey } from "./progress";
+import { enrollChallenge, reconcileChallenges, validateChallenges, type UserChallenge } from "./challenges";
 
 export interface Database {
   execSync(sql: string): void;
@@ -46,7 +49,7 @@ export class LocalStore {
     `),
     );
   }
-  save(record: SessionRecord) {
+  save(record: SessionRecord, pro = false) {
     if (!validRating(record.pre) || !validRating(record.post))
       throw new Error("Invalid tension rating");
     this.db.withTransactionSync(() => {
@@ -62,6 +65,9 @@ export class LocalStore {
       JSON.stringify(record),
     );
     if (record.stage === "result") {
+      const attempt = stateShiftAttempt(record);
+      if (attempt) this.writeTestStore(appendAttempt(this.testStore(), attempt));
+      this.writeChallenges(reconcileChallenges(this.challenges(), [record], pro));
       const history = this.history();
       this.writeRewards(reconcileRewards(history, this.rewards(history), experienceFor(this.preferences()).weeklyGoal));
     }
@@ -78,11 +84,49 @@ export class LocalStore {
       if (value.version !== 1 || !Array.isArray(value.badges) || !value.weekGoals ||
         value.badges.some(b => typeof b.id !== "string" || typeof b.label !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(b.date)) ||
         Object.values(value.weekGoals).some(g => !Number.isInteger(g) || g < 2 || g > 7)) throw new Error("Saved rewards could not be read. Your data has been preserved.");
-      const reconciled = reconcileRewards(records ?? this.history(), value, experienceFor(this.preferences()).weeklyGoal);
+      const reconciled = reconcileRewards(records ?? this.history(), value, experienceFor(this.preferences()).weeklyGoal, new Date(), this.challenges(), this.testStore().attempts);
       if (JSON.stringify(reconciled) !== JSON.stringify(value)) this.writeRewards(reconciled);
       return reconciled;
     }
-    return reconcileRewards(records ?? this.history(), emptyLedger(), experienceFor(this.preferences()).weeklyGoal);
+    return reconcileRewards(records ?? this.history(), emptyLedger(), experienceFor(this.preferences()).weeklyGoal, new Date(), this.challenges(), this.testStore().attempts);
+  }
+  challenges(): UserChallenge[] {
+    const row = this.db.getFirstSync<{ payload: string }>("SELECT payload FROM settings WHERE key='challenges-v1'");
+    const value: unknown = row ? JSON.parse(row.payload) : [];
+    validateChallenges(value); return value;
+  }
+  private writeChallenges(value: UserChallenge[]) {
+    validateChallenges(value);
+    this.db.runSync("INSERT INTO settings(key,payload) VALUES('challenges-v1',?) ON CONFLICT(key) DO UPDATE SET payload=excluded.payload", JSON.stringify(value));
+  }
+  enrollChallenge(id: string, pro: boolean, now: number) {
+    this.db.withTransactionSync(() => this.writeChallenges(enrollChallenge(id, this.challenges(), pro, now)));
+  }
+  acknowledgeChallenge(id: string) {
+    this.writeChallenges(this.challenges().map(s => s.challengeId === id && s.status === "completed" ? { ...s, celebrationSeen: true } : s));
+  }
+  testStore(): TestStore {
+    const row = this.db.getFirstSync<{ payload: string }>("SELECT payload FROM settings WHERE key='challenge-tests-v1'");
+    const value = row ? JSON.parse(row.payload) : emptyTestStore(); validateTestStore(value); return value;
+  }
+  private writeTestStore(value: TestStore) {
+    validateTestStore(value);
+    this.db.runSync("INSERT INTO settings(key,payload) VALUES('challenge-tests-v1',?) ON CONFLICT(key) DO UPDATE SET payload=excluded.payload", JSON.stringify(value));
+  }
+  setPendingTest(pending: PendingTest | null) { this.writeTestStore({ ...this.testStore(), pending }); }
+  saveTestAttempt(attempt: ChallengeAttempt) {
+    this.db.withTransactionSync(() => {
+      this.writeTestStore({ ...appendAttempt(this.testStore(), attempt), pending: null });
+      this.writeRewards(this.rewards());
+    });
+  }
+  excludeTest(id: TestId, excluded: boolean) {
+    const state = this.testStore(); this.writeTestStore({ ...state, excluded: [...state.excluded.filter(v => v !== id), ...(excluded ? [id] : [])] });
+  }
+  dailyChallenge(pro: boolean, now: number) {
+    const state = this.testStore(), next = selectDaily(state, pro, this.challenges(), now);
+    if (next !== state) this.writeTestStore(next);
+    return next.daily.find(d => d.day === dayKey(new Date(now)))?.id ?? null;
   }
   private writeRewards(value: RewardLedger) {
     this.db.runSync("INSERT INTO settings(key,payload) VALUES('rewards-v1',?) ON CONFLICT(key) DO UPDATE SET payload=excluded.payload", JSON.stringify(value));
@@ -126,6 +170,7 @@ export class LocalStore {
     this.db.withTransactionSync(() => {
       this.writeRewards(this.rewards());
       this.db.runSync("DELETE FROM sessions WHERE stage='result'");
+      this.writeTestStore({ ...this.testStore(), attempts: [] });
     });
   }
   routines(): SavedRoutine[] {
@@ -200,6 +245,13 @@ export class LocalStore {
   readEntitlementCache(): unknown {
     const row = this.db.getFirstSync<{ payload: string }>("SELECT payload FROM settings WHERE key='entitlement-cache-v1'");
     return row ? JSON.parse(row.payload) : null;
+  }
+  readAdFrequency(): unknown {
+    const row = this.db.getFirstSync<{ payload: string }>("SELECT payload FROM settings WHERE key='ad-frequency-v1'");
+    return row ? JSON.parse(row.payload) : null;
+  }
+  writeAdFrequency(value: unknown) {
+    this.db.runSync("INSERT INTO settings(key,payload) VALUES('ad-frequency-v1',?) ON CONFLICT(key) DO UPDATE SET payload=excluded.payload", JSON.stringify(value));
   }
   readShareLinks(): ManagedShare[] {
     const row = this.db.getFirstSync<{ payload: string }>("SELECT payload FROM settings WHERE key='share-links-v1'");

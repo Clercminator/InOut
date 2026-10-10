@@ -90,7 +90,7 @@ test("demo purchase/restore/cancel/failure work without producing real conversio
   const adapter = new DevelopmentSubscriptionProvider(() => now);
   const events: string[] = [];
   const s = new SubscriptionService(adapter, e, new AnalyticsService({ record: (event) => events.push(event) }));
-  await s.load(); assert.equal(s.offers.length, 2); assert.equal(e.state.pro, false);
+  await s.load(); assert.equal(s.offers.length, 3); assert.equal(e.state.pro, false);
   adapter.outcome = "cancel"; await s.purchase("monthly"); assert.equal(e.state.pro, false); assert.match(s.message, /cancelled/);
   adapter.outcome = "failure"; await s.purchase("annual"); assert.equal(e.state.pro, false);
   adapter.outcome = "success"; adapter.trial = true; await s.purchase("monthly"); assert.equal(e.state.status, "trial");
@@ -115,19 +115,30 @@ test("store refresh failure preserves unexpired cached access; repeated purchase
 });
 
 test("RevenueCat mapping preserves expiry, grace and cancelled-active states", () => {
-  const info = { requestDate: new Date(1000).toISOString(), entitlements: { all: { pro: {
+  const info = { requestDate: new Date(1000).toISOString(), entitlements: { verification: "VERIFIED", all: { in_out_pro: {
     productIdentifier: "monthly", isActive: true, expirationDate: new Date(10000).toISOString(),
     willRenew: false, periodType: "NORMAL", billingIssueDetectedAt: null,
   } } }, subscriptionsByProductIdentifier: {} } as unknown as CustomerInfo;
   assert.equal(grantFromCustomerInfo(info).status, "cancelled");
-  const withGrace = { ...info, entitlements: { all: { pro: { ...info.entitlements.all.pro, billingIssueDetectedAt: "date" } } },
+  const withGrace = { ...info, entitlements: { verification: "VERIFIED", all: { in_out_pro: { ...info.entitlements.all.in_out_pro, billingIssueDetectedAt: "date" } } },
     subscriptionsByProductIdentifier: { monthly: { gracePeriodExpiresDate: new Date(20000).toISOString() } } } as unknown as CustomerInfo;
   assert.equal(grantFromCustomerInfo(withGrace).status, "grace");
   assert.equal(grantFromCustomerInfo(withGrace).graceUntil, 20000);
   assert.equal(grantFromCustomerInfo({ ...info, entitlements: { all: {} } } as CustomerInfo).status, "free");
   for (const active of [false, true]) {
-    const refunded = { ...info, entitlements: { all: { pro: { ...info.entitlements.all.pro, isActive: active } } }, subscriptionsByProductIdentifier: { monthly: { refundedAt: new Date(2000).toISOString() } } } as unknown as CustomerInfo;
+    const refunded = { ...info, entitlements: { verification: "VERIFIED", all: { in_out_pro: { ...info.entitlements.all.in_out_pro, isActive: active } } }, subscriptionsByProductIdentifier: { monthly: { refundedAt: new Date(2000).toISOString() } } } as unknown as CustomerInfo;
     assert.equal(grantFromCustomerInfo(refunded).active, false);
     assert.equal(grantFromCustomerInfo(refunded).status, "expired");
   }
+});
+
+test("an identity transition failure removes the prior paid cache and preserves independent reviewer access", async () => {
+  let persisted: unknown;
+  const e = new EntitlementService(false, Date.now, { read: () => null, write: value => { persisted = value; } });
+  const active = { source: "store" as const, status: "active" as const, active: true, verifiedAt: Date.now(), expiresAt: Date.now() + 100000, graceUntil: null };
+  e.acceptStoreGrant(active); e.acceptReviewerGrant({ verifiedAt: Date.now(), expiresAt: Date.now() + 100000 });
+  const adapter: SubscriptionProvider = { mode: "store", offers: async () => [], refresh: async () => active, purchase: async () => active, restore: async () => active, managementUrl: async () => null, identify: async () => { throw Error("offline"); } };
+  await new SubscriptionService(adapter, e, new AnalyticsService()).identify("server-verified-account");
+  assert.equal(e.state.subscriptionPro, false); assert.equal(e.state.reviewerPro, true); assert.equal(e.billingReady, true);
+  assert.equal((persisted as EntitlementGrant).active, false);
 });

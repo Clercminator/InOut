@@ -189,6 +189,7 @@ export function Screen({
   footer,
   avoidKeyboard = false,
   tabScreen = false,
+  hideHeader = false,
 }: PropsWithChildren<{
   back?: () => void;
   title?: string;
@@ -197,6 +198,7 @@ export function Screen({
   footer?: React.ReactNode;
   avoidKeyboard?: boolean;
   tabScreen?: boolean;
+  hideHeader?: boolean;
 }>) {
   const { colors: c, backgrounds } = useTheme();
   const s = useStyles();
@@ -205,7 +207,7 @@ export function Screen({
   return (
     <SafeAreaView style={[s.safe, { backgroundColor: backgrounds[experience.background] }]} edges={tabScreen ? ["top", "left", "right"] : ["top", "left", "right", "bottom"]}>
       <KeyboardAvoidingView style={{ flex: 1 }} enabled={avoidKeyboard} behavior={Platform.OS === "ios" ? "padding" : "height"}>
-      <View style={s.header}>
+      {!hideHeader && <View style={s.header}>
         {back ? (
           <Pressable
             accessibilityRole="button"
@@ -222,7 +224,7 @@ export function Screen({
         )}
         <View style={{ flex: 1, alignItems: back ? "center" : "flex-end" }}>{title ? <Label>{title}</Label> : null}</View>
         {headerAction ?? (back ? <View style={{ width: 48 }} /> : null)}
-      </View>
+      </View>}
       {scroll ? (
         <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" automaticallyAdjustKeyboardInsets={!avoidKeyboard} showsVerticalScrollIndicator={false} contentContainerStyle={s.content}>{children}</ScrollView>
       ) : (
@@ -337,9 +339,9 @@ export function ProtocolRow({
       <View style={s.protocolInfo}>
         <Copy translate={false} style={s.protocolName}>{protocolTitle(protocol)}</Copy>
         <Copy style={s.small}>{purpose}</Copy>
-        <Copy style={s.small}>{t(protocol.intensity)}{protocol.safetyCategory !== "general" ? ` · ${t("Read precautions")}` : ""}{favorite ? " · ★" : ""}</Copy>
+        {protocol.safetyCategory !== "general" && <Copy style={s.small}>{t("Read precautions")}</Copy>}
         <Copy style={s.protocolMeta}>
-          {isCyclic(protocol) ? message(protocol.defaultCycles === 1 ? "Up to {0} · 1 round" : "Up to {0} · {1} rounds", [duration(protocol.defaultDuration), protocol.defaultCycles]) : `${duration(protocol.defaultDuration)} · ${protocol.defaultCycles} cycles · ${protocol.goalTags.join(" / ")}`}
+          {isCyclic(protocol) ? message(protocol.defaultCycles === 1 ? "Up to {0} · 1 round" : "Up to {0} · {1} rounds", [duration(protocol.defaultDuration), protocol.defaultCycles]) : `${duration(protocol.defaultDuration)} · ${message("{0} cycles", [protocol.defaultCycles])} · ${protocol.goalTags.map(goal => t(goal)).join(" / ")}${favorite ? " · ★" : ""}`}
         </Copy>
       </View>
       <MaterialIcons accessible={false} name={locked ? "lock-outline" : "chevron-right"} size={22} color={locked ? c.gold : c.secondaryText} />
@@ -364,7 +366,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     color: c.text,
     letterSpacing: -1.3,
   },
-  copy: { color: c.text, fontFamily: f.body, fontSize: 16, lineHeight: 24, flexShrink: 1 },
+  copy: { color: c.text, fontFamily: f.body, fontSize: 15, lineHeight: 22, flexShrink: 1 },
   label: {
     color: c.accent,
     fontFamily: f.label,
@@ -524,7 +526,7 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   goalChoiceSelected: { backgroundColor: c.accent },
   metricGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   metricCard: { flexBasis: "46%", flexGrow: 1, padding: 16, gap: 10 },
-  chip: { maxWidth: "100%", minHeight: 48, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 999, backgroundColor: c.raised, borderWidth: 1, borderColor: c.border, justifyContent: "center", alignItems: "center" },
+  chip: { flexShrink: 0, minHeight: 48, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 999, backgroundColor: c.raised, borderWidth: 1, borderColor: c.border, justifyContent: "center", alignItems: "center" },
   chipSelected: { backgroundColor: c.accent, borderColor: c.accent },
   hero: { padding: 22, borderRadius: 24, borderWidth: 1, borderColor: c.sessionBorder, gap: 16, overflow: "hidden" },
   heatmap: { flexDirection: "row", flexWrap: "wrap", gap: 6 },

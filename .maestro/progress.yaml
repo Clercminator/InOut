@@ -16,8 +16,8 @@ appId: com.imrtech.inout
     direction: DOWN
 - tapOn: "I understand"
 - tapOn: "Close subscription offer"
-- tapOn: ".*Progress"
-- assertVisible: "CURRENT STREAK"
+- tapOn: ".*Results"
+- assertVisible: "DAY STREAK"
 - takeScreenshot: progress-overview
 - scrollUntilVisible:
     element:

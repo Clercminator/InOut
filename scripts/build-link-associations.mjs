@@ -8,7 +8,14 @@ export function associations(c) {
     android: [{ relation: ['delegate_permission/common.handle_all_urls'], target: { namespace: 'android_app', package_name: 'com.imrtech.inout', sha256_cert_fingerprints: c.androidSha256 } }] };
 }
 if (process.argv[1]?.endsWith('build-link-associations.mjs')) {
-  if (!links.origin) console.log('Verified-link associations pending owner domain/signing values; browser sharing preserved.');
+  if (!links.origin || !links.appleTeamId || !links.androidSha256.length) {
+    const dir = new URL('../apps/web/public/.well-known/', import.meta.url);
+    mkdirSync(dir, { recursive: true });
+    // Empty declarations do not falsely authorize an unknown signing identity.
+    writeFileSync(new URL('apple-app-site-association', dir), JSON.stringify({ applinks: { details: [] } }));
+    writeFileSync(new URL('assetlinks.json', dir), '[]');
+    console.log('Association endpoints generated without claims: real Team ID/signing SHA-256 still required.');
+  }
   else {
     const result = associations(links), dir = new URL('../apps/web/public/.well-known/', import.meta.url);
     mkdirSync(dir, { recursive: true });

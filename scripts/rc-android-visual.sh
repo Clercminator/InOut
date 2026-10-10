@@ -13,6 +13,9 @@ else
   adb shell wm size 1080x1920
   adb shell wm density 400
 fi
+# The hosted launcher can ANR while applying a density change. Stop that launcher
+# before app automation; never dismiss an InOut/Expo runtime failure.
+adb shell am force-stop com.android.launcher3
 adb shell wm size > artifacts/rc-visual/device.txt
 adb shell wm density >> artifacts/rc-visual/device.txt
 adb shell settings get system font_scale >> artifacts/rc-visual/device.txt
@@ -22,4 +25,6 @@ adb shell am start -a android.intent.action.VIEW -d inout://profile com.imrtech.
 sleep 3
 adb exec-out screencap -p > artifacts/rc-visual/dark-profile.png
 package_path=$(adb shell pm path com.imrtech.inout | head -1 | tr -d '\r' | sed 's/^package://;s@/base.apk$@@')
-adb shell du -sk "$package_path" > artifacts/rc-visual/installed-code-kib.txt
+adb root
+adb wait-for-device
+adb shell du -sk "$package_path" /data/user/0/com.imrtech.inout > artifacts/rc-visual/installed-code-kib.txt

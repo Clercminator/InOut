@@ -4,3 +4,5 @@ verify_jwt = false
 verify_jwt = false
 [functions.inout-welcome]
 verify_jwt = true
+[functions.inout-privacy]
+verify_jwt = true

@@ -16,7 +16,11 @@ appId: com.imrtech.inout
     direction: DOWN
 - tapOn: "I understand"
 - tapOn: "Close subscription offer"
-- tapOn: "Open settings"
+- tapOn: "My practice profile"
+- scrollUntilVisible:
+    element: { text: "Settings" }
+    direction: DOWN
+- tapOn: "Settings"
 - tapOn: "Plan & privacy"
 - tapOn: "Pro & subscriptions"
 - assertNotVisible: "DEVELOPMENT DEMO"

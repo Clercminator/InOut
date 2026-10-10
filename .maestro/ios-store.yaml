@@ -16,15 +16,15 @@ appId: com.imrtech.inout
     direction: DOWN
 - tapOn: "I understand"
 - tapOn: "Close subscription offer"
-- assertVisible: "FOR YOU"
+- assertVisible: "Quick reset"
 - takeScreenshot: 01-today
 - scrollUntilVisible:
     element:
-      text: "48-second reset"
+      text: "Quick reset"
     direction: DOWN
     timeout: 60000
     waitToSettleTimeoutMs: 1000
-- tapOn: "48-second reset"
+- tapOn: "Quick reset"
 - assertVisible: 'How tense are you right now\?'
 - tapOn: "7 of 10"
 - takeScreenshot: 02-pre

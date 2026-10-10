@@ -23,8 +23,8 @@ export default function ProtocolDetail() {
   const protocol = protocols.find((item) => item.id === id) ?? sigh;
   useEffect(() => { if (!id || protocols.some(p => p.id === id)) controller.analytics.track("protocol_viewed"); }, [controller, id]);
   const available = protocol.availability === "enabled";
-  if (id && !protocols.some(item => item.id === id)) return <BackScreen title="PROTOCOL"><Title>Session unavailable</Title><Button title="Browse protocols" onPress={() => router.replace("/(tabs)/protocols")} /></BackScreen>;
-  if (!available) return <BackScreen title="PROTOCOL"><Title>Not in this release.</Title><Button title="Browse protocols" onPress={() => router.replace("/(tabs)/protocols")} /></BackScreen>;
+  if (id && !protocols.some(item => item.id === id)) return <BackScreen title="PROTOCOL"><Title>Session unavailable</Title><Button title="Browse protocols" onPress={() => router.replace("/protocols")} /></BackScreen>;
+  if (!available) return <BackScreen title="PROTOCOL"><Title>Not in this release.</Title><Button title="Browse protocols" onPress={() => router.replace("/protocols")} /></BackScreen>;
   return (
     <BackScreen title="PROTOCOL" footer={<View style={{ padding: 16, borderTopWidth: 1, borderTopColor: colors.border, backgroundColor: colors.background }}><Button title="Start practice  →" onPress={() => router.push({ pathname: "/pre", params: { id: protocol.id } })} /></View>}>
       <View style={{ gap: 8 }}>

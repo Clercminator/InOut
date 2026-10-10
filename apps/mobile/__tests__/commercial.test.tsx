@@ -18,6 +18,7 @@ const mockInitialize = jest.fn();
 const mockConfigure = jest.fn();
 const mockPrivacyOptions = jest.fn();
 const mockConsentInfo = jest.fn();
+beforeEach(() => { mockConsent.mockResolvedValue({ canRequestAds: true }); });
 jest.mock("react-native-google-mobile-ads", () => ({
   default: () => ({ initialize: mockInitialize, setRequestConfiguration: mockConfigure }),
   AdsConsent: {
@@ -89,13 +90,13 @@ test("Pro screen supports monthly demo purchase, downgrade and restore without c
 test("annual demo failure/cancellation keep Free; cancelled-active and expired states are distinct", async () => {
   const s = services(); await s.subscriptions.load();
   await render(wrap(s, <Pro />));
-  await fireEvent.press(screen.getByRole("button", { name: "Annual Pro" }));
+  await fireEvent.press(screen.getByRole("button", { name: "Yearly Pro" }));
   await fireEvent.press(screen.getByRole("button", { name: "Next purchase: failure" }));
-  await fireEvent.press(screen.getByRole("button", { name: "Simulate Annual Pro" }));
+  await fireEvent.press(screen.getByRole("button", { name: "Simulate Yearly Pro" }));
   expect(s.entitlements.state.pro).toBe(false);
   expect(screen.getByText("Simulated store failure. No charge was made.")).toBeTruthy();
   await fireEvent.press(screen.getByRole("button", { name: "Next purchase: cancel" }));
-  await fireEvent.press(screen.getByRole("button", { name: "Simulate Annual Pro" }));
+  await fireEvent.press(screen.getByRole("button", { name: "Simulate Yearly Pro" }));
   expect(screen.getByText("Purchase cancelled. Nothing changed.")).toBeTruthy();
   await fireEvent.press(screen.getByRole("button", { name: "Simulate cancelled" }));
   expect(s.entitlements.state.pro).toBe(true);
@@ -103,11 +104,11 @@ test("annual demo failure/cancellation keep Free; cancelled-active and expired s
   expect(s.entitlements.state.pro).toBe(false);
 });
 
-test("ad placement unmounts on Pro and cannot appear on State Shift", async () => {
+test("Expo Go hides technical ad placeholders, including during Pro and State Shift", async () => {
   AppState.currentState = "active";
   const s = services(); mockPath = "/";
   const rendered = await render(wrap(s, <AdSlot placement="today" />));
-  expect(screen.getByText("TEST ADVERTISING")).toBeTruthy();
+  expect(screen.queryByText("TEST ADVERTISING")).toBeNull();
   await act(() => s.entitlements.simulate("active"));
   expect(screen.queryByText("TEST ADVERTISING")).toBeNull();
   await act(() => s.entitlements.simulate("free"));
@@ -173,4 +174,42 @@ test("leaving the placement during SDK initialization cannot mark ads ready", as
   mockInitialize.mockImplementationOnce(async () => { eligible = false; return []; });
   await ads.prepare(() => eligible);
   expect(ads.ready).toBe(false);
+});
+
+test("reviewer removal returns to Free while leaving normal purchasing available", async () => {
+  const s: CommercialServices = services(); const now = Date.now();
+  s.reviewer = new ReviewerService({ read: async () => null, write: async () => {} }, async () => ({ token: "a".repeat(64), serverTime: now, expiresAt: now + 86400000 }), () => "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", s.entitlements, () => now);
+  await s.reviewer.activate("test-only-code"); await s.subscriptions.load();
+  await render(wrap(s, <Pro />));
+  await fireEvent.press(screen.getByRole("button", { name: "Reviewer access" }));
+  await fireEvent.press(screen.getByRole("button", { name: "Remove reviewer access" }));
+  expect(s.entitlements.state.reviewerPro).toBe(false);
+  expect(s.entitlements.state.pro).toBe(false);
+  await fireEvent.press(screen.getByRole("button", { name: "Simulate Monthly Pro" }));
+  expect(s.entitlements.state.pro).toBe(true);
+});
+
+test("the three-plan paywall selects Monthly even when Yearly is best value; Weekly requires a tap", async () => {
+  const s = services(); await s.subscriptions.load();
+  s.subscriptions.offers = [
+    { id: "weekly", title: "Weekly Pro", price: "3.000 CLP", period: "week", priceAmount: 3000, currency: "CLP" },
+    { id: "monthly", title: "Monthly Pro", price: "8.000 CLP", period: "month", priceAmount: 8000, currency: "CLP" },
+    { id: "annual", title: "Yearly Pro", price: "60.000 CLP", period: "year", priceAmount: 60000, currency: "CLP" },
+  ];
+  await render(wrap(s, <Pro />));
+  expect(screen.getByText("BEST VALUE")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Monthly Pro" }).props.accessibilityState.selected).toBe(true);
+  expect(screen.getByRole("button", { name: "Weekly Pro" }).props.accessibilityState.selected).toBe(false);
+  expect(screen.getByText("8.000 CLP")).toBeTruthy();
+  await fireEvent.press(screen.getByRole("button", { name: "Weekly Pro" }));
+  expect(screen.getByRole("button", { name: "Weekly Pro" }).props.accessibilityState.selected).toBe(true);
+});
+
+test("reopening privacy choices invalidates consent already in flight", async () => {
+  const ads = new AdService(new EntitlementService(), "live");
+  mockInitialize.mockClear(); let consent!: (value: unknown) => void;
+  mockConsent.mockImplementationOnce(() => new Promise(resolve => { consent = resolve; }));
+  mockPrivacyOptions.mockResolvedValue(undefined); mockConsentInfo.mockResolvedValue({ canRequestAds: false });
+  const pending = ads.prepare(); await ads.privacyOptions(); consent({ canRequestAds: true }); await pending;
+  expect(ads.ready).toBe(false); expect(mockInitialize).not.toHaveBeenCalled();
 });

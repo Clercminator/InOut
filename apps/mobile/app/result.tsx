@@ -2,9 +2,10 @@ import { useTheme } from "../src/theme";
 import { recordTitle, message, t, countLabel } from "../src/i18n";
 import { useLanguage } from "../src/use-language";
 import { Alert, Switch } from "../src/localized-native";
-import { useState } from "react";
-import { Share, View } from "react-native";
-import { router, useLocalSearchParams } from "expo-router";
+import { useCallback, useState } from "react";
+import { AppState, Share, View } from "react-native";
+import { useCommercial } from "../src/commercial-context";
+import { router, useLocalSearchParams, useFocusEffect } from "expo-router";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Screen, Title, Label, Card, Copy, Button, useStyles } from "../src/ui";
 import { useSession, SaveError } from "../src/provider";
@@ -23,10 +24,22 @@ export default function Result() {
   const { id, saved } = useLocalSearchParams<{ id: string; saved?: string }>();
   const [shareRatingsFor, setShareRatingsFor] = useState<string | null>(null);
   const controller = useSession();
+  const commercial = useCommercial();
+  const [leaving, setLeaving] = useState(false);
+  const completion = controller.challenges().find(s => s.status === "completed" && !s.celebrationSeen && s.completedSteps.some(step => step.sessionId === id));
+  const completionId = completion?.challengeId;
+  useFocusEffect(useCallback(() => { if (saved === "1" && completionId && !controller.error) router.push({ pathname: "/challenge-complete", params: { id: completionId } }); }, [saved, completionId, controller.error]));
   const record =
     controller.current?.id === id
       ? controller.current
       : controller.history().find((r) => r.id === id);
+  const adEligible = saved === "1" && controller.current?.id === id && record?.stage === "result" && record.endReason === "completed" && record.source !== "manual" && !completionId && !controller.error;
+  useFocusEffect(useCallback(() => {
+    if (!commercial || !adEligible) return;
+    commercial.ads.setContext({ path: "/result", foreground: AppState.currentState === "active", sessionStage: "result", challengeActive: !!controller.pendingTest?.() });
+    commercial.ads.prepareCompletion(id);
+    return () => commercial.ads.cancelCompletion();
+  }, [commercial, adEligible, id, controller, commercial?.ads.ready]));
   if (!record || record.stage !== "result")
     return (
       <Screen>
@@ -99,8 +112,13 @@ export default function Result() {
       <View style={{ gap: 8 }}>
         <Button
           title="DONE · VIEW HISTORY  →"
-          disabled={!!controller.error}
-          onPress={() => router.replace("/history")}
+          disabled={!!controller.error || leaving}
+          onPress={() => {
+            if (leaving) return;
+            setLeaving(true);
+            void (adEligible ? commercial?.ads.showCompletion(id) : Promise.resolve())?.finally(() => { setLeaving(false); router.replace("/history"); });
+            if (!commercial) { setLeaving(false); router.replace("/history"); }
+          }}
         />
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
         <View style={{ flexGrow: 1, flexBasis: 140 }}>

@@ -1,6 +1,8 @@
+import { attemptComparison, challengeBadgeDefinitions, testCatalog, type ChallengeAttempt } from "./challenge-tests";
 import type { Experience, Preferences, SessionRecord } from "@inout/shared-types";
 import { addDays, dayKey, practiceStats } from "./progress";
 import { achievementProgress, qualifyingRecords } from "./achievements";
+import { challengeCatalog, definitionForState, type UserChallenge } from "./challenges";
 
 export const defaultExperience: Experience = {
   name: "", bio: "", intention: "A moment for myself", avatar: "spa", pinnedBadges: [], weeklyGoal: 3,
@@ -19,11 +21,22 @@ export function weeklyPractice(records: SessionRecord[], ledger: RewardLedger, g
     .filter(r => weekKey(new Date(r.engine.startedAt)) === week).map(r => dayKey(new Date(r.engine.startedAt))));
   return { days, count: days.size, goal: ledger.weekGoals[week] ?? goal, week };
 }
-export function reconcileRewards(records: SessionRecord[], previous: RewardLedger, goal: number, now = new Date()): RewardLedger {
+export function reconcileRewards(records: SessionRecord[], previous: RewardLedger, goal: number, now = new Date(), challenges: UserChallenge[] = [], attempts: ChallengeAttempt[] = []): RewardLedger {
   const stats = practiceStats(qualifyingRecords(records, now), now);
   const badges = new Map(previous.badges.map(b => [b.id, b]));
   const weekGoals = { ...previous.weekGoals };
   const award = (id: string, label: string, date: string) => { if (!badges.has(id)) badges.set(id, { id, label, date }); };
+  for (const state of challenges) {
+    const definition = challengeCatalog().find(d => d.id === state.challengeId);
+    if (definition && state.status === "completed") award(`challenge-${state.challengeId}`, definitionForState(definition, state).title, state.completedSteps.at(-1)!.localDay);
+  }
+  const completions = [...challenges.filter(s => s.status === "completed").map(s => ({ at: s.completedAt!, day: s.completedSteps.at(-1)!.localDay })), ...attempts.filter(a => a.completed).map(a => ({ at: a.finishedAt, day: a.localDay }))].sort((a, b) => a.at - b.at);
+  for (const badge of challengeBadgeDefinitions) if (completions.length >= badge.threshold) award(badge.id, badge.title, completions[badge.threshold - 1].day);
+  for (const attempt of attempts.filter(a => a.completed)) {
+    const d = testCatalog().find(d => d.id === attempt.challengeId);
+    if (d) award(`test-${d.id}`, d.title, attempt.localDay);
+    if (attemptComparison(attempt, attempts).isPersonalBest) award("challenge-first-pb", "First Personal Best", attempt.localDay);
+  }
   for (const badge of achievementProgress(records, now)) if (badge.earnedAt) award(badge.id, badge.title, badge.earnedAt);
   const ordered = [...stats.records].sort((a, b) => a.engine.startedAt - b.engine.startedAt);
   for (const n of [1, 10, 25, 50, 100, 250, 500, 1000]) {

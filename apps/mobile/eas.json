@@ -19,7 +19,11 @@
         "image": "macos-tahoe-26.5-xcode-26.6"
       },
       "env": {
-        "INOUT_RELEASE": "1"
+        "INOUT_RELEASE": "1",
+        "EXPO_NO_DOTENV": "1",
+        "EXPO_PUBLIC_REVENUECAT_MODE": "store",
+        "EXPO_PUBLIC_SUBSCRIPTION_PROVIDER": "revenuecat",
+        "EXPO_PUBLIC_ADS_MODE": "live"
       },
       "android": {
         "buildType": "app-bundle"
@@ -39,8 +43,10 @@
       "autoIncrement": true,
       "env": {
         "INOUT_STORE_TEST": "1",
+        "EXPO_NO_DOTENV": "1",
         "EXPO_PUBLIC_SUBSCRIPTION_PROVIDER": "revenuecat",
-        "EXPO_PUBLIC_ADS_MODE": "test"
+        "EXPO_PUBLIC_ADS_MODE": "test",
+        "EXPO_PUBLIC_REVENUECAT_MODE": "store"
       },
       "android": {
         "buildType": "app-bundle",

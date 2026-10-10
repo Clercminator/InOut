@@ -10,7 +10,8 @@
     "start": "npm run start -w @inout/mobile --",
     "typecheck": "tsc --noEmit -p apps/mobile/tsconfig.json && tsc -p apps/web/tsconfig.json && tsc -p supabase/tsconfig.json",
     "test": "tsx --test tests/*.test.ts",
-    "verify": "npm run locales:check && npm run typecheck && npm test && npm run test:mobile",
+    "verify": "npm run locales:check && npm run release:pages && npm run lint:web && npm run typecheck && npm test && npm run test:mobile",
+    "lint:web": "eslint --config eslint.web.config.mjs apps/web/site-content.mjs apps/web/src/privacy-request.ts scripts/build-public-pages.mjs scripts/build-shared-web.mjs supabase/functions/inout-privacy",
     "test:mobile": "npm test -w @inout/mobile",
     "release:check": "node scripts/check-release.mjs",
     "release:pages": "node scripts/build-public-pages.mjs && node scripts/build-shared-web.mjs && node scripts/build-link-associations.mjs",
@@ -21,11 +22,14 @@
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.5.8",
+    "@eslint/js": "10.0.1",
     "@expo/ngrok": "^4.1.3",
     "@types/node": "^24.0.0",
     "esbuild": "^0.28.2",
+    "eslint": "10.12.0",
     "tsx": "^4.20.0",
-    "typescript": "~6.0.3"
+    "typescript": "~6.0.3",
+    "typescript-eslint": "8.71.1"
   },
   "overrides": {
     "react-test-renderer": "19.2.3",

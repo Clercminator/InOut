@@ -64,6 +64,7 @@ export interface EngineState {
     | "clockChange";
 }
 export interface SessionRecord {
+  challengeTest?: "state-shift-60";
   guidedQuota?: boolean;
   voiceAllowed?: boolean;
   note?: string;
@@ -80,6 +81,8 @@ export interface SessionRecord {
   post: number | null;
   stage: "active" | "post" | "result";
   finishedAt: number | null;
+  /** Calendar date captured when completion is saved, before optional reflection or travel. */
+  completionLocalDay?: string;
   effect: string | null;
   endReason: "completed" | "ended" | "unwell" | null;
 }

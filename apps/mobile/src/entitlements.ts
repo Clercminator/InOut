@@ -1,12 +1,13 @@
 import type { SavedRoutine, Protocol } from "@inout/shared-types";
 import { productConfig } from "./product-config";
+import monetization from "../../../release/monetization.json";
 
 export const commercialPolicy = Object.freeze({
   freeSavedPatterns: 1,
   freeSavedMixes: 1,
   freeSavedRoutines: 2,
   maxOfflineAgeMs: 72 * 60 * 60 * 1000,
-  entitlementId: "pro",
+  entitlementId: monetization.entitlement,
 });
 export const proCapabilities = [
   "adFree", "unlimitedCustomPatterns", "unlimitedMixes", "unlimitedSavedRoutines",
@@ -37,6 +38,7 @@ export function validGrant(value: unknown): value is EntitlementGrant {
 
 export class EntitlementService {
   accessReady = true;
+  billingReady = true;
   private reviewer: { verifiedAt: number; expiresAt: number } | null = null;
   private highWater = 0;
   private grant: EntitlementGrant | null = null;
@@ -89,6 +91,10 @@ export class EntitlementService {
   protocolAccess(protocol: Pick<Protocol, "id" | "plan">) {
     const locked = [protocol.id, ...(protocol.plan?.blocks.map(b => b.protocolId) ?? [])].some(id => productConfig.proProtocolIds.includes(id));
     return { allowed: !locked || this.state.pro, requiresPro: locked };
+  }
+  challengeAccess(id: string) {
+    const requiresPro = productConfig.proChallengeIds.includes(id);
+    return { allowed: !productConfig.disabledChallengeIds.includes(id) && (!requiresPro || this.state.pro), requiresPro };
   }
   guidedAccess(used: number) {
     const limit = productConfig.guidedSessionsPerMonth;

@@ -1,11 +1,11 @@
 export const darkColors = {
   reward: "#F5B62D", onReward: "#164F59",
-  background: "#060F20", lowest: "#040B18", card: "#0D2038", raised: "#142E4A",
-  border: "#284764", text: "#F5FAFF", secondaryText: "#BDD0E5", muted: "#93AEC8",
-  accent: "#5EA9FF", blue: "#246FF0", onAccent: "#041426", danger: "#FF918A",
-  dangerSurface: "#381A2A", sessionSurface: "#102E54", sessionBorder: "#32669C",
-  inhale: "#5EA9FF", hold: "#BE9BFF", exhale: "#36E5AC", rest: "#F4C654", gold: "#F4C654",
-  accentSurface: "#142E4A", accentBorder: "#32669C", shadow: "#000000",
+  background: "#111317", lowest: "#0B0C10", card: "#191923", raised: "#242334",
+  border: "#3D394F", text: "#F8F5FF", secondaryText: "#CEC7DF", muted: "#AAA3BE",
+  accent: "#C4A1FF", blue: "#5B2DFF", onAccent: "#191025", danger: "#FF918A",
+  dangerSurface: "#381A2A", sessionSurface: "#241B38", sessionBorder: "#655184",
+  inhale: "#C4A1FF", hold: "#F49AD0", exhale: "#60B5FA", rest: "#2DD4BF", gold: "#F4C654",
+  accentSurface: "#272035", accentBorder: "#705295", shadow: "#000000",
 };
 export type ThemeColors = typeof darkColors;
 export const lightColors: ThemeColors = {

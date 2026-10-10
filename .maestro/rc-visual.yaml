@@ -2,6 +2,11 @@ appId: com.imrtech.inout
 ---
 - launchApp:
     clearState: true
+- runFlow:
+    when:
+      visible: "Quickstep isn't responding"
+    commands:
+      - tapOn: "Close app"
 - scrollUntilVisible:
     element: { text: "Start breathing" }
     direction: DOWN
@@ -10,6 +15,9 @@ appId: com.imrtech.inout
     element: { text: "Personalize InOut" }
     direction: DOWN
 - tapOn: "Personalize InOut"
+- scrollUntilVisible:
+    element: { text: "Reduce stress & anxiety" }
+    direction: UP
 - tapOn: "Reduce stress & anxiety"
 - takeScreenshot: 02-goals
 - scrollUntilVisible:
@@ -30,10 +38,14 @@ appId: com.imrtech.inout
 - assertNotVisible: "DEVELOPMENT DEMO"
 - tapOn: "Close subscription offer"
 - takeScreenshot: 06-home
-- tapOn: "Protocols"
+- tapOn: "Explore protocols"
 - takeScreenshot: 07-library
-- tapOn: "Progress"
+- tapOn: "Go back"
+- tapOn: "Results"
 - takeScreenshot: 08-progress-empty
+- scrollUntilVisible:
+    element: { text: "Calendar" }
+    direction: DOWN
 - tapOn: "Calendar"
 - takeScreenshot: 09-calendar-empty
 - tapOn: "Badges"
@@ -94,5 +106,15 @@ appId: com.imrtech.inout
 - takeScreenshot: 21-result
 - launchApp:
     stopApp: true
-- tapOn: "Open settings"
+- tapOn: "My practice profile"
+- scrollUntilVisible:
+    element: { text: "Settings" }
+    direction: DOWN
+- tapOn: "Settings"
 - takeScreenshot: 22-settings
+- openLink: "inout://challenge?id=sleep-reset"
+- tapOn: { text: "Open", optional: true }
+- takeScreenshot: 23-challenge-detail
+- openLink: "inout://custom-pattern"
+- tapOn: { text: "Open", optional: true }
+- takeScreenshot: 24-create-rhythm

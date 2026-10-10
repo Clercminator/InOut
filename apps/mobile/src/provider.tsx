@@ -11,6 +11,7 @@ import React, {
   type PropsWithChildren,
 } from "react";
 import { AppState, Platform } from "react-native";
+import { usePathname } from "expo-router";
 import * as SQLite from "expo-sqlite";
 import { randomUUID, digestStringAsync, CryptoDigestAlgorithm } from "expo-crypto";
 import { createClock } from "@inout/breathing-engine";
@@ -126,6 +127,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
       <ReminderEffects />
       <WelcomeEmailEffects />
       <NativeSessionEffects />
+      <AdContextEffects controller={controller} commercial={commercial} />
       {children}
       </ReminderContext.Provider>
       </ShareLinksContext.Provider>
@@ -134,6 +136,18 @@ export function SessionProvider({ children }: PropsWithChildren) {
       </ExperienceProvider>
     </SessionContext.Provider>
   );
+}
+function AdContextEffects({ controller, commercial }: { controller: SessionController; commercial: CommercialServices | null }) {
+  const path = usePathname();
+  useEffect(() => {
+    let foreground = AppState.currentState === "active";
+    const update = () => commercial?.ads.setContext({ path, foreground, sessionStage: controller.current?.stage ?? null, challengeActive: !!controller.pendingTest() });
+    update();
+    const unsubscribe = controller.subscribe(update);
+    const appState = AppState.addEventListener("change", state => { foreground = state === "active"; update(); });
+    return () => { unsubscribe(); appState.remove(); commercial?.ads.cancelCompletion(); };
+  }, [path, controller, commercial]);
+  return null;
 }
 export { useSession } from "./session-context";
 export function SaveError() {

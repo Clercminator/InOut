@@ -1,5 +1,4 @@
 import { practiceStats } from "../src/progress";
-import { WelcomeEmailOptIn } from "../src/welcome-email-ui";
 import { goalContent } from "../src/personalization";
 import { useTheme } from "../src/theme";
 import { t, locale } from "../src/i18n";
@@ -14,7 +13,6 @@ import { useSession } from "../src/provider";
 import { practiceDuration } from "../src/format";
 import { experienceFor } from "../src/experience";
 import { photoUri } from "../src/profile-photo";
-import { WeeklyGoal } from "../src/practice-rewards";
 import { captureRef, releaseCapture } from "react-native-view-shot";
 import * as sharingService from "expo-sharing";
 
@@ -46,12 +44,9 @@ export default function Profile() {
         <View style={{ flex: 1, minWidth: 140, gap: 4 }}><Title translate={false}>{e.name || t("Your practice")}</Title><Copy translate={false}>{controller.preferences.experience?.intention ?? t(e.intention)}</Copy></View>
       </View>
       {!!e.bio && <Copy translate={false}>{e.bio}</Copy>}
-      <View style={[s.profileStats, { flexWrap: "wrap" }]}>
-        <View><Label>CURRENT STREAK</Label><Title>{stats.current}</Title></View>
-        <View><Label>SESSIONS</Label><Title>{records.length}</Title></View>
-        <View><Label>TIME</Label><Title>{practiceDuration(total)}</Title></View>
-        <View><Label>BADGES</Label><Title>{badges.length}</Title></View>
-      </View>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>{[
+        ["CURRENT STREAK", String(stats.current)], ["SESSIONS", String(stats.count)], ["TIME", practiceDuration(total)], ["BADGES", String(badges.length)],
+      ].map(([label, value]) => <View key={label} style={{ flexBasis: "45%", flexGrow: 1, backgroundColor: colors.accentSurface, padding: 12, borderRadius: 16, gap: 5 }}><Title translate={false}>{value}</Title><Label>{label}</Label></View>)}</View>
       {pinned.map(b => <View key={b.id} style={s.inlineLabel}><MaterialIcons name="workspace-premium" size={20} color={accent} /><Copy>{b.label}</Copy></View>)}
       {favorite && <Copy translate={false}>{t("My ritual")} · {favorite.name}</Copy>}
     </View>
@@ -69,16 +64,13 @@ export default function Profile() {
       })().catch(() => Alert.alert("Could not share", "Please try again.")).finally(() => setSharing(false));
     }} />
     {controller.preferences.journey?.primaryGoal && <Card><Label>YOUR MAIN GOAL</Label><Copy>{goalContent[controller.preferences.journey.primaryGoal].title}</Copy></Card>}
-    <Card><ActionRow title="Pro & subscriptions" icon="workspace-premium" onPress={() => router.push("/pro")} /><ActionRow title="Reminders" icon="notifications-none" onPress={() => router.push("/reminders")} /><ActionRow title="View progress" icon="insights" onPress={() => router.push("/(tabs)/progress")} /></Card>
-    <WeeklyGoal />
-    <Button title="Personalize my experience" secondary onPress={() => router.push("/personalize")} />
-    <Button title="My rituals" secondary onPress={() => router.push("/rituals")} />
+    <Card><ActionRow title="Personalize my experience" icon="palette" onPress={() => router.push("/personalize")} /><ActionRow title="Pro & subscriptions" icon="workspace-premium" onPress={() => router.push("/pro")} /><ActionRow title="My rituals" icon="auto-awesome" onPress={() => router.push("/rituals")} /><ActionRow title="Settings" icon="settings" onPress={() => router.push("/settings")} /><ActionRow title="Reminders" icon="notifications-none" onPress={() => router.push("/reminders")} /><ActionRow title="Results" icon="insights" onPress={() => router.push("/(tabs)/progress")} /></Card>
+
     <Card><Label>YOUR MILESTONE TIMELINE</Label>
       {!badges.length && <Copy>Your first practice starts your collection.</Copy>}
       {badges.slice(0, 3).map(b => <View key={b.id} style={{ gap: 4 }}><Copy style={s.subtitle}>{b.label}</Copy><Copy style={s.small}>{new Date(b.date + "T12:00:00").toLocaleDateString(locale())}</Copy></View>)}
     </Card>
     {badges.length > 3 && <Button title="View all badges" secondary onPress={() => router.push({ pathname: "/(tabs)/progress", params: { view: "Badges" } })} />}
-    <Button title="Settings" secondary onPress={() => router.push("/settings")} />
-    <WelcomeEmailOptIn />
+
   </BackScreen>;
 }

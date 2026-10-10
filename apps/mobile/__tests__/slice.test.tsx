@@ -386,13 +386,13 @@ test("saved routines persist through the session controller", () => {
   expect(mockController.isFavorite("coherent")).toBe(false);
 });
 
-test("Custom shows a saved routine and starts it with its protocol id", async () => {
+test("Custom opens a saved routine detail with its protocol id", async () => {
   mockController.toggleFavorite("coherent");
   await render(<Custom />);
   expect(screen.getByText("Coherent Breathing")).toBeTruthy();
-  await fireEvent.press(screen.getByRole("button", { name: "Start routine" }));
+  await fireEvent.press(screen.getByRole("button", { name: "Coherent Breathing, Saved practice, Saved" }));
   expect(mockPush).toHaveBeenCalledWith({
-    pathname: "/pre",
+    pathname: "/protocol",
     params: { id: "coherent" },
   });
 });

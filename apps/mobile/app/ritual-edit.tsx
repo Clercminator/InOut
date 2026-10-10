@@ -29,7 +29,7 @@ export default function RitualEdit() {
   const canSaveProtocol = !!existing || protocols.some(p => p.id === protocol.id) || controller.routines().some(r => r.protocol.id === protocol.id);
   if (ritualId && !existing) return <BackScreen title="RITUAL"><Copy>This ritual is no longer available.</Copy></BackScreen>;
   if (!existing && protocolId && (protocolId === "custom" ? !controller.customProtocol : !protocols.some(p => p.id === protocolId)))
-    return <BackScreen title="RITUAL"><Copy>This session draft is no longer available. Choose a protocol again.</Copy><Button title="Choose a protocol" onPress={() => router.replace("/(tabs)/protocols")} /></BackScreen>;
+    return <BackScreen title="RITUAL"><Copy>This session draft is no longer available. Choose a protocol again.</Copy><Button title="Choose a protocol" onPress={() => router.replace("/protocols")} /></BackScreen>;
   return <BackScreen title={existing ? "EDIT RITUAL" : "NEW RITUAL"} avoidKeyboard>
     <Label>RITUAL NAME</Label><TextInput accessibilityLabel={t("Ritual name")} maxLength={40} value={name} onChangeText={setName} style={{ ...s.copy, padding: 14, backgroundColor: colors.card, borderRadius: 12 }} />
     <Card><Label>PROTOCOL</Label><Copy translate={false} style={s.subtitle}>{protocolTitle(protocol)}</Copy>

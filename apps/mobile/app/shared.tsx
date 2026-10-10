@@ -6,6 +6,7 @@ import { BackScreen, Button, Copy, Title } from "../src/ui";
 import { useSession } from "../src/provider";
 import { practiceDuration } from "../src/format";
 import { useEffect, useState } from "react";
+import { publicError } from "../src/public-error";
 import type { Protocol } from "@inout/shared-types";
 export default function SharedPractice() {
   const { id } = useLocalSearchParams<{ id?: string }>();
@@ -15,12 +16,12 @@ export default function SharedPractice() {
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     let active = true; setProtocol(null); setError("");
-    void resolveSharedLink(sharingConfig.apiUrl, typeof id === "string" ? id : "").then(value => { if (active) setProtocol(sharedProtocol(value)); }).catch(error => { if (active) setError(error instanceof Error ? error.message : "Sharing unavailable"); });
+    void resolveSharedLink(sharingConfig.apiUrl, typeof id === "string" ? id : "").then(value => { if (active) setProtocol(sharedProtocol(value)); }).catch(error => { if (active) setError(publicError(error, "Sharing is temporarily unavailable. Please try again online.")); });
     return () => { active = false; };
   }, [id, attempt]);
   if (!protocol) return <BackScreen title="SHARED EXERCISE"><Title>{error || "Loading exercise…"}</Title>
     {!!error && <Button title="Retry" onPress={() => setAttempt(n => n + 1)} />}
-    <Button title="Browse protocols" secondary onPress={() => router.replace("/(tabs)/protocols")} /></BackScreen>;
+    <Button title="Browse protocols" secondary onPress={() => router.replace("/protocols")} /></BackScreen>;
   const selected = protocol;
   return <BackScreen title="SHARED EXERCISE"><Title>Shared breathing practice</Title><Copy>{practiceDuration(selected.defaultDuration)}</Copy>
     <Copy>This cadence was shared by another person. Keep breaths comfortable and stop if unwell.</Copy>

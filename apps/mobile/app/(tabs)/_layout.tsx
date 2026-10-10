@@ -1,86 +1,27 @@
+import { View, useWindowDimensions } from "react-native";
+import { Redirect, Tabs } from "expo-router";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../../src/theme";
 import { useLanguage } from "../../src/use-language";
 import { t } from "../../src/i18n";
-import { useWindowDimensions } from "react-native";
 import { Copy } from "../../src/ui";
-import { Redirect, Tabs } from "expo-router";
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { typography } from "@inout/design-tokens";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSession } from "../../src/provider";
 export default function TabLayout() {
   const { colors, mode } = useTheme();
   useLanguage();
-  const insets = useSafeAreaInsets();
-  const { fontScale } = useWindowDimensions();
+  const insets = useSafeAreaInsets(), { fontScale } = useWindowDimensions();
   const controller = useSession();
   if (!controller.preferences.onboardingComplete) return <Redirect href="/onboarding" />;
-  return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarStyle: {
-          backgroundColor: colors.lowest,
-          borderTopWidth: 1,
-          borderTopColor: colors.border,
-          height: 36 + 32 * fontScale + insets.bottom,
-          paddingBottom: insets.bottom,
-          paddingTop: 4,
-          shadowColor: colors.shadow,
-          shadowOffset: { width: 0, height: -3 },
-          shadowOpacity: mode === "light" ? 0.05 : 0,
-          shadowRadius: 12,
-          elevation: mode === "light" ? 4 : 0,
-        },
-        tabBarActiveTintColor: colors.accent,
-        tabBarActiveBackgroundColor: colors.accentSurface,
-        tabBarItemStyle: { borderRadius: 14, marginHorizontal: 3 },
-        tabBarInactiveTintColor: colors.secondaryText,
-        tabBarLabelPosition: "below-icon",
-        tabBarLabel: ({ children, color }) => <Copy translate={false} style={{ color, fontFamily: typography.label, fontSize: 11, lineHeight: 16, textAlign: "center", alignSelf: "stretch" }}>{children}</Copy>,
-        tabBarLabelStyle: { fontFamily: typography.label },
-      }}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: t("Today"),
-          tabBarAccessibilityLabel: t("Today"),
-          tabBarIcon: ({ color, size }) => (
-            <MaterialIcons accessible={false} name="bolt" color={color} size={size} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="protocols"
-        options={{
-          title: t("Protocols"),
-          tabBarAccessibilityLabel: t("Protocols"),
-          tabBarIcon: ({ color, size }) => (
-            <MaterialIcons accessible={false} name="grid-view" color={color} size={size} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="custom"
-        options={{
-          title: t("Custom"),
-          tabBarAccessibilityLabel: t("Custom"),
-          tabBarIcon: ({ color, size }) => (
-            <MaterialIcons accessible={false} name="tune" color={color} size={size} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="progress"
-        options={{
-          title: t("Progress"),
-          tabBarAccessibilityLabel: t("Progress"),
-          tabBarIcon: ({ color, size }) => (
-            <MaterialIcons accessible={false} name="equalizer" color={color} size={size} />
-          ),
-        }}
-      />
-    </Tabs>
-  );
+  return <Tabs initialRouteName="index" screenOptions={{ headerShown: false,
+    tabBarStyle: { backgroundColor: colors.card, borderTopWidth: 1, borderTopColor: colors.border, height: 50 + 24 * fontScale + insets.bottom, paddingBottom: insets.bottom + 6, paddingTop: 8, elevation: 0 },
+    tabBarActiveTintColor: colors.accent, tabBarInactiveTintColor: colors.muted,
+    tabBarLabelPosition: "below-icon", tabBarLabel: ({ children, color }) => <Copy translate={false} style={{ color, fontSize: 11, lineHeight: 16, fontWeight: "600", textAlign: "center" }}>{children}</Copy>,
+  }}>
+    <Tabs.Screen name="progress" options={{ title: t("Results"), tabBarAccessibilityLabel: t("Results"), tabBarIcon: ({ color }) => <MaterialIcons accessible={false} name="bar-chart" color={color} size={25} /> }} />
+    <Tabs.Screen name="index" options={{ title: t("Home"), tabBarAccessibilityLabel: t("Home"), tabBarIcon: ({ focused }) => <View style={{ width: 54, height: 54, borderRadius: 20, marginTop: -24, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, alignItems: "center", justifyContent: "center", shadowColor: colors.shadow, shadowOpacity: mode === "light" ? .12 : .3, shadowRadius: 12, shadowOffset: { width: 0, height: 3 }, elevation: 5 }}><MaterialIcons accessible={false} name={focused ? "home" : "home"} color={colors.accent} size={28} /></View> }} />
+    <Tabs.Screen name="challenges" options={{ title: t("Challenges"), tabBarAccessibilityLabel: t("Challenges"), tabBarIcon: ({ color }) => <MaterialIcons accessible={false} name="emoji-events" color={color} size={25} /> }} />
+    <Tabs.Screen name="protocols" options={{ href: null }} />
+    <Tabs.Screen name="custom" options={{ href: null }} />
+  </Tabs>;
 }

@@ -1,3 +1,4 @@
+import { testCatalog, attemptComparison, type TestId, type PendingTest, type ChallengeAttempt } from "./challenge-tests";
 import { isLanguage, setLanguage } from "./i18n";
 import * as engine from "@inout/breathing-engine";
 import { sigh, planFor, protocols, cyclic, isCyclic, includesHighIntensity, availableForPractice } from "@inout/protocols";
@@ -14,8 +15,9 @@ import type { LocalStore } from "./storage";
 import { EntitlementService } from "./entitlements";
 import { AnalyticsService } from "./analytics";
 import { manualSession, type ManualSessionInput } from "./manual-session";
-import { practiceStats } from "./progress";
+import { practiceStats, dayKey } from "./progress";
 import { productConfig } from "./product-config";
+import { challengeCatalog } from "./challenges";
 
 export class SessionController {
   current: SessionRecord | null = null;
@@ -31,6 +33,54 @@ export class SessionController {
   private pendingManualId: string | null = null;
   routineNotice: string | null = null;
   latestAwards: Badge[] = [];
+  challenges() { return this.store.challenges?.() ?? []; }
+  enrollChallenge(id: string) {
+    const d = challengeCatalog().find(d => d.id === id);
+    if (this.error || !d || (d.requiresPro && !this.entitlements.state.pro)) return false;
+    return this.mutate(() => {
+      const before = this.challenges().find(s => s.challengeId === id);
+      this.store.enrollChallenge(id, this.entitlements.state.pro, this.now());
+      if (!before || before.startedAt !== this.challenges().find(s => s.challengeId === id)?.startedAt) { this.analytics.track("challenge_started"); this.analytics.track("challenge_program_joined"); }
+    });
+  }
+  pendingTest() { return this.store.testStore?.().pending ?? null; }
+  testState() { return this.store.testStore(); }
+  testAttempts() { return this.store.testStore?.().attempts ?? []; }
+  dailyChallenge() { try { return this.store.dailyChallenge(this.entitlements.state.pro, this.now()); } catch { return null; } }
+  excludeTest(id: TestId, excluded: boolean) { return this.mutate(() => this.store.excludeTest(id, excluded)); }
+  beginTest(id: PendingTest["challengeId"], confirmed: boolean) {
+    if (!confirmed || this.error || !this.entitlements.challengeAccess(id).allowed || this.testState().excluded.includes(id) || this.testState().pending || (this.current && this.current.stage !== "result")) return false;
+    return this.mutate(() => { if (!this.entitlements.challengeAccess(id).allowed || this.testState().pending) throw Error("Challenge access changed"); this.store.setPendingTest({ id: this.id(), challengeId: id, startedAt: this.now() }); this.analytics.track("challenge_started"); });
+  }
+  finishTest(elapsedMs: number) {
+    const p = this.testState().pending, now = this.now();
+    if (!p || p.finishedAt !== undefined || !Number.isFinite(elapsedMs) || elapsedMs < 100 || elapsedMs > now - p.startedAt + 1000) return false;
+    return this.mutate(() => this.store.setPendingTest({ ...p, finishedAt: now, localDay: dayKey(new Date(now)), value: p.challengeId === "nasal-10" ? Math.min(10, elapsedMs / 60000) : Math.floor(elapsedMs / 100) / 10 }));
+  }
+  abandonTest() { return this.mutate(() => { this.store.setPendingTest(null); this.analytics.track("challenge_abandoned"); }); }
+  saveTest(completed = true) {
+    const p = this.testState().pending;
+    if (!p || p.finishedAt === undefined || p.value === undefined || !p.localDay || !this.entitlements.challengeAccess(p.challengeId).allowed || (completed && p.challengeId === "nasal-10" && p.value < 10)) return null;
+    const attempt: ChallengeAttempt = { id: p.id, challengeId: p.challengeId, definitionVersion: 1, startedAt: p.startedAt, finishedAt: p.finishedAt, localDay: p.localDay, value: p.value, completed };
+    const previous = this.rewards(), before = this.testAttempts();
+    return this.mutate(() => {
+      if (!this.entitlements.challengeAccess(attempt.challengeId).allowed) throw Error("Challenge access changed");
+      this.store.saveTestAttempt(attempt); this.captureRewards(previous);
+      if (!before.some(a => a.id === attempt.id)) {
+        this.analytics.track("challenge_attempt_completed");
+        if (completed) this.analytics.track("challenge_completed");
+        if (attemptComparison(attempt, before).isPersonalBest) this.analytics.track("challenge_personal_best");
+        if (this.latestAwards.length) this.analytics.track("challenge_badge_earned");
+      }
+    }) ? attempt.id : null;
+  }
+  startStateShift(rating: number, confirmed: boolean) {
+    if (!Number.isInteger(rating) || rating < 1 || rating > 10 || !confirmed || this.testState().pending || this.testState().excluded.includes("state-shift-60") || !this.entitlements.challengeAccess("state-shift-60").allowed) return;
+    const protocol = protocols.find(p => p.id === "coherent")!;
+    this.start(rating, 6, protocol, false, "state-shift-60");
+    if (this.current?.stage === "active" && this.current.challengeTest) this.analytics.track("challenge_started");
+  }
+  acknowledgeChallenge(id: string) { return this.mutate(() => this.store.acknowledgeChallenge(id)); }
   dismissAwards() { this.latestAwards = []; this.emit(); }
   guidedAccess() { return this.entitlements.guidedAccess(this.store.guidedUsage?.(this.now()).sessionIds.length ?? 0); }
   private rewardCache: RewardLedger | null = null;
@@ -63,6 +113,7 @@ export class SessionController {
       if (c.endReason === "completed") { once("session_completed"); if (c.protocol?.plan && c.protocolId !== "shared-practice") once("mix_completed"); }
       else once("session_abandoned");
       if (c.post !== null) once("state_after_logged");
+      if (c.challengeTest && this.testAttempts().some(a => a.id === c.id)) { once("challenge_attempt_completed"); once("challenge_completed"); }
     }
   }
   constructor(
@@ -109,9 +160,16 @@ export class SessionController {
   private save() {
     try {
       if (this.current) {
+        if (this.current.endReason === "completed" && this.current.finishedAt !== null && !this.current.completionLocalDay) this.current = { ...this.current, completionLocalDay: dayKey(new Date(this.current.finishedAt)) };
         const previous = this.current.stage === "result" ? this.rewards() : null;
         const streakBefore = previous ? practiceStats(this.history(), new Date(this.now())).current : null;
-        this.store.save(this.current);
+        const challengesBefore = this.challenges();
+        this.store.save(this.current, this.entitlements.state.pro);
+        for (const state of this.challenges()) {
+          const old = challengesBefore.find(s => s.challengeId === state.challengeId);
+          if (state.progress > (old?.progress ?? 0)) { this.analytics.track("challenge_progressed"); this.analytics.track("challenge_program_progress"); }
+          if (state.status === "completed" && old?.status !== "completed") this.analytics.track("challenge_completed");
+        }
         if (this.current.stage === "result") this.historyCache = null;
         if (previous) this.captureRewards(previous);
         if (streakBefore !== null && practiceStats(this.history(), new Date(this.now())).current > streakBefore) this.analytics.track("streak_extended");
@@ -141,11 +199,13 @@ export class SessionController {
     cycles: number | undefined = undefined,
     protocol: Protocol = sigh,
     safetyConfirmed = false,
+    challengeTest?: "state-shift-60",
   ) {
     if (!validRating(pre)) throw new Error("Choose a rating from 1 to 10");
     if (!this.entitlements.protocolAccess(protocol).allowed) { this.analytics.track("premium_lock_tapped"); this.routineNotice = "This protocol requires InOut Pro."; this.emit(); return; }
     if (
       this.error ||
+      !!this.store.testStore?.().pending ||
       !availableForPractice(protocol) ||
       (includesHighIntensity(protocol) && !safetyConfirmed) ||
       (this.current && this.current.stage !== "result")
@@ -162,6 +222,7 @@ export class SessionController {
     const plan = planFor(protocol, selectedCycles);
     this.current = {
       id: this.id(),
+      challengeTest,
       guidedQuota: this.preferences.audio === "voice" && productConfig.guidedSessionsPerMonth !== null && !this.entitlements.state.pro && this.guidedAccess().allowed,
       voiceAllowed: productConfig.guidedSessionsPerMonth === null || this.entitlements.state.pro || (this.preferences.audio === "voice" && this.guidedAccess().allowed),
       protocolId: protocol.id,
