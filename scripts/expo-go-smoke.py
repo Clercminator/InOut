@@ -100,7 +100,10 @@ try:
     tap('Continue', scroll=True)
     tap("Let's get started", scroll=True)
     tap('I understand', scroll=True)
-    tap('Close subscription offer')
+    locate('Close subscription offer')
+    # Expo Go's floating developer button overlaps the paywall close target.
+    # Android Back dismisses the same route without tapping that host overlay.
+    adb('shell', 'input', 'keyevent', 'KEYCODE_BACK')
     tap('Quick reset', scroll=True)
     tap('Skip rating & start', scroll=True)
     time.sleep(2)

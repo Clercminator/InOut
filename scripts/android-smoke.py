@@ -81,7 +81,7 @@ def tap(text, class_name=None):
     print(f'Tap {text}: {bounds(settled)}', flush=True)
     adb('shell', 'input', 'tap', str((x1+x2)//2), str((y1+y2)//2))
 
-def scroll_to(text, class_name=None):
+def scroll_to(text, class_name=None, direction='down'):
     for _ in range(20):
         try:
             find(text, 2, class_name)
@@ -91,7 +91,10 @@ def scroll_to(text, class_name=None):
             area = next(node for node in root.iter('node') if node.get('class') == 'android.widget.ScrollView' and node.get('scrollable') == 'true')
             left, top, right, bottom = map(int, re.findall(r'\d+', area.attrib['bounds']))
             x = str((left + right) // 2)
-            adb('shell', 'input', 'swipe', x, str(top + (bottom-top)*4//5), x, str(top + (bottom-top)//5), '300')
+            start, end = top + (bottom-top)*4//5, top + (bottom-top)//5
+            if direction == 'up':
+                start, end = end, start
+            adb('shell', 'input', 'swipe', x, str(start), x, str(end), '300')
     find(text)
 
 def shot(name):
@@ -172,15 +175,18 @@ try:
     tap('Save routine')
     find('Saved on this phone.')
     adb('shell', 'input', 'keyevent', 'KEYCODE_BACK')
+    scroll_to('Saved Presets')
     tap('Saved Presets')
     find('My Pattern')
     shot('09-saved-pattern')
     adb('shell', 'am', 'force-stop', APP)
     launch()
     tap('Create')
+    scroll_to('Saved Presets')
     tap('Saved Presets')
     find('My Pattern')
     adb('shell', 'input', 'keyevent', 'KEYCODE_BACK')
+    scroll_to('Create Mix', direction='up')
     tap('Create Mix')
     scroll_to('Add Physiological Sigh')
     tap('Add Physiological Sigh')
