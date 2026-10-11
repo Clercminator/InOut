@@ -27,8 +27,8 @@ test('privacy SQL prevents duplicate requests and isolates client roles; complet
   const db=new PGlite();
   try {
     await db.exec("create role anon;create role authenticated;create role service_role bypassrls;create schema auth;create table auth.users(id uuid primary key,email text,email_confirmed_at timestamptz,is_anonymous boolean default false);grant usage on schema auth to service_role;grant select on auth.users to service_role;");
-    await db.exec(readFileSync('supabase/migrations/20261008214815_privacy_requests.sql','utf8'));
-    await db.exec(readFileSync('supabase/migrations/20261008215902_privacy_request_rate_limit.sql','utf8'));
+    await db.exec(readFileSync('supabase/migrations/20261008215544_privacy_requests.sql','utf8'));
+    await db.exec(readFileSync('supabase/migrations/20261008215951_privacy_request_rate_limit.sql','utf8'));
     const user='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
     await db.query('insert into auth.users(id,email,email_confirmed_at) values($1,$2,now())',[user,'fixture@example.test']);
     for(const role of ['anon','authenticated']) {await db.exec(`set role ${role}`);await assert.rejects(db.query('select * from inout_private.privacy_requests'),/permission denied/);await assert.rejects(db.query("select public.inout_privacy_request($1,'fixture@example.test','account','account')",[user]),/permission denied/);await db.exec('reset role');}

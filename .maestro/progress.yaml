@@ -88,10 +88,15 @@ appId: com.imrtech.inout
 - assertVisible: "Manual breathing"
 - takeScreenshot: manual-history
 
-- openLink: "inout://pre?id=box"
+- openLink:
+    link: "inout://pre?id=box"
+- extendedWaitUntil:
+    visible: "Open|Skip rating & start"
+    timeout: 20000
 - tapOn:
     text: "Open"
     optional: true
+    retryTapIfNoChange: true
 - scrollUntilVisible:
     element:
       text: "Skip rating & start"

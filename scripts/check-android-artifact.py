@@ -14,18 +14,26 @@ def check_elf(data, name):
         raise ValueError(f'{name}: expected a little-endian 64-bit ELF')
     offset = struct.unpack_from('<Q', data, 32)[0]
     size, count = struct.unpack_from('<HH', data, 54)
-    loads = 0
+    loads = []
+    relro = []
     for index in range(count):
-        kind, _, file_offset, virtual, _, _, memory_size, alignment = struct.unpack_from(
+        kind, flags, file_offset, virtual, _, _, memory_size, alignment = struct.unpack_from(
             '<IIQQQQQQ', data, offset + size * index)
         if kind == 1:
-            loads += 1
+            loads.append((virtual, virtual + memory_size, flags))
             if alignment < 16384 or (virtual - file_offset) % 16384:
                 raise ValueError(f'{name}: LOAD segment is not 16 KB aligned')
-        if kind == 0x6474e552 and (virtual + memory_size) % 16384:
-            raise ValueError(f'{name}: GNU_RELRO end is not 16 KB aligned')
+        if kind == 0x6474e552:
+            relro.append((virtual, virtual + memory_size))
     if not loads:
         raise ValueError(f'{name}: no LOAD segments')
+    for start, end in relro:
+        # A partial RELRO page is safe if its padding contains no writable data.
+        # Older AndroidX binaries put the next writable LOAD on a separate page.
+        protected_end = (end + 16383) // 16384 * 16384
+        if any(flags & 2 and max(end, first) < min(protected_end, last)
+               for first, last, flags in loads):
+            raise ValueError(f'{name}: 16 KB RELRO protection overlaps writable data')
 
 
 def main():

@@ -23,6 +23,13 @@ def locate(text, scroll=False, timeout=60):
     until = time.monotonic() + timeout
     while time.monotonic() < until:
         root = tree()
+        labels = ' '.join(n.get('text', '') for n in root.iter('node'))
+        if text != 'Close' and 'SDK version: 57.0.0' in labels and 'Fast Refresh' in labels:
+            close = next(n for n in root.iter('node') if n.get('content-desc') == 'Close')
+            left, top, right, bottom = map(int, re.findall(r'\d+', close.get('bounds', '')))
+            adb('shell', 'input', 'tap', str((left + right) // 2), str((top + bottom) // 2))
+            time.sleep(1)
+            continue
         parents = {child: parent for parent in root.iter() for child in parent}
         for node in root.iter('node'):
             label = node.get('text', '') + ' ' + node.get('content-desc', '')
