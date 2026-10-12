@@ -62,8 +62,15 @@ export class EntitlementService {
     return () => { this.listeners.delete(listener); };
   };
   getRevision = () => this.revision;
+  get billingEvidenceReady() {
+    const state = this.state;
+    return !!this.grant && !state.needsRefresh && (!this.grant.active || state.subscriptionPro);
+  }
   refresh = () => { this.stateKey = JSON.stringify(this.state); this.revision++; this.listeners.forEach((fn) => fn()); };
-  checkExpiry = () => { if (JSON.stringify(this.state) !== this.stateKey) this.refresh(); };
+  checkExpiry = () => {
+    if (this.grant && !this.billingEvidenceReady) this.billingReady = false;
+    if (JSON.stringify(this.state) !== this.stateKey) this.refresh();
+  };
   get state() {
     const g = this.grant;
     const now = this.now();

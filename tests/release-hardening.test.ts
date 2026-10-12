@@ -13,6 +13,8 @@ test("release fails closed for test providers, mocks, demo ads and open gates; a
   assert.ok(buildPolicy({ EAS_BUILD_PROFILE: "store-test" }).length);
   const candidate = { EAS_BUILD_PROFILE: "store-test", EXPO_PUBLIC_EAS_PROJECT_ID: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", EXPO_PUBLIC_REVENUECAT_IOS_KEY: "appl_testfixture", EXPO_PUBLIC_REVENUECAT_ANDROID_KEY: "goog_testfixture", EXPO_PUBLIC_ADS_MODE: "test" };
   assert.deepEqual(buildPolicy(candidate), []);
+  assert.deepEqual(buildPolicy({ ...candidate, EAS_BUILD_PLATFORM: "android", EXPO_PUBLIC_REVENUECAT_IOS_KEY: undefined }), []);
+  assert.ok(buildPolicy({ ...candidate, EAS_BUILD_PLATFORM: "android", EXPO_PUBLIC_REVENUECAT_ANDROID_KEY: undefined }).length);
   assert.ok(buildPolicy({ ...candidate, EXPO_PUBLIC_REVENUECAT_MODE: "test-store" }).length);
   assert.ok(buildPolicy({ ...candidate, EXPO_PUBLIC_REVENUECAT_TEST_KEY: "test_fixture" }).length);
   assert.ok(buildPolicy({ ...candidate, EXPO_PUBLIC_REVENUECAT_IOS_KEY: "sk_fixture" }).length);

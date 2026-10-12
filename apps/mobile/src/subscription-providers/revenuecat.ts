@@ -10,6 +10,7 @@ export function grantFromCustomerInfo(info: CustomerInfo, testStore = false): En
   const graceUntil = subscription?.gracePeriodExpiresDate ? Date.parse(subscription.gracePeriodExpiresDate) : null;
   const verifiedAt = Date.parse(info.requestDate);
   const trusted = testStore || ["VERIFIED", "VERIFIED_ON_DEVICE"].includes(info.entitlements.verification);
+  if (!trusted) throw new SubscriptionError("failed", "The store response could not be verified. Try restoring purchases.");
   const active = trusted && entitlement?.isActive === true && !subscription?.refundedAt;
   return { source: testStore ? "development" : "store", active, verifiedAt, expiresAt, graceUntil,
     status: !entitlement ? "free" : !active ? "expired" : entitlement.billingIssueDetectedAt
@@ -79,7 +80,10 @@ export function revenueCatAdapter(apiKey: string, testStore = false): Subscripti
       return await Purchases.isAnonymous() ? customer() : grant(await Purchases.logOut());
     },
     listen(listener) {
-      const callback = (info: CustomerInfo) => listener(grant(info));
+      const callback = (info: CustomerInfo) => {
+        // An unverified update cannot revoke existing access or establish Free billing status.
+        try { listener(grant(info)); } catch { /* A later refresh can recover. */ }
+      };
       Purchases.addCustomerInfoUpdateListener(callback);
       return () => Purchases.removeCustomerInfoUpdateListener(callback);
     },

@@ -91,10 +91,12 @@ def scroll_to(text, class_name=None, direction='down'):
             area = next(node for node in root.iter('node') if node.get('class') == 'android.widget.ScrollView' and node.get('scrollable') == 'true')
             left, top, right, bottom = map(int, re.findall(r'\d+', area.attrib['bounds']))
             x = str((left + right) // 2)
-            start, end = top + (bottom-top)*4//5, top + (bottom-top)//5
+            # Small, slow swipes overlap most of the viewport and avoid flinging
+            # past a large-text accessibility target between observations.
+            start, end = top + (bottom-top)*7//10, top + (bottom-top)*4//10
             if direction == 'up':
                 start, end = end, start
-            adb('shell', 'input', 'swipe', x, str(start), x, str(end), '300')
+            adb('shell', 'input', 'swipe', x, str(start), x, str(end), '600')
     find(text)
 
 def shot(name):

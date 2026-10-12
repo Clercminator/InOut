@@ -24,7 +24,7 @@ export function createCommercialServices(store: LocalStore): CommercialServices 
   if (configuration && native) {
     try { adapter = revenueCatAdapter(configuration.key, configuration.testStore); } catch { /* A missing native SDK must not prevent breathing. */ }
   } else if (development && process.env.EXPO_PUBLIC_REVENUECAT_MODE === "mock") adapter = new (require("./subscription-providers/test").DevelopmentSubscriptionProvider)();
-  entitlements.billingReady = adapter.mode === "unavailable";
+  entitlements.billingReady = entitlements.billingEvidenceReady;
   const subscriptions = new SubscriptionService(adapter, entitlements, analytics);
   const ads = new AdService(entitlements, native ? !development && process.env.EXPO_PUBLIC_ADS_MODE === "live" ? "live" : "test" : "preview", { read: () => store.readAdFrequency(), write: value => store.writeAdFrequency(value) });
   const reviewer = createReviewerService(entitlements);

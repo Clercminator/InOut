@@ -2,7 +2,7 @@ import type { ConfigContext } from "expo/config";
 
 export default ({ config }: ConfigContext) => {
   const { buildPolicy } = require("../../scripts/build-policy.cjs");
-  const errors = buildPolicy(process.env, require("../../release/readiness.json").gates, require("../../release/store-listing.json").status);
+  const errors = buildPolicy({ ...process.env, EXPO_PUBLIC_EAS_PROJECT_ID: process.env.EXPO_PUBLIC_EAS_PROJECT_ID || config.extra?.eas?.projectId }, require("../../release/readiness.json").gates, require("../../release/store-listing.json").status);
   if (errors.length) throw new Error(errors.join("\n"));
   const links = require("../../release/links.json");
   const { admob } = require("../../release/monetization.json");

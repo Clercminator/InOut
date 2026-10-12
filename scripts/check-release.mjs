@@ -8,7 +8,7 @@ const listing = JSON.parse(readFileSync(root + 'release/store-listing.json', 'ut
 const readiness = JSON.parse(readFileSync(root + 'release/readiness.json', 'utf8'));
 const sharing = JSON.parse(readFileSync(root + 'release/sharing.json', 'utf8'));
 const app = JSON.parse(readFileSync(root + 'apps/mobile/app.json', 'utf8')).expo;
-const errors = policy.buildPolicy(process.env, readiness.gates, listing.status);
+const errors = policy.buildPolicy({ ...process.env, EXPO_PUBLIC_EAS_PROJECT_ID: process.env.EXPO_PUBLIC_EAS_PROJECT_ID || app.extra?.eas?.projectId }, readiness.gates, listing.status);
 if (sharing.apiUrl || readiness.gates?.sharingVerified || process.env.INOUT_RELEASE === '1') {
   try {
     const url = new URL(sharing.apiUrl);
@@ -17,6 +17,7 @@ if (sharing.apiUrl || readiness.gates?.sharingVerified || process.env.INOUT_RELE
 }
 if (process.env.INOUT_RELEASE === '1') {
   for (const key of ['EXPO_PUBLIC_REVENUECAT_IOS_KEY', 'EXPO_PUBLIC_REVENUECAT_ANDROID_KEY']) {
+    if (process.env.EAS_BUILD_PLATFORM === 'android' && key.includes('_IOS_') || process.env.EAS_BUILD_PLATFORM === 'ios' && key.includes('_ANDROID_')) continue;
     if (!process.env[key] || process.env[key].includes('3940256099942544')) errors.push(`Production configuration is missing or uses demo values: ${key}`);
   }
   if (process.env.EXPO_PUBLIC_ADS_MODE !== 'live') errors.push('Production ads must be explicitly configured after acceptance.');

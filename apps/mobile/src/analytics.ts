@@ -9,7 +9,7 @@ export const productEvents = [
   "session_started", "session_completed", "session_abandoned", "state_before_logged", "state_after_logged",
   "custom_created", "custom_started", "mix_created", "mix_started", "mix_completed", "share_created", "share_link_copied",
   "shared_web_opened", "shared_web_started", "shared_web_completed", "shared_web_install_cta_clicked", "shared_web_app_open_clicked",
-  "paywall_viewed", "trial_started", "subscription_started", "subscription_restored", "subscription_cancelled", "ad_impression",
+  "paywall_viewed", "trial_started", "subscription_started", "subscription_restored", "subscription_cancelled", "ad_impression", "ad_loaded", "ad_failed", "ad_consent_failed",
 ] as const;
 export type ProductEvent = typeof productEvents[number];
 export const paywallSources = ["onboarding", "profile", "protocol", "quota", "insights", "custom", "reminders", "challenges", "other"] as const;

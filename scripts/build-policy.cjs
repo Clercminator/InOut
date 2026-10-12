@@ -4,6 +4,7 @@ function buildPolicy(env, gates = {}, listingStatus = '') {
   const production = env.INOUT_RELEASE === '1' || env.EAS_BUILD_PROFILE === 'production';
   const store = production || env.INOUT_STORE_TEST === '1' || env.EAS_BUILD_PROFILE === 'store-test';
   const errors = [];
+  const platforms = ['android', 'ios'].includes(env.EAS_BUILD_PLATFORM) ? [env.EAS_BUILD_PLATFORM] : ['android', 'ios'];
   for (const [platform, ids] of Object.entries(admob)) {
     const names = { app: `ADMOB_${platform.toUpperCase()}_APP_ID`, banner: `EXPO_PUBLIC_ADMOB_${platform.toUpperCase()}_BANNER_ID`, interstitial: `EXPO_PUBLIC_ADMOB_${platform.toUpperCase()}_INTERSTITIAL_ID` };
     for (const [format, name] of Object.entries(names)) if (env[name] && env[name] !== ids[format]) errors.push(`${name} conflicts with release/monetization.json.`);
@@ -16,9 +17,11 @@ function buildPolicy(env, gates = {}, listingStatus = '') {
   if (env.EXPO_PUBLIC_REVENUECAT_MODE && env.EXPO_PUBLIC_REVENUECAT_MODE !== 'store') errors.push('Store builds cannot use mock or RevenueCat Test Store mode.');
   if (env.EXPO_PUBLIC_REVENUECAT_TEST_KEY) errors.push('Remove the Test Store key from store build environments.');
   for (const [key, prefix] of [['EXPO_PUBLIC_REVENUECAT_IOS_KEY','appl_'], ['EXPO_PUBLIC_REVENUECAT_ANDROID_KEY','goog_']]) {
+    if (!platforms.includes(prefix === 'appl_' ? 'ios' : 'android')) continue;
     if (!env[key]?.startsWith(prefix)) errors.push(`Configure the platform public SDK key: ${key}`);
   }
   for (const [platform, ids] of Object.entries(admob)) {
+    if (!platforms.includes(platform)) continue;
     if (!/^ca-app-pub-\d+~\d+$/.test(ids.app) || ids.app.includes(demo)) errors.push(`Real native app ID required: ${platform}`);
     for (const format of ['banner', 'interstitial']) if (!/^ca-app-pub-\d+\/\d+$/.test(ids[format]) || ids[format].includes(demo)) errors.push(`Real ${format} ID required: ${platform}`);
   }

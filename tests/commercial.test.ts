@@ -124,7 +124,7 @@ test("RevenueCat mapping preserves expiry, grace and cancelled-active states", (
     subscriptionsByProductIdentifier: { monthly: { gracePeriodExpiresDate: new Date(20000).toISOString() } } } as unknown as CustomerInfo;
   assert.equal(grantFromCustomerInfo(withGrace).status, "grace");
   assert.equal(grantFromCustomerInfo(withGrace).graceUntil, 20000);
-  assert.equal(grantFromCustomerInfo({ ...info, entitlements: { all: {} } } as CustomerInfo).status, "free");
+  assert.equal(grantFromCustomerInfo({ ...info, entitlements: { verification: "VERIFIED", all: {} } } as CustomerInfo).status, "free");
   for (const active of [false, true]) {
     const refunded = { ...info, entitlements: { verification: "VERIFIED", all: { in_out_pro: { ...info.entitlements.all.in_out_pro, isActive: active } } }, subscriptionsByProductIdentifier: { monthly: { refundedAt: new Date(2000).toISOString() } } } as unknown as CustomerInfo;
     assert.equal(grantFromCustomerInfo(refunded).active, false);
@@ -139,6 +139,21 @@ test("an identity transition failure removes the prior paid cache and preserves 
   e.acceptStoreGrant(active); e.acceptReviewerGrant({ verifiedAt: Date.now(), expiresAt: Date.now() + 100000 });
   const adapter: SubscriptionProvider = { mode: "store", offers: async () => [], refresh: async () => active, purchase: async () => active, restore: async () => active, managementUrl: async () => null, identify: async () => { throw Error("offline"); } };
   await new SubscriptionService(adapter, e, new AnalyticsService()).identify("server-verified-account");
-  assert.equal(e.state.subscriptionPro, false); assert.equal(e.state.reviewerPro, true); assert.equal(e.billingReady, true);
+  assert.equal(e.state.subscriptionPro, false); assert.equal(e.state.reviewerPro, true); assert.equal(e.billingReady, false);
   assert.equal((persisted as EntitlementGrant).active, false);
+});
+
+test("failed billing refresh distinguishes unknown and stale access from recently verified Free; restore recovers", async () => {
+  let now = 1000000;
+  const free = { source: "store", status: "free", active: false, verifiedAt: now, expiresAt: 0, graceUntil: null } as const;
+  const e = new EntitlementService(false, () => now);
+  const adapter: SubscriptionProvider = { mode: "store", offers: async () => [], refresh: async () => { throw Error("offline"); }, purchase: async () => free, restore: async () => ({ ...free, verifiedAt: now }), managementUrl: async () => null };
+  const subscriptions = new SubscriptionService(adapter, e, new AnalyticsService());
+  await subscriptions.load(); assert.equal(e.billingReady, false);
+  e.acceptStoreGrant(free); await subscriptions.load(); assert.equal(e.billingReady, true);
+  now += commercialPolicy.maxOfflineAgeMs; e.checkExpiry(); assert.equal(e.billingReady, false);
+  await subscriptions.load(); assert.equal(e.billingReady, false);
+  await subscriptions.restore(); assert.equal(e.billingReady, true);
+  e.acceptStoreGrant({ ...free, status: "active", active: true, verifiedAt: now, expiresAt: now + 10 });
+  now += 11; e.checkExpiry(); assert.equal(e.billingReady, false);
 });

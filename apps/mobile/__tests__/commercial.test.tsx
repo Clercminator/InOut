@@ -42,6 +42,19 @@ function services() {
 }
 function wrap(s: CommercialServices, child: React.ReactNode) { return <CommercialContext.Provider value={s}>{child}</CommercialContext.Provider>; }
 
+test("live banners load automatically, stay absent for unresolved billing, and disappear immediately on Pro", async () => {
+  AppState.currentState = "active"; mockPath = "/";
+  const s = services(); s.ads = new AdService(s.entitlements, "live");
+  s.entitlements.billingReady = false;
+  await render(wrap(s, <AdSlot placement="today" />));
+  expect(screen.queryByTestId("native-banner")).toBeNull();
+  await act(async () => { s.entitlements.billingReady = true; s.entitlements.refresh(); });
+  expect(screen.getByTestId("native-banner")).toBeTruthy();
+  expect(screen.queryByText("Review ad privacy choices")).toBeNull();
+  await act(async () => { s.entitlements.simulate("active"); });
+  expect(screen.queryByTestId("native-banner")).toBeNull();
+});
+
 test("reviewer UI handles loading, invalid code, server failure, success and expiry", async () => {
   const s: CommercialServices = services();
   let time = Date.now(), status = 403, finish: ((value: any) => void) | null = null;
@@ -133,9 +146,10 @@ test("live ads cannot initialize before consent or after becoming Pro during con
   expect(mockInitialize).not.toHaveBeenCalled(); expect(ads.ready).toBe(false);
   let finish!: (info: { canRequestAds: boolean }) => void;
   mockConsent.mockImplementationOnce(() => new Promise((resolve) => { finish = resolve; }));
-  const preparing = ads.prepare();
+  const nextLaunch = new AdService(e, "live");
+  const preparing = nextLaunch.prepare();
   e.simulate("active"); finish({ canRequestAds: true }); await preparing;
-  expect(mockInitialize).not.toHaveBeenCalled(); expect(ads.ready).toBe(false);
+  expect(mockInitialize).not.toHaveBeenCalled(); expect(nextLaunch.ready).toBe(false);
 });
 
 test("native test ads initialize demo SDK only while the placement stays eligible", async () => {

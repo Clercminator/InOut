@@ -15,6 +15,9 @@ export class AdService {
   private context: AdContext | null = null;
   private paywalls = 0;
   private initialized = false;
+  private consentAllowed = false;
+  private consentChecked = false;
+  private consentRetryAt = 0;
   private consentGeneration = 0;
   private blocked = false;
   private startedAt: number;
@@ -56,8 +59,20 @@ export class AdService {
     const eligible = () => generation === this.consentGeneration && this.canRequest() && isEligible();
     this.pending = (async () => {
       const sdk = require("react-native-google-mobile-ads") as typeof import("react-native-google-mobile-ads");
-      const consent = await sdk.AdsConsent.gatherConsent();
-      if (!consent.canRequestAds) { this.ready = false; return; }
+      if (!this.consentChecked || this.now() >= this.consentRetryAt) {
+        // Refresh once per launch, then at most hourly on eligible foreground surfaces.
+        // A failed request may be retried after a minute, never on every render.
+        this.consentChecked = true;
+        this.consentRetryAt = this.now() + 60000;
+        this.ready = false;
+        try {
+          const consent = await sdk.AdsConsent.gatherConsent();
+          if (generation !== this.consentGeneration) return;
+          this.consentAllowed = consent.canRequestAds;
+          this.consentRetryAt = this.now() + 3600000;
+        } catch (error) { if (generation === this.consentGeneration) this.consentAllowed = false; throw error; }
+      }
+      if (!this.consentAllowed) { this.ready = false; return; }
       if (!eligible()) { this.ready = false; return; }
       if (!this.initialized) {
         await sdk.default().setRequestConfiguration({ maxAdContentRating: sdk.MaxAdContentRating.G });
@@ -71,13 +86,17 @@ export class AdService {
   }
   async privacyOptions() {
     this.consentGeneration++;
+    this.consentAllowed = false;
+    this.consentChecked = true;
+    this.consentRetryAt = this.now() + 3600000;
     this.ready = false;
     this.cancelCompletion();
     this.entitlements.refresh();
     if (this.mode === "preview") return;
     const sdk = require("react-native-google-mobile-ads") as typeof import("react-native-google-mobile-ads");
     await sdk.AdsConsent.showPrivacyOptionsForm();
-    this.ready = this.initialized && (await sdk.AdsConsent.getConsentInfo()).canRequestAds && this.canRequest();
+    this.consentAllowed = (await sdk.AdsConsent.getConsentInfo()).canRequestAds;
+    this.ready = this.initialized && this.consentAllowed && this.canRequest();
   }
   paywallOpened() { this.paywalls++; this.cancelCompletion(); return () => { this.paywalls = Math.max(0, this.paywalls - 1); this.frequency.lastPaywall = this.now(); this.persist(); }; }
   private persist() { try { this.storage?.write(this.frequency); } catch { this.blocked = true; } }

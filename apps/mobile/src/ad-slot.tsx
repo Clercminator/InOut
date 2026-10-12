@@ -19,10 +19,30 @@ export function AdSlot({ placement }: { placement: AdPlacement }) {
   const eligible = useRef(false);
   const context = { path, foreground, sessionStage: controller.current?.stage ?? null, challengeActive: !!controller.pendingTest?.() };
   eligible.current = !!services?.ads.allowed(placement, context);
+  const allowed = eligible.current;
+  const automatic = services?.ads.mode === "live" || (!__DEV__ && services?.ads.mode === "test");
   useEffect(() => () => { eligible.current = false; }, []);
   useEffect(() => { const sub = AppState.addEventListener("change", (s) => setForeground(s === "active")); return () => sub.remove(); }, []);
+  useEffect(() => {
+    if (!services || !allowed || !automatic) return;
+    let mounted = true;
+    const prepare = async () => {
+      try {
+        await services.ads.prepare(() => mounted && eligible.current);
+        if (mounted) setReady(services.ads.ready);
+      } catch {
+        if (mounted) setReady(false);
+        services.analytics.track("ad_consent_failed");
+      }
+    };
+    void prepare();
+    const retry = setInterval(() => { void prepare(); }, 60000);
+    return () => { mounted = false; clearInterval(retry); };
+  }, [services, allowed, automatic, foreground, path]);
   if (!services || !services.ads.allowed(placement, context)) return null;
   if (services.ads.mode === "preview") return null;
+  // No empty ad card, compulsory button, or error interrupts normal practice.
+  if (automatic && (!ready || !services.ads.ready)) return null;
   if (!ready || !services.ads.ready) return <Card>
     <Label>{services.ads.mode === "live" ? "ADVERTISING" : "TEST ADVERTISING"}</Label>
     <Copy>{services.ads.mode === "test" ? "Google demo inventory only. Loading a test ad connects to Google's ad service; no practice data is sent." : "Review privacy choices before loading an ad. Breathing sessions stay uninterrupted."}</Copy>
@@ -38,7 +58,8 @@ export function AdSlot({ placement }: { placement: AdPlacement }) {
   return <Card><Label>{services.ads.mode === "test" ? "TEST AD" : "ADVERTISEMENT"}</Label>
     <sdk.BannerAd unitId={unitId} size={sdk.BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
       requestOptions={{ requestNonPersonalizedAdsOnly: true }}
+      onAdLoaded={() => services.analytics.track("ad_loaded")}
       onAdImpression={() => services.analytics.track("ad_impression")}
-      onAdFailedToLoad={() => { setReady(false); setNotice("No ad available right now."); }} />
+      onAdFailedToLoad={() => { setReady(false); setNotice("No ad available right now."); services.analytics.track("ad_failed"); }} />
   </Card>;
 }

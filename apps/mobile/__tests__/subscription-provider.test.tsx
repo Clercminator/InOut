@@ -46,7 +46,7 @@ test("pending, cancellation and errors cannot manufacture a grant; listener remo
   cleanup(); expect(mockSdk.removeCustomerInfoUpdateListener).toHaveBeenCalledWith(update);
 });
 test("unverified or wrong entitlement is rejected; only debug Test Store returns development grants", async () => {
-  for (const verification of ["FAILED", "NOT_REQUESTED", undefined]) expect(grantFromCustomerInfo({ ...info(), entitlements: { ...info().entitlements, verification } } as unknown as CustomerInfo).active).toBe(false);
+  for (const verification of ["FAILED", "NOT_REQUESTED", undefined]) expect(() => grantFromCustomerInfo({ ...info(), entitlements: { ...info().entitlements, verification } } as unknown as CustomerInfo)).toThrow("could not be verified");
   expect(grantFromCustomerInfo({ ...info(), entitlements: { verification: "VERIFIED", all: { pro: info().entitlements.all.in_out_pro } } } as unknown as CustomerInfo).active).toBe(false);
   expect(subscriptionConfiguration(false, "ios", { mode: "test-store", testKey: "test_fixture" })).toBeNull();
   expect(subscriptionConfiguration(true, "ios", { iosKey: "sk_secret" })).toBeNull();

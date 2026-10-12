@@ -24,6 +24,16 @@ function fixture(saved: unknown = null) {
 }
 beforeEach(() => { jest.clearAllMocks(); mockConsent.mockResolvedValue({ canRequestAds: true }); mockInitialize.mockResolvedValue([]); mockConfigure.mockResolvedValue(undefined); });
 
+test("consent is cached across eligible surfaces, refreshed hourly, and failures retry after a minute", async () => {
+  const f = fixture(); await f.ads.prepare(); await f.ads.prepare();
+  expect(mockConsent).toHaveBeenCalledTimes(1); expect(mockInitialize).toHaveBeenCalledTimes(1);
+  f.tick(3600001); mockConsent.mockRejectedValueOnce(Error("offline"));
+  await expect(f.ads.prepare()).rejects.toThrow("offline"); expect(f.ads.ready).toBe(false);
+  await f.ads.prepare(); expect(mockConsent).toHaveBeenCalledTimes(2);
+  f.tick(60001); await f.ads.prepare(); expect(f.ads.ready).toBe(true);
+  expect(mockConsent).toHaveBeenCalledTimes(3); expect(mockInitialize).toHaveBeenCalledTimes(1);
+});
+
 test.each(["subscription", "reviewer"])("%s Pro makes zero SDK initialization, banner eligibility or interstitial load requests", async kind => {
   const f = fixture();
   if (kind === "subscription") f.entitlements.simulate("active"); else f.entitlements.acceptReviewerGrant({ verifiedAt: f.now(), expiresAt: f.now() + 3600000 });

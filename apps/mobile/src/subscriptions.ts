@@ -51,6 +51,8 @@ export class SubscriptionService {
       if (this.adapter.mode !== "development" && !this.adapter.testStore) throw new Error("Unexpected mock grant");
       this.entitlements.acceptDevelopmentGrant(grant);
     } else this.entitlements.acceptStoreGrant(grant);
+    this.entitlements.billingReady = this.entitlements.billingEvidenceReady;
+    this.entitlements.refresh();
   }
   private async operation(action: () => Promise<void>) {
     if (this.busy) return;
@@ -66,7 +68,7 @@ export class SubscriptionService {
     this.apply(grant);
     this.offers = await this.adapter.offers();
     if (!this.offers.length) this.message = "No subscription plans are available in this build yet.";
-  }); this.entitlements.billingReady = true; this.entitlements.refresh(); }
+  }); this.entitlements.billingReady = this.entitlements.billingEvidenceReady; this.entitlements.refresh(); }
   async identify(verifiedAccountId: string | null) {
     if (this.busy) return;
     await this.operation(async () => {
@@ -74,9 +76,9 @@ export class SubscriptionService {
       this.identifying = true;
       this.entitlements.billingReady = false;
       // No previous identity's cached access may survive a failed account transition.
-      this.apply({ source: this.adapter.testStore ? "development" : "store", active: false, status: "free", verifiedAt: Date.now(), expiresAt: 0, graceUntil: null });
+      this.apply({ source: this.adapter.testStore ? "development" : "store", active: false, status: "free", verifiedAt: 0, expiresAt: 0, graceUntil: null });
       try { this.apply(await this.adapter.identify(verifiedAccountId)); }
-      finally { this.identifying = false; this.entitlements.billingReady = true; this.entitlements.refresh(); }
+      finally { this.identifying = false; this.entitlements.refresh(); }
     });
   }
   async purchase(id: PlanId) { await this.operation(async () => {

@@ -58,6 +58,13 @@
         }
       ]
     ],
-    "icon": "./assets/icon-pulse.png"
+    "icon": "./assets/icon-pulse.png",
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "81b6e532-9ba4-4124-b0b0-e1ed7cc3b601"
+      }
+    },
+    "owner": "imr-tech"
   }
 }
