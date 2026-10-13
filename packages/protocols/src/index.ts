@@ -154,22 +154,34 @@ export const protocols: Protocol[] = [
     6,
     "ripple",
   ),
-  // Retained in the shared model, excluded from this release.
-  protocol(
-    "high-intensity-cyclic",
-    "High-Intensity Cyclic Breathing",
-    ["Energize"],
-    [phase("inhale", 2), phase("exhale", 2)],
-    30,
-    "pulse",
-    "highIntensity",
-  ),
+  {
+    ...protocol("high-intensity-cyclic", "Cyclic Breathwork", ["Perform", "Energize"],
+      [phase("inhale", 2), phase("exhale", 2)], 3, "pulse", "highIntensity"),
+    version: 2,
+    availability: "enabled",
+    defaultDuration: 648000,
+    durationPresets: [216000, 432000, 648000],
+    plan: { blocks: [
+      { protocolId: "high-intensity-cyclic", protocolVersion: 2, cycles: 30, phases: [phase("inhale", 2), phase("exhale", 2)] },
+      { protocolId: "high-intensity-cyclic", protocolVersion: 2, cycles: 1, phases: [phase("retention", 60)] },
+      { protocolId: "high-intensity-cyclic", protocolVersion: 2, cycles: 1, phases: [phase("inhale", 3), phase("hold", 15), phase("exhale", 3), phase("freeBreathing", 15)] },
+    ] },
+  },
 ];
+export const cyclic = protocols[9];
+export const isCyclic = (p: Pick<Protocol, "id" | "version">) => p.id === cyclic.id && p.version === cyclic.version;
+export const includesHighIntensity = (p: Protocol) => p.safetyCategory === "highIntensity" || p.id === cyclic.id || !!p.plan?.blocks.some(b => b.protocolId === cyclic.id);
+export const availableForPractice = (p: Protocol) => p.availability === "enabled" && (!includesHighIntensity(p) || isCyclic(p));
 export const sigh = protocols[0];
 export function planFor(
   protocol: Protocol,
   cycles = protocol.defaultCycles,
 ): SessionPlan {
+  if (isCyclic(protocol)) {
+    if (!Number.isInteger(cycles) || cycles < 1 || cycles > 3) throw new Error("Choose 1–3 rounds.");
+    // Use the versioned definition, including for saved rituals and replay snapshots.
+    return { blocks: Array.from({ length: cycles }, () => cyclic.plan!.blocks).flat() };
+  }
   if (protocol.plan) {
     if (!Number.isInteger(cycles) || cycles < 1 || cycles > 1000)
       throw new Error("Invalid mix repeat count");

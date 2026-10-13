@@ -1,0 +1,32 @@
+appId: com.imrtech.inout
+---
+# Run on a clean signed candidate after onboarding; native acceptance remains manual until executed.
+- launchApp
+- openLink: "inout://challenge-test?id=long-exhale"
+- tapOn: { text: "Open", optional: true }
+- scrollUntilVisible:
+    element: { text: "I have read the precautions and I am in a safe place" }
+    direction: DOWN
+- tapOn: "I have read the precautions and I am in a safe place"
+- scrollUntilVisible:
+    element: { text: "Ready.*Start" }
+    direction: DOWN
+- tapOn: "Ready.*Start"
+- assertVisible: "STAY COMFORTABLE"
+- takeScreenshot: long-exhale-running
+- tapOn: "Finish"
+- tapOn: "Save result"
+- assertVisible: "CHALLENGE COMPLETE"
+- takeScreenshot: long-exhale-result
+- scrollUntilVisible:
+    element: { text: "Share result" }
+    direction: DOWN
+- tapOn: "Share result"
+- takeScreenshot: long-exhale-story
+- tapOn: "Square.*"
+- takeScreenshot: long-exhale-square
+- scrollUntilVisible:
+    element: { text: "Share achievement" }
+    direction: DOWN
+- tapOn: "Share achievement"
+- takeScreenshot: long-exhale-native-share

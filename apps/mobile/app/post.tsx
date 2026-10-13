@@ -1,10 +1,18 @@
+import { useTheme } from "../src/theme";
+import { recordTitle, message, t } from "../src/i18n";
+import { useLanguage } from "../src/use-language";
+import { Pressable } from "../src/localized-native";
 import { useEffect, useState } from "react";
-import { BackHandler, Pressable, View } from "react-native";
+import { BackHandler, View } from "react-native";
 import { Redirect, router } from "expo-router";
-import { Screen, Title, Label, Copy, Button, StateScale, s } from "../src/ui";
+import { Screen, Title, Label, Copy, Button, StateScale, ActionFooter, useStyles } from "../src/ui";
 import { useSession, SaveError } from "../src/provider";
-import { colors } from "@inout/design-tokens";
+
+import { Celebration } from "../src/celebration";
 export default function Post() {
+  const { colors } = useTheme();
+  const s = useStyles();
+  useLanguage();
   const controller = useSession();
   const record = controller.current;
   const [rating, setRating] = useState<number | null>(null);
@@ -17,18 +25,23 @@ export default function Post() {
   if (record.stage === "active") return <Redirect href="/session" />;
   if (record.stage === "result")
     return (
-      <Redirect href={{ pathname: "/result", params: { id: record.id } }} />
+      <Redirect href={{ pathname: record.challengeTest && controller.testAttempts().some(a => a.id === record.id) ? "/challenge-attempt" : "/result", params: { id: record.id, attempt: record.id, fresh: "1", saved: "1" } }} />
     );
   const finish = (post: number | null) => {
     controller.answer(post, post === null ? null : effect);
     if (!controller.error)
-      router.replace({ pathname: "/result", params: { id: record.id } });
+      router.replace({ pathname: record.challengeTest && controller.testAttempts().some(a => a.id === record.id) ? "/challenge-attempt" : "/result", params: { id: record.id, attempt: record.id, fresh: "1", saved: "1" } });
   };
   return (
-    <Screen title="STATE SHIFT · POST">
+    <Screen title="STATE SHIFT · POST" footer={<ActionFooter>
+      <SaveError />
+      <Button title="SEE MY STATE SHIFT  →" disabled={rating === null || !!controller.error} onPress={() => finish(rating)} />
+      <Button title="Skip & save session" secondary disabled={!!controller.error} onPress={() => finish(null)} />
+    </ActionFooter>}>
+      {record.endReason === "completed" && <Celebration title="Congratulations!" message="You made time for yourself. Take a moment to feel proud." />}
       <View style={s.flowHeader}>
-        <Label>SESSION COMPLETE</Label>
-        <Title>{record.protocolName}</Title>
+        <Label>{record.endReason === "completed" ? "SESSION COMPLETE" : "SESSION ENDED"}</Label>
+        <Title translate={false}>{recordTitle(record)}</Title>
         <Copy style={{ color: colors.accent }}>
           {Math.round(record.engine.elapsedAtAnchor / 1000)} sec · {record.engine.plan.blocks.reduce((sum, block) => sum + block.cycles, 0)} cycles
         </Copy>
@@ -49,11 +62,11 @@ export default function Post() {
                 s.secondaryButton,
                 {
                   backgroundColor:
-                    effect === text ? colors.blue : colors.raised,
+                    effect === text ? colors.accent : colors.raised,
                 },
               ]}
             >
-              <Copy>{text}</Copy>
+              <Copy style={{ color: effect === text ? colors.onAccent : colors.text }}>{text}</Copy>
             </Pressable>
           ),
         )}
@@ -61,17 +74,6 @@ export default function Post() {
       <Copy style={s.small}>
         This is your own assessment, not a biometric measurement.
       </Copy>
-      <SaveError />
-      <Button
-        title="SEE MY STATE SHIFT  →"
-        disabled={rating === null}
-        onPress={() => finish(rating)}
-      />
-      <Button
-        title="Skip & save session"
-        secondary
-        onPress={() => finish(null)}
-      />
     </Screen>
   );
 }

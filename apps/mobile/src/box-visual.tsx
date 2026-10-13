@@ -1,17 +1,26 @@
+import type { ThemeColors } from "@inout/design-tokens";
+import { useTheme, useThemedStyles } from "./theme";
+import { useLanguage } from "./use-language";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Easing, StyleSheet, View } from "react-native";
-import { colors } from "@inout/design-tokens";
+
 import type { snapshot } from "@inout/breathing-engine";
 import { boxPoint as boxPointForTrail, boxSamples } from "./box-path";
+import { useExperience } from "./experience-context";
+
 
 type Snapshot = ReturnType<typeof snapshot>;
-const phaseColors = [colors.inhale, colors.hold, colors.exhale, colors.rest];
 
 export function BoxVisual({ view, running, reduced }: {
   view: Snapshot;
   running: boolean;
   reduced: boolean;
 }) {
+  const { colors, palettes } = useTheme();
+  const styles = useLocalStyles();
+  useLanguage();
+  const palette = palettes[useExperience().experience.palette];
+  const phaseColors = [palette.accent, palette.hold, palette.exhale, colors.rest];
   const [size, setSize] = useState(0);
   const progress = useRef(new Animated.Value(0)).current;
   const phase = view.phaseIndex % 4;
@@ -67,11 +76,12 @@ export function BoxVisual({ view, running, reduced }: {
   </View>;
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   frame: { position: "absolute", left: "10%", top: "10%", width: "80%", height: "80%" },
-  halo: { position: "absolute", left: "18%", top: "18%", width: "64%", height: "64%", borderRadius: 48, backgroundColor: "#adc6ff05" },
+  halo: { position: "absolute", left: "18%", top: "18%", width: "64%", height: "64%", borderRadius: 48, backgroundColor: colors.accent + "05" },
   track: { position: "absolute", top: -1, left: -1, right: -1, bottom: -1, borderWidth: 2, borderColor: colors.sessionBorder },
   marker: { position: "absolute", left: -6, top: -6, width: 12, height: 12, borderRadius: 6, alignItems: "center", justifyContent: "center" },
   glow: { position: "absolute", width: 34, height: 34, borderRadius: 17, opacity: 0.12 },
   core: { width: 5, height: 5, borderRadius: 3, backgroundColor: colors.text },
 });
+function useLocalStyles() { return useThemedStyles(createStyles); }

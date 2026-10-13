@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+Disallow: /reset.html
+Sitemap: https://inout.imrtech.xyz/sitemap.xml

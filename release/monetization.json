@@ -1,0 +1,8 @@
+{
+  "entitlement": "in_out_pro",
+  "offering": "default",
+  "admob": {
+    "android": { "app": "ca-app-pub-5826774665710369~5291138435", "banner": "ca-app-pub-5826774665710369/7977011529", "interstitial": "ca-app-pub-5826774665710369/2999927723" },
+    "ios": { "app": "ca-app-pub-5826774665710369~9511611168", "banner": "ca-app-pub-5826774665710369/2020133955", "interstitial": "ca-app-pub-5826774665710369/4858970154" }
+  }
+}

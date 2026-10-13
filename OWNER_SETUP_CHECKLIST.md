@@ -1,99 +1,93 @@
-# IN/OUT — Owner setup checklist
+# InOut — owner acceptance and submission
 
-The v1 target is now Free + recurring Pro + conservative ads + browser sharing + product-event measurement. **Do not submit the old free-only metadata.** Setup does not mean an integration or its acceptance tests are complete. Engineering progress and launch gates live in [LAUNCH_PLAN.md](LAUNCH_PLAN.md).
+Updated October 13, 2026. Only account, credential, legal, store and physical-device actions remain here. Engineering evidence belongs in README. Record acceptance with date, candidate commit/build, device/OS, result and approver. Private keys, reviewer codes and identity documents stay in the relevant secure service.
 
-## Storage and security key
+Signed Android internal-test candidate: `artifacts/final-launch-check/inout-1.0.0-3-store-test.aab` - version 1.0.0 (3), package `com.imrtech.inout`. [EAS build](https://expo.dev/accounts/imr-tech/projects/inout/builds/3b526366-125a-4e93-bd44-4219e765d314) succeeded. Signature and upload-certificate match verified; target API 36, non-debuggable, 56 native libraries passed 16 KB ELF checks. This candidate uses test ads and requires Play-installed purchase/restore/consent acceptance. Upload certificate SHA-256: `F4:B3:B0:19:3A:FC:F9:5D:62:1E:61:38:28:B7:64:94:C4:AD:A9:EC:CD:44:D6:BB:4E:94:28:B0:66:43:E9:9F`. Obtain the separate Play App Signing certificate for verified links.
 
-Each row specifies the exact return value/location and these flags: **Secret / .env / EAS Secrets / Native config / Never commit**. `No` for EAS Secrets means do not store it as a secret build variable; public build configuration can use EAS environment variables with plaintext visibility. `N/A` means no configuration value is needed.
+## Required before store submission
 
-- Public SDK keys and app/unit/product IDs are identifiers, not private credentials. Public mobile values will be visible in the compiled app. RevenueCat and AdMob names are consumed by the current adapters/native config; share-origin and analytics-provider names remain reserved. See `apps/mobile/.env.example`.
-- Local development values belong in ignored `apps/mobile/.env.local`, using a separate test environment. Never paste private keys into chat or place them in `EXPO_PUBLIC_*` variables.
-- Private store/service credentials belong in the provider's secure console or EAS credential management. Use secret build variables only if a future server/build task actually needs them. They do not belong in the JS bundle, native config, repository or public pages.
-- “Value Codex needs” means a non-secret identifier or confirmation/access arrangement. Upload private files directly to the indicated console; report completion rather than disclosing their contents.
+### 1. Publisher accounts and signing access
 
-## NOW
+- [ ] [Apple Developer](https://developer.apple.com/account/) → Membership: confirm Apple has approved the pending **IMR Technologies SpA** organization enrollment (verification documents already submitted/received), then complete any remaining agreements. Certificates, Identifiers & Profiles → Identifiers: register **`com.imrtech.inout`**. [App Store Connect](https://appstoreconnect.apple.com/) → My Apps → + → New App: choose that bundle ID and enter the approved app name/internal SKU. Business → Agreements: complete paid-app, tax and banking requirements. **Needed for:** signed distribution and paid subscriptions. **Success:** active membership/agreements, Team ID and numeric app ID.
+- [ ] Play Console → existing **IN/OUT: Breathing Exercises** → Test and release → Testing → Internal testing → Create new release: upload the signed `store-test` AAB, complete Play App Signing, and add the owner's account under Testers and Settings → License testing. **Do not create another app.** The existing IMR Tech Organization account does not require the personal-account 12-testers/14-days program.
+- [x] Existing Expo `imr-tech/inout` linked: project `81b6e532-9ba4-4124-b0b0-e1ed7cc3b601`, GitHub base directory `/apps/mobile`, Android upload keystore managed by EAS. Platform RevenueCat SDK keys and `GOOGLE_SERVICES_JSON` are configured privately in preview and production. Firebase Analytics/Crashlytics use opt-in collection; only free services enabled. The `store-test` profile uses real store billing and test ads; do not publish it as the live-ad production build.
 
-| Done | Exact console/service and action | Value needed afterward and where to store it | Secret / .env / EAS Secrets / Native config / Never commit |
-| --- | --- | --- | --- |
-| [ ] | Apple Developer → enroll/verify publisher; accept agreements | Team ID and enrollment confirmation. Team ID in release configuration when signing is configured; private account access via invitation | No / No / No / Later team config / No |
-| [ ] | Google Play Console → create/verify developer account | Developer account ID and confirmation; retain in owner release records | No / No / No / No / No |
-| [ ] | Expo dashboard → create/link IN/OUT project and grant build access | Expo owner/slug and project UUID; `extra.eas.projectId` in mobile app config after linking | No / No / No / Yes / No |
-| [ ] | Product decision, no console: choose first countries, pricing currencies, monthly/annual price candidates and whether to offer a trial | Written choices in launch plan; no invented defaults or trial eligibility promises | No / No / No / No / No |
-| [ ] | Publisher operations: confirm `davidclerc@imrtech.xyz` receives mail and who handles support | Confirmation, not mailbox password; shared publisher JSON already contains address | No / No / No / No / No |
 
-## BEFORE BILLING TEST
+| EAS variable | Owner value |
+| --- | --- |
+| `EXPO_PUBLIC_EAS_PROJECT_ID` | Expo project UUID |
+| `EXPO_PUBLIC_SUBSCRIPTION_PROVIDER` | `revenuecat` |
+| `EXPO_PUBLIC_REVENUECAT_IOS_KEY`, `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY` | Public platform SDK keys, `appl_…` and `goog_…` |
+| `EXPO_PUBLIC_REVENUECAT_MODE` | `store`; omit `EXPO_PUBLIC_REVENUECAT_TEST_KEY` from both EAS environments |
+| `EXPO_PUBLIC_ADS_MODE` | `test` for initial acceptance; `live` for accepted production configuration |
 
-| Done | Exact console/service and action | Value needed afterward and where to store it | Secret / .env / EAS Secrets / Native config / Never commit |
-| --- | --- | --- | --- |
-| [ ] | Apple Developer → Certificates, Identifiers & Profiles → App ID; App Store Connect → My Apps → IN/OUT | Reserve `com.imrtech.inout`; return numeric App Store app ID and bundle ID. Bundle ID already in `apps/mobile/app.json`; numeric ID later in submission config | No / No / No / Yes, bundle ID / No |
-| [ ] | App Store Connect → Business → agreements, tax and banking | Completion confirmation only; tax/bank details remain in Apple's console | Yes for financial details / No / No / No / Yes |
-| [ ] | App Store Connect → IN/OUT → Monetization → Subscriptions | Create Pro subscription group, monthly and annual products, prices/localizations and optional introductory offer. Return group/product IDs, durations and approved trial details; later centralized product mapping | No / No / No / No / No |
-| [ ] | Play Console → All apps → IN/OUT; Monetize → Products → Subscriptions | App record `com.imrtech.inout`; monthly/annual base plans and optional offers. Return subscription/base-plan/offer IDs, prices and trial rules; later centralized mapping | No / No / No / Package already configured / No |
-| [ ] | Play Console/Google payments → agreements/payment profile | Completion confirmation only; bank/tax data remain in console | Yes for financial details / No / No / No / Yes |
-| [ ] | RevenueCat → new project → iOS and Android apps | Project ID, app IDs and public SDK keys. Reserve `EXPO_PUBLIC_REVENUECAT_IOS_KEY` and `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY` in ignored mobile `.env.local` and matching EAS environment | No / Yes / No, plaintext environment / No / Keep local env files uncommitted |
-| [ ] | RevenueCat → connect App Store app using the credentials its current setup requires | Upload Apple private `.p8` key/any requested shared secret directly to RevenueCat; return connection-validation status. Key ID/issuer ID are identifiers, private key is secret | Yes for key/secret / No / No / No / Yes |
-| [ ] | Google Cloud + Play Console → scoped service account/access; RevenueCat → Android app → service credentials | Upload service-account JSON directly to RevenueCat; return validation status. Do not bundle the JSON or share its private key | Yes / No / No / No / Yes |
-| [ ] | RevenueCat → Entitlements and Offerings | Create entitlement `pro`; an offering with monthly/annual packages attached to real store products. Return offering ID and package mapping; later central commercial config | No / No / No / No / No |
-| [ ] | App Store Connect sandbox testers; Play Console license testing + internal testers | Confirm test users/devices invited and test purchase access. Credentials stay with testers; no passwords needed by code | Yes for tester passwords / No / No / No / Yes |
+The six supplied AdMob IDs are already wired in `release/monetization.json`; do not recreate them or add conflicting environment overrides. The supplied `test_` RevenueCat key is already configured locally for debug Test Store use; it cannot configure a dashboard or replace the store SDK keys. These are public client/build identifiers. Apple/Google signing credentials belong in EAS; store-connection keys belong in RevenueCat. Service-role and email-provider keys never belong in the app.
 
-No RevenueCat administrative secret API key is needed in the mobile app. The provider adapter and bounded cache are implemented. Real billing still requires configured products/offerings and sandbox/device verification. Current mock Pro is not a purchase.
+### 2. Products and real store acceptance
 
-## BEFORE AD TEST
+- [ ] Play Console → existing app → Monetize with Play → Products → Subscriptions: after the first AAB is accepted, confirm the owner's weekly/monthly/yearly prices, reuse any existing product IDs, and activate the corresponding auto-renewing base plans. Do not invent prices or create duplicate subscriptions. Apple setup can wait until after Android launch.
+- [ ] RevenueCat → In/Out → Apps & providers → Google Play: the existing service-account credential is saved; catalog/base-plan access passes, but purchase validation reports package not found. Recheck after the first AAB upload. Product catalog → Products: import the actual Google Play products; Entitlements → `in_out_pro`: attach them; Offerings → `default`: map `$rc_weekly`, `$rc_monthly`, `$rc_annual` to the actual Google Play products/base plans. **Current offering has Test Store products only; Android billing is not yet usable or accepted.** No duplicate Google credential is needed. Configure Play real-time developer notifications using the existing Google project; no Pub/Sub topic was available in RevenueCat at the last check.
+- [ ] App Store Connect → Users and Access → Sandbox: authorize test accounts and install the signed candidate through TestFlight. Play Console → Settings → License testing and InOut → Testing → Internal testing → Testers: authorize accounts and install from the opt-in link. On each phone: Settings → Plan & privacy → Pro & subscriptions. Verify **Monthly is selected**, all three actual prices/durations match the store, then test each plan's purchase/cancel/pending behavior, restart, restore, renewal cancellation, expiry, refund, retry/grace and offline recovery. Confirm expired Pro becomes Free and independently active reviewer access remains separate. Verify no ads or preloads for paid/reviewer Pro. **Why manual:** SDK fixtures and Test Store transactions do not establish Apple/Google acceptance or real-device behavior.
 
-| Done | Exact console/service and action | Value needed afterward and where to store it | Secret / .env / EAS Secrets / Native config / Never commit |
-| --- | --- | --- | --- |
-| [ ] | AdMob → Apps → register separate iOS and Android IN/OUT apps | App IDs (`ca-app-pub-…~…`); later `ADMOB_IOS_APP_ID` / `ADMOB_ANDROID_APP_ID` build config and native plugin settings | No / Yes for local config / No, plaintext environment / Yes / No; env file stays ignored |
-| [ ] | AdMob → each app → Ad units → conservative banner placements | Unit IDs (`ca-app-pub-…/…`); later `EXPO_PUBLIC_ADMOB_IOS_BANNER_ID` / `EXPO_PUBLIC_ADMOB_ANDROID_BANNER_ID` | No / Yes / No, plaintext environment / No / No; env file stays ignored |
-| [ ] | AdMob → Privacy & messaging → configure applicable consent/privacy messages | Confirmation, selected regions/options, linked app IDs and privacy URL; UMP configuration stays in AdMob | No / No / No / App ID only / No |
-| [ ] | AdMob/test device setup → register test devices when using own units | Test-device identifiers via ignored local/test environment; use Google's demo units first and never click live ads in tests | Device identifiers private / Only test environment if needed / No / No / Yes for device identifiers |
-| [ ] | AdMob + publisher website → verification/app-ads.txt requirements | If requested, publish AdMob-provided publisher record on controlled domain; return HTTPS URL and verification result | No / No / No / No / No |
+### 3. Private reviewer credential
 
-Production IDs are not necessary for initial demo-ad development. Native config defaults to official Google demo app IDs; EXPO_PUBLIC_ADS_MODE=test uses demo banner units after an explicit load action. Live mode requires explicit IDs and UMP eligibility. A test banner is not evidence of production consent acceptance. Consent behavior, test units, ad-free Pro and placement exclusions must be verified before enabling real inventory. No tension values, routines, notes or inferred wellbeing state may become targeting inputs.
+- [ ] Run `pwsh -File scripts/new-reviewer-code.ps1 -Days 14` locally. Save the clipboard code in a password manager and private review fields, then clear the clipboard. [Supabase InOut](https://supabase.com/dashboard/project/jvmrsoxknaidcbqoasst) → Edge Functions → Secrets: save the script's **`REVIEWER_ENABLED`**, **`REVIEWER_CODE_SHA256`**, **`REVIEWER_CODE_EXPIRES_AT`**, **`REVIEWER_GENERATION`** values. **Needed for:** review without purchasing. **Success:** Settings → Plan & privacy → Pro & subscriptions → Reviewer access → code → Unlock Pro grants access; wrong code fails. Restart and confirm access, then rotate generation and confirm next online validation removes the old grant. Grants last at most seven days; offline reviewer access is limited to one hour. Refresh the private code/expiry before submission if needed. No code is embedded in the binary.
 
-## BEFORE WEB SHARING TEST
+### Reviewer instructions for this Challenges candidate
 
-| Done | Exact console/service and action | Value needed afterward and where to store it | Secret / .env / EAS Secrets / Native config / Never commit |
-| --- | --- | --- | --- |
-| [ ] | Chosen registrar/DNS and hosting console → authorize a production host | Domain and HTTPS origin; later `EXPO_PUBLIC_SHARE_ORIGIN` in local/EAS public environment. Hosting access through invitation; no domain is assumed purchased | No for origin; access tokens secret / Yes for origin / No for origin / Yes, association domains later / Yes for tokens |
-| [ ] | Hosting → choose share-record persistence/service and deployment access | Non-secret project ID/origin; any service database credential in hosting server secrets only, never mobile `.env` | Yes for server credential / Server-only env if needed / No / No / Yes |
-| [ ] | Apple Team/App ID + hosting → publish `/.well-known/apple-app-site-association` | Team ID + `com.imrtech.inout`, URL/path rules; association file public, `ios.associatedDomains` in native config | No / No / No / Yes / No |
-| [ ] | Play Console → App integrity → App signing; hosting → `/.well-known/assetlinks.json` | Production app-signing certificate SHA-256 fingerprint (not upload-key fingerprint), package ID and test-build fingerprints separately; public association file and native intent filters | No / No / No / Yes / No |
-| [ ] | App Store Connect / Play Console → public listing destinations | Actual store URLs once available; central public config. Use explicit unavailable state before then, not invented links | No / No / No / No / No |
+The implementation and automated reviewer/provider tests are local evidence. A clean signed installation, a live reusable reviewer code and sandbox purchases still need device acceptance. Keep actual codes in private console fields, never in Git or screenshots.
 
-Browser resets can be developed on a staging host before the final domain. Automatic verified app opening requires real domain association and correctly signed builds; a custom scheme alone is insufficient.
+**Apple App Review Notes (copy into App Store Connect; supply the code privately):**
 
-## BEFORE TESTFLIGHT
+> InOut is guest-first. No InOut account or email/password login is required. Complete or skip the optional onboarding questions, acknowledge safety, and choose Continue for free. Free mode includes breathing protocols, State Shift, Today's Challenge, Long Exhale, Nasal 10, 3×3 and starter programs. The tabs are Results, Home and Challenges.
+>
+> To test purchasing, open Home → profile avatar → Settings → Plan & privacy → Pro & subscriptions. Select Weekly, Monthly or Yearly if offered, invoke the Apple purchase sheet, and use Restore purchases to restore the store entitlement. Pro unlocks all premium Challenges and removes ads. Displayed products and prices come from the store.
+>
+> For immediate inspection without payment, open Reviewer access on the same paywall, enter the reusable code supplied privately with this submission, then tap Unlock Pro. No app account, SMS, OTP, email verification or location requirement applies. Internet access is required for server validation. To test normal Free/purchase behavior afterward, select Reviewer access → Remove reviewer access; any independently active store subscription remains active. Reviewer access is separate from subscription purchasing.
 
-| Done | Exact console/service and action | Value needed afterward and where to store it | Secret / .env / EAS Secrets / Native config / Never commit |
-| --- | --- | --- | --- |
-| [ ] | Apple Developer + EAS credential management → authorize distribution signing | EAS-managed certificate/profile access; return team/project confirmation. Do not commit `.p12`, private keys or provisioning credentials | Yes for signing key/password / No / Use EAS credentials, not JS env / Bundle/team identifiers only / Yes for private files |
-| [ ] | App Store Connect → TestFlight → test groups, build/compliance information | Group names, tester invitation confirmation and accepted build number; owner release records | Tester contacts private / No / No / No / Yes for contact lists |
-| [ ] | Physical iPhone → install actual TestFlight candidate | Device/OS/build and QA outcomes in launch evidence; no device account password | No for anonymized results / No / No / No / No |
+Before submission, record weekly/monthly/yearly rendering, purchase/cancellation, restore, expiry/loss of access, reviewer removal and post-removal purchase behavior on the actual candidate. Follow [Apple's sandbox review setup](https://developer.apple.com/help/app-review/before-submitting-for-review/configure-in-app-purchases/). Reviewer unlock does not establish purchase acceptance.
 
-## BEFORE PLAY INTERNAL TEST
+**Google Play Console:**
 
-| Done | Exact console/service and action | Value needed afterward and where to store it | Secret / .env / EAS Secrets / Native config / Never commit |
-| --- | --- | --- | --- |
-| [ ] | Play Console → App integrity + EAS credentials → Play App Signing and upload key | Signing enrollment confirmation; upload keystore/password in EAS credential management, certificate fingerprint public | Yes for keystore/password / No / EAS credentials / Package only / Yes for private files |
-| [ ] | Play Console → Testing → Internal testing → testers/release | Test list/group, opt-in URL and build number; private contacts stay in console | No for URL; tester contacts private / No / No / No / Yes for contacts |
-| [ ] | Physical Android → install from internal testing | Device/OS/build and QA outcomes, including billing via Play installation | No for anonymized results / No / No / No / No |
+1. Open the app → Policy and programs → App content → App access (labelled **Sign-in details** in current Google help) → Start or Manage.
+2. Declare that some functionality is restricted by a subscription. Choose Add new instructions and name the entry “InOut Pro reviewer access”. There is no app-account username/password; explain the code mechanism in the access/other-instructions fields.
+3. Supply the actual reusable code privately with these steps: “Complete onboarding and choose Continue for free. Home → profile avatar → Settings → Plan & privacy → Pro & subscriptions → Reviewer access. Enter the supplied code and tap Unlock Pro. All premium Challenges and ad removal are now available. No account, email/password, SMS, OTP or payment is required. The code is reusable and location-independent; internet is needed for validation.”
+4. Save. In Publishing overview, include the updated instructions when sending the candidate for review. Follow the current [Google review access instructions](https://support.google.com/googleplay/android-developer/answer/9859455?hl=en).
+5. On a clean signed Play installation, confirm a new guest is Free, wrong code is rejected, the private code unlocks Comfort Hold, Sleep Reset, Focus Week, Consistency 10 and Beat Your Best, and ads are suppressed. Restart, remove reviewer access, confirm Free locks return, and verify an unrelated clean installation never receives the grant. Confirm rotation/revocation online and the one-hour offline limit. Refresh the private code expiry for the review period.
 
-## BEFORE STORE SUBMISSION
+**Challenge-specific device acceptance:** test comfortable Long Exhale/Comfort Hold only if suitable; leaving/backgrounding a running breath test must discard its timer. Resume Nasal 10 after background/restart, confirm both Yes and Not this time, and verify only Yes earns completion. Complete State Shift 60 with higher and lower post-ratings; verify honest deltas. Inspect EN/ES/PT, large text, screen readers, reduced motion and both share formats. State Shift ratings appear on a shared card only after the explicit include-ratings choice. No GPS, microphone, wearables or new account permissions are used.
 
-| Done | Exact console/service and action | Value needed afterward and where to store it | Secret / .env / EAS Secrets / Native config / Never commit |
-| --- | --- | --- | --- |
-| [ ] | Legal/content review → Privacy Policy, Terms, Subscription Terms, wellness disclaimer | Approved text/URLs covering actual billing, ads, consent, sharing and analytics behavior; release content/public pages | No / No / No / No / No |
-| [ ] | App Store Connect → App Privacy, age rating, review and subscription metadata | Completed answers based on final SDK inventory; reviewer instructions, real prices/trial terms and signed build | No / No / No / No / No |
-| [ ] | Play Console → App content → Data safety, ads, health, age/content and applicable declarations | Completed answers matching actual SDK behavior and consent; owner confirmation and release record | No / No / No / No / No |
-| [ ] | Both store consoles → territories, pricing, current testing/access requirements and final assets | Countries, final native screenshots, listing copy and acceptance evidence | No / No / No / No / No |
-| [ ] | Optional analytics provider → decide provider/project or explicitly retain local-only logger | If chosen: public client project key/endpoint in future public environment; administrative/server secrets only in provider/server vault. Return collection/retention decision | Public client key no; admin secret yes / Client public only / No client secrets / No / Yes for admin secrets |
-| [ ] | Owner final release review | Sign-off against every [launch gate](LAUNCH_PLAN.md#launch-gates); no submission while production integration evidence is missing | No / No / No / No / No |
+### 4. Advertising and consent
 
-### Official setup references
+- [ ] [AdMob](https://admob.google.com/) → Apps → InOut (Android and iOS): confirm the existing app, banner and interstitial IDs match `release/monetization.json`, app readiness and store links. Privacy & messaging: publish applicable messages using the approved privacy URL. Settings → Test devices: register phones before exercising your own units; confirm **Test Ad** labels and never click live ads. **Success:** banners only on Today/Progress; consent refusal/revisit works; no banner or interstitial request/preload for paid Pro or reviewer Pro; no ads during practice/challenge attempts, safety, onboarding or post check-in. Interstitials may appear only after a completed session when tapping Done, after three eligible completions, three minutes since app launch, ten minutes between ads, five minutes after a paywall, at most twice per UTC day. Verify cap persistence and no-fill/offline navigation. **Why manual:** UMP messages, audience/regions, live units and native delivery require your AdMob account and device acceptance; do not enable tracking/IDFA messaging unless the actual policy requires it. [UMP guidance](https://developers.google.com/admob/ios/privacy).
+- [ ] AdMob → Apps → app-ads.txt: provide the exact publisher record and a domain you control for the store developer website if requested; authorize publishing that record. **Success:** AdMob reports the file authorized. Attest to actual provider data/tracking in store forms; non-personalized ads alone do not settle those declarations.
 
-- Public versus private keys: [RevenueCat API keys](https://www.revenuecat.com/docs/projects/authentication); [Apple service credentials](https://www.revenuecat.com/docs/store-configuration/app-store/service-credentials-index).
-- Build environment handling: [Expo environment variables](https://docs.expo.dev/guides/environment-variables/) and [EAS environment usage](https://docs.expo.dev/eas/environment-variables/usage/).
-- Consent: [Google UMP for iOS](https://developers.google.com/admob/ios/privacy).
-- Verified links: [Expo iOS Universal Links](https://docs.expo.dev/linking/ios-universal-links/) and [linking overview](https://docs.expo.dev/linking/overview/).
+### 5. Physical-phone acceptance
 
-Console labels and requirements may evolve; verify provider guidance at configuration time. Setup values above are a handoff contract, not credentials already created.
+- [ ] Install matching signed candidates on a real Android phone and iPhone; record model/OS/build. Complete a calm session and review the separately gated high-intensity route only if personally appropriate. Judge EN/ES/PT cues, speaker/headphones/silent mode and vibration comfort with haptics on/off. Pause/resume, lock/background, receive a call/alarm and reopen. **Success:** comfortable coordinated cues, safe interruption pause, explicit resume and durable history. These sensory checks require a person and hardware.
+- [ ] Use TalkBack/VoiceOver, enlarged text and reduced motion. Complete onboarding, edit profile with keyboard open, inspect Progress/Calendar/Badges and share both card ratios to an actual destination. Save a reminder with permission granted/denied and verify delivery opens the intended practice without starting it. Open/start an exercise link in the phone browser/app; revoke and confirm a fresh browser request refuses it. **Success:** reachable/readable controls, useful announcements, no private notes/ratings in default milestone images and correct permissions/links. Approve final design and audio/haptic feel.
+
+### 6. Business/legal approval and submission
+
+- [ ] Review the live Vercel site at https://inout.imrtech.xyz. The site is already deployed; no GitHub Pages merge is needed for these live URLs. Keep the repository changes reviewed and retained for reproducible future deployments.
+
+- [ ] Reconcile the public operator **IMR Tech SpA** with the enrolling legal entity **IMR Technologies SpA**, then approve the operator name, support **davidclerc@imrtech.xyz**, launch countries/languages/audience, prices and any trial. Confirm support-mail delivery. Approve final Privacy, Safety, subscription terms and store copy against actual provider behavior and content rights. Public URLs: [Privacy](https://inout.imrtech.xyz/privacy), [Support](https://inout.imrtech.xyz/support). **Success:** explicit approval of business facts, precautions, rights and copy without medical-efficacy or affiliation claims.
+- [ ] Supabase InOut → Authentication → URL Configuration: allow exactly `https://inout.imrtech.xyz/delete-account` and `https://inout.imrtech.xyz/delete-data`; configure production Auth email delivery and abuse controls. Verify a link, confirm account/data request, retry without duplicates, reject an expired link, then fulfill a controlled request. The initial project had zero accounts; production mobile sign-up/sign-in still requires engineering implementation. Keep `accountsAndDeletionVerified=false` until that flow and fulfillment pass.
+- [ ] Assign an operator to monitor private `inout_private.privacy_requests` and **davidclerc@imrtech.xyz**. Confirm mailbox delivery, ownership verification, response timing, retention exceptions and provider cleanup. The endpoint queues a request; it does not automatically erase data. After fulfilling a request, remove its email/user ID when marking it completed; purge anonymous completed receipts after 90 days. Do not attest to partial deletion merely because the page exists.
+- [ ] Configure real `APP_STORE_URL` and `GOOGLE_PLAY_URL` at web build time (or `release/links.json`); until then download buttons remain hidden. `SUPPORT_EMAIL` can override the existing address. No service-role key belongs in Vercel/browser public configuration.
+
+- [ ] App Store Connect → InOut: complete App Privacy, age rating, content rights, export compliance and applicable publisher/trader declarations; App Review Information: reachable contact and private reviewer instructions/code. Play Console → InOut → Policy and programs → App content: complete Data safety, Ads, App access, audience, content rating and health-app declarations plus account-specific prompts. Use README's actual data inventory, including optional email, RevenueCat and AdMob. **Success:** no outstanding required console forms.
+- [ ] Approve exact signed builds/screenshots/listings and the seven `release/readiness.json` gates. App Store Connect: select accepted build/subscriptions and submit. Play Console: create the authorized production release after testing requirements. Choose rollout timing and a support/operator contact. **Success:** submission receipts, then approved listings and successful installations. Credential-dependent builds, packaging and evidence-backed gate updates are mechanical follow-up after access/sign-off; this checklist does not assign implementation work to the owner.
+
+## Optional / business decisions
+
+### Welcome email — required only when enabling delivery
+
+- [ ] [Resend](https://resend.com/domains) → Domains → Add Domain: enter a domain/subdomain you control, copy DNS records to your DNS provider and wait for **Verified**. API Keys → Create API Key: select sending permission scoped to that domain. Choose a real From address; keep open/click tracking disabled. [Domain verification](https://resend.com/docs/dashboard/domains/introduction).
+- [ ] Supabase InOut → Edge Functions → Secrets: set **`WELCOME_RESEND_API_KEY`** (private sending key), **`WELCOME_EMAIL_FROM`** (`InOut <actual-address@verified-domain>`), **`WELCOME_HASH_SALT`** (stable password-manager-generated secret, at least 32 random bytes), then **`WELCOME_EMAIL_ENABLED=true`**. Preserve the salt: changing it changes deduplication identity. **Success:** next opted-in request can send; no app rebuild. Set enabled to `false` to stop sending.
+- [ ] In the candidate, enter an address you control in onboarding/Profile, explicitly request the email, choose a goal and finish onboarding. Resend → Emails and inbox: confirm one localized personalized message and its CTA opens the recommended practice. Restart/retry and confirm no duplicate. **Success:** provider receipt plus real inbox/link acceptance. A `review` receipt requires checking provider delivery before resetting it; never blindly resend an uncertain delivery.
+
+### Verified HTTPS links and measurement
+
+- [ ] The domain is already configured at **inout.imrtech.xyz**. Supply the Apple Team ID, Play Console → App integrity → app-signing certificate SHA-256, and real store URLs. Root `.well-known` endpoints are live with empty declarations. Populate `release/links.json` with real values; prepared scripts consume them. **Success:** HTTPS links open the signed app with browser/store fallback. Existing custom-scheme/browser sharing does not require this optional domain setup.
+- [ ] Confirm the existing **no remote product analytics for v1** decision. No analytics account/key is needed. Future remote collection is a separate business/privacy decision; current events accept no private free text, goals, ratings or user identifiers.

@@ -1,5 +1,6 @@
+import { useTheme } from "../src/theme";
+import { useLanguage } from "../src/use-language";
 import { Stack } from "expo-router";
-import { StatusBar } from "expo-status-bar";
 import { useFonts } from "expo-font";
 import { Inter_400Regular } from "@expo-google-fonts/inter/400Regular";
 import { Inter_600SemiBold } from "@expo-google-fonts/inter/600SemiBold";
@@ -9,11 +10,24 @@ import { SpaceGrotesk_500Medium } from "@expo-google-fonts/space-grotesk/500Medi
 import { SpaceGrotesk_700Bold } from "@expo-google-fonts/space-grotesk/700Bold";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { SessionProvider } from "../src/provider";
-import { colors } from "@inout/design-tokens";
-import { Screen, Copy } from "../src/ui";
-export { ErrorBoundary } from "expo-router";
+
+import { Screen, Copy, Button } from "../src/ui";
+
+export function ErrorBoundary({ error, retry }: { error: Error; retry: () => void }) {
+  useLanguage();
+  return (
+    <SafeAreaProvider>
+      <Screen>
+        <Copy accessibilityRole="alert">Something went wrong. Your saved practice is still on this phone. Try reopening this screen.</Copy>
+        {__DEV__ && error.stack ? <Copy>{error.stack}</Copy> : null}
+        <Button title="Reload" onPress={retry} />
+      </Screen>
+    </SafeAreaProvider>
+  );
+}
 
 export default function RootLayout() {
+  useLanguage();
   const [loaded, error] = useFonts({
     Inter_400Regular,
     Inter_600SemiBold,
@@ -35,8 +49,16 @@ export default function RootLayout() {
     );
   return (
     <SafeAreaProvider>
-      <StatusBar style="light" />
       <SessionProvider>
+        <ThemedNavigator />
+      </SessionProvider>
+    </SafeAreaProvider>
+  );
+}
+
+function ThemedNavigator() {
+  const { colors } = useTheme();
+  return (
         <Stack
           screenOptions={{
             headerShown: false,
@@ -47,7 +69,5 @@ export default function RootLayout() {
           <Stack.Screen name="session" options={{ gestureEnabled: false }} />
           <Stack.Screen name="post" options={{ gestureEnabled: false }} />
         </Stack>
-      </SessionProvider>
-    </SafeAreaProvider>
   );
 }

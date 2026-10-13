@@ -1,0 +1,85 @@
+{0} consecutive day	{0} día consecutivo	{0} dia consecutivo
+{0} consecutive days	{0} días consecutivos	{0} dias consecutivos
+{0} sessions	{0} sesiones	{0} sessões
+{0} session	{0} sesión	{0} sessão
+{0} practice days	{0} días de práctica	{0} dias de prática
+{0} practice day	{0} día de práctica	{0} dia de prática
+{0} of {1} practice days	{0} de {1} días de práctica	{0} de {1} dias de prática
+{0} practice days this month	{0} días de práctica este mes	{0} dias de prática neste mês
+{0} practice day this month	{0} día de práctica este mes	{0} dia de prática neste mês
+{0} cycles	{0} ciclos	{0} ciclos
+{0} cycle	{0} ciclo	{0} ciclo
+{0} repeats	{0} repeticiones	{0} repetições
+{0} seconds	{0} segundos	{0} segundos
+{0} sec	{0} seg	{0} seg
+{0} days	{0} días	{0} dias
+{0} total	{0} en total	{0} no total
+{0} milestones	{0} hitos	{0} marcos
+{0} milestone	{0} hito	{0} marco
+{0} this {1}	{0} este {1}	{0} neste {1}
+Average {0}	Promedio {0}	Média {0}
+{0} average State Shift	Cambio medio en la tensión: {0}	Variação média da tensão: {0}
+average shift {0}	cambio medio: {0}	variação média: {0}
+Sessions per {0}	Sesiones por {0}	Sessões por {0}
+Time per {0}	Tiempo por {0}	Tempo por {0}
+{0} ({1} pairs)	{0} ({1} pares)	{0} ({1} pares)
+{0} paired ratings	{0} evaluaciones antes y después	{0} avaliações antes e depois
+No {0} sessions yet.	Aún no hay sesiones de {0}.	Ainda não há sessões de {0}.
+Block {0}	Bloque {0}	Bloco {0}
+Phase {0}	Fase {0}	Fase {0}
+Block {0} cycles	Ciclos del bloque {0}	Ciclos do bloco {0}
+Phase {0} seconds	Segundos de la fase {0}	Segundos da fase {0}
+Add {0}	Agregar {0}	Adicionar {0}
+Start {0}	Empezar {0}	Iniciar {0}
+Delete {0} session	Eliminar sesión de {0}	Excluir sessão de {0}
+{0} will remain available in Protocols.	{0} seguirá disponible en Protocolos.	{0} continuará disponível em Protocolos.
+{0} copy	Copia de {0}	Cópia de {0}
+This week's goal stays at {0} days. Changes apply from next week.	La meta de esta semana sigue en {0} días. Los cambios se aplican desde la próxima semana.	A meta desta semana continua em {0} dias. As mudanças valem a partir da próxima semana.
+{0} palette with {1} bubble	Paleta {0} con burbuja {1}	Paleta {0} com bolha {1}
+Next demo purchase: {0}	Próxima compra de demostración: {0}	Próxima compra de demonstração: {0}
+Next purchase: {0}	Próxima compra: {0}	Próxima compra: {0}
+Simulate {0}	Simular {0}	Simular {0}
+You can contact {0} from your email app.	Puedes contactar a {0} desde tu app de correo.	Você pode contatar {0} pelo seu app de e-mail.
+Tension {0}/10	Tensión {0}/10	Tensão {0}/10
+no pre-rating	sin evaluación previa	sem avaliação prévia
+Tension down {0} point	La tensión bajó {0} punto	A tensão diminuiu {0} ponto
+Tension down {0} points	La tensión bajó {0} puntos	A tensão diminuiu {0} pontos
+Tension up {0} point	La tensión subió {0} punto	A tensão aumentou {0} ponto
+Tension up {0} points	La tensión subió {0} puntos	A tensão aumentou {0} pontos
+{0}. {1} seconds remaining. Cycle {2} of {3}	{0}. Quedan {1} segundos. Ciclo {2} de {3}	{0}. Restam {1} segundos. Ciclo {2} de {3}
+{0}, left nostril	{0}, fosa nasal izquierda	{0}, narina esquerda
+{0}, right nostril	{0}, fosa nasal derecha	{0}, narina direita
+{0}. left nostril	{0}. Fosa nasal izquierda	{0}. Narina esquerda
+{0}. right nostril	{0}. Fosa nasal derecha	{0}. Narina direita
+{0}: practiced	{0}: con práctica	{0}: com prática
+{0}: no practice	{0}: sin práctica	{0}: sem prática
+{0}, practiced, view sessions	{0}, con práctica, ver sesiones	{0}, com prática, ver sessões
+{0}, no practice	{0}, sin práctica	{0}, sem prática
+{0} of 10	{0} de 10	{0} de 10
+{0} of 10, very relaxed	{0} de 10, muy relajado	{0} de 10, muito relaxado
+{0} of 10, very tense	{0} de 10, mucha tensión	{0} de 10, muita tensão
+{0}s {1}	{0}s {1}	{0}s {1}
+{0} {1}s	{0} {1}s	{0} {1}s
+{0} must be a whole number from {1} to {2}.	{0} debe ser un número entero entre {1} y {2}.	{0} deve ser um número inteiro entre {1} e {2}.
+Free includes {0} saved {1}. Edit an existing routine, use this draft without saving, or explore Pro.	Puedes guardar hasta {0} {1} gratis. Edita una rutina, practica sin guardar o descubre Pro.	Você pode salvar até {0} {1} grátis. Edite uma rotina, pratique sem salvar ou conheça o Pro.
+Next: {0}	Siguiente: {0}	A seguir: {0}
+Recommended for {0}	Recomendado para {0}	Recomendado para {0}
+Next unlock: {0}	Próxima recompensa: {0}	Próxima conquista: {0}
+Best: {0} days · Next milestone: {1} days ({2} to go).	Mejor racha: {0} días · Próxima meta: {1} días (te quedan {2}).	Maior sequência: {0} dias · Próxima meta: {1} dias (faltam {2}).
+Weekly average: {0} over the last 12 weeks.	Promedio semanal: {0} en las últimas 12 semanas.	Média semanal: {0} nas últimas 12 semanas.
+Cycle {0}	Ciclo {0}	Ciclo {0}
+{0} saved routines	{0} rutinas guardadas	{0} rotinas salvas
+{0} saved routine	{0} rutina guardada	{0} rotina salva
+{0} logged sessions	{0} sesiones registradas	{0} sessões registradas
+{0} logged session	{0} sesión registrada	{0} sessão registrada
+Since {0}	Desde {0}	Desde {0}
+Version {0}	Versión {0}	Versão {0}
+Effective {0}	Vigente desde {0}	Vigente desde {0}
+Published by {0}	Publicado por {0}	Publicado por {0}
+Privacy questions: {0}	Consultas sobre privacidad: {0}	Dúvidas sobre privacidade: {0}
+Sessions on {0}	Sesiones del {0}	Sessões de {0}
+Contact {0}. Your session history is not attached automatically.	Contacta a {0}. Tu historial de sesiones no se adjunta automáticamente.	Contate {0}. Seu histórico de sessões não é anexado automaticamente.
+Average from {0} completed sessions with paired ratings. Positive values mean lower tension. These are your observations, not a measure of clinical benefit.	Promedio de {0} sesiones completas con evaluaciones antes y después. Los valores positivos indican menor tensión. Son tus observaciones, no una medida de beneficio clínico.	Média de {0} sessões concluídas com avaliações antes e depois. Os valores positivos indicam menor tensão. São suas observações, não uma medida de benefício clínico.
+{0} remaining	{0} restantes	{0} restantes
+{0} total practice days	{0} días de práctica en total	{0} dias de prática no total
+{0} total time	{0} de tiempo total	{0} de tempo total

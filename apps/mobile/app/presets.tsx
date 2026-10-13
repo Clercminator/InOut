@@ -1,2 +1,4 @@
+import { useLanguage } from "../src/use-language";
 import { RoutineLibrary } from "../src/routine-library";
-export default function Library() { return <RoutineLibrary kind="pattern" />; }
+export default function Library() {
+  useLanguage(); return <RoutineLibrary kind="pattern" />; }

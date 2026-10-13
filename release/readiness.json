@@ -6,6 +6,7 @@
     "sharingVerified": false,
     "analyticsDecisionVerified": false,
     "nativeDeviceAcceptance": false,
-    "metadataAndLegalApproved": false
+    "metadataAndLegalApproved": false,
+    "accountsAndDeletionVerified": false
   }
 }

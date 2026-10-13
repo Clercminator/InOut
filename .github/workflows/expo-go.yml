@@ -1,0 +1,42 @@
+name: Expo Go verification
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  expo-go:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run verify
+      - name: Start Metro for Expo Go
+        run: |
+          mkdir -p artifacts/expo-go
+          CI=1 npm run start:go -- --localhost --port 8081 > artifacts/expo-go/metro.log 2>&1 &
+          for attempt in $(seq 1 60); do
+            if curl -fsS http://localhost:8081/status; then break; fi
+            sleep 2
+          done
+          curl -fsS http://localhost:8081/status
+      - name: Enable emulator acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          script: python scripts/expo-go-smoke.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: expo-go-runtime-evidence
+          path: artifacts/expo-go/
