@@ -2,6 +2,8 @@
 
 Updated October 13, 2026. Only account, credential, legal, store and physical-device actions remain here. Engineering evidence belongs in README. Record acceptance with date, candidate commit/build, device/OS, result and approver. Private keys, reviewer codes and identity documents stay in the relevant secure service.
 
+Signed Android internal-test candidate: `artifacts/final-launch-check/inout-1.0.0-3-store-test.aab` - version 1.0.0 (3), package `com.imrtech.inout`. [EAS build](https://expo.dev/accounts/imr-tech/projects/inout/builds/3b526366-125a-4e93-bd44-4219e765d314) succeeded. Signature and upload-certificate match verified; target API 36, non-debuggable, 56 native libraries passed 16 KB ELF checks. This candidate uses test ads and requires Play-installed purchase/restore/consent acceptance. Upload certificate SHA-256: `F4:B3:B0:19:3A:FC:F9:5D:62:1E:61:38:28:B7:64:94:C4:AD:A9:EC:CD:44:D6:BB:4E:94:28:B0:66:43:E9:9F`. Obtain the separate Play App Signing certificate for verified links.
+
 ## Required before store submission
 
 ### 1. Publisher accounts and signing access
