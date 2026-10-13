@@ -3,8 +3,6 @@ import { typography } from "@inout/design-tokens";
 import { Pressable } from "../../src/localized-native";
 import { ChallengeArt } from "../../src/challenge-art";
 import { PulseArtwork } from "../../src/pulse-orb";
-import { challengeCatalog } from "../../src/challenges";
-import { ChallengeProgress } from "../../src/challenge-ui";
 import { photoUri } from "../../src/profile-photo";
 import { duration } from "../../src/format";
 import { useTheme } from "../../src/theme";
@@ -43,8 +41,6 @@ export default function Today() {
   const recommendation = useMemo(() => recommendPractice(goal, records, id => controller.entitlements.protocolAccess({ id }).allowed), [goal, records, pro, controller]);
   const recent = records.find(r => r.source !== "manual" && protocols.some(p => p.id === r.protocolId));
   const returning = welcomeMessage(records);
-  const activeChallenge = controller.challenges().find(s => s.status === "active");
-  const challenge = challengeCatalog().find(d => d.id === activeChallenge?.challengeId);
   const [photoFailed, setPhotoFailed] = useState(false);
   return <Screen tabScreen hideHeader>
     <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 8 }}>
@@ -76,13 +72,12 @@ export default function Today() {
       <QuickTile title="Create your rhythm" icon="graphic-eq" onPress={() => router.push("/custom-pattern")} />
       <QuickTile title="Learn breathing" icon="school" onPress={() => router.push("/learn")} />
     </View>
-    <Card><Label>CHALLENGE</Label>{challenge ? <><Title>{challenge.title}</Title><ChallengeProgress definition={challenge} state={activeChallenge} /></> : <><Title>Try your first challenge</Title><Copy>Small steps. A habit that feels like you.</Copy></>}<ActionRow title={challenge ? "Continue challenge" : "Explore challenges"} icon="emoji-events" onPress={() => router.push("/(tabs)/challenges")} /></Card>
     {(favorite || recent) && <Card><Label>YOUR FAMILIAR RHYTHMS</Label>
       {favorite && <Button translate={false} title={message("Start {0}", [favorite.name])} disabled={!!controller.error || (!!current && current.stage !== "result")} onPress={() => { if (isCyclic(favorite.protocol)) router.push({ pathname: "/pre", params: { ritualId: favorite.id } }); else if (controller.startRitual(favorite.id)) router.push("/session"); }} />}
       {recent && <Button title={message("Start {0}", [protocolTitle(protocols.find(p => p.id === recent.protocolId)!)])} secondary onPress={() => router.push({ pathname: "/pre", params: { id: recent.protocolId } })} />}
       <ActionRow title="My rituals" icon="auto-awesome" onPress={() => router.push("/rituals")} />
     </Card>}
-    <WeeklyGoal /><Card><ActionRow title="View progress" icon="insights" onPress={() => router.push("/(tabs)/progress")} /></Card><AdSlot placement="today" />
+    <WeeklyGoal /><AdSlot placement="today" />
   </Screen>;
 }
 

@@ -1,3 +1,5 @@
+import { AchievementMark } from "../src/achievement-mark";
+import { achievementProgress } from "../src/achievements";
 import { useEffect, useRef, useState } from "react";
 import { Platform, Share, View, useWindowDimensions } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
@@ -20,6 +22,7 @@ export default function Milestone() {
   const busyRef = useRef(false), card = useRef<View>(null);
   const stats = practiceStats(controller.history());
   const earned = controller.rewards().badges.find(b => b.id === badge);
+  const badgeDefinition = achievementProgress(controller.history()).find(item => item.id === badge);
   const title = earned?.label ?? message("{0} day streak", [stats.current]);
   useEffect(() => { controller.analytics.track("achievement_view"); }, [controller]);
   if ((badge && !earned) || (!badge && stats.current < 3)) return <BackScreen title="MILESTONE"><Title>Your next milestone is ahead.</Title><Copy>Share after earning a badge or reaching a three-day streak.</Copy></BackScreen>;
@@ -27,10 +30,11 @@ export default function Milestone() {
   const scale = cardWidth / 360;
   return <BackScreen title="SHARE YOUR PRACTICE"><Title>A moment worth keeping.</Title>
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}><Chip title="Story · 9:16" selected={story} onPress={() => setStory(true)} /><Chip title="Square · 1:1" selected={!story} onPress={() => setStory(false)} /></View>
-    <View ref={card} collapsable={false} style={{ alignSelf: "center", width: cardWidth, aspectRatio: story ? 9 / 16 : 1, padding: 26 * scale, borderRadius: 24, backgroundColor: "#EAF5F6", justifyContent: "space-between", overflow: "hidden" }}>
+    <View testID="achievement-share-artwork" ref={card} collapsable={false} style={{ alignSelf: "center", width: cardWidth, aspectRatio: story ? 9 / 16 : 1, padding: 26 * scale, borderRadius: 24, backgroundColor: "#EAF5F6", justifyContent: "space-between", overflow: "hidden" }}>
       <Copy allowFontScaling={false} style={{ color: "#124F59", fontSize: 20 * scale, lineHeight: 24 * scale, fontWeight: "800", letterSpacing: 3 }}>IN/OUT</Copy>
-      <View style={{ alignItems: "center", gap: (story ? 20 : 10) * scale }}><View style={{ padding: (story ? 28 : 14) * scale, borderRadius: 80, backgroundColor: "#F5B52C" }}><MaterialIcons name="workspace-premium" size={(story ? 68 : 36) * scale} color="#124F59" /></View>
+      <View style={{ alignItems: "center", gap: (story ? 20 : 10) * scale }}><AchievementMark icon={badgeDefinition?.icon} size={(story ? 120 : 76) * scale} />
         <Copy numberOfLines={3} adjustsFontSizeToFit minimumFontScale={0.7} allowFontScaling={false} style={{ color: "#124F59", fontSize: (story ? 36 : 26) * scale, lineHeight: (story ? 42 : 30) * scale, textAlign: "center", fontWeight: "800" }}>{title}</Copy>
+        {earned && <Copy allowFontScaling={false} style={{ color: "#41636A", fontSize: 12 * scale, lineHeight: 16 * scale }}>{earned.date}</Copy>}
         {includeTime && <Copy allowFontScaling={false} style={{ color: "#41636A", fontSize: 14 * scale, lineHeight: 18 * scale, textAlign: "center" }}>{statsDuration(stats.totalMs)} · {t("total breathing time")}</Copy>}
       </View>
       <View style={{ gap: 8 }}><Copy allowFontScaling={false} style={{ color: "#124F59", fontSize: 13 * scale, lineHeight: 17 * scale, textAlign: "center" }}>Small breaths. Consistent practice.</Copy><Copy allowFontScaling={false} style={{ color: "#41636A", fontSize: 10 * scale, lineHeight: 14 * scale, textAlign: "center" }}>{info.supportUrl.replace("https://", "")}</Copy></View>

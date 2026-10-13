@@ -4,8 +4,17 @@ import { act, fireEvent, render, screen } from "@testing-library/react-native";
 import { snapshot, start } from "@inout/breathing-engine";
 import Testing, { testingPlan } from "../app/testing";
 import { PulseOrb } from "../src/pulse-orb";
+import { protocols, planFor } from "@inout/protocols";
 
 jest.mock("expo-router", () => ({ useFocusEffect: jest.fn(), router: { canGoBack: () => false, replace: jest.fn() } }));
+
+test("native ribbons remain still during holds", async () => {
+  jest.spyOn(AccessibilityInfo, "isReduceMotionEnabled").mockResolvedValue(false);
+  const timing = jest.spyOn(Animated, "timing");
+  const box = protocols.find(p => p.id === "box")!;
+  await render(<PulseOrb view={snapshot(start(planFor(box), 0), 5000)} phases={box.phases} running />);
+  expect(timing).not.toHaveBeenCalled();
+});
 afterEach(() => { jest.restoreAllMocks(); jest.useRealTimers(); });
 
 test("orb respects reduced motion and does not schedule animation", async () => {
@@ -22,15 +31,15 @@ test("orb uses remaining phase time, avoids restarting on ticks, and cancels on 
   const timing = jest.spyOn(Animated, "timing").mockImplementation(() => ({ start: jest.fn(), stop, reset: jest.fn() }));
   const state = start(testingPlan, 0);
   const rendered = await render(<PulseOrb view={snapshot(state, 2000)} phases={testingPlan.blocks[0].phases} running />);
-  expect(timing).toHaveBeenCalledTimes(2);
+  expect(timing).toHaveBeenCalledTimes(1);
   expect(timing.mock.calls[0][1]).toMatchObject({ duration: 3000, toValue: 1, useNativeDriver: true, isInteraction: false });
   await rendered.rerender(<PulseOrb view={snapshot(state, 2100)} phases={testingPlan.blocks[0].phases} running />);
-  expect(timing).toHaveBeenCalledTimes(2);
+  expect(timing).toHaveBeenCalledTimes(1);
   await rendered.rerender(<PulseOrb view={snapshot(state, 2200)} phases={testingPlan.blocks[0].phases} running={false} />);
   expect(stop).toHaveBeenCalled();
-  expect(timing).toHaveBeenCalledTimes(2);
+  expect(timing).toHaveBeenCalledTimes(1);
   await rendered.rerender(<PulseOrb view={snapshot(state, 2200)} phases={testingPlan.blocks[0].phases} running motionEnabled={false} />);
-  expect(timing).toHaveBeenCalledTimes(2);
+  expect(timing).toHaveBeenCalledTimes(1);
 });
 
 test("testing starts on demand, pauses in background, resumes without counting background time and restarts", async () => {

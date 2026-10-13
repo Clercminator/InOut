@@ -1,3 +1,4 @@
+import { AchievementCard } from "./achievement-card";
 import { View } from "react-native";
 import { AchievementMark } from "./achievement-mark";
 import { router } from "expo-router";
@@ -16,18 +17,15 @@ export function AchievementGallery() {
   return <View style={{ gap: 16 }}><Label>CHALLENGE BADGES</Label>{challengeCatalog().map(current => {
     const d = definitionForState(current, challenges.find(s => s.challengeId === current.id));
     const state = challenges.find(s => s.challengeId === d.id), earned = ledger.badges.some(b => b.id === `challenge-${d.id}`);
-    return <Card key={d.id} style={{ backgroundColor: earned ? colors.reward + "0C" : colors.card }}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}><AchievementMark earned={earned} size={64} /><View style={{ flex: 1, gap: 4 }}><Label>{d.title}</Label><Copy>{d.description}</Copy></View></View>
-      <ChallengeProgress definition={d} state={state} />
-      <Button title={earned ? "View achievement" : "View challenge"} secondary onPress={() => router.push({ pathname: earned ? "/challenge-complete" : "/challenge", params: { id: d.id } })} />
-    </Card>;
+    return <AchievementCard key={d.id} title={d.title} description={d.description}
+      earnedDate={ledger.badges.find(b => b.id === `challenge-${d.id}`)?.date} progress={state?.progress ?? 0} target={d.targetCount}
+      action={earned ? "View achievement" : "View challenge"}
+      onPress={() => router.push({ pathname: earned ? "/challenge-complete" : "/challenge", params: { id: d.id } })} />;
   })}<Label>PRACTICE BADGES</Label>{definitions.map(badge => {
     const earned = ledger.badges.find(b => b.id === badge.id);
-    return <Card key={badge.id} style={{ backgroundColor: earned ? colors.reward + "0C" : colors.card }}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}><AchievementMark earned={!!earned} icon={badge.icon} size={64} /><View style={{ flex: 1, gap: 4 }}><Label>{badge.title}</Label><Copy>{badge.description}</Copy></View></View>
-      <Copy>{earned ? message("Earned {0}", [earned.date]) : message("{0} / {1}", [Math.floor(badge.progress), badge.conditionValue])}</Copy>
-      {!earned && <View accessibilityRole="progressbar" accessibilityLabel={badge.title} accessibilityValue={{ min: 0, max: badge.conditionValue, now: badge.progress }} style={{ height: 6, borderRadius: 3, backgroundColor: colors.border }}><View style={{ height: 6, borderRadius: 3, width: `${100 * badge.progress / badge.conditionValue}%`, backgroundColor: colors.accent }} /></View>}
-      {earned && <Button title="Share achievement" secondary onPress={() => router.push({ pathname: "/milestone", params: { badge: badge.id } })} />}
-    </Card>;
+    return <AchievementCard key={badge.id} title={badge.title} description={badge.description} icon={badge.icon}
+      earnedDate={earned?.date} progress={badge.progress} target={badge.conditionValue}
+      action={earned ? "Share achievement" : "Start practice"}
+      onPress={() => earned ? router.push({ pathname: "/milestone", params: { badge: badge.id } }) : router.push("/protocols")} />;
   })}{ledger.badges.filter(b => !definitions.some(d => d.id === b.id) && !challengeCatalog().some(d => b.id === `challenge-${d.id}`)).map(b => <Card key={b.id}><Label>{b.label}</Label><Copy>{b.date}</Copy><Button title="Share achievement" secondary onPress={() => router.push({ pathname: "/milestone", params: { badge: b.id } })} /></Card>)}</View>;
 }

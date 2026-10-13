@@ -83,7 +83,7 @@ export default function Pre() {
         </Copy>
       </View>
       {intense && <><CyclicOverview compact /><Card><CyclicSafety /><Chip title="I have read the precautions and I am in a safe place" selected={confirmed} onPress={() => setConfirmed(!confirmed)} /></Card></>}
-      <Title>How tense are you right now?</Title>
+      <Copy accessibilityRole="header" style={{ fontSize: 24, lineHeight: 32, fontWeight: "700" }}>How tense are you right now?</Copy>
       <GuidanceAllowance />
       {controller.preferences.audio === "voice" && !controller.guidedAccess().allowed && <Copy>Your guided allowance is used. This session will use tones. You can still breathe for free.</Copy>}
       <Copy>Optional check-in. You can skip it and start breathing.</Copy>

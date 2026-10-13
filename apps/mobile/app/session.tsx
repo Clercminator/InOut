@@ -6,9 +6,9 @@ import { useCallback, useEffect } from "react";
 import { BackHandler, View, useWindowDimensions } from "react-native";
 import { Redirect, router, useFocusEffect } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
-import { Screen, Label, Title, Copy, Button, useStyles } from "../src/ui";
+import { Screen, Label, Title, Copy, Button, ActionFooter, useStyles } from "../src/ui";
 import { useSession, SaveError } from "../src/provider";
-import { SighVisual } from "../src/sigh-visual";
+import { PulseSessionVisual } from "../src/pulse-session-visual";
 
 import { breathingGuidance } from "../src/breathing-guidance";
 import { practiceDuration } from "../src/format";
@@ -84,6 +84,7 @@ export default function Session() {
     <Screen
       title="ACTIVE SESSION"
       footer={
+        <ActionFooter>
         <View
           testID="session-controls"
           style={{
@@ -108,6 +109,7 @@ export default function Session() {
             </View>
           </View>
         </View>
+        </ActionFooter>
       }
     >
       <Title translate={false}>{recordTitle(record)}</Title>
@@ -129,17 +131,16 @@ export default function Session() {
         </Copy>
       )}
       <LinearGradient
-        colors={[colors.sessionSurface, colors.lowest]}
+        colors={["#171029", "#0E0A19"]}
         style={[s.card, { padding: 16, borderWidth: 1, borderColor: colors.sessionBorder, borderRadius: 24 }]}
       >
-        <SighVisual
+        <PulseSessionVisual
           view={view}
           running={running}
-          animationType={animationType}
           phases={record.engine.plan.blocks[view.blockIndex].phases}
           cycleLabel={intense ? block.cycles === 30 ? message("Breath {0} of 30", [view.currentCycle]) : view.phase.type === "retention" ? "Optional retention" : "Recovery breath" : undefined}
         />
-        <Copy style={[s.small, { textAlign: "center" }]}>Next: {nextLabel}</Copy>
+        <Copy style={[s.small, { textAlign: "center", color: "#E2D6F5" }]}>Next: {nextLabel}</Copy>
         <View style={s.row}>
           {record.engine.plan.blocks[view.blockIndex].phases.map((phase, i) => phase.durationMs > 0 && (
             <View key={i} style={{ flexGrow: 1, flexBasis: 100 * fontScale, maxWidth: "100%", gap: 8 }}>
@@ -151,8 +152,8 @@ export default function Session() {
                     i === view.phaseIndex ? colors.accent : colors.border,
                 }}
               />
-              <Copy style={[s.small, { color: i === view.phaseIndex ? colors.text : colors.muted }]}>{breathingGuidance(record.engine.plan.blocks[view.blockIndex].phases, i).label.toUpperCase()}</Copy>
-              <Copy style={[s.small, { color: colors.muted }]}>{phase.durationMs / 1000}s</Copy>
+              <Copy style={[s.small, { color: i === view.phaseIndex ? "#FFFFFF" : "#C5B5DB" }]}>{breathingGuidance(record.engine.plan.blocks[view.blockIndex].phases, i).label.toUpperCase()}</Copy>
+              <Copy style={[s.small, { color: "#C5B5DB" }]}>{phase.durationMs / 1000}s</Copy>
             </View>
           ))}
         </View>

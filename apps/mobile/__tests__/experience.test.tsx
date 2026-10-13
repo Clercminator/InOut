@@ -450,8 +450,8 @@ test("Home exposes profile and practice gateways without Settings or a personali
   expect(mockPush).toHaveBeenLastCalledWith("/protocols");
   await fireEvent.press(screen.getByRole("button", { name: "Create" }));
   expect(mockPush).toHaveBeenLastCalledWith("/custom");
-  await fireEvent.press(screen.getByRole("button", { name: "Explore challenges" }));
-  expect(mockPush).toHaveBeenLastCalledWith("/(tabs)/challenges");
+  expect(screen.queryByRole("button", { name: "Explore challenges" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "View progress" })).toBeNull();
 });
 
 test.each(["en", "es", "pt"] as const)("Long Exhale saves an actual timed attempt with a localized result in %s", async language => {
