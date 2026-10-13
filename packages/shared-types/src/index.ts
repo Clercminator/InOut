@@ -87,6 +87,7 @@ export interface SessionRecord {
   endReason: "completed" | "ended" | "unwell" | null;
 }
 export interface Preferences {
+  telemetryEnabled?: boolean;
   welcomeEmail?: { email: string; consentAt: number; status: "pending" | "sent" | "review" };
   journey?: OnboardingJourney;
   theme?: "system" | "light" | "dark";

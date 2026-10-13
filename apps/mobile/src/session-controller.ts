@@ -403,6 +403,7 @@ export class SessionController {
       const previous = this.preferences.journey;
       this.store.savePreferences(preferences);
       this.preferences = preferences;
+      this.analytics.setConsent(preferences.telemetryEnabled === true);
       const journey = preferences.journey;
       if (journey?.primaryGoal && journey.primaryGoal !== previous?.primaryGoal) this.analytics.track("onboarding_goal_selected");
       if (journey?.step === "value" && previous?.step !== "value") this.analytics.track("onboarding_value_viewed");
@@ -517,6 +518,7 @@ export class SessionController {
       this.rewardCache = null;
       this.latestAwards = [];
       this.preferences = { ...defaultPreferences };
+      this.analytics.setConsent(false);
       setLanguage("en");
       this.pendingPreferences = null;
       this.sessionError = null;

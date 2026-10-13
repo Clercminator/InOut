@@ -217,6 +217,7 @@ export class LocalStore {
       throw new Error("Saved settings could not be read.");
     return {
       ...p,
+      telemetryEnabled: p.telemetryEnabled === true,
       theme: ["system", "light", "dark"].includes(p.theme) ? p.theme : "system",
       language: ["en", "es", "pt"].includes(p.language) ? p.language : "en",
       favoriteProtocolIds: p.favoriteProtocolIds ?? [],

@@ -32,6 +32,15 @@ export default function Settings() {
       <Disclosure title="Plan & privacy" icon="credit-card">
         <Copy>{commercial?.entitlements.state.pro ? "Pro" : "Free"} · All ten breathing protocols included</Copy>
         <ActionRow title="Pro & subscriptions" icon="credit-card" onPress={() => router.push("/pro")} />
+        {commercial?.analytics.remoteAvailable && <>
+          <View style={s.row}>
+            <Copy>Share usage & crash reports</Copy>
+            <Switch accessibilityLabel={t("Share usage & crash reports")} value={preferences.telemetryEnabled === true}
+              onValueChange={value => controller.setPreferences({ ...preferences, telemetryEnabled: value })}
+              trackColor={{ true: colors.blue }} />
+          </View>
+          <Copy style={s.small}>Optional. Help improve IN/OUT with basic usage and crash reports through Google Firebase. No breathing ratings or profile details are sent. Turn off anytime.</Copy>
+        </>}
         <ActionRow title="Ad privacy options" icon="privacy-tip" onPress={() => {
           if (!commercial || commercial.ads.mode === "preview") { Alert.alert("Native build required", "Ad privacy choices are available in a native development build."); return; }
           void commercial.ads.privacyOptions().then(() => Alert.alert("Privacy options", "Your available ad privacy choices have been reviewed.")).catch(() => Alert.alert("Privacy options unavailable", "No new ad request was made. Try again when connected."));

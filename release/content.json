@@ -1,9 +1,9 @@
 {
-  "updated": "2026-10-08",
+  "updated": "2026-10-12",
   "privacy": [
     {
-      "title": "Development build and launch scope",
-      "body": "This policy describes a development build preparing commercial v1. RevenueCat subscription and Google AdMob consent/banner adapters are included. Without store configuration, billing is unavailable in release builds and simulated with no charge in development. Native ads default to Google test units and load only after an explicit test-ad action. Live inventory requires the UMP privacy flow. These are not production integration acceptance. Final Privacy and Subscription Terms require review before launch."
+      "title": "IN/OUT and this policy",
+      "body": "IN/OUT is a wellness app operated by IMR Tech SpA, not a medical device. Core practice works without an account. Pro subscriptions use RevenueCat and the app store. Free users may see ads on eligible screens after Google privacy checks; ads never interrupt an active practice. Store-test builds use Google test ads."
     },
     {
       "title": "Your practice data",
@@ -11,7 +11,7 @@
     },
     {
       "title": "Collection and sharing",
-      "body": "Practice history and tension ratings remain local and are not passed to advertising or analytics. With configured store keys, RevenueCat and the app stores process purchase, entitlement and app-user identifier information to provide subscriptions and restoration. When you review ad privacy choices and load a native test ad, Google consent/ad services receive the requests needed to provide those services. Production ad configuration is not enabled by default. The developer event logger accepts event names only, has no remote analytics sink and runs only in development. Audio and fonts are bundled. When you choose Share result, the shown text is passed to the service you select; that service receives the shared copy. Exercise sharing uploads breathing timings and any nostril instructions to a Supabase-hosted database, without names, ratings or notes. Anyone with the short link can open it until it expires after 30 days or is revoked by its creator. Revocation removes the stored cadence and prevents future loads; it cannot erase copies already downloaded. A separate revocation secret stays on the creator's phone. Sharing services receive ordinary network request information. The browser exercise stores no history and sends no analytics."
+      "body": "Practice history and tension ratings remain local and are not passed to advertising or analytics. With configured store keys, RevenueCat and the app stores process purchase, entitlement and app-user identifier information to provide subscriptions and restoration. Google AdMob processes ad interactions, device identifiers, diagnostics and approximate location inferred from network information for advertising, measurement and fraud prevention, subject to Google privacy choices. Ads load automatically only on eligible Free screens after consent and billing checks. Optional Firebase Analytics and Crashlytics are off by default. Enable Share usage & crash reports in Settings to send basic event counts, app/device diagnostics and crash reports. No breathing ratings, profile details, custom routine names or purchase receipts are sent to Firebase. Turn the option off to stop collection and reset the local analytics identifier. Google processes analytics installation identifiers and network information; provider retention rules apply. Audio and fonts are bundled. When you choose Share result, the shown text is passed to the service you select; that service receives the shared copy. Exercise sharing uploads breathing timings and any nostril instructions to a Supabase-hosted database, without names, ratings or notes. Anyone with the short link can open it until it expires after 30 days or is revoked by its creator. Revocation removes the stored cadence and prevents future loads; it cannot erase copies already downloaded. A separate revocation secret stays on the creator's phone. Sharing services receive ordinary network request information. The browser exercise stores no history and sends no analytics."
     },
     {
       "title": "Device backups and security",

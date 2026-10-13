@@ -19,7 +19,12 @@ export function createCommercialServices(store: LocalStore): CommercialServices 
     iosKey: process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY, androidKey: process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY,
   });
   const entitlements = new EntitlementService(development, Date.now, native && configuration && !configuration.testStore ? secureEntitlementCache(development ? "debug" : "store") : undefined);
-  const analytics = new AnalyticsService(development ? { record: (event) => console.info(`[IN/OUT dev event] ${event}`) } : undefined);
+  let sink;
+  if (native && Platform.OS === "android" && Constants.expoConfig?.extra?.firebaseConfigured) {
+    try { sink = require("./telemetry-native").firebaseTelemetry(); } catch { /* Telemetry never prevents offline practice. */ }
+  }
+  const analytics = new AnalyticsService(sink ?? (development ? { record: (event) => console.info(`[IN/OUT dev event] ${event}`) } : undefined));
+  analytics.setConsent(store.preferences().telemetryEnabled === true);
   let adapter = unavailableSubscriptions;
   if (configuration && native) {
     try { adapter = revenueCatAdapter(configuration.key, configuration.testStore); } catch { /* A missing native SDK must not prevent breathing. */ }

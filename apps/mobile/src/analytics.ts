@@ -14,10 +14,12 @@ export const productEvents = [
 export type ProductEvent = typeof productEvents[number];
 export const paywallSources = ["onboarding", "profile", "protocol", "quota", "insights", "custom", "reminders", "challenges", "other"] as const;
 export type PaywallSource = typeof paywallSources[number];
-export interface AnalyticsSink { record(event: ProductEvent, context?: { source: PaywallSource }): void; }
+export interface AnalyticsSink { record(event: ProductEvent, context?: { source: PaywallSource }): void; setConsent?(enabled: boolean): Promise<void>; }
 // Only the finite paywall source is accepted as context; ratings, free text and identifiers are excluded.
 export class AnalyticsService {
   constructor(private sink?: AnalyticsSink) {}
+  get remoteAvailable() { return !!this.sink?.setConsent; }
+  setConsent(enabled: boolean) { void this.sink?.setConsent?.(enabled).catch(() => {}); }
   paywallSource(value: string) {
     const source = paywallSources.includes(value as PaywallSource) ? value as PaywallSource : "other";
     try { this.sink?.record("paywall_source", { source }); } catch { /* No measurement may block practice. */ }

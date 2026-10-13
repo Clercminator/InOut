@@ -6,12 +6,14 @@ export default ({ config }: ConfigContext) => {
   if (errors.length) throw new Error(errors.join("\n"));
   const links = require("../../release/links.json");
   const { admob } = require("../../release/monetization.json");
+  const googleServicesFile = process.env.GOOGLE_SERVICES_JSON;
   return ({
   ...config,
-  extra: { ...config.extra, ...(process.env.EXPO_PUBLIC_EAS_PROJECT_ID ? { eas: { projectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID } } : {}) },
+  extra: { ...config.extra, firebaseConfigured: !!googleServicesFile, ...(process.env.EXPO_PUBLIC_EAS_PROJECT_ID ? { eas: { projectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID } } : {}) },
   ios: { ...config.ios, ...(links.origin && links.appleTeamId ? { appleTeamId: links.appleTeamId, associatedDomains: [`applinks:${new URL(links.origin).host}`] } : {}) },
-  android: { ...config.android, ...(links.origin && links.androidSha256.length ? { intentFilters: [{ action: "VIEW", autoVerify: true, category: ["BROWSABLE", "DEFAULT"], data: [{ scheme: "https", host: new URL(links.origin).host, path: links.path }] }] } : {}) },
+  android: { ...config.android, ...(googleServicesFile ? { googleServicesFile } : {}), ...(links.origin && links.androidSha256.length ? { intentFilters: [{ action: "VIEW", autoVerify: true, category: ["BROWSABLE", "DEFAULT"], data: [{ scheme: "https", host: new URL(links.origin).host, path: links.path }] }] } : {}) },
   plugins: [...(config.plugins ?? []),
+    ...(googleServicesFile ? ["@react-native-firebase/app", "@react-native-firebase/crashlytics"] : []),
     "expo-secure-store",
     "expo-sharing",
     "expo-notifications",
