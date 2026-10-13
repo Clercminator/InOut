@@ -34,7 +34,7 @@ jest.mock("../src/session-context", () => ({
 jest.mock("expo-haptics", () => ({
   impactAsync: (...args: unknown[]) => mockHaptic(...args),
   performAndroidHapticsAsync: (...args: unknown[]) => mockHaptic(...args),
-  AndroidHaptics: { Segment_Tick: "light", Segment_Frequent_Tick: "soft" },
+  AndroidHaptics: { Context_Click: "light", Clock_Tick: "soft" },
   notificationAsync: (...args: unknown[]) => mockHaptic(...args),
   ImpactFeedbackStyle: { Light: "light", Medium: "medium", Soft: "soft" },
   NotificationFeedbackType: { Success: "success" },

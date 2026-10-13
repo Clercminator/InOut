@@ -181,7 +181,7 @@ export default function Session() {
         <Button
           title="Audio & haptics"
           secondary
-          onPress={() => router.push("/settings")}
+          onPress={() => router.push("/practice-audio")}
         />
       )}
     </Screen>

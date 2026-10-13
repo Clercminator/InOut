@@ -558,3 +558,17 @@ test("insight entry explains the Pro feature without blocking basic progress", a
   await fireEvent.press(screen.getByText("View history & progress"));
   expect(mockReplace).toHaveBeenCalledWith("/(tabs)/progress");
 });
+
+
+test("practice audio opens a focused route while the pre-session draft stays mounted", async () => {
+  mockParams = { id: "box" };
+  await render(<Pre />);
+  const preset = screen.getAllByRole("button").find(b => String(b.props.children?.props?.children ?? "").includes("5:00"));
+  if (preset) await fireEvent.press(preset);
+  await fireEvent.press(screen.getByRole("button", { name: "Audio & haptics" }));
+  expect(mockPush).toHaveBeenCalledWith("/practice-audio");
+  expect(screen.getByText("How tense are you right now?")).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Breath sounds" })).toBeNull();
+  await fireEvent.press(screen.getByRole("button", { name: "Skip rating & start" }));
+  expect(mockController.current?.protocolId).toBe("box");
+});

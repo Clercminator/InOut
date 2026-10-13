@@ -223,7 +223,7 @@ export function NativeSessionEffects() {
       const g = breathingGuidance(record.engine.plan.blocks[current.blockIndex].phases, current.phaseIndex, current.phaseElapsedMs);
       return { key: `${record.id}:${record.engine.startedAt}:${current.cueKey}`, elapsedMs: current.phaseElapsedMs,
         remainingMs: current.phaseRemainingMs, intervalMs: g.pulseEveryMs, style: g.pulseStyle, offsetsMs: hapticOffsets(current.phase, controller.preferences.hapticMode) };
-    }, emitBreathHaptic, deliveredHaptic.current);
+    }, style => { void emitBreathHaptic(style).catch(() => {}); }, deliveredHaptic.current);
   }, [running, haptics, hapticMode, controller, session?.id, session?.engine.startedAt]);
 
   // Screen-reader guidance remains independent of audio activation.

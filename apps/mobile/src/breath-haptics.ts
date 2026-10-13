@@ -8,9 +8,10 @@ export function hapticOffsets(phase: Phase, mode: Preferences["hapticMode"]) {
 }
 
 export function emitBreathHaptic(style: "medium" | "light" | "soft") {
-  // Android's impact fallback can be a long buzzer. Use its purpose-built tactile ticks.
+  // Segment_Frequent_Tick is intentionally silent on some hardware. These established
+  // feedback effects still respect Android's system touch-feedback setting.
   const effect = Platform.OS === "android"
-    ? Haptics.performAndroidHapticsAsync(style === "soft" ? Haptics.AndroidHaptics.Segment_Frequent_Tick : Haptics.AndroidHaptics.Segment_Tick)
+    ? Haptics.performAndroidHapticsAsync(style === "soft" ? Haptics.AndroidHaptics.Clock_Tick : Haptics.AndroidHaptics.Context_Click)
     : Haptics.impactAsync(style === "soft" ? Haptics.ImpactFeedbackStyle.Soft : Haptics.ImpactFeedbackStyle.Light);
-  void effect.catch(() => {});
+  return effect;
 }

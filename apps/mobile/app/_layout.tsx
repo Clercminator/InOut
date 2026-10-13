@@ -66,6 +66,7 @@ function ThemedNavigator() {
             animation: "none",
           }}
         >
+          <Stack.Screen name="practice-audio" options={{ presentation: "modal" }} />
           <Stack.Screen name="session" options={{ gestureEnabled: false }} />
           <Stack.Screen name="post" options={{ gestureEnabled: false }} />
         </Stack>

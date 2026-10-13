@@ -65,7 +65,7 @@ jest.mock("react-native-view-shot", () => ({ captureRef: (...args: unknown[]) =>
 jest.mock("expo-audio", () => ({
   setAudioModeAsync: async () => {}, setIsAudioActiveAsync: async () => {},
   createAudioPlayer: () => {
-    const player = { volume: 1, play: jest.fn(), pause: jest.fn(), remove: jest.fn(), addListener: jest.fn() };
+    const player = { isLoaded: true, volume: 1, play: jest.fn(), pause: jest.fn(), remove: jest.fn(), addListener: jest.fn(() => ({ remove: jest.fn() })) };
     mockPlayers.push(player); return player;
   },
 }));
@@ -181,13 +181,13 @@ test("an interrupted voice preview cancels the pending exhale cue", async () => 
   mockController.setPreferences({ ...mockController.preferences, audio: "voice" });
   await render(wrap(<SoundControls compact />));
   await fireEvent.press(screen.getByRole("button", { name: "Preview breath sounds · 6 sec" }));
-  expect(mockPlayers).toHaveLength(2);
+  expect(mockPlayers).toHaveLength(3);
   const status = mockPlayers[0].addListener.mock.calls[0][1];
   await act(async () => {
     status({ playing: true }); status({ playing: false, isBuffering: false });
     jest.advanceTimersByTime(4000);
   });
-  expect(mockPlayers).toHaveLength(2);
+  expect(mockPlayers).toHaveLength(3);
   expect(mockPlayers.every(p => p.remove.mock.calls.length === 1)).toBe(true);
 });
 
@@ -515,4 +515,15 @@ test("a pending breath test recovered without foreground timing is discarded saf
   await render(wrap(<ChallengeTest />));
   expect(mockController.testState().pending).toBeNull();
   expect(screen.getByText("Interrupted test. Breathe normally and start again when ready.")).toBeTruthy();
+});
+
+
+test("vibration failures are visible and cancel remaining pulses", async () => {
+  mockTouch.mockRejectedValueOnce(new Error("unavailable"));
+  await render(wrap(<SoundControls compact />));
+  await fireEvent.press(screen.getByRole("button", { name: "Gentle transitions" }));
+  await fireEvent.press(screen.getByRole("button", { name: /Preview vibration/ }));
+  expect(screen.getByRole("alert")).toHaveTextContent(/Vibration unavailable/);
+  await act(async () => jest.advanceTimersByTime(6000));
+  expect(mockTouch).toHaveBeenCalledTimes(1);
 });

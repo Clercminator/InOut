@@ -22,7 +22,7 @@ import { protocols, sigh, isCyclic, availableForPractice } from "@inout/protocol
 import { experienceFor } from "../src/experience";
 import { CyclicOverview, CyclicSafety } from "../src/cyclic-content";
 import { totalDuration } from "@inout/breathing-engine";
-import { SoundControls } from "../src/sound-controls";
+
 import { GuidanceAllowance } from "../src/guidance-allowance";
 export default function Pre() {
   const { colors } = useTheme();
@@ -109,13 +109,7 @@ export default function Pre() {
         <Copy>Breathe comfortably in a safe place. Never practice while driving or in water. Stop if dizzy or unwell.</Copy>
         {protocol.safetyCategory === "retention" && <Copy>Keep holds comfortable. Return to natural breathing whenever you need to.</Copy>}
       </Card>
-      <Disclosure title="Guidance & sound" icon="volume-up">
-        <Copy>The guide grows as you breathe in, rests during holds, and settles as you breathe out.</Copy>
-        {controller.preferences.audio !== "silent" && <Copy>{controller.preferences.audio === "voice" ? "Spoken cues and breath sounds" : "Breath sounds"} follow each phase. Airflow goes quiet during holds.</Copy>}
-        {controller.preferences.haptics && <Copy>Touch: gentle cues for inhale and exhale. Holds stay quiet. Choose your vibration style below.</Copy>}
-        <SoundControls compact />
-        <ActionRow title="Audio & haptics" icon="tune" onPress={() => router.push("/settings")} />
-      </Disclosure>
+      <ActionRow title="Audio & haptics" icon="tune" onPress={() => router.push("/practice-audio")} />
       <Copy>Self-reported. Takes 1–2 seconds.</Copy>
       <ActionRow title="Save as a personal ritual" icon="bookmark-border" onPress={() => router.push({ pathname: "/ritual-edit", params: { protocolId: id ?? protocol.id, cycles: String(cycles) } })} />
       <ActionRow title="Breathing safety" icon="health-and-safety" onPress={() => router.push("/safety")} />

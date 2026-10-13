@@ -1,9 +1,9 @@
 import { voices } from "./voice-library";
 import { useLanguage } from "./use-language";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AppState, View } from "react-native";
+import { AppState, Platform, View } from "react-native";
 import { useFocusEffect } from "expo-router";
-import { createAudioPlayer, setAudioModeAsync, setIsAudioActiveAsync, type AudioPlayer } from "expo-audio";
+import { createAudioPreview } from "./preview-audio";
 import { useSession } from "./provider";
 import { experienceFor } from "./experience";
 import { breathPreviews, chimes } from "./audio-library";
@@ -20,7 +20,7 @@ export function SoundControls({ compact = false }: { compact?: boolean }) {
   const language = controller.preferences.language ?? "en";
   const [playing, setPlaying] = useState(false);
   const [error, setError] = useState("");
-  const players = useRef<AudioPlayer[]>([]);
+  const audioPreview = useRef<ReturnType<typeof createAudioPreview> | null>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const generation = useRef(0);
   const stopHaptics = useRef<(() => void) | null>(null);
@@ -28,47 +28,34 @@ export function SoundControls({ compact = false }: { compact?: boolean }) {
     generation.current++;
     stopHaptics.current?.(); stopHaptics.current = null;
     timers.current.forEach(clearTimeout); timers.current = [];
-    players.current.forEach(p => { p.pause(); p.remove(); }); players.current = [];
+    audioPreview.current?.stop(); audioPreview.current = null;
     setPlaying(false);
   }, []);
   useFocusEffect(useCallback(() => stop, [stop]));
   useEffect(() => { const sub = AppState.addEventListener("change", state => { if (state !== "active") stop(); }); return () => sub.remove(); }, [stop]);
   useEffect(() => stop, [language, stop]);
+  useEffect(() => { if (controller.current?.stage === "active") stop(); }, [controller.current?.stage, stop]);
   const preview = async (kind: "breath" | "chime") => {
     stop(); setError("");
     if (controller.current?.stage === "active") return;
     const token = generation.current;
     setPlaying(true);
-    try {
-      await setAudioModeAsync({ playsInSilentMode: false, shouldPlayInBackground: false, interruptionMode: "doNotMix" });
-      if (token !== generation.current) return;
-      await setIsAudioActiveAsync(true);
-      if (token !== generation.current || AppState.currentState !== "active") return;
-      const play = (source: number, volume: number) => {
-        if (token !== generation.current || AppState.currentState !== "active") return;
-        const player = createAudioPlayer(source, { keepAudioSessionActive: false });
-        players.current.push(player); player.volume = volume;
-        let hasPlayed = false;
-        player.addListener("playbackStatusUpdate", status => {
-          if (status.playing) hasPlayed = true;
-          if (status.didJustFinish) hasPlayed = false;
-          if (status.error || status.mediaServicesDidReset || (hasPlayed && !status.playing && !status.isBuffering)) {
-            stop(); setError("Preview stopped. Tap preview when you're ready.");
-          }
-        });
-        player.play();
-      };
-      play(kind === "breath" ? breathPreviews[e.breathSound] : chimes[e.chime === "off" ? "bell" : e.chime], kind === "breath" ? e.guidanceVolume * (controller.preferences.audio === "voice" ? 0.25 : 1) : e.celebrationVolume);
-      if (kind === "breath" && controller.preferences.audio === "voice") {
-        play(voices[controller.preferences.language ?? "en"][0], e.guidanceVolume);
-        timers.current.push(setTimeout(() => play(voices[controller.preferences.language ?? "en"][2], e.guidanceVolume), 3000));
-      }
-      timers.current.push(setTimeout(stop, kind === "breath" ? 6200 : 2200));
-    } catch { if (token === generation.current) { stop(); setError("Preview unavailable. Try again."); } }
+    const preview = createAudioPreview(() => {
+      if (token === generation.current) { stop(); setError("Sound preview unavailable. Check media volume and silent mode, then try again."); }
+    }, () => { if (token === generation.current) stop(); });
+    audioPreview.current = preview;
+    const clips = [{ source: kind === "breath" ? breathPreviews[e.breathSound] : chimes[e.chime === "off" ? "bell" : e.chime],
+      volume: kind === "breath" ? e.guidanceVolume * (controller.preferences.audio === "voice" ? 0.25 : 1) : e.celebrationVolume, at: 0 }];
+    if (kind === "breath" && controller.preferences.audio === "voice") clips.push(
+      { source: voices[language][0], volume: e.guidanceVolume, at: 0 },
+      { source: voices[language][2], volume: e.guidanceVolume, at: 3000 });
+    await preview.start(clips, kind === "breath" ? 6200 : 2200);
   };
   const previewTouch = () => {
     stop(); setError("");
     if (controller.current?.stage === "active" || !controller.preferences.haptics) return;
+    if (Platform.OS !== "android" && Platform.OS !== "ios") { setError("Vibration preview is available on supported phones only."); return; }
+    const token = generation.current;
     const started = performance.now();
     const phases = protocols.find(p => p.id === "box")!.phases.map((phase, i) => ({ ...phase, durationMs: i % 2 ? 1000 : 2000 }));
     setPlaying(true);
@@ -81,7 +68,9 @@ export function SoundControls({ compact = false }: { compact?: boolean }) {
       return { key: `preview:${index}`, elapsedMs: elapsed, remainingMs: phase.durationMs - elapsed,
         intervalMs: 1000, offsetsMs: hapticOffsets(phase, controller.preferences.hapticMode),
         style: phase.type === "inhale" ? "light" : phase.type === "exhale" ? "soft" : null };
-    }, emitBreathHaptic);
+    }, style => { void emitBreathHaptic(style).catch(() => {
+      if (token === generation.current) { stop(); setError("Vibration unavailable. Check system touch feedback and battery settings."); }
+    }); });
     timers.current.push(setTimeout(stop, 6000));
   };
   return <View style={{ gap: 12 }}>
@@ -117,6 +106,7 @@ export function SoundControls({ compact = false }: { compact?: boolean }) {
       {e.chime !== "off" && controller.preferences.audio !== "silent" && <Button title="Preview chime" secondary disabled={playing || controller.current?.stage === "active"} onPress={() => void preview("chime")} />}
       <Copy style={s.small}>Silent mode mutes all sounds. Quiet celebrations mute reward sounds and touch. Previews play only when requested. Audio respects your phone volume and silent switch.</Copy>
     </>}
+    {controller.preferences.haptics && <Copy style={s.small}>No vibration? Your phone may suppress touch feedback in system or battery settings. Some hardware does not support these effects.</Copy>}
     {playing && <Button title="Stop preview" secondary onPress={stop} />}
     {!!error && <Copy accessibilityRole="alert">{error}</Copy>}
   </View>;
