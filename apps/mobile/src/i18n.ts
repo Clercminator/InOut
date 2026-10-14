@@ -1,3 +1,4 @@
+import { getDeviceLanguage } from "./language-preference";
 import es from './locales/es.json';
 import pt from './locales/pt.json';
 import { protocols } from '@inout/protocols';
@@ -10,7 +11,7 @@ export const languages = [
   { id: 'pt', name: 'Português', locale: 'pt-BR' },
 ] as const;
 export const isLanguage = (value: unknown): value is Language => languages.some(item => item.id === value);
-let language: Language = 'en';
+let language: Language = getDeviceLanguage();
 const listeners = new Set<() => void>();
 export const getLanguage = () => language;
 export const locale = () => languages.find(item => item.id === language)!.locale;

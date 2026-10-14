@@ -93,6 +93,7 @@ export interface Preferences {
   journey?: OnboardingJourney;
   theme?: "system" | "light" | "dark";
   language?: "en" | "es" | "pt";
+  languageSource?: "device" | "manual";
   experience?: Experience;
   audio: "voice" | "tones" | "silent";
   haptics: boolean;
@@ -105,7 +106,7 @@ export interface Preferences {
 export type PracticeGoal = "stress" | "sleep" | "focus" | "performance" | "energy" | "pressure" | "learn";
 export interface OnboardingJourney {
   version: 1;
-  step: "welcome" | "goals" | "value" | "safety" | "offer" | "complete";
+  step: "welcome" | "goals" | "personalize" | "demo" | "value" | "safety" | "offer" | "complete";
   primaryGoal?: PracticeGoal;
   secondaryGoals: PracticeGoal[];
   safetyAcceptedAt?: number;

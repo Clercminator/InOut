@@ -1,3 +1,4 @@
+import "../src/device-language";
 import { useTheme } from "../src/theme";
 import { useLanguage } from "../src/use-language";
 import { Stack } from "expo-router";

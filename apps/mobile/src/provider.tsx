@@ -1,3 +1,5 @@
+import { refreshDeviceLanguage } from "./device-language";
+import { getDeviceLanguage } from "./language-preference";
 import { goalContent } from "./personalization";
 import { WelcomeEmailEffects } from "./welcome-email-ui";
 import { ShareLinksService } from "./share-links";
@@ -90,6 +92,11 @@ export function SessionProvider({ children }: PropsWithChildren) {
     if (!controller) return;
     const state = AppState.addEventListener("change", (next) => {
       if (next !== "active") controller.pause("background");
+      else {
+        refreshDeviceLanguage();
+        if (controller.preferences.languageSource === "device" && controller.preferences.language !== getDeviceLanguage())
+          controller.setPreferences({ ...controller.preferences, language: getDeviceLanguage() });
+      }
     });
     const blur =
       Platform.OS === "android"

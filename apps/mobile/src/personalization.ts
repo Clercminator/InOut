@@ -19,7 +19,7 @@ export function completeJourney(p: Preferences, now: number): Preferences {
   return { ...p, onboardingComplete: true, journey: { ...journey, step: "complete", completedAt: journey.completedAt ?? now } };
 }
 export function validateJourney(j: OnboardingJourney) {
-  if (!j || j.version !== 1 || !["welcome", "goals", "value", "safety", "offer", "complete"].includes(j.step) ||
+  if (!j || j.version !== 1 || !["welcome", "goals", "personalize", "demo", "value", "safety", "offer", "complete"].includes(j.step) ||
     (j.primaryGoal !== undefined && !practiceGoals.includes(j.primaryGoal)) || !Array.isArray(j.secondaryGoals) ||
     j.secondaryGoals.length > 6 || j.secondaryGoals.some(g => !practiceGoals.includes(g)) ||
     [j.safetyAcceptedAt, j.completedAt].some(n => n !== undefined && (!Number.isFinite(n) || n < 0))) throw Error("Saved onboarding could not be read.");

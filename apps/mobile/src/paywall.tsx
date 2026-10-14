@@ -1,3 +1,4 @@
+import { GoalMark, OnboardingHero } from "./onboarding-art";
 import { t, locale, message, countLabel } from "./i18n";
 import { useLanguage } from "./use-language";
 import { Pressable, Switch, TextInput } from "./localized-native";
@@ -42,30 +43,29 @@ export function Paywall({ entry = "profile", onClose, completionError }: { entry
   const demo = subscriptions.adapter.mode === "development";
   const recommended = productConfig.emphasizeAnnual && annualIsBetterValue(subscriptions.offers);
   const chosen = subscriptions.offers.find(o => o.id === selected) ?? defaultPlan(subscriptions.offers, productConfig.defaultPlan);
-  return <Screen title="InOut Pro" avoidKeyboard headerAction={<IconButton icon="close" title="Close subscription offer" onPress={close} />} footer={chosen ? <ActionFooter>
-    <Button title={`${demo ? "Simulate" : "Continue with"} ${chosen.title}`} disabled={subscriptions.busy} onPress={() => { void subscriptions.purchase(chosen.id); }} />
+  return <Screen title="InOut Pro" avoidKeyboard headerAction={<IconButton icon="close" title="Close subscription offer" onPress={close} />} footer={chosen || onClose ? <ActionFooter>
+    {chosen && !state.pro && <><Copy style={{ textAlign: "center", fontWeight: "600" }}>{message("{0} / {1}", [chosen.price, t(chosen.period)])}</Copy>
+    <Button title={`${demo ? "Simulate" : "Continue with"} ${chosen.title}`} disabled={subscriptions.busy} onPress={() => { void subscriptions.purchase(chosen.id); }} /></>}
+    {state.pro && <Copy accessibilityRole="alert">Your Pro access is ready.</Copy>}
     {onClose && <Button title={state.pro ? "Continue to Home" : "Continue for free"} variant="quiet" disabled={subscriptions.busy} onPress={close} />}
   </ActionFooter> : undefined}>
     {completionError && <Copy accessibilityRole="alert">{completionError}</Copy>}
-    <View style={{ width: 64, height: 64, borderRadius: 22, alignItems: "center", justifyContent: "center", backgroundColor: colors.reward }}><MaterialIcons accessible={false} name="auto-awesome" size={32} color={colors.onReward} /></View>
-    <Title>More room for your practice.</Title>
-    {entry === "onboarding" && <Copy>Build a practice that fits you. You can also continue for free.</Copy>}
+    {entry === "onboarding" ? <><OnboardingHero compact /><Label>WELCOME TO YOUR NEXT CHAPTER</Label><Title>Make this practice yours.</Title><Copy>A personal breathing coach. More ways to grow.</Copy></> : <Title>More room for your practice.</Title>}
     {entry === "quota" && <Copy>Your guided allowance is used. Keep breathing with tones, or explore Pro.</Copy>}
     {entry === "protocol" && <Copy>Unlock this protocol and make more room for your practice.</Copy>}
     {entry === "coach" && <Copy>Pro includes multiweek guided programs and continuing weekly plans. Find Your Rhythm and basic recommendations remain free.</Copy>}
     {productConfig.proChallengeIds.length > 0 && <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}><MaterialIcons accessible={false} name="emoji-events" size={26} color={colors.gold} /><Copy style={{ flex: 1 }}>More challenges for sleep, focus and consistent practice.</Copy></View>}
     <Copy>{productConfig.proProtocolIds.length || productConfig.guidedSessionsPerMonth !== null ? "Core breathing, State Shift and safety remain Free. Explore Pro for more options." : "All ten breathing protocols, cues, State Shift and safety remain Free. Pro removes ads and saved-routine limits."}</Copy>
-    <View style={{ gap: 12 }}>{[["tune", "Unlimited saved patterns & mixes"], ["insights", "Private practice insights"], ["notifications-none", "Up to five personal reminders"], ["spa", "A practice without ads"]].map(([icon, label]) => <View key={label} style={{ flexDirection: "row", gap: 12, alignItems: "center" }}><MaterialIcons accessible={false} name={icon as "tune"} size={22} color={colors.accent} /><Copy style={{ flex: 1 }}>{label}</Copy></View>)}</View>
+    <View style={{ gap: 16 }}>{[["learn", "Guided programs for your goals"], ["focus", "Weekly plans that fit your life"], ["performance", "Private practice insights"], ["pressure", "Unlimited saved patterns & mixes"], ["stress", "A practice without ads"]].map(([mark, label]) => <View key={label} style={{ flexDirection: "row", gap: 14, alignItems: "center" }}><GoalMark goal={mark as "learn" | "focus" | "performance" | "pressure" | "stress"} size={40} /><Copy style={{ flex: 1, fontWeight: "600" }}>{label}</Copy></View>)}</View>
     {demo && <Card><Label>DEVELOPMENT DEMO</Label><Copy>No money is charged. These plans and optional trial simulate store behavior; they are not real offers.</Copy></Card>}
     {subscriptions.adapter.testStore && <Card><Label>TEST STORE</Label><Copy>RevenueCat Test Store. No real charge or store subscription.</Copy></Card>}
     {subscriptions.adapter.mode === "unavailable" && !subscriptions.message && <Copy>Purchases are unavailable right now. You can keep breathing for free.</Copy>}
     <View style={{ gap: 12 }}>{subscriptions.offers.slice().sort((a, b) => productConfig.planOrder.indexOf(a.id) - productConfig.planOrder.indexOf(b.id)).map(offer => <Pressable key={offer.id} disabled={subscriptions.busy} accessibilityRole="button" accessibilityLabel={t(offer.title)} accessibilityState={{ selected: chosen?.id === offer.id }} onPress={() => { setSelected(offer.id); services.analytics.track("plan_selected"); }} style={{ padding: 20, gap: 12, borderRadius: 22, borderWidth: 2, borderColor: chosen?.id === offer.id ? colors.accent : colors.border, backgroundColor: chosen?.id === offer.id ? colors.accentSurface : colors.card }}>
-      {offer.id === "annual" && recommended && <Label>BEST VALUE</Label>}
+      {offer.id === "annual" && productConfig.emphasizeAnnual && <Label>{recommended ? "BEST VALUE" : "RECOMMENDED PLAN"}</Label>}
       <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}><View style={{ flex: 1, gap: 4 }}><Copy style={styles.subtitle}>{offer.title}</Copy><Copy><Copy style={{ fontSize: 24, lineHeight: 30, fontWeight: "700" }}>{offer.price}</Copy>{!demo ? ` / ${t(offer.period)}` : ""}</Copy></View><MaterialIcons accessible={false} name={chosen?.id === offer.id ? "radio-button-checked" : "radio-button-unchecked"} size={26} color={colors.accent} /></View>
       {offer.trialEligible && <Label>FREE TRIAL AVAILABLE</Label>}
       {offer.introductoryOffer && <Copy style={styles.small}>{message("Introductory price: {0} / {1}, for {2} billing periods.", [offer.introductoryOffer.price, introDuration(offer.introductoryOffer.period), offer.introductoryOffer.periods])}</Copy>}
     </Pressable>)}</View>
-    {!chosen && onClose && <Button title="Continue for free" onPress={close} />}
     {!demo && subscriptions.offers.length > 0 && <Copy>Subscriptions renew automatically unless cancelled through your store. Review the store confirmation for final price, any eligible introductory offer, and renewal terms.</Copy>}
     {subscriptions.busy && <Copy accessibilityRole="alert">Contacting the store…</Copy>}
     {!!subscriptions.message && <Copy accessibilityRole="alert">{subscriptions.message}</Copy>}

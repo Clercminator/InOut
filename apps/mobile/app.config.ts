@@ -15,6 +15,7 @@ export default ({ config }: ConfigContext) => {
   plugins: [...(config.plugins ?? []),
     ...(googleServicesFile ? ["@react-native-firebase/app", "@react-native-firebase/crashlytics"] : []),
     "expo-secure-store",
+    ["expo-localization", { supportedLocales: ["en", "es", "pt"], allowDynamicLocaleChangesAndroid: true }],
     "expo-sharing",
     "expo-notifications",
     ["expo-image-picker", { photosPermission: "Choose a photo for your private IN/OUT profile.", cameraPermission: false, microphonePermission: false }],

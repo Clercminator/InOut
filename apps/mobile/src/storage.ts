@@ -1,3 +1,4 @@
+import { languagePreference } from "./language-preference";
 import { emptyTestStore, validateTestStore, appendAttempt, stateShiftAttempt, selectDaily, type TestStore, type ChallengeAttempt, type PendingTest, type TestId } from "./challenge-tests";
 import { validateManagedShares, type ManagedShare } from "./share-links";
 import type { Preferences, SessionRecord, SavedRoutine } from "@inout/shared-types";
@@ -25,7 +26,7 @@ export interface Database {
 }
 export const defaultPreferences: Preferences = {
   theme: "system",
-  language: "en",
+  languageSource: "device",
   audio: "tones",
   haptics: true,
   keepAwake: true,
@@ -208,7 +209,7 @@ export class LocalStore {
     const row = this.db.getFirstSync<{ payload: string }>(
       "SELECT payload FROM settings WHERE key='preferences'",
     );
-    if (!row) return this.db.getFirstSync("SELECT id FROM sessions LIMIT 1") ? { ...defaultPreferences, onboardingComplete: true } : defaultPreferences;
+    if (!row) return { ...defaultPreferences, ...languagePreference(defaultPreferences), onboardingComplete: !!this.db.getFirstSync("SELECT id FROM sessions LIMIT 1") };
     const p = JSON.parse(row.payload);
     if (p.journey !== undefined) validateJourney(p.journey);
     this.validateWelcomeEmail(p);
@@ -229,7 +230,7 @@ export class LocalStore {
       ...p,
       telemetryEnabled: p.telemetryEnabled === true,
       theme: ["system", "light", "dark"].includes(p.theme) ? p.theme : "system",
-      language: ["en", "es", "pt"].includes(p.language) ? p.language : "en",
+      ...languagePreference(p),
       favoriteProtocolIds: p.favoriteProtocolIds ?? [],
       // A pre-funnel installation with saved preferences is not forced through onboarding again.
       onboardingComplete: p.onboardingComplete ?? !p.journey,

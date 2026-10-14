@@ -225,7 +225,7 @@ test("Settings changes the whole interface immediately and can switch back to En
 
 test("translated profile preserves user-written text even when it matches English UI copy", async () => {
   mockController.updateExperience({ name: "Focus", bio: "Sleep", intention: "A moment for myself" });
-  mockController.setPreferences({ ...mockController.preferences, language: "es" });
+  mockController.setPreferences({ ...mockController.preferences, language: "es", languageSource: "manual" });
   await render(wrap(<Profile />));
   expect(screen.getByText("Focus")).toBeTruthy();
   expect(screen.getByText("Sleep")).toBeTruthy();
@@ -235,7 +235,7 @@ test("translated profile preserves user-written text even when it matches Englis
 
 test("Portuguese protocol safety expands and translated dialogs keep their actions", async () => {
   mockParams = { id: "box" };
-  mockController.setPreferences({ ...mockController.preferences, language: "pt" });
+  mockController.setPreferences({ ...mockController.preferences, language: "pt", languageSource: "manual" });
   const rendered = await render(wrap(<ProtocolDetail />));
   expect(screen.getByText("Respiração quadrada")).toBeTruthy();
   const safety = screen.getByRole("button", { name: "Antes de começar" });
@@ -367,20 +367,50 @@ test("onboarding quick path acknowledges safety before completing once", async (
   expect(mockReplace).toHaveBeenCalledWith({ pathname: "/pre", params: { id: "extended-exhale" } });
 });
 
-test("personalization resumes from saved value screen and paywall dismissal enters Home", async () => {
+test("personalization persists time, safety and demo; dismissal completes without a store", async () => {
   const view = await render(wrap(<Onboarding />));
   await fireEvent.press(screen.getByRole("button", { name: "Personalize InOut" }));
   await fireEvent.press(screen.getByRole("radio", { name: "Sleep better" }));
   await fireEvent.press(screen.getByRole("button", { name: "Continue" }));
+  await fireEvent.press(screen.getByRole("button", { name: "5 min" }));
+  expect(mockController.coachState().availableMinutes).toBe(5);
+  await fireEvent.press(screen.getByRole("button", { name: "Continue" }));
+  await fireEvent.press(screen.getByRole("button", { name: "I understand" }));
+  expect(mockController.preferences.journey?.step).toBe("demo");
+  await fireEvent.press(screen.getByRole("button", { name: "Try a few breaths" }));
+  expect(screen.getByText("Breathe in")).toBeTruthy();
+  await act(async () => { jest.advanceTimersByTime(4000); });
+  expect(screen.getByText("Breathe out")).toBeTruthy();
+  await fireEvent.press(screen.getByRole("button", { name: "Continue" }));
+  expect(mockController.history()).toHaveLength(0);
+  expect(mockController.current).toBeNull();
   await view.unmount();
   await render(wrap(<Onboarding />));
   expect(screen.getByText("Ease into your evening.")).toBeTruthy();
   await fireEvent.press(screen.getByRole("button", { name: "Let's get started" }));
-  await fireEvent.press(screen.getByRole("button", { name: "I understand" }));
   expect(mockController.preferences.journey?.step).toBe("offer");
   await fireEvent.press(screen.getByRole("button", { name: "Continue for free" }));
   expect(mockController.preferences.onboardingComplete).toBe(true);
   expect(mockReplace).toHaveBeenCalledWith("/(tabs)");
+});
+
+test("completed users never re-enter the welcome offer through its route", async () => {
+  mockController.setPreferences({ ...mockController.preferences, onboardingComplete: true, journey: { version: 1, step: "offer", secondaryGoals: [] } });
+  await render(wrap(<Onboarding />));
+  expect(screen.getByText("Redirect: /(tabs)")).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Continue for free" })).toBeNull();
+});
+
+test("demo backgrounding stops immediately and returning never resumes automatically", async () => {
+  mockController.setPreferences({ ...mockController.preferences, journey: { version: 1, step: "demo", secondaryGoals: [], safetyAcceptedAt: 1 } });
+  const subscribe = jest.spyOn(AppState, "addEventListener");
+  await render(wrap(<Onboarding />));
+  await fireEvent.press(screen.getByRole("button", { name: "Try a few breaths" }));
+  const callbacks = subscribe.mock.calls.filter(([event]) => event === "change").map(([, callback]) => callback);
+  await act(async () => { callbacks.forEach(callback => callback("background")); });
+  await act(async () => { jest.advanceTimersByTime(30000); callbacks.forEach(callback => callback("active")); });
+  expect(screen.getByRole("button", { name: "Try a few breaths" })).toBeTruthy();
+  expect(mockController.history()).toHaveLength(0);
 });
 
 test("earned milestone shares a private image through native sharing and offers both aspect ratios", async () => {

@@ -2,6 +2,8 @@ import React from "react";
 import { AppState } from "react-native";
 import { act, fireEvent, render, screen } from "@testing-library/react-native";
 import Pro from "../app/pro";
+import { Paywall } from "../src/paywall";
+import { setLanguage } from "../src/i18n";
 import { AdSlot } from "../src/ad-slot";
 import { CommercialContext, type CommercialServices } from "../src/commercial-context";
 import { EntitlementService } from "../src/entitlements";
@@ -41,6 +43,23 @@ function services() {
   return { entitlements, analytics, subscriptions: new SubscriptionService(adapter, entitlements, analytics), ads: new AdService(entitlements, "preview") };
 }
 function wrap(s: CommercialServices, child: React.ReactNode) { return <CommercialContext.Provider value={s}>{child}</CommercialContext.Provider>; }
+
+test("welcome offer uses the shared purchase service, localized store prices and an explicit Free exit", async () => {
+  const s = services(), close = jest.fn();
+  await s.subscriptions.load();
+  s.subscriptions.offers = [{ id: "monthly", title: "Monthly Pro", price: "R$ 29,90", period: "month", priceAmount: 29.9, currency: "BRL" }];
+  const purchase = jest.spyOn(s.subscriptions, "purchase");
+  setLanguage("pt");
+  await render(wrap(s, <Paywall entry="onboarding" onClose={close} />));
+  expect(screen.getByText("Faça desta prática a sua.")).toBeTruthy();
+  expect(screen.getByText("R$ 29,90")).toBeTruthy();
+  expect(screen.queryByText("FREE TRIAL AVAILABLE")).toBeNull();
+  await fireEvent.press(screen.getByRole("button", { name: "Simular Pro mensal" }));
+  expect(purchase).toHaveBeenCalledWith("monthly");
+  expect(s.entitlements.state.pro).toBe(true);
+  await fireEvent.press(screen.getByRole("button", { name: "Ir para o início" }));
+  expect(close).toHaveBeenCalledTimes(1);
+});
 
 test("live banners load automatically, stay absent for unresolved billing, and disappear immediately on Pro", async () => {
   AppState.currentState = "active"; mockPath = "/";

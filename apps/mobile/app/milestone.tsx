@@ -9,7 +9,8 @@ import * as Sharing from "expo-sharing";
 import { useSession } from "../src/provider";
 import { BackScreen, Copy, Title, Label, Button, Chip } from "../src/ui";
 import { practiceStats, statsDuration } from "../src/progress";
-import { t, message } from "../src/i18n";
+import { t, message, locale } from "../src/i18n";
+import { LinearGradient } from "expo-linear-gradient";
 import info from "../../../release/public-info.json";
 import { ShareExercise } from "../src/share-exercise";
 import { sigh } from "@inout/protocols";
@@ -31,10 +32,12 @@ export default function Milestone() {
   return <BackScreen title="SHARE YOUR PRACTICE"><Title>A moment worth keeping.</Title>
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}><Chip title="Story · 9:16" selected={story} onPress={() => setStory(true)} /><Chip title="Square · 1:1" selected={!story} onPress={() => setStory(false)} /></View>
     <View testID="achievement-share-artwork" ref={card} collapsable={false} style={{ alignSelf: "center", width: cardWidth, aspectRatio: story ? 9 / 16 : 1, padding: 26 * scale, borderRadius: 24, backgroundColor: "#EAF5F6", justifyContent: "space-between", overflow: "hidden" }}>
+      <LinearGradient colors={["#F5F7EB", "#D4EBDE", "#DBD9F0"]} style={{ position: "absolute", top: 0, bottom: 0, left: 0, right: 0 }} />
+      {[.8, 1.2, 1.6].map(factor => <View key={factor} style={{ position: "absolute", width: cardWidth * factor, height: cardWidth * factor, borderRadius: cardWidth, borderWidth: 1, borderColor: "#124F5915", alignSelf: "center", top: (story ? 210 : 50) * scale - cardWidth * (factor - .8) / 2 }} />)}
       <Copy allowFontScaling={false} style={{ color: "#124F59", fontSize: 20 * scale, lineHeight: 24 * scale, fontWeight: "800", letterSpacing: 3 }}>IN/OUT</Copy>
       <View style={{ alignItems: "center", gap: (story ? 20 : 10) * scale }}><AchievementMark icon={badgeDefinition?.icon} size={(story ? 120 : 76) * scale} />
         <Copy numberOfLines={3} adjustsFontSizeToFit minimumFontScale={0.7} allowFontScaling={false} style={{ color: "#124F59", fontSize: (story ? 36 : 26) * scale, lineHeight: (story ? 42 : 30) * scale, textAlign: "center", fontWeight: "800" }}>{title}</Copy>
-        {earned && <Copy allowFontScaling={false} style={{ color: "#41636A", fontSize: 12 * scale, lineHeight: 16 * scale }}>{earned.date}</Copy>}
+        {earned && <Copy allowFontScaling={false} style={{ color: "#41636A", fontSize: 12 * scale, lineHeight: 16 * scale }}>{new Date(`${earned.date}T12:00:00`).toLocaleDateString(locale(), { year: "numeric", month: "short", day: "numeric" })}</Copy>}
         {includeTime && <Copy allowFontScaling={false} style={{ color: "#41636A", fontSize: 14 * scale, lineHeight: 18 * scale, textAlign: "center" }}>{statsDuration(stats.totalMs)} · {t("total breathing time")}</Copy>}
       </View>
       <View style={{ gap: 8 }}><Copy allowFontScaling={false} style={{ color: "#124F59", fontSize: 13 * scale, lineHeight: 17 * scale, textAlign: "center" }}>Small breaths. Consistent practice.</Copy><Copy allowFontScaling={false} style={{ color: "#41636A", fontSize: 10 * scale, lineHeight: 14 * scale, textAlign: "center" }}>{info.supportUrl.replace("https://", "")}</Copy></View>

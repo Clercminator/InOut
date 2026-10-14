@@ -52,9 +52,10 @@ export default function Settings() {
       <Card>
         <Label>LANGUAGE</Label>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+          <Chip title="Use device language" selected={preferences.languageSource === "device"} onPress={() => controller.setPreferences({ ...preferences, languageSource: "device" })} />
           {languages.map(language => <Chip key={language.id} title={language.name}
-            selected={(preferences.language ?? "en") === language.id}
-            onPress={() => controller.setPreferences({ ...preferences, language: language.id })} />)}
+            selected={preferences.languageSource !== "device" && (preferences.language ?? "en") === language.id}
+            onPress={() => controller.setPreferences({ ...preferences, language: language.id, languageSource: "manual" })} />)}
         </View>
       </Card>
       </Disclosure>

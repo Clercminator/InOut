@@ -4,6 +4,7 @@ import * as engine from "@inout/breathing-engine";
 import { sigh, planFor, protocols, cyclic, isCyclic, includesHighIntensity, availableForPractice } from "@inout/protocols";
 import type { Protocol, SavedRoutine, Experience, PersonalRitual } from "@inout/shared-types";
 import { emptyLedger, experienceFor, reconcileRewards, unlocked, type Badge, type RewardLedger } from "./experience";
+import { languagePreference } from "./language-preference";
 import { defaultPreferences } from "./storage";
 import { validRating } from "@inout/shared-types";
 import type {
@@ -179,7 +180,8 @@ export class SessionController {
     readonly entitlements = new EntitlementService(),
     readonly analytics = new AnalyticsService(),
   ) {
-    this.preferences = store.preferences();
+    const savedPreferences = store.preferences();
+    this.preferences = { ...savedPreferences, ...languagePreference(savedPreferences) };
     setLanguage(isLanguage(this.preferences.language) ? this.preferences.language : "en");
     const pending = store.pending();
     if (pending) {
@@ -461,6 +463,7 @@ export class SessionController {
     });
   }
   setPreferences(preferences: Preferences) {
+    preferences = { ...preferences, ...languagePreference(preferences) };
     try {
       const onboardingCompleted = !this.preferences.onboardingComplete && preferences.onboardingComplete;
       const previous = this.preferences.journey;
@@ -581,9 +584,9 @@ export class SessionController {
       this.routinesCache = [];
       this.rewardCache = null;
       this.latestAwards = [];
-      this.preferences = { ...defaultPreferences };
+      this.preferences = { ...defaultPreferences, ...languagePreference(defaultPreferences) };
       this.analytics.setConsent(false);
-      setLanguage("en");
+      setLanguage(this.preferences.language ?? "en");
       this.pendingPreferences = null;
       this.sessionError = null;
       this.preferencesError = null;
