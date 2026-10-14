@@ -13,3 +13,14 @@ apps/mobile/ios/
 artifacts/
 
 supabase/.temp/
+coverage/
+*.log
+*.hprof
+*.aab
+*.apk
+*.ipa
+*.jks
+*.keystore
+google-services.json
+GoogleService-Info.plist
+*service-account*.json
