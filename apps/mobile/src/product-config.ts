@@ -2,6 +2,8 @@ import type { Capability } from "./entitlements";
 
 /** Rollout defaults preserve the existing Free product. No remote configuration dependency. */
 export const productConfig = {
+  proProgramIds: ["evening-wind-down", "focus-on-demand", "build-your-practice"] as string[],
+  coachAiEnabled: false,
   proChallengeIds: ["sleep-reset", "focus-week", "consistency", "comfort-hold", "beat-your-best"] as string[],
   disabledChallengeIds: [] as string[],
   onboardingPaywall: true,
@@ -10,7 +12,7 @@ export const productConfig = {
   planOrder: ["weekly", "monthly", "annual"] as const,
   interstitial: { everyCompletions: 3, minAppAgeMs: 180000, cooldownMs: 600000, paywallCooldownMs: 300000, maxPerDay: 2 },
   proProtocolIds: [] as string[],
-  proFeatures: ["adFree", "unlimitedCustomPatterns", "unlimitedMixes", "unlimitedSavedRoutines", "advancedInsights", "advancedReminders"] as Capability[],
+  proFeatures: ["adFree", "unlimitedCustomPatterns", "unlimitedMixes", "unlimitedSavedRoutines", "advancedInsights", "advancedReminders", "guidedPrograms", "continuingPlans", "aiCoach"] as Capability[],
   guidedSessionsPerMonth: null as number | null,
   manualLogging: true,
   learn: true,

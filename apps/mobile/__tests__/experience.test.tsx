@@ -33,6 +33,10 @@ import RitualEdit from "../app/ritual-edit";
 import Rituals from "../app/rituals";
 import { SoundControls } from "../src/sound-controls";
 import { Celebration } from "../src/celebration";
+import Coach from "../app/coach";
+import Pre from "../app/pre";
+import PracticeAudio from "../app/practice-audio";
+import { emptyCoach, recordCoachSession, validateCoach } from "../src/coach";
 
 let mockController: SessionController;
 let mockParams = {};
@@ -82,8 +86,10 @@ beforeEach(() => {
   const history = new Map<string, SessionRecord>();
   let id = 0;
   let challenges: UserChallenge[] = [];
+  let coach = emptyCoach();
   let testState = emptyTestStore();
   mockController = new SessionController({
+    coachState: () => coach, writeCoachState: (value: unknown) => { coach = validateCoach(value); },
     testStore: () => testState, setPendingTest: (pending: PendingTest | null) => { testState = { ...testState, pending }; },
     saveTestAttempt: (a: ChallengeAttempt) => { testState = { ...appendAttempt(testState, a), pending: null }; },
     excludeTest: (id: TestId, excluded: boolean) => { testState = { ...testState, excluded: excluded ? [...testState.excluded, id] : testState.excluded.filter(v => v !== id) }; },
@@ -93,7 +99,7 @@ beforeEach(() => {
     acknowledgeChallenge: (id: string) => { challenges = challenges.map(s => s.challengeId === id ? { ...s, celebrationSeen: true } : s); },
     savePreferences: (p: Preferences) => { preferences = p; },
     history: () => [...history.values()].filter(r => r.stage === "result"),
-    save: (r: SessionRecord) => history.set(r.id, r), routines: () => [],
+    save: (r: SessionRecord) => { history.set(r.id, r); coach = recordCoachSession(coach, r); }, routines: () => [],
   } as unknown as LocalStore, () => Date.now(), () => `id-${++id}`);
 });
 afterEach(() => { jest.useRealTimers(); jest.restoreAllMocks(); });
@@ -278,7 +284,7 @@ test("home recommendation starts the selected goal and displays the user's own i
   expect(screen.getByText("A quiet moment before work")).toBeTruthy();
   await fireEvent.press(screen.getByRole("button", { name: "Focus" }));
   await fireEvent.press(screen.getByRole("button", { name: "Start practice" }));
-  expect(mockPush).toHaveBeenCalledWith({ pathname: "/pre", params: { id: "box" } });
+  expect(mockPush).toHaveBeenCalledWith({ pathname: "/pre", params: expect.objectContaining({ id: "box" }) });
 });
 
 test("vibration preview follows the selected style and cancels immediately on stop or mode change", async () => {
@@ -526,4 +532,46 @@ test("vibration failures are visible and cancel remaining pulses", async () => {
   expect(screen.getByRole("alert")).toHaveTextContent(/Vibration unavailable/);
   await act(async () => jest.advanceTimersByTime(6000));
   expect(mockTouch).toHaveBeenCalledTimes(1);
+});
+
+test("Free coach opens its program through setup and retains the draft under audio settings", async () => {
+  const view = await render(wrap(<Coach />));
+  expect(screen.queryByText("AI-assisted coaching is not enabled in this build. Your goals and check-ins are not sent to an AI service.")).toBeNull();
+  await fireEvent.press(screen.getByRole("button", { name: "Start program" }));
+  const run = mockController.coachState().activeEnrollmentId;
+  await fireEvent.press(screen.getByRole("button", { name: "Start today's session" }));
+  expect(mockPush).toHaveBeenLastCalledWith({ pathname: "/pre", params: { id: "diaphragmatic", coachRun: run, coachStep: "0", coachRepeat: "0" } });
+  mockParams = mockPush.mock.calls.at(-1)![0].params;
+  await view.rerender(wrap(<Pre />));
+  await fireEvent.press(screen.getByRole("radio", { name: "6 of 10" }));
+  await fireEvent.press(screen.getByRole("button", { name: "Audio & haptics" }));
+  expect(mockPush).toHaveBeenLastCalledWith("/practice-audio");
+  await view.rerender(wrap(<><Pre /><PracticeAudio /></>));
+  await fireEvent.press(screen.getByRole("button", { name: "Warm" }));
+  await view.rerender(wrap(<Pre />));
+  expect(screen.getByRole("radio", { name: "6 of 10" }).props.accessibilityState.selected).toBe(true);
+  await fireEvent.press(screen.getByRole("button", { name: "Skip rating & start" }));
+  expect(mockReplace).toHaveBeenLastCalledWith("/session");
+  expect(mockController.current?.coach).toEqual({ enrollmentId: run, step: 0 });
+  expect(mockController.current?.engine.plan.blocks[0].cycles).toBe(12);
+  expect(experienceFor(mockController.preferences).breathSound).toBe("warm");
+});
+
+test("premium program preview does not activate access and rejected deep links return to coach", async () => {
+  const view = await render(wrap(<Coach />));
+  await fireEvent.press(screen.getAllByRole("button", { name: "Explore InOut Pro" })[0]);
+  expect(mockPush).toHaveBeenLastCalledWith({ pathname: "/pro", params: { source: "coach" } });
+  expect(mockController.coachState().enrollments).toHaveLength(0);
+  mockParams = { id: "coherent", coachRun: "missing", coachStep: "0" };
+  await view.rerender(wrap(<Pre />));
+  expect(screen.queryByRole("button", { name: "Skip rating & start" })).toBeNull();
+  await fireEvent.press(screen.getByRole("button", { name: "Return to coach" }));
+  expect(mockReplace).toHaveBeenLastCalledWith("/coach");
+});
+
+test.each(["en", "es", "pt"] as const)("coach navigation and program titles localize in %s", async language => {
+  mockController.setPreferences({ ...mockController.preferences, language });
+  await render(wrap(<Coach />));
+  expect(screen.getByText(t("Find Your Rhythm"))).toBeTruthy();
+  expect(screen.getByRole("button", { name: t("Start program") })).toBeTruthy();
 });

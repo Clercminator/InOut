@@ -11,7 +11,7 @@ export const commercialPolicy = Object.freeze({
 });
 export const proCapabilities = [
   "adFree", "unlimitedCustomPatterns", "unlimitedMixes", "unlimitedSavedRoutines",
-  "advancedInsights", "advancedReminders",
+  "advancedInsights", "advancedReminders", "guidedPrograms", "continuingPlans", "aiCoach",
 ] as const;
 export type Capability = typeof proCapabilities[number];
 export type SubscriptionStatus = "free" | "trial" | "active" | "cancelled" | "billingRetry" | "grace" | "expired";
@@ -95,6 +95,7 @@ export class EntitlementService {
     this.refresh();
   }
   has(capability: Capability): boolean { return proCapabilities.includes(capability) && (!productConfig.proFeatures.includes(capability) || this.state.pro); }
+  programAccess(id: string) { return { allowed: !productConfig.proProgramIds.includes(id) || this.has("guidedPrograms") }; }
   protocolAccess(protocol: Pick<Protocol, "id" | "plan">) {
     const locked = [protocol.id, ...(protocol.plan?.blocks.map(b => b.protocolId) ?? [])].some(id => productConfig.proProtocolIds.includes(id));
     return { allowed: !locked || this.state.pro, requiresPro: locked };

@@ -14,6 +14,7 @@ import { productConfig } from "./product-config";
 import { validEmail } from "./welcome-email";
 import { dayKey } from "./progress";
 import { enrollChallenge, reconcileChallenges, validateChallenges, type UserChallenge } from "./challenges";
+import { emptyCoach, validateCoach, recordCoachSession, type CoachState } from "./coach";
 
 export interface Database {
   execSync(sql: string): void;
@@ -65,6 +66,7 @@ export class LocalStore {
       JSON.stringify(record),
     );
     if (record.stage === "result") {
+      if (record.coach) this.writeCoachState(recordCoachSession(this.coachState(), record));
       const attempt = stateShiftAttempt(record);
       if (attempt) this.writeTestStore(appendAttempt(this.testStore(), attempt));
       this.writeChallenges(reconcileChallenges(this.challenges(), [record], pro));
@@ -76,6 +78,14 @@ export class LocalStore {
   guidedUsage(now: number): GuidedUsage {
     const row = this.db.getFirstSync<{ payload: string }>("SELECT payload FROM settings WHERE key='guided-usage-v1'");
     return currentUsage(row ? JSON.parse(row.payload) : null, now);
+  }
+  coachState(): CoachState {
+    const row = this.db.getFirstSync<{ payload: string }>("SELECT payload FROM settings WHERE key='coach-v1'");
+    return row ? validateCoach(JSON.parse(row.payload)) : emptyCoach();
+  }
+  writeCoachState(value: CoachState) {
+    validateCoach(value);
+    this.db.runSync("INSERT INTO settings(key,payload) VALUES('coach-v1',?) ON CONFLICT(key) DO UPDATE SET payload=excluded.payload", JSON.stringify(value));
   }
   rewards(records?: SessionRecord[]): RewardLedger {
     const row = this.db.getFirstSync<{ payload: string }>("SELECT payload FROM settings WHERE key='rewards-v1'");

@@ -11,7 +11,7 @@ export function createAudioPreview(onError: () => void, onDone: () => void) {
     if (stopped) return;
     stopped = true;
     timers.forEach(clearTimeout);
-    cleanup.forEach(fn => fn());
+    cleanup.forEach(fn => { try { fn(); } catch { /* Continue after a native media reset. */ } });
     players.forEach(player => {
       try { player.pause(); } catch { /* A reset may already have released native resources. */ }
       try { player.remove(); } catch { /* Continue releasing the other players. */ }

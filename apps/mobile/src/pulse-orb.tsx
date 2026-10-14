@@ -48,7 +48,7 @@ export function PulseOrb({ view, phases, running, motionEnabled = true, size = 2
     animation.start();
     return () => animation.stop();
     // Phase boundaries and resume resync from the authoritative snapshot; timer ticks do not restart native animation.
-  }, [view.cueKey, running, reduced, motionEnabled, volume]);
+  }, [view.cueKey, phases, running, reduced, motionEnabled, volume]);
   return <View testID="pulse-orb" accessible={false} importantForAccessibility="no-hide-descendants"
     style={{ width: size, height: size, maxWidth: "100%", alignSelf: "center" }}>
     <View style={[StyleSheet.absoluteFill, { borderRadius: size / 2, backgroundColor: "#7B2AFF12", transform: [{ scale: 1.08 }] }]} />

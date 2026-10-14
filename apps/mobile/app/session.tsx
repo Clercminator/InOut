@@ -135,6 +135,7 @@ export default function Session() {
         style={[s.card, { padding: 16, borderWidth: 1, borderColor: colors.sessionBorder, borderRadius: 24 }]}
       >
         <PulseSessionVisual
+          key={record.id}
           view={view}
           running={running}
           phases={record.engine.plan.blocks[view.blockIndex].phases}

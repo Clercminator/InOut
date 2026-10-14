@@ -1,3 +1,4 @@
+import { DailyCoachCard } from "../../src/daily-coach-card";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { typography } from "@inout/design-tokens";
 import { Pressable } from "../../src/localized-native";
@@ -60,7 +61,7 @@ export default function Today() {
         <HomeTile title="Create" icon="tune" tone="gold" onPress={() => router.push("/custom")} />
       </View>
     </View>
-    <Card style={{ backgroundColor: colors.accentSurface, gap: 10 }}><Label>{content.title}</Label><Copy style={{ fontFamily: typography.heading, fontSize: 20, lineHeight: 27 }}>{content.heading}</Copy><Copy translate={false} style={{ color: colors.secondaryText }}>{protocolTitle(recommendation)} · {duration(recommendation.defaultDuration)}</Copy><Button title="Start practice" onPress={() => router.push({ pathname: "/pre", params: { id: recommendation.id } })} /></Card>
+    <DailyCoachCard goal={moment ?? undefined} />
     <GuidanceAllowance />
     <View style={{ gap: 12 }}><Label>WHAT DO YOU NEED?</Label><ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={{ gap: 8, paddingRight: 20, alignItems: "center" }}>
       {(Object.keys(situationGoals) as Goal[]).map(situation => <Chip key={situation} title={situation} selected={content.situation === situation} onPress={() => { setMoment(situationGoals[situation]); controller.analytics.track("situation_selected"); }} />)}

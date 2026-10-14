@@ -91,3 +91,14 @@ Before submission, record weekly/monthly/yearly rendering, purchase/cancellation
 
 - [ ] The domain is already configured at **inout.imrtech.xyz**. Supply the Apple Team ID, Play Console → App integrity → app-signing certificate SHA-256, and real store URLs. Root `.well-known` endpoints are live with empty declarations. Populate `release/links.json` with real values; prepared scripts consume them. **Success:** HTTPS links open the signed app with browser/store fallback. Existing custom-scheme/browser sharing does not require this optional domain setup.
 - [ ] Confirm the existing **no remote product analytics for v1** decision. No analytics account/key is needed. Future remote collection is a separate business/privacy decision; current events accept no private free text, goals, ratings or user identifiers.
+
+
+## UX and coach milestone acceptance (unreleased, October 14, 2026)
+
+- [ ] On the next owner-approved Android candidate, audition Air/Ocean/Warm and Voice + breath in EN/ES/PT; check media/silent settings, both vibration styles, disabled system haptics, rapid switching, Stop, leaving the modal, locking the phone and starting a session. Confirm no overlapping or late cues.
+- [ ] At small screen size and large system text, verify pre-session rating/duration survive Audio & Haptics, all three tab selections, badge dates/progress/share controls, and 1080px square/story exports. Listen to phase-aligned voice and confirm quiet holds.
+- [ ] Check native Pulse on a mid-range Android phone through inhale/hold/exhale, pause/resume, background interruption and reduced motion. The implementation uses a few native gradients and curved ribbons, without a fluid simulation, blur shader or video. Automated tests do not establish smoothness or visual acceptance.
+- [ ] Complete and resume the Free introductory program offline; test skip/repeat, restarting the app, saved results and return to Coach. With valid Pro access, test premium programs, weekly edits/pause/repeat, expiry and the existing unavailable-store fallback.
+- [ ] Optional AI remains disabled (`productConfig.coachAiEnabled = false`). Local inspection found no coaching Edge Function or server-side entitlement/usage enforcement. The typed adapter has strict allowlists, consent gates, timeout, a local request cap and deterministic fallback, but no live transport. Before enabling it, implement authenticated server-side Pro verification, shared daily/rate/cost limits, and an OpenRouter adapter with an explicitly chosen model/token budget. Keep credentials server-side; require explicit consent before sending goal text or check-in categories. No cloud configuration or deployment was performed.
+
+The current Google Play internal-testing build remains unchanged. No native build, upload, versionCode increment or release was performed for these milestones.

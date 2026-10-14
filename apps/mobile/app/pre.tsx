@@ -23,12 +23,18 @@ import { experienceFor } from "../src/experience";
 import { CyclicOverview, CyclicSafety } from "../src/cyclic-content";
 import { totalDuration } from "@inout/breathing-engine";
 
+import { coachProtocol, comfortableCycles, type CoachSession } from "../src/coach";
 import { GuidanceAllowance } from "../src/guidance-allowance";
 export default function Pre() {
   const { colors } = useTheme();
   useLanguage();
   const controller = useSession();
-  const { id, ritualId, minSeconds } = useLocalSearchParams<{ id?: string; ritualId?: string; minSeconds?: string }>();
+  const { id, ritualId, minSeconds, coachRun, coachStep, coachWeek, coachDate, coachRepeat, coachSeconds } = useLocalSearchParams<{
+    id?: string; ritualId?: string; minSeconds?: string; coachRun?: string; coachStep?: string; coachWeek?: string; coachDate?: string; coachRepeat?: string; coachSeconds?: string;
+  }>();
+  const coachTag: CoachSession | undefined = coachRun ? { enrollmentId: coachRun, step: Number(coachStep) } : coachWeek ? { week: coachWeek, date: coachDate ?? "" } : undefined;
+  const coachChoice = coachTag ? controller.coachSession(coachTag, coachRepeat === "1") : null;
+  const basicCoach = coachSeconds !== undefined && id ? coachProtocol(id) : null;
   const ritual = experienceFor(controller.preferences).rituals.find(r => r.id === ritualId);
   const protocol = ritual?.protocol ?? (id === "custom" && controller.customProtocol
     ? controller.customProtocol
@@ -40,9 +46,10 @@ export default function Pre() {
     (total, phase) => total + phase.durationMs,
     0,
   );
-  const [cycles, setCycles] = useState(ritual?.cycles ?? Math.max(protocol.defaultCycles, Math.ceil(Math.min(180, Math.max(0, Number(minSeconds) || 0)) * 1000 / cycleDuration)));
+  const [cycles, setCycles] = useState(coachChoice?.cycles ?? (basicCoach ? comfortableCycles(basicCoach.id as import("../src/coach").CoachProtocolId, Number(coachSeconds)) : undefined) ?? ritual?.cycles ?? Math.max(protocol.defaultCycles, Math.ceil(Math.min(180, Math.max(0, Number(minSeconds) || 0)) * 1000 / cycleDuration)));
   const locked = !controller.entitlements.protocolAccess(protocol).allowed;
   useEffect(() => { if (locked) controller.analytics.track("premium_lock_tapped"); }, [controller, locked, protocol.id]);
+  if (coachTag && (!coachChoice || coachChoice.protocolId !== protocol.id || ritualId)) return <BackScreen title="Coach & programs"><Copy>This planned practice is unavailable. Return to your coach to check progress and access.</Copy><Button title="Return to coach" onPress={() => router.replace("/coach")} /></BackScreen>;
   if (ritualId && !ritual) return <BackScreen title="RITUAL"><Copy>This ritual is no longer available.</Copy></BackScreen>;
   if (id && ((id === "custom" && !controller.customProtocol) || (id !== "custom" && !protocols.some((p) => p.id === id))))
     return <BackScreen title="SESSION UNAVAILABLE"><Title>This pattern is unavailable.</Title><Copy>Choose a protocol or create a new session draft.</Copy><Button title="Browse protocols" onPress={() => router.replace("/protocols")} /></BackScreen>;
@@ -66,6 +73,8 @@ export default function Pre() {
       cycles,
       protocol,
       confirmed,
+      undefined,
+      coachTag ? { tag: coachTag, repeat: coachRepeat === "1" } : undefined,
     );
     if (controller.current?.stage === "active") router.replace("/session");
   };
@@ -75,6 +84,7 @@ export default function Pre() {
       <Button title="START PRACTICE  →" disabled={rating === null || (intense && !confirmed) || !!controller.error} onPress={() => start(rating)} />
       <Button title="Skip rating & start" secondary disabled={(intense && !confirmed) || !!controller.error} onPress={() => start(null)} />
     </ActionFooter>}>
+      {coachChoice && <Copy>{coachChoice.explanation}</Copy>}
       <View style={{ gap: 6 }}>
         <Label>{protocol.goalTags[0].toUpperCase()}</Label>
         <Title translate={false}>{protocolTitle(protocol)}</Title>
@@ -96,6 +106,7 @@ export default function Pre() {
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
         {protocol.durationPresets.map((duration) => {
           const presetCycles = Math.max(1, Math.round(duration / cycleDuration));
+          if (coachChoice && (presetCycles > coachChoice.cycles || presetCycles < comfortableCycles(coachChoice.protocolId, 60))) return null;
           return (
             <Chip
               key={duration}

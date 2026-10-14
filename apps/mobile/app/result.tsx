@@ -59,6 +59,7 @@ export default function Result() {
         message={shift !== null && shift > 0 ? "You reported less tension. A moment worth celebrating — your session is saved." : "Your practice is part of your progress. Nicely done."}
       />}
       {saved === "1" && !controller.error && <WeeklyGoal compact />}
+      {record.coach && !controller.error && <Button title="Return to coach" secondary onPress={() => router.replace("/coach")} />}
       <View style={s.resultHeader}>
         <View style={s.row}>
           <View style={s.inlineLabel}>

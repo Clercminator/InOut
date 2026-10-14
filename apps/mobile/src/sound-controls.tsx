@@ -57,6 +57,7 @@ export function SoundControls({ compact = false }: { compact?: boolean }) {
     if (Platform.OS !== "android" && Platform.OS !== "ios") { setError("Vibration preview is available on supported phones only."); return; }
     const token = generation.current;
     const started = performance.now();
+    let hapticInFlight = false;
     const phases = protocols.find(p => p.id === "box")!.phases.map((phase, i) => ({ ...phase, durationMs: i % 2 ? 1000 : 2000 }));
     setPlaying(true);
     stopHaptics.current = startHapticPacer(() => {
@@ -68,9 +69,9 @@ export function SoundControls({ compact = false }: { compact?: boolean }) {
       return { key: `preview:${index}`, elapsedMs: elapsed, remainingMs: phase.durationMs - elapsed,
         intervalMs: 1000, offsetsMs: hapticOffsets(phase, controller.preferences.hapticMode),
         style: phase.type === "inhale" ? "light" : phase.type === "exhale" ? "soft" : null };
-    }, style => { void emitBreathHaptic(style).catch(() => {
+    }, style => { if (hapticInFlight) return; hapticInFlight = true; void emitBreathHaptic(style).catch(() => {
       if (token === generation.current) { stop(); setError("Vibration unavailable. Check system touch feedback and battery settings."); }
-    }); });
+    }).finally(() => { hapticInFlight = false; }); });
     timers.current.push(setTimeout(stop, 6000));
   };
   return <View style={{ gap: 12 }}>

@@ -18,8 +18,64 @@ import { manualSession, type ManualSessionInput } from "./manual-session";
 import { practiceStats, dayKey } from "./progress";
 import { productConfig } from "./product-config";
 import { challengeCatalog } from "./challenges";
+import { emptyCoach, programFor, enrollProgram, programSession, coachProtocol, comfortableCycles, generateWeek, type CoachState, type CoachSession } from "./coach";
+import { addDays } from "./progress";
 
 export class SessionController {
+  private coachCache: CoachState | null = null;
+  coachState() { return this.coachCache ??= this.store.coachState?.() ?? emptyCoach(); }
+  private changeCoach(change: (state: CoachState) => CoachState) {
+    if (this.error || (this.current && this.current.stage !== "result")) return false;
+    return this.mutate(() => { this.store.writeCoachState(change(this.coachState())); this.coachCache = null; });
+  }
+  enrollProgram(id: string) {
+    if (!programFor(id) || !this.entitlements.programAccess(id).allowed) return false;
+    return this.changeCoach(state => enrollProgram(state, id, this.id(), this.now()));
+  }
+  configureCoach(patch: Partial<Pick<CoachState, "availableMinutes" | "useFeedback">>) {
+    return this.changeCoach(state => ({ ...state, ...patch }));
+  }
+  pauseProgram(paused: boolean) {
+    return this.changeCoach(state => ({ ...state, enrollments: state.enrollments.map(e => e.id === state.activeEnrollmentId && e.status !== "completed" ? { ...e, status: paused ? "paused" : "active" } : e) }));
+  }
+  skipProgramDay() {
+    return this.changeCoach(state => ({ ...state, enrollments: state.enrollments.map(e => e.id === state.activeEnrollmentId && e.status === "active" ? { ...e, deferUntil: dayKey(addDays(new Date(this.now()), 1)) } : e) }));
+  }
+  createCoachWeek() {
+    if (!this.entitlements.has("continuingPlans")) return false;
+    return this.changeCoach(state => {
+      // Do not erase completed or edited sessions when returning to the current plan.
+      if (state.week && state.week.entries[6].date >= dayKey(new Date(this.now()))) return state;
+      return { ...state, week: generateWeek(this.preferences, this.history(), state, this.now()) };
+    });
+  }
+  pauseCoachWeek(paused: boolean) {
+    if (!this.entitlements.has("continuingPlans")) return false;
+    return this.changeCoach(state => state.week ? { ...state, week: { ...state.week, paused } } : state);
+  }
+  editCoachDay(date: string, protocolId?: string, minutes?: number, skip = false) {
+    if (!this.entitlements.has("continuingPlans")) return false;
+    return this.changeCoach(state => {
+      if (!state.week || date < dayKey(new Date(this.now())) || (protocolId !== undefined && !coachProtocol(protocolId))) return state;
+      return { ...state, week: { ...state.week, entries: state.week.entries.map(e => {
+        if (e.date !== date || e.status === "completed") return e;
+        const id = (protocolId ?? e.protocolId) as typeof e.protocolId;
+        return { ...e, protocolId: id, cycles: minutes === undefined && protocolId === undefined ? e.cycles : comfortableCycles(id, (minutes ?? state.availableMinutes) * 60), status: skip ? "skipped" : "planned" };
+      }) } };
+    });
+  }
+  coachSession(tag: CoachSession, repeat = false) {
+    const state = this.coachState(), today = dayKey(new Date(this.now()));
+    if ("enrollmentId" in tag) {
+      const enrollment = state.enrollments.find(e => e.id === tag.enrollmentId);
+      if (!enrollment || !this.entitlements.programAccess(enrollment.programId).allowed) return null;
+      return programSession(state, tag.enrollmentId, tag.step, repeat, today);
+    }
+    if (!this.entitlements.has("continuingPlans") || !state.week || state.week.paused || tag.week !== state.week.start || tag.date !== today) return null;
+    const entry = state.week.entries.find(e => e.date === tag.date);
+    if (!entry || (repeat ? entry.status !== "completed" : entry.status !== "planned")) return null;
+    return { protocolId: entry.protocolId, cycles: entry.cycles, seconds: entry.cycles * coachProtocol(entry.protocolId)!.phases.reduce((sum, p) => sum + p.durationMs, 0) / 1000, explanation: "Your weekly plan, adjusted to your available time." };
+  }
   current: SessionRecord | null = null;
   customProtocol: Protocol | null = null;
   preferences: Preferences;
@@ -165,6 +221,7 @@ export class SessionController {
         const streakBefore = previous ? practiceStats(this.history(), new Date(this.now())).current : null;
         const challengesBefore = this.challenges();
         this.store.save(this.current, this.entitlements.state.pro);
+        if (this.current.stage === "result" && this.current.coach) this.coachCache = null;
         for (const state of this.challenges()) {
           const old = challengesBefore.find(s => s.challengeId === state.challengeId);
           if (state.progress > (old?.progress ?? 0)) { this.analytics.track("challenge_progressed"); this.analytics.track("challenge_program_progress"); }
@@ -200,6 +257,7 @@ export class SessionController {
     protocol: Protocol = sigh,
     safetyConfirmed = false,
     challengeTest?: "state-shift-60",
+    coaching?: { tag: CoachSession; repeat: boolean },
   ) {
     if (!validRating(pre)) throw new Error("Choose a rating from 1 to 10");
     if (!this.entitlements.protocolAccess(protocol).allowed) { this.analytics.track("premium_lock_tapped"); this.routineNotice = "This protocol requires InOut Pro."; this.emit(); return; }
@@ -212,6 +270,10 @@ export class SessionController {
     )
       return;
     const selectedCycles = cycles ?? protocol.defaultCycles;
+    if (coaching) {
+      const choice = this.coachSession(coaching.tag, coaching.repeat);
+      if (!choice || choice.protocolId !== protocol.id || !Number.isInteger(selectedCycles) || selectedCycles < comfortableCycles(choice.protocolId, 60) || selectedCycles > choice.cycles) return;
+    }
     if (isCyclic(protocol)) {
       if (!Number.isInteger(selectedCycles) || selectedCycles < 1 || selectedCycles > 3) return;
       protocol = cyclic;
@@ -222,6 +284,7 @@ export class SessionController {
     const plan = planFor(protocol, selectedCycles);
     this.current = {
       id: this.id(),
+      coach: coaching?.tag,
       challengeTest,
       guidedQuota: this.preferences.audio === "voice" && productConfig.guidedSessionsPerMonth !== null && !this.entitlements.state.pro && this.guidedAccess().allowed,
       voiceAllowed: productConfig.guidedSessionsPerMonth === null || this.entitlements.state.pro || (this.preferences.audio === "voice" && this.guidedAccess().allowed),
@@ -510,6 +573,7 @@ export class SessionController {
     this.pause();
     return this.mutate(() => {
       this.store.reset();
+      this.coachCache = null;
       this.onLocalDataReset?.();
       this.current = null;
       this.customProtocol = null;
