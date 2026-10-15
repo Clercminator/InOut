@@ -1,4 +1,5 @@
 import test from "node:test";
+import { setDeviceLocales } from "../apps/mobile/src/language-preference";
 import { AnalyticsService, type ProductEvent } from "../apps/mobile/src/analytics";
 import assert from "node:assert/strict";
 import { DatabaseSync } from "node:sqlite";
@@ -568,7 +569,8 @@ test("history is not reread on every timer render and invalidates after new resu
 });
 
 
-test("language choice survives cold launch without changing practice data; legacy preferences default to English", () => {
+test("manual language choice survives cold launch without changing practice data", () => {
+  setDeviceLocales(["en-US"]);
   const env = setup();
   try {
     const c = env.controller();
@@ -577,7 +579,7 @@ test("language choice survives cold launch without changing practice data; legac
     c.start(7); env.now(48000 + 1000); c.tick(); c.answer(4, null);
     const history = JSON.stringify(c.history());
     for (const language of ["es", "pt", "en"] as const) {
-      c.setPreferences({ ...c.preferences, language });
+      c.setPreferences({ ...c.preferences, language, languageSource: "manual" });
       const reopened = env.controller();
       assert.equal(reopened.preferences.language, language);
       assert.equal(experienceFor(reopened.preferences).name, "Focus");
@@ -591,19 +593,20 @@ test("language choice survives cold launch without changing practice data; legac
 
 
 test("failed language saves keep the current choice and retry persists the requested language", () => {
+  setDeviceLocales(["en-US"]);
   const env = setup();
   try {
     const c = env.controller();
     const save = env.store.savePreferences.bind(env.store);
     env.store.savePreferences = () => { throw new Error("disk full"); };
-    c.setPreferences({ ...c.preferences, language: "pt" });
+    c.setPreferences({ ...c.preferences, language: "pt", languageSource: "manual" });
     assert.equal(c.preferences.language, "en");
     assert.ok(c.error);
     env.store.savePreferences = save;
     c.retry();
     assert.equal(c.preferences.language, "pt");
     assert.equal(env.controller().preferences.language, "pt");
-    c.setPreferences({ ...c.preferences, language: "en" });
+    c.setPreferences({ ...c.preferences, language: "en", languageSource: "manual" });
   } finally { env.db.close(); }
 });
 

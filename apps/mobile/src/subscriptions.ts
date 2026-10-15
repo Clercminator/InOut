@@ -1,5 +1,6 @@
 import { EntitlementService, type EntitlementGrant } from "./entitlements";
 import { AnalyticsService } from "./analytics";
+import type { PurchasesOffering } from "react-native-purchases";
 
 export type PlanId = "weekly" | "monthly" | "annual";
 export interface SubscriptionOffer { id: PlanId; title: string; price: string; period: string; priceAmount?: number; currency?: string; trialEligible?: boolean; introductoryOffer?: { price: string; periods: number; period: string }; }
@@ -17,6 +18,10 @@ export class SubscriptionError extends Error {
 export interface SubscriptionProvider {
   readonly mode: "development" | "store" | "unavailable";
   readonly testStore?: boolean;
+  remotePaywall?: {
+    offering(locale: string): Promise<PurchasesOffering>;
+    verify(customerInfo: unknown): EntitlementGrant;
+  };
   offers(): Promise<SubscriptionOffer[]>;
   refresh(): Promise<EntitlementGrant>;
   purchase(id: PlanId): Promise<EntitlementGrant>;
@@ -54,6 +59,35 @@ export class SubscriptionService {
     this.entitlements.billingReady = this.entitlements.billingEvidenceReady;
     this.entitlements.refresh();
   }
+  remoteStarted(operation: "purchase" | "restore") {
+    this.busy = true; this.message = "";
+    this.analytics.track(operation === "purchase" ? "purchase_started" : "restore_started");
+    this.emit();
+  }
+  remoteCompleted(customerInfo: unknown, operation: "purchase" | "restore") {
+    let unlocked = false;
+    try {
+      if (!this.adapter.remotePaywall || this.adapter.testStore || this.adapter.mode !== "store") throw Error("Store verification required");
+      const grant = this.adapter.remotePaywall.verify(customerInfo);
+      if (grant.source !== "store") throw Error("Store verification required");
+      this.apply(grant);
+      unlocked = this.entitlements.state.subscriptionPro;
+      this.message = unlocked ? "Pro is active." : "No active Pro subscription was found.";
+      if (unlocked) {
+        this.analytics.track(operation === "purchase" ? "purchase_success" : "restore_success");
+        this.analytics.track(operation === "restore" ? "subscription_restored" : grant.status === "trial" ? "trial_started" : "subscription_started");
+      }
+    } catch { this.message = "The store response could not be verified. Try restoring purchases."; }
+    finally { this.busy = false; this.emit(); }
+    return unlocked;
+  }
+  remoteFailed(cancelled = false) {
+    this.busy = false;
+    this.message = cancelled ? "Purchase cancelled. Nothing changed." : "The store could not complete this request. Try again.";
+    if (cancelled) this.analytics.track("purchase_cancelled");
+    this.emit();
+  }
+  remoteClosed() { if (this.busy) { this.busy = false; this.emit(); } }
   private async operation(action: () => Promise<void>) {
     if (this.busy) return;
     this.busy = true; this.message = ""; this.emit();

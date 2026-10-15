@@ -1048,6 +1048,8 @@
   "RECOMMENDED PLAN": "PLAN RECOMENDADO",
   "Your Pro access is ready.": "Tu acceso Pro está listo.",
   "{0} / {1}": "{0} / {1}",
+  "The store response could not be verified. Try restoring purchases.": "No se pudo verificar la respuesta de la tienda. Intenta restaurar tus compras.",
+  "The store could not complete this request. Try again.": "La tienda no pudo completar esta solicitud. Inténtalo de nuevo.",
   "Advertisement": "Anuncio",
   "Advertising": "Publicidad",
   "Access boundary": "Límite de acceso",

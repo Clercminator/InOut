@@ -3,7 +3,7 @@ import type { CustomerInfo } from "react-native-purchases";
 import { revenueCatAdapter, grantFromCustomerInfo } from "../src/subscription-providers/revenuecat";
 import { SubscriptionError, defaultPlan } from "../src/subscriptions";
 import { subscriptionConfiguration } from "../src/monetization";
-const mockSdk = { ENTITLEMENT_VERIFICATION_MODE: { INFORMATIONAL: "INFORMATIONAL" }, configure: jest.fn(), getCustomerInfo: jest.fn(), getOfferings: jest.fn(), purchasePackage: jest.fn(), restorePurchases: jest.fn(), checkTrialOrIntroductoryPriceEligibility: jest.fn(), addCustomerInfoUpdateListener: jest.fn(), removeCustomerInfoUpdateListener: jest.fn(), logIn: jest.fn(), logOut: jest.fn(), isAnonymous: jest.fn() };
+const mockSdk = { ENTITLEMENT_VERIFICATION_MODE: { INFORMATIONAL: "INFORMATIONAL" }, configure: jest.fn(), getCustomerInfo: jest.fn(), getOfferings: jest.fn(), overridePreferredLocale: jest.fn(), purchasePackage: jest.fn(), restorePurchases: jest.fn(), checkTrialOrIntroductoryPriceEligibility: jest.fn(), addCustomerInfoUpdateListener: jest.fn(), removeCustomerInfoUpdateListener: jest.fn(), logIn: jest.fn(), logOut: jest.fn(), isAnonymous: jest.fn() };
 jest.mock("react-native-purchases", () => ({ default: mockSdk }));
 const info = () => ({ requestDate: new Date(1000).toISOString(), entitlements: { verification: "VERIFIED", all: { in_out_pro: { productIdentifier: "fixture", expirationDate: new Date(10000).toISOString(), isActive: true, willRenew: true, periodType: "NORMAL" } } }, managementURL: "https://apps.apple.com/account/subscriptions" });
 const item = (period: string, price: number) => ({ product: { identifier: period, priceString: `${price},00 Kč`, price, currencyCode: "CZK", subscriptionPeriod: period } });
@@ -61,4 +61,15 @@ test("SDK guest identity is preserved and future authenticated migration uses lo
   await provider.identify!("verified-server-id"); expect(mockSdk.logIn).toHaveBeenCalledWith("verified-server-id");
   await provider.identify!(null); expect(mockSdk.logOut).toHaveBeenCalledTimes(1);
   mockSdk.isAnonymous.mockResolvedValue(true); await provider.identify!(null); expect(mockSdk.logOut).toHaveBeenCalledTimes(1);
+});
+
+test("remote paywall uses the exact default offering and preferred locale, with no Test Store path", async () => {
+  const provider = revenueCatAdapter("appl_fixture");
+  const offering = { availablePackages: [item("P1M", 100)] };
+  mockSdk.getOfferings.mockResolvedValueOnce({ all: { default: offering } });
+  expect(await provider.remotePaywall!.offering("es-419")).toBe(offering);
+  expect(mockSdk.overridePreferredLocale).toHaveBeenCalledWith("es-419");
+  mockSdk.getOfferings.mockResolvedValueOnce({ all: {} });
+  await expect(provider.remotePaywall!.offering("pt-BR")).rejects.toMatchObject({ reason: "unavailable" });
+  expect(revenueCatAdapter("test_fixture", true).remotePaywall).toBeUndefined();
 });

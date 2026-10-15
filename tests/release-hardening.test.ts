@@ -24,10 +24,11 @@ test("release fails closed for test providers, mocks, demo ads and open gates; a
   assert.equal(eas.build["store-test"].distribution, "store"); assert.equal(eas.build["store-test"].android.buildType, "app-bundle");
   assert.equal(eas.build.production.env.INOUT_RELEASE, "1");
 });
-test("RevenueCat SDK references stay inside its adapter and generic service handles pending and restore", async () => {
+test("RevenueCat runtime billing calls stay inside its adapter and generic service handles pending and restore", async () => {
   for (const root of ["apps/mobile/src", "apps/mobile/app"]) for (const name of readdirSync(root, { recursive: true }) as string[]) {
     if (!/\.tsx?$/.test(name) || name.replaceAll("\\", "/") === "subscription-providers/revenuecat.ts") continue;
-    assert.doesNotMatch(readFileSync(`${root}/${name}`, "utf8"), /["']react-native-purchases["']/);
+    const runtimeSource = readFileSync(`${root}/${name}`, "utf8").replace(/^import type .*?;\r?\n/gm, "");
+    assert.doesNotMatch(runtimeSource, /["']react-native-purchases["']/);
   }
   const e = new EntitlementService(false, () => 1000);
   const grant = { source: "store" as const, active: true, status: "active" as const, verifiedAt: 1000, expiresAt: 9000, graceUntil: null };

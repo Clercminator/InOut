@@ -31,6 +31,15 @@ export function revenueCatAdapter(apiKey: string, testStore = false): Subscripti
   const customer = async () => grant(await Purchases.getCustomerInfo());
   return {
     mode: "store", testStore,
+    ...(!testStore ? { remotePaywall: {
+      async offering(locale: string) {
+        await Purchases.overridePreferredLocale(locale);
+        const offering = (await Purchases.getOfferings()).all[config.offering];
+        if (!offering?.availablePackages.length) throw new SubscriptionError("unavailable", "No subscription plans are available in this build yet.");
+        return offering;
+      },
+      verify: (info: unknown) => grantFromCustomerInfo(info as CustomerInfo),
+    } } : {}),
     async offers() {
       packages = {};
       const current = (await Purchases.getOfferings()).all[config.offering];

@@ -1,8 +1,9 @@
 import { GoalMark, OnboardingHero } from "./onboarding-art";
+import { RemotePaywall } from "./remote-paywall";
 import { t, locale, message, countLabel } from "./i18n";
 import { useLanguage } from "./use-language";
 import { Pressable, Switch, TextInput } from "./localized-native";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BackHandler, Linking, View } from "react-native";
 import { router } from "expo-router";
 import { useCommercial } from "./commercial-context";
@@ -18,7 +19,30 @@ function introDuration(period: string) {
   const unit = { D: "day", W: "week", M: "month", Y: "year" }[match?.[2] ?? ""] as "day" | "week" | "month" | "year";
   return match && unit ? countLabel(Number(match[1]), unit) : period;
 }
-export function Paywall({ entry = "profile", onClose, completionError }: { entry?: string; onClose?: () => void; completionError?: string | null }) {
+type PaywallProps = { entry?: string; onClose?: () => void; completionError?: string | null };
+export function Paywall(props: PaywallProps) {
+  const services = useCommercial();
+  const [fallback, setFallback] = useState(false);
+  const closing = useRef(false);
+  useEffect(() => { if (props.completionError) closing.current = false; }, [props.completionError]);
+  const close = () => {
+    if (closing.current) return;
+    closing.current = true;
+    services?.analytics.track("paywall_dismissed");
+    if (props.onClose) props.onClose();
+    else if (router.canGoBack()) router.back();
+    else router.replace("/(tabs)");
+  };
+  const pro = services?.entitlements.state.pro;
+  useEffect(() => { if (props.entry === "onboarding" && pro) close(); }, [pro, props.entry]);
+  if (props.entry === "onboarding" && pro) return <Screen><Copy>Your Pro access is ready.</Copy>{props.completionError && <Copy accessibilityRole="alert">{props.completionError}</Copy>}<Button title="Continue to Home" onPress={close} /></Screen>;
+  if (props.entry === "onboarding" && services?.subscriptions.adapter.mode === "store" && !services.entitlements.billingReady)
+    return <Screen><Copy accessibilityRole="alert">{services.subscriptions.message || "Contacting the store…"}</Copy><Button title="Refresh plans & status" secondary disabled={services.subscriptions.busy} onPress={() => { void services.subscriptions.load(); }} /><Button title="Continue to Home" onPress={close} /></Screen>;
+  if (services?.subscriptions.adapter.remotePaywall && !pro && !fallback)
+    return <RemotePaywall services={services} entry={props.entry ?? "profile"} onClose={close} onFallback={() => setFallback(true)} completionError={props.completionError} />;
+  return <FallbackPaywall {...props} onClose={props.onClose ? close : undefined} />;
+}
+function FallbackPaywall({ entry = "profile", onClose, completionError }: PaywallProps) {
   const { colors } = useTheme();
   const styles = useStyles();
   const [selected, setSelected] = useState<PlanId | null>(null);
