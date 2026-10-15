@@ -12,7 +12,7 @@ The updated [Stitch design reference](UI/inout/DESIGN.md) remains with the expor
 
 ## Current status
 
-**Updated October 15, 2026. Android 1.1.0 (4) is being prepared for Internal testing; public production acceptance remains open.** Native implementation now includes ten protocols (high-intensity cyclic practice requires explicit safety confirmation), local reminders, Pro insights, profiles/rituals/rewards, English/Spanish/Brazilian Portuguese, and Light/Dark/System themes. Core practice stays offline and account-free. Free includes one saved pattern, one mix and one reminder; Pro removes pattern/mix save limits, includes up to five reminders and insights, and suppresses ads. Existing saved items remain usable after downgrade.
+**Updated October 15, 2026. Signed Android 1.1.0 (4) is ready for owner-approved Internal testing upload; public production acceptance remains open.** Native implementation now includes ten protocols (high-intensity cyclic practice requires explicit safety confirmation), local reminders, Pro insights, profiles/rituals/rewards, English/Spanish/Brazilian Portuguese, and Light/Dark/System themes. Core practice stays offline and account-free. Free includes one saved pattern, one mix and one reminder; Pro removes pattern/mix save limits, includes up to five reminders and insights, and suppresses ads. Existing saved items remain usable after downgrade.
 
 Short, revocable exercise sharing is deployed: Supabase **InOut**, organization **IMR TECH**, São Paulo (`sa-east-1`), project `jvmrsoxknaidcbqoasst`; browser practice runs on the existing public site. The current mobile changes are committed on `codex/android-onboarding-release`; release evidence and remaining device checks are in the owner checklist.
 
