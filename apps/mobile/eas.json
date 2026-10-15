@@ -40,7 +40,7 @@
     "store-test": {
       "distribution": "store",
       "environment": "preview",
-      "autoIncrement": true,
+      "autoIncrement": false,
       "env": {
         "INOUT_STORE_TEST": "1",
         "EXPO_NO_DOTENV": "1",
@@ -55,6 +55,15 @@
       "ios": {
         "image": "macos-tahoe-26.5-xcode-26.6",
         "credentialsSource": "remote"
+      }
+    }
+  },
+  "submit": {
+    "internal": {
+      "android": {
+        "track": "internal",
+        "releaseStatus": "completed",
+        "changesNotSentForReview": true
       }
     }
   }

@@ -1,6 +1,6 @@
 # IN/OUT — Product context
 
-This document combines the product vision and product/business briefing. [README.md](README.md) owns implementation status, engineering work and verification; [OWNER_SETUP_CHECKLIST.md](OWNER_SETUP_CHECKLIST.md) owns manual decisions, setup and launch actions. Updated September 30, 2026 to reflect current implementation and decisions. Implemented features are not yet an approved store release; research proposals below remain hypotheses.
+This document combines the product vision and product/business briefing. [README.md](README.md) owns implementation status, engineering work and verification; [OWNER_SETUP_CHECKLIST.md](OWNER_SETUP_CHECKLIST.md) owns manual decisions, setup and launch actions. Updated October 14, 2026 to reflect current implementation and decisions. Implemented features are not yet an approved store release; research proposals below remain hypotheses.
 
 ## Product and positioning
 
@@ -26,13 +26,13 @@ The September 17 commercial-v1 direction, with subsequent implemented additions 
 | Progress/insights | Basic Progress retained | Implemented sample-limited insights; device acceptance open |
 | Profiles, rituals, themes and EN/ES/PT content | Implemented local experience | Included |
 
-Pro uses monthly/annual store subscriptions with an optional store-configured trial. No native card-entry forms. Central implemented capabilities are `adFree`, `unlimitedCustomPatterns`, `unlimitedMixes`, `unlimitedSavedRoutines`, `advancedInsights` and `advancedReminders`. Reserved advanced guidance, audiovisual and cloud-sync concepts do not grant access or imply product availability.
+Pro uses weekly/monthly/annual store subscriptions with an optional store-configured trial. No native card-entry forms. Central implemented capabilities are `adFree`, `unlimitedCustomPatterns`, `unlimitedMixes`, `unlimitedSavedRoutines`, `advancedInsights` and `advancedReminders`. Guided programs and continuing weekly plans are implemented Pro capabilities; the introductory seven-day program and basic recommendations remain Free. AI remains disabled; cloud sync remains a proposal.
 
 Ads never appear during active practice, State Shift, onboarding or safety, or as a post-reset interstitial. Ratings, notes, routine content and inferred wellbeing states are excluded from targeting and analytics. Provider integrations remain isolated; demo purchases and test ads are not production acceptance.
 
 ## Native experience and design
 
-React Native, Expo, TypeScript and Expo Router are the canonical client. Native navigation has four main tabs: Today, Protocols, Custom and Progress; Settings/Profile remain secondary. Prioritize portrait orientation, safe areas, one-handed use, readable controls, short paths and unreliable connectivity. No desktop-style dashboard or hover-dependent interactions.
+React Native, Expo, TypeScript and Expo Router are the canonical client. Native navigation has three main tabs: Results, Home and Challenges; protocols, saved practices, Coach and Profile are secondary routes. Prioritize portrait orientation, safe areas, one-handed use, readable controls, short paths and unreliable connectivity. No desktop-style dashboard or hover-dependent interactions.
 
 Preserve the owner's selected [Stitch exports](UI/) using native components and bundled Inter/Space Grotesk fonts. Extract reusable cards, buttons, chips, rating scales, spacing, radii and motion from selected screens; do not turn exported HTML/Tailwind into the application architecture. Selected screens guide composition; the updated [design reference](UI/inout/DESIGN.md) and current native tokens describe later refinements. The updated design reference describes current implementation intent, not sensing or clinical claims. Current implementation constants live in [design tokens](packages/design-tokens/src/index.ts).
 

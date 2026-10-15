@@ -12,16 +12,16 @@ The updated [Stitch design reference](UI/inout/DESIGN.md) remains with the expor
 
 ## Current status
 
-**Updated October 1, 2026. Commercial v1 is not ready for store submission.** Native implementation now includes ten protocols (high-intensity cyclic practice requires explicit safety confirmation), local reminders, Pro insights, profiles/rituals/rewards, English/Spanish/Brazilian Portuguese, and Light/Dark/System themes. Core practice stays offline and account-free. Free includes one saved pattern, one mix and one reminder; Pro removes pattern/mix save limits, includes up to five reminders and insights, and suppresses ads. Existing saved items remain usable after downgrade.
+**Updated October 15, 2026. Android 1.1.0 (4) is being prepared for Internal testing; public production acceptance remains open.** Native implementation now includes ten protocols (high-intensity cyclic practice requires explicit safety confirmation), local reminders, Pro insights, profiles/rituals/rewards, English/Spanish/Brazilian Portuguese, and Light/Dark/System themes. Core practice stays offline and account-free. Free includes one saved pattern, one mix and one reminder; Pro removes pattern/mix save limits, includes up to five reminders and insights, and suppresses ads. Existing saved items remain usable after downgrade.
 
-Short, revocable exercise sharing is deployed: Supabase **InOut**, organization **IMR TECH**, São Paulo (`sa-east-1`), project `jvmrsoxknaidcbqoasst`; browser practice runs on the existing public site. Native feature/backend source changes remain in the local working tree. The narrow public-page publication is commit `e78da14840c2c7b5adde58b5b06fc7f8b33ccecc`, not delivery of the entire mobile candidate.
+Short, revocable exercise sharing is deployed: Supabase **InOut**, organization **IMR TECH**, São Paulo (`sa-east-1`), project `jvmrsoxknaidcbqoasst`; browser practice runs on the existing public site. The current mobile changes are committed on `codex/android-onboarding-release`; release evidence and remaining device checks are in the owner checklist.
 
 RevenueCat/AdMob adapters and event wiring exist, but production provider acceptance remains open. All seven [readiness gates](release/readiness.json) remain false and store metadata remains a draft. Automated checks, live browser/API tests, physical native acceptance and store approval are distinct milestones. All manual actions belong in the [owner checklist](OWNER_SETUP_CHECKLIST.md).
 
 ## Commercial implementation and trying it
 
 - [Entitlements](apps/mobile/src/entitlements.ts): centralized capabilities and save quotas, preservation of existing routines after downgrade, normalized store cache with a 72-hour maximum offline age and rollback rejection. Legacy preferences and development grants do not establish production Pro.
-- [Subscriptions](apps/mobile/src/subscriptions.ts): provider-neutral service with an isolated RevenueCat adapter and a guarded test provider, weekly/monthly/yearly offers, purchase/restore, lifecycle mapping and store management. The adapter reads offering `default` and entitlement `in_out_pro`.
+- [Subscriptions](apps/mobile/src/subscriptions.ts): provider-neutral service with an isolated RevenueCat adapter and a guarded test provider, weekly/monthly/yearly offers, purchase/restore, lifecycle mapping and store management. The adapter reads offering `default` and entitlement `in_out_pro`. The shared paywall uses RevenueCat UI 10.10.0 with the published welcome paywall, store prices and EN/es-419/pt-BR locales. Native callbacks pass through the same verified-entitlement service; existing subscribers bypass the onboarding offer. Offline failures retain a free exit and the existing subscription-details screen.
 - Settings → **Pro & subscriptions** offers development purchase/failure/cancellation/restore and lifecycle simulations where enabled. These are not store transactions and cannot establish release acceptance.
 - [Ads](apps/mobile/src/ads.ts) and [native slots](apps/mobile/src/ad-slot.tsx): Today/Progress only, protected-flow and Pro suppression. Native test mode uses Google's demo inventory with explicit loading; Expo Go shows only a placement preview. Live requests require configured IDs and UMP eligibility.
 - [Analytics](apps/mobile/src/analytics.ts): event names only, local/dev sink, no remote transport. Core native and browser lifecycle triggers are wired; production collection remains disabled. See the event map for semantics and reserved events.
@@ -54,14 +54,16 @@ Launch/onboarding → Today → Calm Now → Physiological Sigh → optional Pre
 - Local profile/photo, goals, rituals, practice rewards and manually logged sessions; no cloud profile or account synchronization.
 - Reminders select local time, weekdays and a quick practice or saved ritual. Permission is requested when enabling/saving an enabled reminder, never at startup. Alerts contain neutral text, no sound/badge/vibration, and never auto-start practice. Active/post-session banners are suppressed. Denied permission, missing rituals and scheduling failures have recovery paths. Expo Go cannot validate this feature.
 - Pro insights compare the last seven days with the preceding seven. Most repeated completed pattern needs three completions in 30 days; median reported tension change needs five paired completed sessions across three days per unchanged protocol/version/plan. Manual and early-ended sessions do not establish tension patterns. Insufficient data stays explicit; no causal or efficacy claim.
-- English, Spanish and Brazilian Portuguese UI/voice content; Light/Dark/System theme persistence without remounting active practice.
+- English, Latin American Spanish and Brazilian Portuguese UI/voice content. Device language is selected on first launch; manual selections persist. Light/Dark/System themes preserve active practice.
+- Resumable visual onboarding includes an optional Pulse demo, goal/time personalization and the shared RevenueCat welcome offer. Completed users bypass it.
+- Offline Coach supports a free seven-day introduction, Pro programs and editable weekly plans, persistent completion, repeats, skips and pauses. AI transport remains disabled.
 
 ### Native behavior and visual work
 
 - Real Expo haptic phase cues, bundled audio cues, voice/tone/silent preferences and screen-awake behavior during active practice.
 - Portrait layouts, safe areas, accessible control labels and touch targets, font scaling and reduced-motion behavior.
 - Refined cards, navigation, protocol discovery, progress filters, session colors and fixed session controls.
-- Box breathing follows a smooth native rounded-square path with phase colors. Other protocols use appropriate expansion, wave, alternating-side or ripple visuals.
+- Active sessions use the native Pulse orb driven by the breathing engine, with still holds, phase/countdown labels and nostril guidance. Older protocol visuals remain preserved for reference and regression coverage.
 - Onboarding, wordmark, optional ratings, keyboard layouts and fixed session controls have been refined in source; current signed-device acceptance is still open.
 - Offline privacy, safety and help screens, plus user-initiated support email.
 
