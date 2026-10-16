@@ -1,6 +1,7 @@
+import PracticeSafety from "../app/practice-safety";
 import React from "react";
 import { Alert, Share } from "react-native";
-import { render, fireEvent, screen, waitFor } from "@testing-library/react-native";
+import { render, fireEvent, screen, waitFor, act } from "@testing-library/react-native";
 import Reminders from "../app/reminders";
 import Insights from "../app/insights";
 import { ReminderContext } from "../src/reminder-context";
@@ -254,11 +255,12 @@ test("history date filter and manual result preserve provenance without offering
 });
 test("pre rating requires a deliberate selection and keeps skip available", async () => {
   await render(<Pre />);
-  expect(screen.getByRole("button", { name: "START PRACTICE  →" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Continue to safety" })).toBeDisabled();
   await fireEvent.press(screen.getByRole("radio", { name: "7 of 10" }));
-  await fireEvent.press(screen.getByRole("button", { name: "START PRACTICE  →" }));
+  await fireEvent.press(screen.getByRole("button", { name: "Continue to safety" }));
+  await act(async () => { mockController.confirmSafety(); });
   expect(mockController.current?.pre).toBe(7);
-  expect(mockReplace).toHaveBeenCalledWith("/session");
+  expect(mockPush).toHaveBeenCalledWith("/practice-safety");
 });
 
 test("pattern editor changes durations, reorders phases and saves the executed cadence", async () => {
@@ -343,8 +345,9 @@ test("result presents raw scores and honest negative shift", async () => {
 test("skip saves null rather than the visual default", async () => {
   await render(<Pre />);
   await fireEvent.press(
-    screen.getByRole("button", { name: "Skip rating & start" }),
+    screen.getByRole("button", { name: "Skip rating & continue" }),
   );
+  await act(async () => { mockController.confirmSafety(); });
   expect(mockController.current?.pre).toBeNull();
 });
 
@@ -352,7 +355,7 @@ test("an expired custom draft never silently starts a sigh", async () => {
   mockParams = { id: "custom" };
   await render(<Pre />);
   expect(screen.getByText("This pattern is unavailable.")).toBeTruthy();
-  expect(screen.queryByRole("button", { name: "Skip rating & start" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Skip rating & continue" })).toBeNull();
 });
 
 test("result opens History and restores custom replay data", async () => {
@@ -374,8 +377,9 @@ test("pre-session loadout changes the selected cycle count", async () => {
     screen.getByRole("button", { name: /1:36 · 6 cycles/ }),
   );
   await fireEvent.press(
-    screen.getByRole("button", { name: "Skip rating & start" }),
+    screen.getByRole("button", { name: "Skip rating & continue" }),
   );
+  await act(async () => { mockController.confirmSafety(); });
   expect(mockController.current?.engine.plan.blocks[0].cycles).toBe(6);
 });
 
@@ -468,10 +472,14 @@ test("result sharing keeps tension private by default and includes it only after
 test("cyclic pre-session requires precautions and lets the user end each hold immediately", async () => {
   mockParams = { id: "high-intensity-cyclic" };
   const rendered = await render(<Pre />);
-  expect(screen.getByRole("button", { name: "Skip rating & start" })).toBeDisabled();
-  await fireEvent.press(screen.getByRole("button", { name: "I have read the precautions and I am in a safe place" }));
+  expect(mockController.current).toBeNull();
   await fireEvent.press(screen.getByRole("button", { name: "Up to 3:36 · 1 round" }));
-  await fireEvent.press(screen.getByRole("button", { name: "Skip rating & start" }));
+  await fireEvent.press(screen.getByRole("button", { name: "Skip rating & continue" }));
+  expect(mockController.current).toBeNull();
+  await rendered.rerender(<PracticeSafety />);
+  expect(screen.getByRole("button", { name: "Start practice" })).toBeDisabled();
+  await fireEvent.press(screen.getByRole("button", { name: "I have read the precautions and I am in a safe place" }));
+  await fireEvent.press(screen.getByRole("button", { name: "Start practice" }));
   expect(mockController.current?.safetyConfirmed).toBe(true);
   now = 130000;
   await rendered.rerender(<Session />);
@@ -569,6 +577,23 @@ test("practice audio opens a focused route while the pre-session draft stays mou
   expect(mockPush).toHaveBeenCalledWith("/practice-audio");
   expect(screen.getByText("How tense are you right now?")).toBeTruthy();
   expect(screen.queryByRole("button", { name: "Breath sounds" })).toBeNull();
-  await fireEvent.press(screen.getByRole("button", { name: "Skip rating & start" }));
+  await fireEvent.press(screen.getByRole("button", { name: "Skip rating & continue" }));
+  await act(async () => { mockController.confirmSafety(); });
   expect(mockController.current?.protocolId).toBe("box");
+});
+
+
+test("dedicated safety is required for a new gentle session and cannot replay its confirmation", async () => {
+  const view = await render(<Pre />);
+  await fireEvent.press(screen.getByRole("button", { name: "Skip rating & continue" }));
+  expect(mockController.current).toBeNull();
+  expect(mockPush).toHaveBeenCalledWith("/practice-safety");
+  await view.rerender(<PracticeSafety />);
+  expect(screen.getByText("Choose a safe place")).toBeTruthy();
+  await fireEvent.press(screen.getByRole("button", { name: "Start practice" }));
+  const record = mockController.current;
+  expect(record?.stage).toBe("active");
+  expect(mockReplace).toHaveBeenCalledWith("/session");
+  mockController.confirmSafety();
+  expect(mockController.current).toBe(record);
 });

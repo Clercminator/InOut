@@ -67,22 +67,24 @@ export default function Pre() {
   if (!availableForPractice(protocol))
     return <BackScreen title="PROTOCOL"><Title>Not in this release.</Title><Copy>This routine includes a protocol that is currently unavailable. Choose another breathing practice.</Copy><Button title="Browse protocols" onPress={() => router.replace("/protocols")} /></BackScreen>;
   const start = (value: number | null) => {
-    if (ritual) controller.startRitual(ritual.id, confirmed, value, cycles);
+    controller.requestSafety(() => {
+    if (ritual) controller.startRitual(ritual.id, true, value, cycles);
     else controller.start(
       value,
       cycles,
       protocol,
-      confirmed,
+      true,
       undefined,
       coachTag ? { tag: coachTag, repeat: coachRepeat === "1" } : undefined,
     );
-    if (controller.current?.stage === "active") router.replace("/session");
+    }, protocol);
+    router.push("/practice-safety");
   };
   return (
     <BackScreen title="STATE SHIFT · PRE" footer={<ActionFooter>
       <SaveError />
-      <Button title="START PRACTICE  →" disabled={rating === null || (intense && !confirmed) || !!controller.error} onPress={() => start(rating)} />
-      <Button title="Skip rating & start" secondary disabled={(intense && !confirmed) || !!controller.error} onPress={() => start(null)} />
+      <Button title="Continue to safety" disabled={rating === null || !!controller.error} onPress={() => start(rating)} />
+      <Button title="Skip rating & continue" secondary disabled={!!controller.error} onPress={() => start(null)} />
     </ActionFooter>}>
       {coachChoice && <Copy>{coachChoice.explanation}</Copy>}
       <View style={{ gap: 6 }}>
@@ -92,7 +94,7 @@ export default function Pre() {
           {intense ? "Breaths · Retention · Recovery" : protocol.phases.map((phase) => phase.label).join(" · ")}
         </Copy>
       </View>
-      {intense && <><CyclicOverview compact /><Card><CyclicSafety /><Chip title="I have read the precautions and I am in a safe place" selected={confirmed} onPress={() => setConfirmed(!confirmed)} /></Card></>}
+      {intense && <CyclicOverview compact />}
       <Copy accessibilityRole="header" style={{ fontSize: 24, lineHeight: 32, fontWeight: "700" }}>How tense are you right now?</Copy>
       <GuidanceAllowance />
       {controller.preferences.audio === "voice" && !controller.guidedAccess().allowed && <Copy>Your guided allowance is used. This session will use tones. You can still breathe for free.</Copy>}

@@ -24,6 +24,18 @@ import { emptyCoach, programFor, enrollProgram, programSession, coachProtocol, c
 import { addDays } from "./progress";
 
 export class SessionController {
+  pendingSafety: { protocol?: Protocol; warning?: string; begin: () => void } | null = null;
+  requestSafety(begin: () => void, protocol?: Protocol, warning?: string) {
+    this.pendingSafety = { begin, protocol, warning };
+    this.emit();
+  }
+  confirmSafety() {
+    const pending = this.pendingSafety;
+    this.pendingSafety = null;
+    if (pending) pending.begin();
+    this.emit();
+  }
+  cancelSafety() { this.pendingSafety = null; this.emit(); }
   private coachCache: CoachState | null = null;
   coachState() { return this.coachCache ??= this.store.coachState?.() ?? emptyCoach(); }
   private changeCoach(change: (state: CoachState) => CoachState) {

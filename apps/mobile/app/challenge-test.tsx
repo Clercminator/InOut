@@ -76,14 +76,17 @@ export default function ChallengeTest() {
   const start = () => {
     if (locked) { router.push({ pathname: "/pro", params: { source: "challenges" } }); return; }
     setNotice("");
+    c.requestSafety(() => {
     if (d.id === "state-shift-60") {
       if (rating === null) return;
-      c.startStateShift(rating, confirmed);
-      if (c.current?.stage === "active") router.push("/session");
+      c.startStateShift(rating, true);
+
     } else {
       midpoint.current = false;
-      timing.current = c.beginTest(d.id, confirmed) ? { mono: performance.now(), wall: Date.now() } : null;
+      timing.current = c.beginTest(d.id, true) ? { mono: performance.now(), wall: Date.now() } : null;
     }
+    }, undefined, d.safety);
+    router.push("/practice-safety");
   };
   const save = (completed: boolean) => {
     const attempt = c.saveTest(completed);

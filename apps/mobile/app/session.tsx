@@ -169,7 +169,7 @@ export default function Session() {
                 "The current attempt will reset to cycle 1.",
                 [
                   { text: "Cancel", style: "cancel" },
-                  { text: "Restart", onPress: () => controller.restart() },
+                  { text: "Restart", onPress: () => { controller.requestSafety(() => controller.restart(), record.protocol); router.push("/practice-safety"); } },
                 ],
               )
             }

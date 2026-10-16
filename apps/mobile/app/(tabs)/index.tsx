@@ -74,7 +74,7 @@ export default function Today() {
       <QuickTile title="Learn breathing" icon="school" onPress={() => router.push("/learn")} />
     </View>
     {(favorite || recent) && <Card><Label>YOUR FAMILIAR RHYTHMS</Label>
-      {favorite && <Button translate={false} title={message("Start {0}", [favorite.name])} disabled={!!controller.error || (!!current && current.stage !== "result")} onPress={() => { if (isCyclic(favorite.protocol)) router.push({ pathname: "/pre", params: { ritualId: favorite.id } }); else if (controller.startRitual(favorite.id)) router.push("/session"); }} />}
+      {favorite && <Button translate={false} title={message("Start {0}", [favorite.name])} disabled={!!controller.error || (!!current && current.stage !== "result")} onPress={() => { router.push({ pathname: "/pre", params: { ritualId: favorite.id } }); }} />}
       {recent && <Button title={message("Start {0}", [protocolTitle(protocols.find(p => p.id === recent.protocolId)!)])} secondary onPress={() => router.push({ pathname: "/pre", params: { id: recent.protocolId } })} />}
       <ActionRow title="My rituals" icon="auto-awesome" onPress={() => router.push("/rituals")} />
     </Card>}

@@ -129,7 +129,7 @@ test("locked cosmetic explains its requirement while background and celebration 
   expect(experienceFor(mockController.preferences).celebration).toBe("quiet");
 });
 
-test("a ritual saves the chosen length and starts without adding a rating step", async () => {
+test("a ritual saves the chosen length and opens configuration before safety", async () => {
   const view = await render(wrap(<RitualEdit />));
   await fireEvent.changeText(screen.getByLabelText("Ritual name"), "Morning reset");
   await fireEvent.changeText(screen.getByLabelText("Ritual cycles"), "2");
@@ -137,10 +137,8 @@ test("a ritual saves the chosen length and starts without adding a rating step",
   expect(mockReplace).toHaveBeenCalledWith("/rituals");
   await view.rerender(wrap(<Rituals />));
   await fireEvent.press(screen.getByRole("button", { name: "Start Morning reset" }));
-  expect(mockController.current?.stage).toBe("active");
-  expect(mockController.current?.pre).toBeNull();
-  expect(mockController.current?.engine.plan.blocks[0].cycles).toBe(2);
-  expect(mockPush).toHaveBeenCalledWith("/session");
+  expect(mockController.current).toBeNull();
+  expect(mockPush).toHaveBeenCalledWith({ pathname: "/pre", params: { ritualId: mockController.preferences.experience!.rituals[0].id } });
 });
 
 test("a lost custom draft cannot silently become a different ritual", async () => {
@@ -156,7 +154,7 @@ test("breath preview respects selected volume, stops on mode change and stays ab
   await fireEvent.press(screen.getByRole("button", { name: "Preview breath sounds · 6 sec" }));
   expect(mockPlayers[0].play).toHaveBeenCalled();
   expect(mockPlayers[0].volume).toBe(0.25);
-  await fireEvent.press(screen.getByRole("button", { name: "Silent" }));
+  await fireEvent(screen.getByLabelText("Natural breathing sounds"), "valueChange", false);
   expect(mockPlayers[0].pause).toHaveBeenCalled(); expect(mockPlayers[0].remove).toHaveBeenCalled();
   expect(screen.queryByRole("button", { name: "Preview breath sounds · 6 sec" })).toBeNull();
   expect(screen.queryByRole("button", { name: "Preview chime" })).toBeNull();
@@ -186,14 +184,14 @@ test("saved celebration plays once at the chosen volume and releases its player"
 test("an interrupted voice preview cancels the pending exhale cue", async () => {
   mockController.setPreferences({ ...mockController.preferences, audio: "voice" });
   await render(wrap(<SoundControls compact />));
-  await fireEvent.press(screen.getByRole("button", { name: "Preview breath sounds · 6 sec" }));
-  expect(mockPlayers).toHaveLength(3);
+  await fireEvent.press(screen.getByRole("button", { name: "Preview voice" }));
+  expect(mockPlayers).toHaveLength(2);
   const status = mockPlayers[0].addListener.mock.calls[0][1];
   await act(async () => {
     status({ playing: true }); status({ playing: false, isBuffering: false });
     jest.advanceTimersByTime(4000);
   });
-  expect(mockPlayers).toHaveLength(3);
+  expect(mockPlayers).toHaveLength(2);
   expect(mockPlayers.every(p => p.remove.mock.calls.length === 1)).toBe(true);
 });
 
@@ -496,6 +494,7 @@ test.each(["en", "es", "pt"] as const)("Long Exhale saves an actual timed attemp
   expect(screen.getByRole("button", { name: t("Ready · Start") })).toBeDisabled();
   await fireEvent.press(screen.getByRole("button", { name: t("I have read the precautions and I am in a safe place") }));
   await fireEvent.press(screen.getByRole("button", { name: t("Ready · Start") }));
+  await act(async () => { mockController.confirmSafety(); });
   await act(() => jest.advanceTimersByTime(28400));
   await fireEvent.press(screen.getByRole("button", { name: t("Finish") }));
   expect(mockController.testState().pending?.value).toBe(28.4);
@@ -520,6 +519,7 @@ test("Comfort Hold is centrally gated; eligibility is remembered and background 
   await fireEvent.press(screen.getByRole("button", { name: "Review my eligibility" }));
   await fireEvent.press(screen.getByRole("button", { name: "I have read the precautions and I am in a safe place" }));
   await fireEvent.press(screen.getByRole("button", { name: "Ready · Start" }));
+  await act(async () => { mockController.confirmSafety(); });
   await act(() => onState?.("background"));
   expect(mockController.testState().pending).toBeNull(); expect(mockController.testAttempts()).toHaveLength(0);
 });
@@ -528,6 +528,7 @@ test("Nasal 10 asks for confirmation and records an unsuccessful attempt without
   mockParams = { id: "nasal-10" }; await render(wrap(<ChallengeTest />));
   await fireEvent.press(screen.getByRole("button", { name: "I am somewhere safe for an easy walk" }));
   await fireEvent.press(screen.getByRole("button", { name: "Ready · Start" }));
+  await act(async () => { mockController.confirmSafety(); });
   await act(() => jest.advanceTimersByTime(600000));
   expect(screen.getByText("Did you complete all 10 minutes breathing only through your nose?")).toBeTruthy();
   await fireEvent.press(screen.getByRole("button", { name: "Not this time" }));
@@ -577,14 +578,15 @@ test("Free coach opens its program through setup and retains the draft under aud
   await fireEvent.press(screen.getByRole("button", { name: "Audio & haptics" }));
   expect(mockPush).toHaveBeenLastCalledWith("/practice-audio");
   await view.rerender(wrap(<><Pre /><PracticeAudio /></>));
-  await fireEvent.press(screen.getByRole("button", { name: "Warm" }));
+  await fireEvent.press(screen.getByRole("button", { name: "Ocean" }));
   await view.rerender(wrap(<Pre />));
   expect(screen.getByRole("radio", { name: "6 of 10" }).props.accessibilityState.selected).toBe(true);
-  await fireEvent.press(screen.getByRole("button", { name: "Skip rating & start" }));
-  expect(mockReplace).toHaveBeenLastCalledWith("/session");
+  await fireEvent.press(screen.getByRole("button", { name: "Skip rating & continue" }));
+  await act(async () => { mockController.confirmSafety(); });
+  expect(mockPush).toHaveBeenLastCalledWith("/practice-safety");
   expect(mockController.current?.coach).toEqual({ enrollmentId: run, step: 0 });
   expect(mockController.current?.engine.plan.blocks[0].cycles).toBe(12);
-  expect(experienceFor(mockController.preferences).breathSound).toBe("warm");
+  expect(experienceFor(mockController.preferences).breathSound).toBe("ocean");
 });
 
 test("premium program preview does not activate access and rejected deep links return to coach", async () => {
@@ -594,7 +596,7 @@ test("premium program preview does not activate access and rejected deep links r
   expect(mockController.coachState().enrollments).toHaveLength(0);
   mockParams = { id: "coherent", coachRun: "missing", coachStep: "0" };
   await view.rerender(wrap(<Pre />));
-  expect(screen.queryByRole("button", { name: "Skip rating & start" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Skip rating & continue" })).toBeNull();
   await fireEvent.press(screen.getByRole("button", { name: "Return to coach" }));
   expect(mockReplace).toHaveBeenLastCalledWith("/coach");
 });
