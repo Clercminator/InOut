@@ -107,3 +107,8 @@ Before submission, record weekly/monthly/yearly rendering, purchase/cancellation
 - [ ] Optional AI remains disabled (`productConfig.coachAiEnabled = false`). Local inspection found no coaching Edge Function or server-side entitlement/usage enforcement. The typed adapter has strict allowlists, consent gates, timeout, a local request cap and deterministic fallback, but no live transport. Before enabling it, implement authenticated server-side Pro verification, shared daily/rate/cost limits, and an OpenRouter adapter with an explicitly chosen model/token budget. Keep credentials server-side; require explicit consent before sending goal text or check-in categories. No cloud configuration or deployment was performed.
 
 The current Google Play internal-testing build remains unchanged. No native build, upload, versionCode increment or release was performed for these milestones.
+
+### Production-quality dashboard follow-up (2026-10-16)
+
+- RevenueCat published `default` paywall: replace yellow sparkle with the existing official IN/OUT logo; provide EN, es-419 and pt-BR copy; reduce vertical spacing and check sticky purchase/legal controls on small phones and enlarged text. App sends the selected locale. Keep all products, prices and `in_out_pro` unchanged. No dashboard edit was performed in this implementation pass.
+- Confirm on a Play-installed device: purchase → branded success once → profile badge/unlocks/no ads; restore without purchase celebration; cancelled renewal keeps paid access until expiry; expiration/refund removes access after provider refresh; offline access follows the existing bounded cache.

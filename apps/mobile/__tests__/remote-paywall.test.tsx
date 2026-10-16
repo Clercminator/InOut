@@ -1,3 +1,4 @@
+jest.mock("expo-audio", () => ({}));
 import React from "react";
 import { act, fireEvent, render, screen } from "@testing-library/react-native";
 import type { CustomerInfo, PurchasesOffering } from "react-native-purchases";
@@ -40,6 +41,7 @@ test.each([["en", "en-US"], ["es", "es-419"], ["pt", "pt-BR"]] as const)("native
   expect(mockPaywall.options).toEqual({ offering, displayCloseButton: true });
 });
 test.each(["purchase", "restore"] as const)("verified %s unlocks immediately and completes onboarding once", async operation => {
+  setLanguage("en");
   const s = services(), close = await mount(s);
   const props = mockPaywall;
   await act(async () => {
@@ -50,6 +52,11 @@ test.each(["purchase", "restore"] as const)("verified %s unlocks immediately and
   expect(s.entitlements.state.subscriptionPro).toBe(true);
   expect(s.entitlements.has("adFree")).toBe(true);
   expect(s.subscriptions.busy).toBe(false);
+  if (operation === "purchase") {
+    expect(close).not.toHaveBeenCalled();
+    expect(screen.getByText("Welcome to InOut Pro!")).toBeTruthy();
+    await fireEvent.press(screen.getByRole("button", { name: "Start practicing" }));
+  }
   expect(close).toHaveBeenCalledTimes(1);
 });
 test("cancel, error, unverified and expired responses cannot grant Pro or close onboarding", async () => {
@@ -95,4 +102,23 @@ test("unresolved startup billing never flashes the onboarding offer to an existi
   await act(async () => { s.subscriptions.remoteCompleted(info(), "restore"); });
   expect(screen.queryByTestId("remote-paywall")).toBeNull();
   expect(close).toHaveBeenCalledTimes(1);
+});
+
+
+test("confirmation is never repeated by duplicate callbacks, restores or store updates", () => {
+  const s = services(), purchase = info();
+  s.subscriptions.remoteCompleted(purchase, "purchase");
+  expect(s.subscriptions.purchaseConfirmation).toBeTruthy();
+  s.subscriptions.dismissPurchaseConfirmation();
+  s.subscriptions.remoteCompleted(purchase, "purchase");
+  expect(s.subscriptions.purchaseConfirmation).toBeNull();
+  s.subscriptions.remoteCompleted(info("VERIFIED", Date.now() + 86400000 * 2), "restore");
+  expect(s.subscriptions.purchaseConfirmation).toBeNull();
+});
+
+test("an active subscription never invokes a second purchase", async () => {
+  const s = services(); s.entitlements.acceptStoreGrant(grantFromCustomerInfo(info()));
+  s.subscriptions.adapter.purchase = jest.fn();
+  await s.subscriptions.purchase("monthly");
+  expect(s.subscriptions.adapter.purchase).not.toHaveBeenCalled();
 });

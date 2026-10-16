@@ -1,4 +1,6 @@
 import { GoalMark, OnboardingHero } from "./onboarding-art";
+import { PulseArtwork } from "./pulse-orb";
+import { Celebration } from "./celebration";
 import { RemotePaywall } from "./remote-paywall";
 import { t, locale, message, countLabel } from "./i18n";
 import { useLanguage } from "./use-language";
@@ -26,6 +28,7 @@ export function Paywall(props: PaywallProps) {
   const closing = useRef(false);
   useEffect(() => { if (props.completionError) closing.current = false; }, [props.completionError]);
   const close = () => {
+    if (services?.subscriptions.purchaseConfirmation) return;
     if (closing.current) return;
     closing.current = true;
     services?.analytics.track("paywall_dismissed");
@@ -34,7 +37,14 @@ export function Paywall(props: PaywallProps) {
     else router.replace("/(tabs)");
   };
   const pro = services?.entitlements.state.pro;
-  useEffect(() => { if (props.entry === "onboarding" && pro) close(); }, [pro, props.entry]);
+  const confirmation = services?.subscriptions.purchaseConfirmation;
+  useEffect(() => { if (props.entry === "onboarding" && pro && !confirmation) close(); }, [pro, props.entry, confirmation]);
+  if (confirmation && pro && services) return <Screen title="InOut Pro">
+    <View style={{ alignItems: "center" }}><PulseArtwork size={180} /></View>
+    <Celebration title="Welcome to InOut Pro!" message="Your Pro access is ready." />
+    <Copy>Guided programs for your goals</Copy><Copy>A practice without ads</Copy>
+    <Button title="Start practicing" onPress={() => { services.subscriptions.dismissPurchaseConfirmation(); close(); }} />
+  </Screen>;
   if (props.entry === "onboarding" && pro) return <Screen><Copy>Your Pro access is ready.</Copy>{props.completionError && <Copy accessibilityRole="alert">{props.completionError}</Copy>}<Button title="Continue to Home" onPress={close} /></Screen>;
   if (props.entry === "onboarding" && services?.subscriptions.adapter.mode === "store" && !services.entitlements.billingReady)
     return <Screen><Copy accessibilityRole="alert">{services.subscriptions.message || "Contacting the store…"}</Copy><Button title="Refresh plans & status" secondary disabled={services.subscriptions.busy} onPress={() => { void services.subscriptions.load(); }} /><Button title="Continue to Home" onPress={close} /></Screen>;
@@ -74,7 +84,7 @@ function FallbackPaywall({ entry = "profile", onClose, completionError }: Paywal
     {onClose && <Button title={state.pro ? "Continue to Home" : "Continue for free"} variant="quiet" disabled={subscriptions.busy} onPress={close} />}
   </ActionFooter> : undefined}>
     {completionError && <Copy accessibilityRole="alert">{completionError}</Copy>}
-    {entry === "onboarding" ? <><OnboardingHero compact /><Label>WELCOME TO YOUR NEXT CHAPTER</Label><Title>Make this practice yours.</Title><Copy>A personal breathing coach. More ways to grow.</Copy></> : <Title>More room for your practice.</Title>}
+    {entry === "onboarding" ? <><OnboardingHero compact /><Label>WELCOME TO YOUR NEXT CHAPTER</Label><Title>Make this practice yours.</Title><Copy>A personal breathing coach. More ways to grow.</Copy></> : <><View style={{ alignItems: "center" }}><PulseArtwork size={96} /></View><Title>{state.pro ? "Your Pro access is ready." : "More room for your practice."}</Title></>}
     {entry === "quota" && <Copy>Your guided allowance is used. Keep breathing with tones, or explore Pro.</Copy>}
     {entry === "protocol" && <Copy>Unlock this protocol and make more room for your practice.</Copy>}
     {entry === "coach" && <Copy>Pro includes multiweek guided programs and continuing weekly plans. Find Your Rhythm and basic recommendations remain free.</Copy>}
@@ -84,7 +94,7 @@ function FallbackPaywall({ entry = "profile", onClose, completionError }: Paywal
     {demo && <Card><Label>DEVELOPMENT DEMO</Label><Copy>No money is charged. These plans and optional trial simulate store behavior; they are not real offers.</Copy></Card>}
     {subscriptions.adapter.testStore && <Card><Label>TEST STORE</Label><Copy>RevenueCat Test Store. No real charge or store subscription.</Copy></Card>}
     {subscriptions.adapter.mode === "unavailable" && !subscriptions.message && <Copy>Purchases are unavailable right now. You can keep breathing for free.</Copy>}
-    <View style={{ gap: 12 }}>{subscriptions.offers.slice().sort((a, b) => productConfig.planOrder.indexOf(a.id) - productConfig.planOrder.indexOf(b.id)).map(offer => <Pressable key={offer.id} disabled={subscriptions.busy} accessibilityRole="button" accessibilityLabel={t(offer.title)} accessibilityState={{ selected: chosen?.id === offer.id }} onPress={() => { setSelected(offer.id); services.analytics.track("plan_selected"); }} style={{ padding: 20, gap: 12, borderRadius: 22, borderWidth: 2, borderColor: chosen?.id === offer.id ? colors.accent : colors.border, backgroundColor: chosen?.id === offer.id ? colors.accentSurface : colors.card }}>
+    <View style={{ gap: 12 }}>{(state.pro ? [] : subscriptions.offers).slice().sort((a, b) => productConfig.planOrder.indexOf(a.id) - productConfig.planOrder.indexOf(b.id)).map(offer => <Pressable key={offer.id} disabled={subscriptions.busy} accessibilityRole="button" accessibilityLabel={t(offer.title)} accessibilityState={{ selected: chosen?.id === offer.id }} onPress={() => { setSelected(offer.id); services.analytics.track("plan_selected"); }} style={{ padding: 20, gap: 12, borderRadius: 22, borderWidth: 2, borderColor: chosen?.id === offer.id ? colors.accent : colors.border, backgroundColor: chosen?.id === offer.id ? colors.accentSurface : colors.card }}>
       {offer.id === "annual" && productConfig.emphasizeAnnual && <Label>{recommended ? "BEST VALUE" : "RECOMMENDED PLAN"}</Label>}
       <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}><View style={{ flex: 1, gap: 4 }}><Copy style={styles.subtitle}>{offer.title}</Copy><Copy><Copy style={{ fontSize: 24, lineHeight: 30, fontWeight: "700" }}>{offer.price}</Copy>{!demo ? ` / ${t(offer.period)}` : ""}</Copy></View><MaterialIcons accessible={false} name={chosen?.id === offer.id ? "radio-button-checked" : "radio-button-unchecked"} size={26} color={colors.accent} /></View>
       {offer.trialEligible && <Label>FREE TRIAL AVAILABLE</Label>}
@@ -94,8 +104,8 @@ function FallbackPaywall({ entry = "profile", onClose, completionError }: Paywal
     {subscriptions.busy && <Copy accessibilityRole="alert">Contacting the store…</Copy>}
     {!!subscriptions.message && <Copy accessibilityRole="alert">{subscriptions.message}</Copy>}
     <Button title="Restore purchases" secondary disabled={subscriptions.busy} onPress={() => { void subscriptions.restore(); }} />
-    <Disclosure title="Subscription details" icon="manage-accounts">
-    <View style={{ gap: 8 }}><Label>YOUR ACCESS</Label><Copy>{state.pro ? "InOut Pro" : "Free"}</Copy>
+    <Disclosure title="Subscription details" icon="manage-accounts" initiallyOpen={state.pro}>
+    <View style={{ gap: 8 }}><Label>YOUR ACCESS</Label><Copy>{state.pro ? "InOut Pro" : "Free"}</Copy>{state.productId && <Copy translate={false}>{state.productId}{state.planId ? ` · ${state.planId}` : ""}</Copy>}
       {state.expiresAt && <Copy>Access until: {new Date(state.expiresAt).toLocaleDateString(locale())}</Copy>}
       {state.status === "cancelled" && <Copy>Renewal is cancelled. Pro remains active until the paid period ends.</Copy>}
       {state.status === "billingRetry" && <Copy>The store reported a payment issue. Check your payment method.</Copy>}

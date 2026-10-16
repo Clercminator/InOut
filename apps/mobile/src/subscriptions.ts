@@ -41,6 +41,16 @@ export const unavailableSubscriptions: SubscriptionProvider = {
 };
 
 export class SubscriptionService {
+  purchaseConfirmation: string | null = null;
+  private confirmedPurchases = new Set<string>();
+  dismissPurchaseConfirmation() { this.purchaseConfirmation = null; this.emit(); }
+  private confirmPurchase(grant: EntitlementGrant) {
+    if (grant.source !== "store" || !this.entitlements.state.subscriptionPro) return;
+    const key = `${grant.productId ?? "pro"}:${grant.expiresAt}`;
+    if (this.confirmedPurchases.has(key)) return;
+    this.confirmedPurchases.add(key);
+    this.purchaseConfirmation = key;
+  }
   offers: SubscriptionOffer[] = [];
   busy = false;
   message = "";
@@ -72,6 +82,7 @@ export class SubscriptionService {
       if (grant.source !== "store") throw Error("Store verification required");
       this.apply(grant);
       unlocked = this.entitlements.state.subscriptionPro;
+      if (unlocked && operation === "purchase") this.confirmPurchase(grant);
       this.message = unlocked ? "Pro is active." : "No active Pro subscription was found.";
       if (unlocked) {
         this.analytics.track(operation === "purchase" ? "purchase_success" : "restore_success");
@@ -116,6 +127,7 @@ export class SubscriptionService {
     });
   }
   async purchase(id: PlanId) { await this.operation(async () => {
+    if (this.entitlements.state.subscriptionPro) { this.message = "Pro is active."; return; }
     if (!this.offers.some((o) => o.id === id)) throw new Error("Choose an available plan.");
     if (this.adapter.mode === "store") this.analytics.track("purchase_started");
     let grant: EntitlementGrant;
@@ -124,6 +136,7 @@ export class SubscriptionService {
     this.apply(grant);
     if (!this.entitlements.state.subscriptionPro) { this.message = "The store has not activated Pro. Try restoring after the purchase finishes."; return; }
     this.message = this.adapter.mode === "development" ? "Demo Pro activated. No purchase or charge occurred." : "Pro is active.";
+    this.confirmPurchase(grant);
     if (grant.source === "store") this.analytics.track("purchase_success");
     if (grant.source === "store") this.analytics.track(grant.status === "trial" ? "trial_started" : "subscription_started");
   }); }

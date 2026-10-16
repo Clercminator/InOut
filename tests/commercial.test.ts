@@ -109,6 +109,8 @@ test("store refresh failure preserves unexpired cached access; repeated purchase
   };
   const s = new SubscriptionService(adapter, e, new AnalyticsService());
   await s.load(); assert.equal(e.state.pro, true);
+  await s.purchase("monthly"); assert.equal(calls, 0);
+  e.acceptStoreGrant({ ...grant(), active: false, status: "free" });
   s.offers = [{ id: "monthly", price: "$test", title: "test", period: "month" }];
   const pending = s.purchase("monthly"); await s.purchase("monthly"); assert.equal(calls, 1);
   release(grant()); await pending; assert.equal(s.busy, false);

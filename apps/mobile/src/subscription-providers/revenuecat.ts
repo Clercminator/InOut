@@ -12,7 +12,7 @@ export function grantFromCustomerInfo(info: CustomerInfo, testStore = false): En
   const trusted = testStore || ["VERIFIED", "VERIFIED_ON_DEVICE"].includes(info.entitlements.verification);
   if (!trusted) throw new SubscriptionError("failed", "The store response could not be verified. Try restoring purchases.");
   const active = trusted && entitlement?.isActive === true && !subscription?.refundedAt;
-  return { source: testStore ? "development" : "store", active, verifiedAt, expiresAt, graceUntil,
+  return { source: testStore ? "development" : "store", active, verifiedAt, expiresAt, graceUntil, productId: entitlement?.productIdentifier, planId: entitlement?.productPlanIdentifier ?? undefined,
     status: !entitlement ? "free" : !active ? "expired" : entitlement.billingIssueDetectedAt
       ? graceUntil && graceUntil > verifiedAt ? "grace" : "billingRetry"
       : !entitlement.willRenew ? "cancelled" : entitlement.periodType.toLowerCase() === "trial" ? "trial" : "active" };

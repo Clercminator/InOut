@@ -1,3 +1,4 @@
+import { useCommercial } from "../src/commercial-context";
 import { practiceStats } from "../src/progress";
 import { goalContent } from "../src/personalization";
 import { useTheme } from "../src/theme";
@@ -21,6 +22,8 @@ export default function Profile() {
   const s = useStyles();
   useLanguage();
   const controller = useSession();
+  const commercial = useCommercial();
+  const pro = commercial?.entitlements.state.pro ?? controller.entitlements.state.pro;
   const e = experienceFor(controller.preferences);
   const records = controller.history();
   const stats = practiceStats(records);
@@ -34,7 +37,7 @@ export default function Profile() {
   const favorite = e.rituals.find(r => r.id === e.favoriteRitualId);
   return <BackScreen title="PROFILE">
     <View ref={card} collapsable={false} style={{ backgroundColor: colors.card, padding: 24, borderRadius: 24, gap: 16, borderWidth: 1, borderColor: accent + "55" }}>
-      <Label>IN/OUT · MY PRACTICE</Label>
+      <Label>IN/OUT · MY PRACTICE</Label>{pro && <View style={{ alignSelf: "flex-start", paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: colors.accentSurface, borderColor: colors.accent, borderWidth: 1 }}><Copy style={{ color: colors.accent, fontWeight: "700" }}>IN/OUT PRO</Copy></View>}
       <View style={[s.profileIdentity, { flexWrap: "wrap" }]}>
         <View style={[s.profileAvatar, { width: 76, height: 76, backgroundColor: accent + "20", borderWidth: e.frame === "laurel" ? 4 : 2, borderColor: accent,
           shadowColor: accent, shadowOpacity: e.frame === "glow" ? 0.6 : 0, shadowRadius: 16 }]}>

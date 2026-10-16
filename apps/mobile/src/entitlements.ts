@@ -16,6 +16,8 @@ export const proCapabilities = [
 export type Capability = typeof proCapabilities[number];
 export type SubscriptionStatus = "free" | "trial" | "active" | "cancelled" | "billingRetry" | "grace" | "expired";
 export interface EntitlementGrant {
+  productId?: string;
+  planId?: string;
   source: "store" | "development";
   status: SubscriptionStatus;
   active: boolean;
@@ -83,6 +85,8 @@ export class EntitlementService {
     return {
       pro: pro || reviewer,
       subscriptionPro: pro,
+      productId: pro ? g!.productId : undefined,
+      planId: pro ? g!.planId : undefined,
       reviewerPro: reviewer,
       source: pro ? g!.source : reviewer ? "reviewer" : g?.source ?? "unconfigured",
       status: pro ? g!.status : reviewer ? "active" as const : g && g.status !== "free" ? "expired" as const : "free" as const,
