@@ -112,13 +112,13 @@ export default function Result() {
       <Copy style={s.small}>Sharing includes your practice name and duration. Tension ratings stay private unless you choose to include them.</Copy>
       <View style={{ gap: 8 }}>
         <Button
-          title="DONE · VIEW HISTORY  →"
+          title="Return to Home"
           disabled={!!controller.error || leaving}
           onPress={() => {
             if (leaving) return;
             setLeaving(true);
-            void (adEligible ? commercial?.ads.showCompletion(id) : Promise.resolve())?.finally(() => { setLeaving(false); router.replace("/history"); });
-            if (!commercial) { setLeaving(false); router.replace("/history"); }
+            void (adEligible ? commercial?.ads.showCompletion(id) : Promise.resolve())?.finally(() => { setLeaving(false); router.replace("/(tabs)"); });
+            if (!commercial) { setLeaving(false); router.replace("/(tabs)"); }
           }}
         />
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>

@@ -222,7 +222,7 @@ export function Screen({
             IN<Copy style={[s.brand, { color: c.accent }]}>/</Copy>OUT
           </Copy>
         )}
-        <View style={{ flex: 1, alignItems: back ? "center" : "flex-end" }}>{title ? <Label>{title}</Label> : null}</View>
+        <View style={{ flex: 1, minWidth: 0, alignItems: back ? "center" : "flex-end" }}>{title ? <Label>{title}</Label> : null}</View>
         {headerAction ?? (back ? <View style={{ width: 48 }} /> : null)}
       </View>}
       {scroll ? (

@@ -358,14 +358,14 @@ test("an expired custom draft never silently starts a sigh", async () => {
   expect(screen.queryByRole("button", { name: "Skip rating & continue" })).toBeNull();
 });
 
-test("result opens History and restores custom replay data", async () => {
+test("result returns Home and restores custom replay data", async () => {
   mockParams = { id: "test-session" };
   const custom = { ...protocols[0], id: "custom-pattern", name: "My pattern" };
   mockController.start(null, 6, custom);
   mockController.end("ended");
   await render(<Result />);
-  await fireEvent.press(screen.getByRole("button", { name: "DONE · VIEW HISTORY  →" }));
-  expect(mockReplace).toHaveBeenCalledWith("/history");
+  await fireEvent.press(screen.getByRole("button", { name: "Return to Home" }));
+  expect(mockReplace).toHaveBeenCalledWith("/(tabs)");
   await fireEvent.press(screen.getByRole("button", { name: "Do it again" }));
   expect(mockController.customProtocol?.defaultCycles).toBe(6);
   expect(mockController.customProtocol?.id).toBe("custom-pattern");

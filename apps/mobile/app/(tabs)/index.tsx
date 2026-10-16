@@ -19,7 +19,7 @@ import type { Goal, PracticeGoal } from "@inout/shared-types";
 import { AdSlot } from "../../src/ad-slot";
 import { experienceFor, welcomeMessage } from "../../src/experience";
 import { WeeklyGoal } from "../../src/practice-rewards";
-import { goalContent, recommendPractice } from "../../src/personalization";
+import { goalContent, goalForDay, recommendPractice } from "../../src/personalization";
 import { practiceStats } from "../../src/progress";
 import { GuidanceAllowance } from "../../src/guidance-allowance";
 
@@ -32,7 +32,7 @@ export default function Today() {
   const experience = experienceFor(controller.preferences);
   const favorite = experience.rituals.find(r => r.id === experience.favoriteRitualId);
   const [moment, setMoment] = useState<PracticeGoal | null>(null);
-  const primary = controller.preferences.journey?.primaryGoal;
+  const primary = goalForDay(controller.preferences);
   const goal = moment ?? primary ?? "stress";
   const content = goalContent[goal];
   const records = controller.history();
@@ -54,7 +54,7 @@ export default function Today() {
     {current?.stage === "post" && <Button title="Finish your State Shift" onPress={() => router.push("/post")} />}
     <View style={{ flexDirection: "row", gap: 12 }}>
       <Pressable accessibilityRole="button" accessibilityLabel={t("Explore protocols")} onPress={() => router.push("/protocols")} style={({ pressed }) => ({ flex: 1.12, borderRadius: 26, overflow: "hidden", backgroundColor: colors.accentSurface, opacity: pressed ? .8 : 1 })}>
-        {mode === "dark" ? <View style={{ height: 156, alignItems: "center", justifyContent: "center", backgroundColor: colors.lowest }}><PulseArtwork size={174} /></View> : <ChallengeArt art="waves" height={156} />}<View style={{ padding: 18, gap: 5 }}><Copy style={{ fontFamily: typography.heading, fontSize: 23, lineHeight: 28 }}>Breathe</Copy><Copy style={{ fontSize: 12, color: colors.secondaryText }}>Find your rhythm</Copy><MaterialIcons accessible={false} name="arrow-forward" size={23} color={colors.accent} /></View>
+        <View style={{ height: 156, alignItems: "center", justifyContent: "center", backgroundColor: colors.lowest }}><PulseArtwork size={174} /></View><View style={{ padding: 18, gap: 5 }}><Copy style={{ fontFamily: typography.heading, fontSize: 23, lineHeight: 28 }}>Breathe</Copy><Copy style={{ fontSize: 12, color: colors.secondaryText }}>Find your rhythm</Copy><MaterialIcons accessible={false} name="arrow-forward" size={23} color={colors.accent} /></View>
       </Pressable>
       <View style={{ flex: 1, gap: 12 }}>
         <HomeTile title="Quick reset" icon="air" tone="aqua" onPress={() => router.push("/pre")} />

@@ -2,7 +2,7 @@ import { protocols } from "@inout/protocols";
 import type { PracticeGoal, Preferences, SessionRecord } from "@inout/shared-types";
 import { addDays, dayKey } from "./progress";
 import { experienceFor } from "./experience";
-import { recommendPractice } from "./personalization";
+import { goalForDay, recommendPractice } from "./personalization";
 
 export const coachProtocolIds = ["diaphragmatic", "coherent", "extended-exhale", "equal", "box"] as const;
 export type CoachProtocolId = typeof coachProtocolIds[number];
@@ -78,7 +78,7 @@ export function comfortableCycles(id: CoachProtocolId, seconds: number) {
   return Math.max(1, Math.floor(Math.min(600, Math.max(60, Number.isFinite(seconds) ? seconds : 60)) * 1000 / cycleMs(id)));
 }
 export interface CoachRecommendation { protocolId: CoachProtocolId; cycles: number; seconds: number; reason: string; goal: PracticeGoal }
-export function dailyRecommendation(preferences: Preferences, history: SessionRecord[], state: CoachState, now: number, goal = preferences.journey?.primaryGoal ?? "stress"): CoachRecommendation {
+export function dailyRecommendation(preferences: Preferences, history: SessionRecord[], state: CoachState, now: number, goal = goalForDay(preferences, now)): CoachRecommendation {
   const recent = history.filter(r => r.source !== "manual" && r.finishedAt !== null && r.finishedAt <= now && r.finishedAt >= now - 7 * 86400000).sort((a, b) => b.finishedAt! - a.finishedAt! || a.id.localeCompare(b.id));
   const comfortable = recent[0]?.endReason === "unwell" || (state.useFeedback && recent[0]?.pre !== null && recent[0]?.post !== null && recent[0]?.post! > recent[0]?.pre!);
   const suggested = recommendPractice(goal, history.filter(r => r.finishedAt !== null && r.finishedAt <= now), id => !!coachProtocol(id));
@@ -120,11 +120,12 @@ export function recordCoachSession(state: CoachState, record: SessionRecord): Co
 export function generateWeek(preferences: Preferences, history: SessionRecord[], state: CoachState, now: number): NonNullable<CoachState["week"]> {
   const first = new Date(now); first.setHours(12, 0, 0, 0);
   const frequency = experienceFor(preferences).weeklyGoal;
-  const recommendation = dailyRecommendation(preferences, history, state, now);
-  return { start: dayKey(first), paused: false, entries: Array.from({ length: 7 }, (_, i) => ({
+  return { start: dayKey(first), paused: false, entries: Array.from({ length: 7 }, (_, i) => {
+    const recommendation = dailyRecommendation(preferences, history, state, addDays(first, i).getTime());
+    return {
     date: dayKey(addDays(first, i)), protocolId: recommendation.protocolId, cycles: recommendation.cycles,
     status: Math.floor((i + 1) * frequency / 7) > Math.floor(i * frequency / 7) ? "planned" : "rest",
-  })) };
+  }; }) };
 }
 export function weeklyReview(history: SessionRecord[], now: number) {
   const recent = history.filter(r => r.stage === "result" && r.endReason === "completed" && r.finishedAt !== null && r.finishedAt <= now && r.finishedAt >= now - 7 * 86400000);

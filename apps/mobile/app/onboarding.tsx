@@ -3,7 +3,7 @@ import { BackHandler, View } from "react-native";
 import { useEffect } from "react";
 import { Screen, Title, Label, Card, Copy, Button, IconButton, ActionFooter, Chip } from "../src/ui";
 import { useSession, SaveError } from "../src/provider";
-import { completeJourney, goalContent, journeyFor, recommendPractice } from "../src/personalization";
+import { completeJourney, selectedGoals, goalContent, journeyFor, recommendPractice } from "../src/personalization";
 import { GoalPicker } from "../src/goal-picker";
 import { GoalMark, OnboardingHero, OnboardingScene } from "../src/onboarding-art";
 import { OnboardingDemo } from "../src/onboarding-demo";
@@ -18,7 +18,7 @@ export default function Onboarding() {
   const controller = useSession();
   const { colors } = useTheme();
   const journey = journeyFor(controller.preferences);
-  const goal = journey.primaryGoal ?? "stress";
+  const goal = journey.primaryGoal ?? selectedGoals(controller.preferences)[0] ?? "stress";
   const content = goalContent[goal];
   const step = journey.step;
   useEffect(() => { if (!controller.preferences.onboardingComplete) controller.analytics.track("onboarding_started"); }, [controller]);
@@ -57,7 +57,7 @@ export default function Onboarding() {
   return <Screen key={step} back={back} title={step === "welcome" ? undefined : "YOUR FIRST MOMENT"}
     headerAction={<IconButton icon="help-outline" title="Breathing safety" onPress={() => router.push("/safety")} />}
     footer={<ActionFooter>
-      <Button title={step === "welcome" ? "Personalize InOut" : step === "safety" ? "I understand" : step === "value" ? "Let's get started" : "Continue"} disabled={!!controller.error || step === "goals" && !journey.primaryGoal} onPress={next} />
+      <Button title={step === "welcome" ? "Personalize InOut" : step === "safety" ? "I understand" : step === "value" ? "Let's get started" : "Continue"} disabled={!!controller.error || step === "goals" && !selectedGoals(controller.preferences).length} onPress={next} />
       {step === "welcome" && <Button title="Start breathing" variant="quiet" onPress={() => save({ step: "safety", quickStart: true })} />}
       {step === "goals" && <Button title="Skip personalization" variant="quiet" onPress={() => save({ step: "safety", quickStart: false })} />}
     </ActionFooter>}>

@@ -1,6 +1,6 @@
 import { useCommercial } from "../src/commercial-context";
 import { practiceStats } from "../src/progress";
-import { goalContent } from "../src/personalization";
+import { goalContent, selectedGoals } from "../src/personalization";
 import { useTheme } from "../src/theme";
 import { t, locale } from "../src/i18n";
 import { useLanguage } from "../src/use-language";
@@ -66,7 +66,7 @@ export default function Profile() {
         } finally { if (uri) releaseCapture(uri); }
       })().catch(() => Alert.alert("Could not share", "Please try again.")).finally(() => setSharing(false));
     }} />
-    {controller.preferences.journey?.primaryGoal && <Card><Label>YOUR MAIN GOAL</Label><Copy>{goalContent[controller.preferences.journey.primaryGoal].title}</Copy></Card>}
+    {selectedGoals(controller.preferences).length > 0 && <Card><Label>Your goals</Label>{selectedGoals(controller.preferences).map(goal => <Copy key={goal}>{goalContent[goal].title}</Copy>)}</Card>}
     <Card><ActionRow title="Personalize my experience" icon="palette" onPress={() => router.push("/personalize")} /><ActionRow title="Pro & subscriptions" icon="workspace-premium" onPress={() => router.push("/pro")} /><ActionRow title="My rituals" icon="auto-awesome" onPress={() => router.push("/rituals")} /><ActionRow title="Settings" icon="settings" onPress={() => router.push("/settings")} /><ActionRow title="Reminders" icon="notifications-none" onPress={() => router.push("/reminders")} /><ActionRow title="Results" icon="insights" onPress={() => router.push("/(tabs)/progress")} /></Card>
 
     <Card><Label>YOUR MILESTONE TIMELINE</Label>

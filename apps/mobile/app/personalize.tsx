@@ -28,7 +28,7 @@ export default function Personalize() {
   })}</View>;
   return <BackScreen title="MAKE IT YOURS">
     <Title>Your rhythm. Your style.</Title>
-    <Disclosure title="Your main goal" icon="flag"><GoalPicker /></Disclosure>
+    <Disclosure title="Your goals" icon="flag"><GoalPicker /></Disclosure>
     <WeeklyGoal compact />
     <Disclosure title="Weekly practice goal" icon="event-available">
       <View style={s.row}>{[2, 3, 4, 5, 6, 7].map(weeklyGoal => <Chip key={weeklyGoal} title={`${weeklyGoal} days`} selected={e.weeklyGoal === weeklyGoal} onPress={() => controller.updateExperience({ weeklyGoal })} />)}</View>

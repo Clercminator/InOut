@@ -11,6 +11,24 @@ export const goalContent: Record<PracticeGoal, { title: string; icon: "spa" | "b
   learn: { title: "Learn to control my breathing", icon: "air", situation: "Calm", protocolId: "diaphragmatic", heading: "Get to know your breath.", body: "Start with a simple, gentle pattern. The guide shows when to breathe in and out. You can adjust the duration and skip any optional check-in.", reminder: "A small moment to get to know your breath." },
 };
 export const practiceGoals = Object.keys(goalContent) as PracticeGoal[];
+export function selectedGoals(p: Preferences): PracticeGoal[] {
+  return [...new Set([p.journey?.primaryGoal, ...(p.journey?.secondaryGoals ?? [])].filter((g): g is PracticeGoal => !!g && practiceGoals.includes(g)))];
+}
+export function toggleGoal(p: Preferences, goal: PracticeGoal): OnboardingJourney {
+  const journey = journeyFor(p), selected = selectedGoals(p);
+  const goals = selected.includes(goal) ? selected.filter(g => g !== goal) : [...selected, goal];
+  const primaryGoal = goals.includes(journey.primaryGoal!) ? journey.primaryGoal : undefined;
+  return { ...journey, primaryGoal, secondaryGoals: goals.filter(g => g !== primaryGoal) };
+}
+export function goalForDay(p: Preferences, now = Date.now()): PracticeGoal {
+  const goals = selectedGoals(p);
+  if (!goals.length) return "stress";
+  // The primary gets an extra day in the rotation, while every selected goal is represented.
+  const rotation = p.journey?.primaryGoal && goals.length > 1 ? [...goals, p.journey.primaryGoal] : goals;
+  const date = new Date(now);
+  const day = Math.floor(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86400000);
+  return rotation[((day % rotation.length) + rotation.length) % rotation.length];
+}
 export function journeyFor(p: Preferences): OnboardingJourney {
   return p.journey ?? { version: 1, step: p.onboardingComplete ? "complete" : "welcome", secondaryGoals: [] };
 }
@@ -21,7 +39,7 @@ export function completeJourney(p: Preferences, now: number): Preferences {
 export function validateJourney(j: OnboardingJourney) {
   if (!j || j.version !== 1 || !["welcome", "goals", "personalize", "demo", "value", "safety", "offer", "complete"].includes(j.step) ||
     (j.primaryGoal !== undefined && !practiceGoals.includes(j.primaryGoal)) || !Array.isArray(j.secondaryGoals) ||
-    j.secondaryGoals.length > 6 || j.secondaryGoals.some(g => !practiceGoals.includes(g)) ||
+    j.secondaryGoals.length > 7 || j.secondaryGoals.some(g => !practiceGoals.includes(g)) ||
     [j.safetyAcceptedAt, j.completedAt].some(n => n !== undefined && (!Number.isFinite(n) || n < 0))) throw Error("Saved onboarding could not be read.");
 }
 export function recommendPractice(goal: PracticeGoal = "stress", records: SessionRecord[] = [], allowed: (id: string) => boolean = () => true) {

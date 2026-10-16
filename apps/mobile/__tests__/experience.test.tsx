@@ -368,7 +368,7 @@ test("onboarding quick path acknowledges safety before completing once", async (
 test("personalization persists time, safety and demo; dismissal completes without a store", async () => {
   const view = await render(wrap(<Onboarding />));
   await fireEvent.press(screen.getByRole("button", { name: "Personalize InOut" }));
-  await fireEvent.press(screen.getByRole("radio", { name: "Sleep better" }));
+  await fireEvent.press(screen.getByRole("checkbox", { name: "Sleep better" }));
   await fireEvent.press(screen.getByRole("button", { name: "Continue" }));
   await fireEvent.press(screen.getByRole("button", { name: "5 min" }));
   expect(mockController.coachState().availableMinutes).toBe(5);
