@@ -1,0 +1,195 @@
+{
+  "assets": [
+    {
+      "file": "release/assets/current/visual/app-icon-512.png",
+      "bytes": 401171,
+      "sha256": "6b2c4ee017835daa22f97ca45929903e7873c8ce8ddab0401356fc81a7f05ead",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA"
+    },
+    {
+      "file": "release/assets/current/visual/exercise-og-background.png",
+      "bytes": 997247,
+      "sha256": "59a359c2beb5bbffaf854db3d6f95e8ab3d737003cef297cfaec185bb0ece273",
+      "width": 1200,
+      "height": 630,
+      "mode": "RGBA"
+    },
+    {
+      "file": "release/assets/current/visual/feature-graphic-en-US-1024x500.png",
+      "bytes": 436008,
+      "sha256": "5c18d7280e5f5a52b1dbe628979a0b0553228886d079665cf315dee52f95be3f",
+      "width": 1024,
+      "height": 500,
+      "mode": "RGB"
+    },
+    {
+      "file": "release/assets/current/visual/feature-graphic-es-419-1024x500.png",
+      "bytes": 438370,
+      "sha256": "27d37fe36af72e885bcc2ecba58d80debe3275736ab884c0458ef7e3e7c40a98",
+      "width": 1024,
+      "height": 500,
+      "mode": "RGB"
+    },
+    {
+      "file": "release/assets/current/visual/feature-graphic-pt-BR-1024x500.png",
+      "bytes": 438861,
+      "sha256": "266fae366daa779c340314cdaa424d9e9cbfa6f6cf57c976c05d1ecb5785859b",
+      "width": 1024,
+      "height": 500,
+      "mode": "RGB"
+    },
+    {
+      "file": "release/assets/current/visual/image copy.png",
+      "bytes": 985898,
+      "sha256": "0abfb7c2acf6459217a5f544c54e2176927b10e1be3a43fbc672902c6ca2d4a6",
+      "width": 1590,
+      "height": 780,
+      "mode": "RGB"
+    },
+    {
+      "file": "release/assets/current/visual/image.png",
+      "bytes": 2464879,
+      "sha256": "d134fb3d33817783abc700b4d54045d7b82ed86071ec2d317df489faea43b29e",
+      "width": 1536,
+      "height": 1024,
+      "mode": "RGB"
+    },
+    {
+      "file": "release/assets/current/visual/result-square-background.png",
+      "bytes": 1395407,
+      "sha256": "46a7af40b27cd76db7db589ace118a7061810bc8569abd541d9ac6edc933d6e3",
+      "width": 1080,
+      "height": 1080,
+      "mode": "RGBA"
+    },
+    {
+      "file": "release/assets/current/visual/result-story-background.png",
+      "bytes": 2467459,
+      "sha256": "b12302baef18c244c7122e8d8b74f18f6d7f0a5680e96b228b94b8264fe86f71",
+      "width": 1080,
+      "height": 1920,
+      "mode": "RGBA"
+    },
+    {
+      "file": "release/assets/current/audio/music/Song - bliss breath.mp4.mp3",
+      "bytes": 12003840,
+      "sha256": "9cb288189ffaf4f0a586944a6bf9347bdc7a6063b85f6611ee7fa6c4c3f8f5da",
+      "decoded": true,
+      "metadata": [
+        "Duration: 00:05:00.10, start: 0.000000, bitrate: 320 kb/s",
+        "Stream #0:0: Audio: mp3 (mp3float), 48000 Hz, stereo, fltp, 320 kb/s",
+        "Stream #0:0: Audio: pcm_s16le, 48000 Hz, stereo, s16, 1536 kb/s"
+      ],
+      "bundled": false
+    },
+    {
+      "file": "release/assets/current/audio/music/Song - Sweet and spicy.mp4.mp3",
+      "bytes": 13760640,
+      "sha256": "42eeb556c35e6ba870b84abaa244e5d080421a0e72b084474ea626a99e82217b",
+      "decoded": true,
+      "metadata": [
+        "Duration: 00:05:44.02, start: 0.000000, bitrate: 320 kb/s",
+        "Stream #0:0: Audio: mp3 (mp3float), 48000 Hz, stereo, fltp, 320 kb/s",
+        "Stream #0:0: Audio: pcm_s16le, 48000 Hz, stereo, s16, 1536 kb/s"
+      ],
+      "bundled": false
+    },
+    {
+      "file": "release/assets/current/audio/music/Song - The awakening.mp4.mp3",
+      "bytes": 17847360,
+      "sha256": "081c1662f4d96bdc6050432c11cb31ef68e7787d90a154d0380257fc7e4d1198",
+      "decoded": true,
+      "metadata": [
+        "Duration: 00:07:26.18, start: 0.000000, bitrate: 320 kb/s",
+        "Stream #0:0: Audio: mp3 (mp3float), 48000 Hz, stereo, fltp, 320 kb/s",
+        "Stream #0:0: Audio: pcm_s16le, 48000 Hz, stereo, s16, 1536 kb/s"
+      ],
+      "bundled": false
+    },
+    {
+      "file": "release/assets/current/audio/music/Song - the initiation.mp4.mp3",
+      "bytes": 18510720,
+      "sha256": "eb79783be077b95b4ebcec5954ecc24de3596581e026ce68fadb13766d4a562a",
+      "decoded": true,
+      "metadata": [
+        "Duration: 00:07:42.77, start: 0.000000, bitrate: 320 kb/s",
+        "Stream #0:0: Audio: mp3 (mp3float), 48000 Hz, stereo, fltp, 320 kb/s",
+        "Stream #0:0: Audio: pcm_s16le, 48000 Hz, stereo, s16, 1536 kb/s"
+      ],
+      "bundled": false
+    },
+    {
+      "file": "release/assets/current/audio/music/Song - westerpark.mp4.mp3",
+      "bytes": 11712000,
+      "sha256": "f14ba88309260d34dd776de70e4b432d52946f8cf9192b9c329a8f38c013d287",
+      "decoded": true,
+      "metadata": [
+        "Duration: 00:04:52.80, start: 0.000000, bitrate: 320 kb/s",
+        "Stream #0:0: Audio: mp3 (mp3float), 48000 Hz, stereo, fltp, 320 kb/s",
+        "Stream #0:0: Audio: pcm_s16le, 48000 Hz, stereo, s16, 1536 kb/s"
+      ],
+      "bundled": false
+    },
+    {
+      "file": "release/assets/current/audio/voice/EN/MALE/Hold & Flow/Just go with the flow.mp3",
+      "bytes": 78720,
+      "sha256": "415639a4eb3c29a2987101154704ef44dce21cf5b76e9859814d56b4cbdd0b19",
+      "decoded": true,
+      "metadata": [
+        "Duration: 00:00:01.97, start: 0.000000, bitrate: 320 kb/s",
+        "Stream #0:0: Audio: mp3 (mp3float), 48000 Hz, stereo, fltp, 320 kb/s",
+        "Stream #0:0: Audio: pcm_s16le, 48000 Hz, stereo, s16, 1536 kb/s"
+      ],
+      "bundled": false
+    },
+    {
+      "file": "release/assets/current/audio/voice/EN/MALE/Hold & Flow/Wim Hof - Hold on.mp4.wav",
+      "bytes": 589588,
+      "sha256": "f48e11e10da33b16040abc167fac8bdef579c1adb4737a842eb100ac7ff29166",
+      "decoded": true,
+      "metadata": [
+        "Duration: 00:00:02.04, bitrate: 2310 kb/s",
+        "Stream #0:0: Audio: pcm_s24le ([1][0][0][0] / 0x0001), 48000 Hz, stereo, s32 (24 bit), 2304 kb/s",
+        "Stream #0:0: Audio: pcm_s16le, 48000 Hz, stereo, s16, 1536 kb/s"
+      ],
+      "bundled": false
+    },
+    {
+      "file": "release/assets/current/audio/voice/EN/MALE/In/Breath in.mp3",
+      "bytes": 78720,
+      "sha256": "2ab2e8451d86e009d3f30d8c755ed9a694e6065b8b8a59d892b02181ffda7b51",
+      "decoded": true,
+      "metadata": [
+        "Duration: 00:00:01.97, start: 0.000000, bitrate: 320 kb/s",
+        "Stream #0:0: Audio: mp3 (mp3float), 48000 Hz, stereo, fltp, 320 kb/s",
+        "Stream #0:0: Audio: pcm_s16le, 48000 Hz, stereo, s16, 1536 kb/s"
+      ],
+      "bundled": false
+    },
+    {
+      "file": "release/assets/current/audio/voice/EN/MALE/Out/Breath out.mp3",
+      "bytes": 78720,
+      "sha256": "a6297f585f5c14bd55c0f240dfd6ca9abc531229540a0515da0b5ac018b55cad",
+      "decoded": true,
+      "metadata": [
+        "Duration: 00:00:01.97, start: 0.000000, bitrate: 320 kb/s",
+        "Stream #0:0: Audio: mp3 (mp3float), 48000 Hz, stereo, fltp, 320 kb/s",
+        "Stream #0:0: Audio: pcm_s16le, 48000 Hz, stereo, s16, 1536 kb/s"
+      ],
+      "bundled": false
+    }
+  ],
+  "missing": [
+    "sharing artwork asset-manifest.json (the existing manifest covers Play artwork only)",
+    "voice/en/female",
+    "voice/es-419/female",
+    "voice/es-419/male",
+    "voice/pt-BR/female",
+    "voice/pt-BR/male",
+    "nature/air",
+    "nature/ocean"
+  ],
+  "pending": "Supplied audio distribution approval and ambiguous hold/rest mappings"
+}

@@ -88,6 +88,12 @@ export interface SessionRecord {
   endReason: "completed" | "ended" | "unwell" | null;
 }
 export interface Preferences {
+  guidance?: {
+    voice?: boolean; nature?: boolean; breathingVoice?: boolean; restingVoice?: boolean;
+    voiceId?: "existing" | "female" | "male"; language?: "en" | "es" | "pt";
+    voiceVolume?: number; natureVolume?: number; musicVolume?: number;
+    music?: boolean; musicId?: string;
+  };
   telemetryEnabled?: boolean;
   welcomeEmail?: { email: string; consentAt: number; status: "pending" | "sent" | "review" };
   journey?: OnboardingJourney;
