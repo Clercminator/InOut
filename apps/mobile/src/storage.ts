@@ -1,3 +1,4 @@
+import { validateGuidance } from "./audio-preferences";
 import { languagePreference } from "./language-preference";
 import { emptyTestStore, validateTestStore, appendAttempt, stateShiftAttempt, selectDaily, type TestStore, type ChallengeAttempt, type PendingTest, type TestId } from "./challenge-tests";
 import { validateManagedShares, type ManagedShare } from "./share-links";
@@ -213,6 +214,7 @@ export class LocalStore {
     const p = JSON.parse(row.payload);
     if (p.journey !== undefined) validateJourney(p.journey);
     this.validateWelcomeEmail(p);
+    validateGuidance(p);
     if (p.experience !== undefined) validateExperience(p.experience);
     if (
       !["voice", "tones", "silent"].includes(p.audio) ||
@@ -239,6 +241,7 @@ export class LocalStore {
   }
   savePreferences(p: Preferences) {
     this.validateWelcomeEmail(p);
+    validateGuidance(p);
     if (p.journey !== undefined) validateJourney(p.journey);
     if (p.experience !== undefined) validateExperience(p.experience);
     this.db.withTransactionSync(() => {

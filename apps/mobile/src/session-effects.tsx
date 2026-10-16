@@ -1,3 +1,6 @@
+import { audioSettings } from "./audio-preferences";
+import { loopedAudio } from "./looped-audio";
+import { selectedVoice, musicTracks } from "./approved-audio";
 import { t } from "./i18n";
 import { isCyclic } from "@inout/protocols";
 import { voices } from "./voice-library";
@@ -25,7 +28,12 @@ export function NativeSessionEffects() {
   const running =
     session?.stage === "active" && session.engine.status === "running";
   const { audio: preferredAudio, haptics, hapticMode = "transitions", keepAwake, language = "en" } = controller.preferences;
-  const audio = preferredAudio === "voice" && session?.voiceAllowed === false ? "tones" : preferredAudio;
+  const settings = audioSettings(controller.preferences);
+  const voiceBank = selectedVoice(controller.preferences);
+  const voiceEnabled = settings.voice && session?.voiceAllowed !== false && !!voiceBank;
+  const natureEnabled = settings.nature;
+  const track = settings.music ? musicTracks.find(track => track.id === settings.musicId) ?? musicTracks[0] : undefined;
+  const audio = voiceEnabled ? "voice" : natureEnabled || track ? "tones" : "silent";
   const { breathSound, guidanceVolume, chime, celebration, celebrationVolume } = experienceFor(controller.preferences);
   const players = useRef<Array<AudioPlayer | undefined>>([]);
   const focus = useRef<AudioPlayer | null>(null);
@@ -36,7 +44,7 @@ export function NativeSessionEffects() {
   const breath = useRef<AudioPlayer | null>(null);
   const texturePlayers = useRef<Partial<Record<"in" | "out" | "hum", AudioPlayer>>>({});
   const completedId = useRef("");
-  const audioKey = `${audio}:${language}:${running}:${session?.stage}`;
+  const audioKey = `${audio}:${voiceBank?.language}:${voiceBank?.id}:${running}:${session?.stage}`;
   const [readyAudioKey, setReadyAudioKey] = useState<string | null>(null);
   const audioReady = audio === "silent" || readyAudioKey === audioKey;
   const view = controller.view();
@@ -85,7 +93,7 @@ export function NativeSessionEffects() {
     if (audio === "silent") return;
     const bank = Array.from({ length: audio === "voice" ? 13 : 4 }, (_, index) => {
       const source = index === 3 ? chime === "off" ? undefined : chimes[chime]
-        : audio === "voice" ? voices[language][index] : undefined;
+        : audio === "voice" ? voiceBank?.cues[index] : undefined;
       return source === undefined ? undefined : createAudioPlayer(source, {
         updateInterval: 100, keepAudioSessionActive: false,
       });
@@ -99,11 +107,11 @@ export function NativeSessionEffects() {
       });
       if (generation.current > gen) players.current = [];
     };
-  }, [audio, chime, language]);
+  }, [audio, chime, voiceBank]);
 
   useEffect(() => {
-    players.current.forEach((player, index) => { if (player) player.volume = index === 3 ? celebrationVolume : guidanceVolume; });
-  }, [audio, chime, guidanceVolume, celebrationVolume, language]);
+    players.current.forEach((player, index) => { if (player) player.volume = index === 3 ? celebrationVolume : settings.voiceVolume; });
+  }, [audio, chime, settings.voiceVolume, celebrationVolume, voiceBank]);
 
   useEffect(() => {
     if (!running || audio === "silent" || !audioReady) return;
@@ -171,7 +179,7 @@ export function NativeSessionEffects() {
     const gen = ++generation.current;
     players.current.forEach((p) => p?.pause());
     // Skip expired cues after stalls. Only the current phase is announced, never a backlog.
-    if (audio === "voice" && audioReady && view.phaseElapsedMs < 300) {
+    if (audio === "voice" && audioReady && (guidance?.holding || view.phase.type === "freeBreathing" ? settings.restingVoice : settings.breathingVoice) && view.phaseElapsedMs < 300) {
       const indexes = { inhale: 0, inhaleTopUp: 1, exhale: 2, hold: 4, hum: 5, retention: 6, recovery: 7, freeBreathing: 8 };
       let index = indexes[view.phase.type];
       if (guidance?.holding && !guidance.full) index = 6;
@@ -181,7 +189,7 @@ export function NativeSessionEffects() {
         if (view.phase.type === "exhale") index = view.phase.nostril === "left" ? 11 : 12;
       }
       const player = players.current[index];
-      const requiredMs = voiceDurations[language][index] + 100;
+      const requiredMs = (voiceBank?.durations[index] ?? Infinity) + 100;
       if (player && view.phaseRemainingMs >= requiredMs)
         void player
           .seekTo(0)
@@ -208,9 +216,15 @@ export function NativeSessionEffects() {
     session?.id,
     audio,
     audioReady,
+    voiceBank, settings.breathingVoice, settings.restingVoice,
     haptics,
     controller,
   ]);
+
+  useEffect(() => {
+    if (!running || !audioReady || !track || AppState.currentState !== "active") return;
+    return loopedAudio(track.source, () => audioSettings(controller.preferences).musicVolume, () => controller.pause("interruption"), track.crossfadeMs);
+  }, [running, audioReady, track, controller]);
 
   // Haptics use engine deadlines independently of React's display refresh.
   useEffect(() => {
@@ -241,7 +255,7 @@ export function NativeSessionEffects() {
 
   // Keep decoded textures ready across phases instead of constructing a player per breath.
   useEffect(() => {
-    if (audio === "silent") return;
+    if (!natureEnabled) return;
     const sources = { ...breathTextures[breathSound], hum: humTexture };
     const pool = Object.fromEntries(Object.entries(sources).map(([key, source]) => {
       const player = createAudioPlayer(source, { updateInterval: 100, keepAudioSessionActive: false });
@@ -255,10 +269,10 @@ export function NativeSessionEffects() {
       texturePlayers.current = {};
       breath.current = null;
     };
-  }, [audio, breathSound]);
+  }, [natureEnabled, breathSound]);
 
   useEffect(() => {
-    if (!running || audio === "silent" || !audioReady || !view || !guidance?.texture || AppState.currentState !== "active") return;
+    if (!running || !natureEnabled || !audioReady || !view || !guidance?.texture || AppState.currentState !== "active") return;
     const player = texturePlayers.current[guidance.texture];
     if (!player) return;
     breath.current = player;
@@ -273,7 +287,7 @@ export function NativeSessionEffects() {
         return false;
       }
       const gain = breathingGuidance(phases, current.phaseIndex, current.phaseElapsedMs).envelope
-        * (audio === "voice" ? 0.25 : 1) * experienceFor(controller.preferences).guidanceVolume;
+        * audioSettings(controller.preferences).natureVolume;
       if (Math.abs(player.volume - gain) > 0.002 || gain === 0) player.volume = gain;
       return true;
     };
@@ -289,12 +303,12 @@ export function NativeSessionEffects() {
       player.pause();
       if (breath.current === player) breath.current = null;
     };
-  }, [running, session?.id, view?.cueKey, audio, audioReady, controller, breathSound]);
+  }, [running, session?.id, view?.cueKey, natureEnabled, audioReady, controller, breathSound]);
 
   useEffect(() => {
     if (breath.current) breath.current.volume = running && AppState.currentState === "active"
-      ? (guidance?.envelope ?? 0) * (audio === "voice" ? 0.25 : 1) * guidanceVolume : 0;
-  }, [running, view?.phaseElapsedMs, audio, guidanceVolume]);
+      ? (guidance?.envelope ?? 0) * settings.natureVolume : 0;
+  }, [running, view?.phaseElapsedMs, natureEnabled, settings.natureVolume]);
 
   useEffect(() => {
     if (

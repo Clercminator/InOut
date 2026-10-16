@@ -321,3 +321,14 @@ test.each(protocols)("$id breath-sound mode has no phase beeps and releases its 
   await screen.unmount();
   textures.forEach(p => expect(p.remove).toHaveBeenCalledTimes(1));
 });
+
+
+test.each([[true, true], [true, false], [false, true], [false, false]])("independent voice=%s nature=%s create only requested players", async (voice, nature) => {
+  mockController.preferences.guidance = { voice, nature };
+  mockController.start(null, 1, protocols.find(p => p.id === "box")!);
+  const screen = await render(<NativeSessionEffects />);
+  expect(mockPlayers.filter(p => p.loop && !p.listener)).toHaveLength(nature ? 3 : 0);
+  expect(mockPlayers.filter(p => !p.loop)).toHaveLength(voice ? 13 : nature ? 1 : 0);
+  await screen.unmount();
+  mockPlayers.forEach(p => expect(p.remove).toHaveBeenCalledTimes(1));
+});

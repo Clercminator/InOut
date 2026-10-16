@@ -1,3 +1,4 @@
+import { audioSettings } from "./audio-preferences";
 import { testCatalog, attemptComparison, type TestId, type PendingTest, type ChallengeAttempt } from "./challenge-tests";
 import { isLanguage, setLanguage } from "./i18n";
 import * as engine from "@inout/breathing-engine";
@@ -280,7 +281,7 @@ export class SessionController {
       if (!Number.isInteger(selectedCycles) || selectedCycles < 1 || selectedCycles > 3) return;
       protocol = cyclic;
     }
-    if (this.preferences.audio === "voice" && !this.guidedAccess().allowed) this.analytics.track("free_quota_exhausted");
+    if (audioSettings(this.preferences).voice && !this.guidedAccess().allowed) this.analytics.track("free_quota_exhausted");
     this.measured.clear();
     this.latestAwards = [];
     const plan = planFor(protocol, selectedCycles);
@@ -288,8 +289,8 @@ export class SessionController {
       id: this.id(),
       coach: coaching?.tag,
       challengeTest,
-      guidedQuota: this.preferences.audio === "voice" && productConfig.guidedSessionsPerMonth !== null && !this.entitlements.state.pro && this.guidedAccess().allowed,
-      voiceAllowed: productConfig.guidedSessionsPerMonth === null || this.entitlements.state.pro || (this.preferences.audio === "voice" && this.guidedAccess().allowed),
+      guidedQuota: audioSettings(this.preferences).voice && productConfig.guidedSessionsPerMonth !== null && !this.entitlements.state.pro && this.guidedAccess().allowed,
+      voiceAllowed: productConfig.guidedSessionsPerMonth === null || this.entitlements.state.pro || (audioSettings(this.preferences).voice && this.guidedAccess().allowed),
       protocolId: protocol.id,
       protocolVersion: protocol.version,
       protocolName: protocol.name,

@@ -1,3 +1,7 @@
+import { audioSettings } from "./audio-preferences";
+import { selectedVoice, voiceBanks, musicTracks } from "./approved-audio";
+import { Switch } from "./localized-native";
+import type { Preferences } from "@inout/shared-types";
 import { voices } from "./voice-library";
 import { useLanguage } from "./use-language";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -17,7 +21,17 @@ export function SoundControls({ compact = false }: { compact?: boolean }) {
   useLanguage();
   const controller = useSession();
   const e = experienceFor(controller.preferences);
-  const language = controller.preferences.language ?? "en";
+  const settings = audioSettings(controller.preferences);
+  const bank = selectedVoice(controller.preferences);
+  const language = settings.language;
+  const update = (patch: NonNullable<Preferences["guidance"]>) => {
+    stop();
+    const guidance = { ...settings, ...patch };
+    controller.setPreferences({ ...controller.preferences, guidance,
+      audio: guidance.voice ? "voice" : guidance.nature || guidance.music ? "tones" : "silent" });
+  };
+  const toggle = (title: string, value: boolean, onValueChange: (value: boolean) => void) => <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}><Copy style={{ flex: 1 }}>{title}</Copy><Switch accessibilityLabel={title} value={value} onValueChange={onValueChange} /></View>;
+  const volume = (title: string, key: "voiceVolume" | "natureVolume" | "musicVolume") => <><Label>{title}</Label><View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>{[0, 0.25, 0.5, 0.7, 1].map(value => <Chip key={value} title={`${Math.round(value * 100)}%`} selected={settings[key] === value} onPress={() => update({ [key]: value })} />)}</View></>;
   const [playing, setPlaying] = useState(false);
   const [error, setError] = useState("");
   const audioPreview = useRef<ReturnType<typeof createAudioPreview> | null>(null);
@@ -35,7 +49,7 @@ export function SoundControls({ compact = false }: { compact?: boolean }) {
   useEffect(() => { const sub = AppState.addEventListener("change", state => { if (state !== "active") stop(); }); return () => sub.remove(); }, [stop]);
   useEffect(() => stop, [language, stop]);
   useEffect(() => { if (controller.current?.stage === "active") stop(); }, [controller.current?.stage, stop]);
-  const preview = async (kind: "breath" | "chime") => {
+  const preview = async (kind: "breath" | "chime" | "voice" | "music") => {
     stop(); setError("");
     if (controller.current?.stage === "active") return;
     const token = generation.current;
@@ -44,12 +58,14 @@ export function SoundControls({ compact = false }: { compact?: boolean }) {
       if (token === generation.current) { stop(); setError("Sound preview unavailable. Check media volume and silent mode, then try again."); }
     }, () => { if (token === generation.current) stop(); });
     audioPreview.current = preview;
-    const clips = [{ source: kind === "breath" ? breathPreviews[e.breathSound] : chimes[e.chime === "off" ? "bell" : e.chime],
-      volume: kind === "breath" ? e.guidanceVolume * (controller.preferences.audio === "voice" ? 0.25 : 1) : e.celebrationVolume, at: 0 }];
-    if (kind === "breath" && controller.preferences.audio === "voice") clips.push(
-      { source: voices[language][0], volume: e.guidanceVolume, at: 0 },
-      { source: voices[language][2], volume: e.guidanceVolume, at: 3000 });
-    await preview.start(clips, kind === "breath" ? 6200 : 2200);
+    const track = musicTracks.find(track => track.id === settings.musicId) ?? musicTracks[0];
+    const clips: { source: number; volume: number; at: number }[] = [];
+    if (kind === "breath") clips.push({ source: breathPreviews[e.breathSound], volume: settings.natureVolume, at: 0 });
+    if (kind === "chime") clips.push({ source: chimes[e.chime === "off" ? "bell" : e.chime], volume: e.celebrationVolume, at: 0 });
+    if (kind === "music" && track) clips.push({ source: track.source, volume: settings.musicVolume, at: 0 });
+    if (kind === "voice" && bank) [0, 2].forEach((index, i) => { const source = bank.cues[index]; if (source !== undefined) clips.push({ source, volume: settings.voiceVolume, at: i * 3000 }); });
+    if (!clips.length) { stop(); return; }
+    await preview.start(clips, kind === "chime" ? 2200 : kind === "music" ? 15000 : 6200);
   };
   const previewTouch = () => {
     stop(); setError("");
@@ -75,19 +91,33 @@ export function SoundControls({ compact = false }: { compact?: boolean }) {
     timers.current.push(setTimeout(stop, 6000));
   };
   return <View style={{ gap: 12 }}>
-    <Label>SOUND</Label>
-    <View style={s.row}>{(["tones", "voice", "silent"] as const).map(audio => <Chip key={audio}
-      title={audio === "tones" ? "Breath sounds" : audio === "voice" ? "Voice + breath" : "Silent"}
-      selected={controller.preferences.audio === audio} onPress={() => { stop(); controller.setPreferences({ ...controller.preferences, audio }); }} />)}</View>
-    {controller.preferences.audio !== "silent" && <>
-      <View style={s.row}>{(["air", "ocean", "warm"] as const).map(breathSound => <Chip key={breathSound} title={breathSound === "air" ? "Air" : breathSound === "ocean" ? "Ocean" : "Warm"}
-        selected={e.breathSound === breathSound} onPress={() => { stop(); controller.updateExperience({ breathSound }); }} />)}</View>
-      <Label>GUIDANCE VOLUME Â· {Math.round(e.guidanceVolume * 100)}%</Label>
-      <View style={s.row}>{[0.25, 0.5, 0.7, 1].map(guidanceVolume => <Chip key={guidanceVolume} title={`${Math.round(guidanceVolume * 100)}%`} selected={e.guidanceVolume === guidanceVolume}
-        onPress={() => { stop(); controller.updateExperience({ guidanceVolume }); }} />)}</View>
-      <Button title="Preview breath sounds Â· 6 sec" secondary disabled={playing || controller.current?.stage === "active"}
-        onPress={() => void preview("breath")} />
+    <Label>GUIDED VOICE</Label>
+    {toggle("Guided voice", settings.voice, voice => update({ voice }))}
+    {settings.voice && <>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>{(["en", "es", "pt"] as const).map(language => <Chip key={language} title={{ en: "English", es: "Español (Latinoamérica)", pt: "Português (Brasil)" }[language]} selected={settings.language === language} onPress={() => update({ language, voiceId: "existing" })} />)}</View>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>{voiceBanks.filter(bank => bank.language === language).map(bank => <Chip key={bank.id} title={bank.label} selected={settings.voiceId === bank.id} onPress={() => update({ voiceId: bank.id })} />)}</View>
+      <Copy style={s.small}>Only available recordings are shown. Missing instructions stay quiet.</Copy>
+      {toggle("Breathing guidance", settings.breathingVoice, breathingVoice => update({ breathingVoice }))}
+      {toggle("Hold and rest guidance", settings.restingVoice, restingVoice => update({ restingVoice }))}
+      {volume("VOICE VOLUME", "voiceVolume")}
+      <Button title="Preview voice" secondary disabled={playing || controller.current?.stage === "active"} onPress={() => void preview("voice")} />
+    </>}
+    <Label>NATURAL BREATHING SOUNDS</Label>
+    {toggle("Natural breathing sounds", settings.nature, nature => update({ nature }))}
+    {settings.nature && <>
+      <View style={s.row}>{(["air", "ocean"] as const).map(breathSound => <Chip key={breathSound} title={breathSound === "air" ? "Air" : "Ocean"} selected={e.breathSound === breathSound} onPress={() => { stop(); controller.updateExperience({ breathSound }); }} />)}</View>
+      {volume("NATURE VOLUME", "natureVolume")}
+      <Button title="Preview breath sounds · 6 sec" secondary disabled={playing || controller.current?.stage === "active"} onPress={() => void preview("breath")} />
       <Copy style={s.small}>Inhale, a quiet hold, exhale, then rest. Preview uses a short sample rhythm. During practice, sound follows your protocol.</Copy>
+    </>}
+    {musicTracks.length > 0 && <>
+      <Label>BACKGROUND MUSIC</Label>
+      {toggle("Background music", settings.music, music => update({ music }))}
+      {settings.music && <>
+        <View style={{ gap: 8 }}>{musicTracks.map(track => <Chip key={track.id} title={track.title} selected={(settings.musicId ?? musicTracks[0].id) === track.id} onPress={() => update({ musicId: track.id })} />)}</View>
+        {volume("MUSIC VOLUME", "musicVolume")}
+        <Button title="Preview music" secondary disabled={playing || controller.current?.stage === "active"} onPress={() => void preview("music")} />
+      </>}
     </>}
     <Label>VIBRATION</Label>
     <View style={s.row}>

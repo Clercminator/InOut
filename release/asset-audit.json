@@ -191,5 +191,6 @@
     "nature/air",
     "nature/ocean"
   ],
-  "pending": "Supplied audio distribution approval and ambiguous hold/rest mappings"
+  "pending": "Female EN, all ES/PT owner voices and owner nature recordings absent. Sharing layout manifest absent; supplied empty regions inspected directly.",
+  "approval": "Owner confirmed distribution rights and flow=rest, hold=both hold types in this session."
 }
