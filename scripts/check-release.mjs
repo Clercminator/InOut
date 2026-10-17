@@ -39,8 +39,8 @@ for (const [file,width,height,colorType] of [
   [mobileAsset(app.icon),1024,1024,2],
   [mobileAsset(app.android?.adaptiveIcon?.foregroundImage),1024,1024,6],
   [mobileAsset(app.android?.adaptiveIcon?.monochromeImage),1024,1024,6],
-  ['release/assets/google-play-icon.png',512,512,6],
-  ['release/assets/google-play-feature.png',1024,500,2],
+  ['release/assets/current/visual/app-icon-512.png',512,512,6],
+  ['release/assets/current/visual/feature-graphic-en-US-1024x500.png',1024,500,2],
 ]) {
   try {
     const png = readFileSync(resolve(root, file));

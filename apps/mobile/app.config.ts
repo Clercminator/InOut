@@ -22,6 +22,7 @@ export default ({ config }: ConfigContext) => {
     "@react-native-community/datetimepicker",
     ["expo-build-properties", { android: { kotlinVersion: "2.2.21" } }],
     "./plugins/with-kotlin-compiler.cjs",
+    "./plugins/with-android-symbols.cjs",
     ["react-native-google-mobile-ads", {
     androidAppId: admob.android.app,
     iosAppId: admob.ios.app,

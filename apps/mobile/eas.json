@@ -26,7 +26,13 @@
         "EXPO_PUBLIC_ADS_MODE": "live"
       },
       "android": {
-        "buildType": "app-bundle"
+        "buildType": "app-bundle",
+        "buildArtifactPaths": [
+          "android/app/build/outputs/mapping/release/**",
+          "android/app/build/outputs/native-debug-symbols/release/**",
+          "android/app/build/intermediates/native_symbol_tables/release/**",
+          "android/app/build/generated/sourcemaps/react/release/**"
+        ]
       },
       "environment": "production"
     },
@@ -50,7 +56,13 @@
       },
       "android": {
         "buildType": "app-bundle",
-        "credentialsSource": "remote"
+        "credentialsSource": "remote",
+        "buildArtifactPaths": [
+          "android/app/build/outputs/mapping/release/**",
+          "android/app/build/outputs/native-debug-symbols/release/**",
+          "android/app/build/intermediates/native_symbol_tables/release/**",
+          "android/app/build/generated/sourcemaps/react/release/**"
+        ]
       },
       "ios": {
         "image": "macos-tahoe-26.5-xcode-26.6",
