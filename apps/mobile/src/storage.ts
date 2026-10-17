@@ -1,3 +1,4 @@
+import { emptyDailyReset, validateDailyReset, creditDailyReset, type DailyResetState } from "./daily-reset";
 import { validateGuidance } from "./audio-preferences";
 import { languagePreference } from "./language-preference";
 import { emptyTestStore, validateTestStore, appendAttempt, stateShiftAttempt, selectDaily, type TestStore, type ChallengeAttempt, type PendingTest, type TestId } from "./challenge-tests";
@@ -68,6 +69,7 @@ export class LocalStore {
       JSON.stringify(record),
     );
     if (record.stage === "result") {
+      if (record.dailyReset) this.writeDailyReset(creditDailyReset(this.dailyReset(), record));
       if (record.coach) this.writeCoachState(recordCoachSession(this.coachState(), record));
       const attempt = stateShiftAttempt(record);
       if (attempt) this.writeTestStore(appendAttempt(this.testStore(), attempt));
@@ -76,6 +78,14 @@ export class LocalStore {
       this.writeRewards(reconcileRewards(history, this.rewards(history), experienceFor(this.preferences()).weeklyGoal));
     }
     });
+  }
+  dailyReset(): DailyResetState {
+    const row = this.db.getFirstSync<{ payload: string }>("SELECT payload FROM settings WHERE key='daily-reset-v1'");
+    const value = row ? JSON.parse(row.payload) : emptyDailyReset(); validateDailyReset(value); return value;
+  }
+  private writeDailyReset(value: DailyResetState) {
+    validateDailyReset(value);
+    this.db.runSync("INSERT INTO settings(key,payload) VALUES('daily-reset-v1',?) ON CONFLICT(key) DO UPDATE SET payload=excluded.payload", JSON.stringify(value));
   }
   guidedUsage(now: number): GuidedUsage {
     const row = this.db.getFirstSync<{ payload: string }>("SELECT payload FROM settings WHERE key='guided-usage-v1'");

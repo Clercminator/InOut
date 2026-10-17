@@ -1,3 +1,5 @@
+import { dailyResetStats } from "../src/daily-reset";
+import { openDailyReset } from "../src/daily-reset-card";
 import { useTheme } from "../src/theme";
 import { recordTitle, message, t, countLabel } from "../src/i18n";
 import { useLanguage } from "../src/use-language";
@@ -61,19 +63,27 @@ export default function Result() {
         <Button title="Today" onPress={() => router.replace("/(tabs)")} />
       </Screen>
     );
+  const dailyStats = dailyResetStats(controller.dailyReset(), record.completionLocalDay);
+  const dailyCredit = controller.dailyReset().credits.find(c => c.sessionId === record.id);
   const shift = stateShift(record.pre, record.post);
   const resultColor = shift !== null && shift > 0 ? colors.exhale : colors.accent;
   const view = snapshot(record.engine, record.engine.anchorAt);
   const enrollment = controller.coachState().enrollments.find(e => e.completed.some(step => step.sessionId === record.id));
   const program = enrollment && programFor(enrollment.programId);
   return (
-    <Screen title="STATE SHIFT">
+    <Screen title={record.dailyReset ? "Daily Reset" : "STATE SHIFT"}>
       {saved === "1" && controller.current?.id === id && !controller.error && record.endReason === "completed" && <Celebration
         variant="saved"
         awards={controller.latestAwards}
-        title={shift !== null && shift > 0 ? "A little lighter." : "Session saved!"}
+        title={record.dailyReset ? "The 60-Second Reset" : shift !== null && shift > 0 ? "A little lighter." : "Session saved!"}
         message={shift !== null && shift > 0 ? "You reported less tension. A moment worth celebrating â€” your session is saved." : "Your practice is part of your progress. Nicely done."}
       />}
+      {record.dailyReset && record.endReason === "completed" && !controller.error && <Card>
+        <Label>{dailyCredit ? "Daily completion earned" : "Today is complete"}</Label>
+        <Title>{message("{0} day streak", [dailyStats.current])}</Title>
+        <Copy>{message("{0} completed days · Best streak: {1}", [dailyStats.total, dailyStats.best])}</Copy>
+        <Copy>Today is complete. Repeat whenever you like; one daily award is saved.</Copy>
+      </Card>}
       {saved === "1" && !controller.error && <WeeklyGoal compact />}
       {record.coach && !controller.error && <Card>
         {program && enrollment && <><Label>PROGRAM PROGRESS</Label><Title>{program.title}</Title>
@@ -125,7 +135,7 @@ export default function Result() {
       {saved === "1" && !controller.error && controller.latestAwards.length > 0 && <Card style={{ backgroundColor: colors.accentSurface }}><AchievementMark /><Label>NEW ACHIEVEMENT</Label><Title>{controller.latestAwards[0].label}</Title><Copy>Your earned badges stay with you. Take a moment to enjoy your progress.</Copy><Button title="Share achievement" onPress={() => router.push({ pathname: "/milestone", params: { badge: controller.latestAwards[0].id } })} /><Button title="Close celebration" secondary onPress={() => controller.dismissAwards()} /></Card>}
       {!!record.note && <Card><Label>NOTE</Label><Copy translate={false}>{record.note}</Copy></Card>}
       <SaveError />
-      {record.source !== "manual" && record.protocol && <ShareExercise protocol={record.protocol} />}
+      {record.source !== "manual" && record.protocol && <ShareExercise protocol={record.protocol} title={record.dailyReset ? "Invite a friend" : "Share this exercise"} />}
       <View style={{ gap: 8 }}>
         <Button
           title="Return to Home"
@@ -143,7 +153,7 @@ export default function Result() {
           title="Share result"
           secondary
           disabled={!!controller.error}
-          onPress={() => { controller.analytics.track("share_result_invoked"); router.push({ pathname: "/result-share", params: { id: record.id } }); }}
+          onPress={() => { controller.analytics.track("share_result_invoked"); router.push(record.dailyReset && record.endReason === "completed" ? { pathname: "/challenge-share", params: { daily: record.id } } : { pathname: "/result-share", params: { id: record.id } }); }}
         />
         </View>
         {record.source !== "manual" && <View style={{ flexGrow: 1, flexBasis: 140 }}><Button
@@ -151,6 +161,7 @@ export default function Result() {
           secondary
           disabled={!!controller.error}
           onPress={() => {
+            if (record.dailyReset) { openDailyReset(controller); return; }
             if (record.protocol) {
               controller.setCustomProtocol(record.protocol);
               router.replace({ pathname: "/pre", params: { id: "custom" } });

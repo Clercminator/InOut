@@ -84,7 +84,7 @@ export function ReminderEffects() {
         if (controller.current?.stage === "active") { router.push("/session"); return; }
         if (controller.current?.stage === "post") { router.push("/post"); return; }
         controller.analytics.track("reminder_opened");
-        router.replace("/(tabs)");
+        router.push("/daily-reset");
         return;
       }
       if (notificationType === "check-in") { router.push("/add-session"); return; }

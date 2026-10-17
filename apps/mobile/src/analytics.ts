@@ -1,4 +1,5 @@
 export const productEvents = [
+  "daily_reset_opened", "daily_reset_started", "daily_reset_completed", "daily_reset_repeat", "daily_reset_returned", "daily_reset_awarded", "guided_program_returned",
   "challenge_attempt_completed", "challenge_abandoned", "challenge_personal_best", "challenge_badge_earned", "challenge_share_opened", "challenge_shared", "challenge_program_joined", "challenge_program_progress", "challenge_retried",
   "challenge_list_viewed", "challenge_viewed", "challenge_started", "challenge_progressed", "challenge_completed", "challenge_share_tapped", "challenge_share_completed", "challenge_locked_tapped",
   "onboarding_goal_selected", "onboarding_value_viewed", "safety_acknowledged", "onboarding_paywall_viewed",
@@ -23,7 +24,7 @@ export const analyticsPropertyValues = {
   platform: ["android", "ios", "web"],
   locale: ["en", "es-419", "pt-BR"],
   entitlement: ["free", "pro"],
-  challengeType: ["first-breath", "seven-day-calm", "sleep-reset", "focus-week", "breath-explorer", "consistency", "three-by-three"],
+  challengeType: ["daily-reset", "plank", "wall-sit", "push-ups", "first-breath", "seven-day-calm", "sleep-reset", "focus-week", "breath-explorer", "consistency", "three-by-three"],
   acquisitionSource: ["organic", "shared-link", "campaign", "unknown"],
   outcome: ["success", "cancelled", "failed", "unavailable", "dismissed"],
   errorCategory: ["decode", "playback", "timeout", "permission", "scheduler", "delivery", "link", "unknown"],

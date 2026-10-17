@@ -74,3 +74,9 @@ Automated checks run:
 Still required before release: Android/iOS device checks for all voice selections and phase timing; music/texture loop continuity, pause/resume, offline, headphones and interruptions; notification permission, category action buttons, quiet hours, weekday/timezone/cold-start behavior; ad consent, test inventory, Pro/reviewer suppression and explicit Done navigation; Firebase consent/withdrawal and Crashlytics behavior on each configured platform. No production ad, analytics, store, or physical-device dashboard acceptance was performed.
 
 Remaining owner/platform work: provide platform Firebase service files through protected build inputs; confirm provenance for the four excluded male recordings; supply PT-BR voice or ambience only if desired; decide whether native large-icon support is required beyond Expo's configured small icon; and define category preferences/timing for the unimplemented notification types listed above.
+
+## 7. Engagement feature integration
+
+Daily Reset extends `SessionRecord`, `storage.ts`, and `session-controller.ts` with an explicit session tag and transactional, once-per-local-day credits. It uses the existing coherent protocol, safety screen, Pulse session, audio preferences, optional result capture, and recovery. `analytics.ts` only extends the event/property contract; transport is unchanged. `reminder-context.tsx` routes the existing Daily Reset notification to its progress/start screen. `share-exercise.tsx` accepts a button label; link creation, expiry and revocation remain unchanged. Result and challenge sharing reuse the approved square/Story artwork. No backend, store or deployment changes.
+
+Feature checks: Daily Reset and existing Challenge domain tests pass (20 tests); TypeScript passes. Device acceptance remains pending.

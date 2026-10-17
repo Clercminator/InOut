@@ -66,6 +66,7 @@ export interface EngineState {
 export interface SessionRecord {
   coach?: { enrollmentId: string; step: number } | { week: string; date: string };
   challengeTest?: "state-shift-60";
+  dailyReset?: true;
   guidedQuota?: boolean;
   voiceAllowed?: boolean;
   note?: string;

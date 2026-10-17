@@ -1,3 +1,4 @@
+import { DailyResetCard, openDailyReset } from "../../src/daily-reset-card";
 import { DailyCoachCard } from "../../src/daily-coach-card";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { typography } from "@inout/design-tokens";
@@ -57,10 +58,11 @@ export default function Today() {
         <View style={{ height: 156, alignItems: "center", justifyContent: "center", backgroundColor: colors.lowest }}><PulseArtwork size={174} /></View><View style={{ padding: 18, gap: 5 }}><Copy style={{ fontFamily: typography.heading, fontSize: 23, lineHeight: 28 }}>Breathe</Copy><Copy style={{ fontSize: 12, color: colors.secondaryText }}>Find your rhythm</Copy><MaterialIcons accessible={false} name="arrow-forward" size={23} color={colors.accent} /></View>
       </Pressable>
       <View style={{ flex: 1, gap: 12 }}>
-        <HomeTile title="Quick reset" icon="air" tone="aqua" onPress={() => router.push("/pre")} />
+        <HomeTile title="Daily Reset" icon="air" tone="aqua" onPress={() => openDailyReset(controller)} />
         <HomeTile title="Create" icon="tune" tone="gold" onPress={() => router.push("/custom")} />
       </View>
     </View>
+    <DailyResetCard />
     <DailyCoachCard goal={moment ?? undefined} />
     <GuidanceAllowance />
     <View style={{ gap: 12 }}><Label>WHAT DO YOU NEED?</Label><ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={{ gap: 8, paddingRight: 20, alignItems: "center" }}>

@@ -1,3 +1,4 @@
+import { dailyResetStats, isDailyResetCompletion } from "./daily-reset";
 import { attemptComparison, testDefinition, testCatalog, type ChallengeAttempt } from "./challenge-tests";
 import { definitionForState, challengeShareable, type ChallengeDefinition, type UserChallenge } from "./challenges";
 import { message, t } from "./i18n";
@@ -19,4 +20,15 @@ export function attemptShareData(attempt: ChallengeAttempt, history: ChallengeAt
     status: t(comparison.isPersonalBest ? "NEW PERSONAL BEST" : attempt.completed ? "CHALLENGE COMPLETE" : "ATTEMPT SAVED"),
     metric: state ? includeRating ? `${attempt.before} → ${attempt.after}` : null : `${attempt.value.toFixed(1)} ${t(d.unit)}`,
     detail: state ? includeRating ? `${t("Self-reported tension · 1–10")} · ${message("{0} in 60 seconds", [attempt.value > 0 ? `+${attempt.value}` : attempt.value])}` : t("One minute. A moment for myself.") : comparison.isPersonalBest ? message("+{0} sec from your previous best", [comparison.improvement!.toFixed(1)]) : t(attempt.completed ? "A personal practice. A moment worth keeping." : "Every attempt is part of the practice.") };
+}
+
+export function dailyResetShareData(state: import("./daily-reset").DailyResetState, sessionId: string, story: boolean, record?: import("@inout/shared-types").SessionRecord) {
+  const credit = state.credits.find(c => c.sessionId === sessionId);
+  if (!credit && (!record || !isDailyResetCompletion(record))) return null;
+  const day = credit?.localDay ?? record!.completionLocalDay;
+  if (!day) return null;
+  const stats = dailyResetStats(state, day);
+  return { width: 1080, height: story ? 1920 : 1080, title: t("The 60-Second Reset"), art: "dawn" as const,
+    status: t("CHALLENGE COMPLETE"), metric: message("{0} day streak", [stats.current]),
+    detail: message("{0} completed days · Best streak: {1}", [stats.total, stats.best]), destination: info.supportUrl };
 }

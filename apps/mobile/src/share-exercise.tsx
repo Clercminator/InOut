@@ -14,14 +14,14 @@ import { useShareLinks } from "./share-links-context";
 import sharingConfig from "../../../release/sharing.json";
 const shareBase = () => linkConfig.origin ? new URL(linkConfig.path, linkConfig.origin).href : new URL("reset.html", info.privacyUrl).href;
 export const shareUrl = (id: string) => `${shareBase()}?s=${id}&lang=${getLanguage()}`;
-export function ShareExercise({ protocol }: { protocol: Protocol }) {
+export function ShareExercise({ protocol, title = "Share this exercise" }: { protocol: Protocol; title?: string }) {
   const controller = useSession();
   const links = useShareLinks();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   if (includesHighIntensity(protocol)) return null;
   return <>
-    <Button title="Share this exercise" secondary disabled={busy || links?.busy} onPress={() => {
+    <Button title={title} secondary disabled={busy || links?.busy} onPress={() => {
       setBusy(true); setError("");
       let deliveryAttempted = false;
       void (async () => {

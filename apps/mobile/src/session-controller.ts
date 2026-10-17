@@ -1,3 +1,4 @@
+import { dailyResetProtocol, dailyResetStats, emptyDailyReset } from "./daily-reset";
 import { audioSettings } from "./audio-preferences";
 import { testCatalog, attemptComparison, type TestId, type PendingTest, type ChallengeAttempt } from "./challenge-tests";
 import { isLanguage, setLanguage } from "./i18n";
@@ -116,6 +117,17 @@ export class SessionController {
       if (!before || before.startedAt !== this.challenges().find(s => s.challengeId === id)?.startedAt) { this.analytics.track("challenge_started"); this.analytics.track("challenge_program_joined"); }
     });
   }
+  dailyReset() { return this.store.dailyReset?.() ?? emptyDailyReset(); }
+  startDailyReset() {
+    const previous = this.current?.id;
+    this.start(null, 6, dailyResetProtocol(), true, undefined, undefined, true);
+    if (this.current?.id !== previous && this.current?.dailyReset && !this.error) {
+      this.analytics.track("daily_reset_started");
+      const stats = dailyResetStats(this.dailyReset(), dayKey(new Date(this.now())));
+      if (stats.todayComplete) this.analytics.track("daily_reset_repeat");
+      else if (stats.total > 0) this.analytics.track("daily_reset_returned");
+    }
+  }
   pendingTest() { return this.store.testStore?.().pending ?? null; }
   testState() { return this.store.testStore(); }
   testAttempts() { return this.store.testStore?.().attempts ?? []; }
@@ -185,6 +197,7 @@ export class SessionController {
     if (c.stage === "result") {
       if (c.endReason === "completed") { once("session_completed"); if (c.protocol?.plan && c.protocolId !== "shared-practice") once("mix_completed"); }
       else once("session_abandoned");
+      if (c.dailyReset && c.endReason === "completed") once("daily_reset_completed");
       if (c.post !== null) once("state_after_logged");
       const coach = c.coach;
       if (coach && "enrollmentId" in coach && this.store.coachState().enrollments.some(e => e.id === coach.enrollmentId && e.status === "completed")) once("guided_program_completed");
@@ -240,6 +253,7 @@ export class SessionController {
         const previous = this.current.stage === "result" ? this.rewards() : null;
         const streakBefore = previous ? practiceStats(this.history(), new Date(this.now())).current : null;
         const challengesBefore = this.challenges();
+        const dailyBefore = this.dailyReset().credits.length;
         this.store.save(this.current, this.entitlements.state.pro);
         if (this.current.stage === "result" && this.current.coach) this.coachCache = null;
         for (const state of this.challenges()) {
@@ -249,6 +263,10 @@ export class SessionController {
         }
         if (this.current.stage === "result") this.historyCache = null;
         if (previous) this.captureRewards(previous);
+        if (this.dailyReset().credits.length > dailyBefore) {
+          this.analytics.track("daily_reset_awarded");
+          this.latestAwards = [...this.latestAwards, { id: `daily-reset-${this.current.completionLocalDay}`, label: "The 60-Second Reset", date: this.current.completionLocalDay! }];
+        }
         if (streakBefore !== null && practiceStats(this.history(), new Date(this.now())).current > streakBefore) this.analytics.track("streak_extended");
       }
       this.sessionError = null;
@@ -278,6 +296,7 @@ export class SessionController {
     safetyConfirmed = false,
     challengeTest?: "state-shift-60",
     coaching?: { tag: CoachSession; repeat: boolean },
+    dailyReset?: true,
   ) {
     if (!validRating(pre)) throw new Error("Choose a rating from 1 to 10");
     if (!this.entitlements.protocolAccess(protocol).allowed) { this.analytics.track("premium_lock_tapped"); this.routineNotice = "This protocol requires InOut Pro."; this.emit(); return; }
@@ -306,6 +325,7 @@ export class SessionController {
       id: this.id(),
       coach: coaching?.tag,
       challengeTest,
+      dailyReset,
       guidedQuota: audioSettings(this.preferences).voice && productConfig.guidedSessionsPerMonth !== null && !this.entitlements.state.pro && this.guidedAccess().allowed,
       voiceAllowed: productConfig.guidedSessionsPerMonth === null || this.entitlements.state.pro || (audioSettings(this.preferences).voice && this.guidedAccess().allowed),
       protocolId: protocol.id,
