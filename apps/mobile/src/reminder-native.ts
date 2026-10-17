@@ -3,6 +3,12 @@ import { Platform } from "react-native";
 import type * as Notifications from "expo-notifications";
 import type { ReminderAdapter } from "./reminders";
 import { t } from "./i18n";
+import {
+  buildEngagementSchedule, checkInCategory, engagementNotificationPrefix,
+  notificationDayKey, notificationPreferences, notificationTime, validateNotificationPreferences,
+  type LocalNotificationPreferences,
+} from "./local-notifications";
+import type { Preferences } from "@inout/shared-types";
 
 export function notifications(): typeof Notifications | null {
   if (Constants.executionEnvironment === "storeClient" || Platform.OS === "web") return null;
@@ -10,8 +16,13 @@ export function notifications(): typeof Notifications | null {
 }
 const channelId = "practice-reminders";
 const dailyResetPrefix = "inout-daily-reset:";
+const achievementPrefix = "inout-achievement:";
 export interface DailyResetSchedule { enabled: boolean; hour: number; minute: number; weekdays: number[]; }
-export function nativeReminderAdapter(message: () => string = () => "A moment to breathe, when it suits you."): ReminderAdapter {
+export function nativeReminderAdapter(
+  message: () => string = () => "A moment to breathe, when it suits you.",
+  quietHours: () => Pick<LocalNotificationPreferences, "quietHoursEnabled" | "quietStartHour" | "quietEndHour"> =
+    () => ({ quietHoursEnabled: false, quietStartHour: 22, quietEndHour: 8 }),
+): ReminderAdapter {
   return {
     async permission(request) {
       const sdk = notifications();
@@ -28,10 +39,11 @@ export function nativeReminderAdapter(message: () => string = () => "A moment to
     async schedule(id, reminder, weekday) {
       const sdk = notifications();
       if (!sdk) throw new Error("Reminders need an installed native build. They are unavailable in Expo Go.");
+      const adjusted = notificationTime(new Date(2026, 5, 6 + weekday), reminder.hour, reminder.minute, quietHours());
       await sdk.scheduleNotificationAsync({ identifier: id,
         content: { title: "IN/OUT", body: t(message()), sound: false, color: "#5B2DFF",
           data: { notificationType: "practice-reminder", reminderId: reminder.id } },
-        trigger: { type: sdk.SchedulableTriggerInputTypes.WEEKLY, weekday, hour: reminder.hour, minute: reminder.minute, channelId },
+        trigger: { type: sdk.SchedulableTriggerInputTypes.WEEKLY, weekday: adjusted.getDay() + 1, hour: adjusted.getHours(), minute: adjusted.getMinutes(), channelId },
       });
     },
   };
@@ -69,4 +81,110 @@ export async function scheduleDailyReset(schedule: DailyResetSchedule): Promise<
     }
     throw error;
   }
+}
+
+let configuredEngagementKey = "";
+let engagementConfiguration: { key: string; promise: Promise<void> } | null = null;
+let engagementQueue: Promise<void> = Promise.resolve();
+export function configureEngagementNotifications(preferences: Preferences, requestPermission = false): Promise<void> {
+  const settings = notificationPreferences(preferences);
+  validateNotificationPreferences(settings);
+  const today = new Date();
+  const key = JSON.stringify([settings.dailyReset, settings.motivation, settings.checkIn, settings.achievements,
+    settings.hour, settings.minute, settings.weekdays, settings.quietStartHour, settings.quietEndHour,
+    settings.quietHoursEnabled,
+    today.getFullYear(), today.getMonth(), today.getDate(), today.getTimezoneOffset()]);
+  if (!requestPermission && configuredEngagementKey === key) return Promise.resolve();
+  if (engagementConfiguration?.key === key) return engagementConfiguration.promise;
+    const promise = engagementQueue.catch(() => {}).then(() => applyEngagementNotifications(settings, requestPermission))
+      .then(() => { configuredEngagementKey = key; });
+    engagementQueue = promise;
+  engagementConfiguration = { key, promise };
+  void promise.finally(() => { if (engagementConfiguration?.promise === promise) engagementConfiguration = null; }).catch(() => {});
+  return promise;
+}
+
+async function applyEngagementNotifications(settings: LocalNotificationPreferences, requestPermission: boolean): Promise<void> {
+  const active = settings.dailyReset || settings.motivation || settings.checkIn || settings.achievements;
+  const sdk = notifications();
+  if (!sdk && !active) return;
+  if (!sdk) throw new Error("Notifications need an installed native build. They are unavailable in Expo Go.");
+  const adapter = nativeReminderAdapter();
+  if (active && requestPermission && !await adapter.permission(true))
+    throw new Error("Notifications are off. Enable them in phone settings, then try again.");
+  if (active && !await adapter.permission(false))
+    throw new Error("Notifications are off. Enable them in phone settings, then try again.");
+  if (settings.checkIn) {
+    await sdk.setNotificationCategoryAsync(checkInCategory, [
+      { identifier: "LOG_PRACTICE", buttonTitle: t("Log practice"), options: { opensAppToForeground: true } },
+      { identifier: "DISMISS_CHECK_IN", buttonTitle: t("Not now"), options: { opensAppToForeground: false } },
+    ]);
+  }
+  const prior = await sdk.getAllScheduledNotificationsAsync();
+  const priorEngagement = prior.filter(item => item.identifier.startsWith(engagementNotificationPrefix));
+  const priorAchievements = prior.filter(item => item.identifier.startsWith(achievementPrefix));
+  const scheduled: string[] = [];
+  try {
+    for (const item of buildEngagementSchedule(settings)) {
+      await sdk.scheduleNotificationAsync({
+        identifier: item.id,
+        content: {
+          title: "IN/OUT", body: t(item.body), sound: false, color: "#5B2DFF",
+          ...(item.type === "check-in" ? { categoryIdentifier: checkInCategory } : {}),
+          data: { notificationType: item.type, scheduledFor: item.date.toISOString() },
+        },
+        trigger: { type: sdk.SchedulableTriggerInputTypes.DATE, date: item.date, channelId },
+      });
+      scheduled.push(item.id);
+    }
+  } catch (error) {
+    for (const id of scheduled) {
+      try { await sdk.cancelScheduledNotificationAsync(id); } catch { /* Preserve the scheduling error. */ }
+    }
+    throw error;
+  }
+  for (const item of priorEngagement) if (!scheduled.includes(item.identifier))
+    await sdk.cancelScheduledNotificationAsync(item.identifier);
+  if (!settings.achievements) for (const item of priorAchievements)
+    await sdk.cancelScheduledNotificationAsync(item.identifier);
+}
+
+export async function scheduleAchievementNotification(
+  awardId: string,
+  value: LocalNotificationPreferences,
+  now = new Date(),
+): Promise<number | null> {
+  if (!value.achievements) return null;
+  validateNotificationPreferences(value);
+  if (!/^[\w-]{1,80}$/.test(awardId)) throw new Error("Invalid achievement notification identifier.");
+  const cutoff = now.getTime() - 7 * 86400000;
+  const recent = (value.achievementNoticeLog ?? []).filter(item => item.at > cutoff);
+  if (recent.some(item => item.id === awardId) || recent.length >= 1) return null;
+  const sdk = notifications();
+  if (!sdk) throw new Error("Notifications need an installed native build. They are unavailable in Expo Go.");
+  if (!await nativeReminderAdapter().permission(false))
+    throw new Error("Notifications are off. Enable them in phone settings, then try again.");
+  const scheduled = await sdk.getAllScheduledNotificationsAsync();
+  const reservedDays = new Set(scheduled.map(item => {
+    const date = item.content.data?.scheduledFor;
+    return typeof date === "string" ? notificationDayKey(new Date(date)) : "";
+  }).filter(Boolean));
+  let at: Date | null = null;
+  for (let offset = 0; offset < 8 && !at; offset++) {
+    const day = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offset);
+    if (value.weekdays.length && !value.weekdays.includes(day.getDay() + 1)) continue;
+    const candidate = notificationTime(day, value.hour, value.minute, value);
+    if (candidate.getTime() > now.getTime() + 60_000 && !reservedDays.has(notificationDayKey(candidate))) at = candidate;
+  }
+  if (!at) return null;
+  const identifier = `${achievementPrefix}${awardId}`;
+  await sdk.scheduleNotificationAsync({
+    identifier,
+    content: {
+      title: "IN/OUT", body: t("You earned a practice milestone."), sound: false, color: "#5B2DFF",
+      data: { notificationType: "achievement", awardId, scheduledFor: at.toISOString() },
+    },
+    trigger: { type: sdk.SchedulableTriggerInputTypes.DATE, date: at, channelId },
+  });
+  return at.getTime();
 }

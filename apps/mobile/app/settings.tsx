@@ -10,12 +10,17 @@ import Constants from "expo-constants";
 import { View, Linking } from "react-native";
 import publicInfo from "../../../release/public-info.json";
 import { router } from "expo-router";
-import { BackScreen, Label, Card, Copy, Chip, Disclosure, ActionRow, useStyles } from "../src/ui";
+import { BackScreen, Label, Card, Copy, Chip, Disclosure, ActionRow, Button, useStyles } from "../src/ui";
 import { useSession, SaveError } from "../src/provider";
 
 import { SoundControls } from "../src/sound-controls";
 import { clearProfilePhotos } from "../src/profile-photo";
 import { useCommercial } from "../src/commercial-context";
+import { useRef, useState } from "react";
+import { notificationDefaults, notificationPreferences, validateNotificationPreferences, type LocalNotificationPreferences } from "../src/local-notifications";
+import { configureEngagementNotifications, nativeReminderAdapter } from "../src/reminder-native";
+import { SessionDatePicker } from "../src/session-date-picker";
+import { locale } from "../src/i18n";
 export default function Settings() {
   const { colors } = useTheme();
   const s = useStyles();
@@ -23,9 +28,33 @@ export default function Settings() {
   const controller = useSession();
   const shares = useShareLinks(), reminders = useReminders();
   const commercial = useCommercial();
+  const [notificationError, setNotificationError] = useState("");
+  const [savingNotificationSettings, setSavingNotificationSettings] = useState(false);
+  const notificationSaveLock = useRef(false);
   const preferences = controller.preferences;
+  const notificationSettings = notificationPreferences(preferences);
   const historyCount = controller.history().length;
   const savedCount = controller.routines().length;
+  const saveNotificationSettings = async (next: LocalNotificationPreferences) => {
+    if (notificationSaveLock.current) return;
+    notificationSaveLock.current = true;
+    setSavingNotificationSettings(true);
+    setNotificationError("");
+    try {
+      validateNotificationPreferences(next);
+      const wantsNotifications = next.dailyReset || next.motivation || next.checkIn || next.achievements;
+      if (wantsNotifications && !await nativeReminderAdapter().permission(true))
+        throw new Error("Notifications are off. Enable them in phone settings, then try again.");
+      controller.setPreferences({ ...controller.preferences, notifications: next });
+      if (controller.error) throw new Error(controller.error);
+      await configureEngagementNotifications({ ...controller.preferences, notifications: next });
+    } catch (error) {
+      setNotificationError(error instanceof Error ? error.message : "Notification settings could not be saved. Try again.");
+    } finally {
+      notificationSaveLock.current = false;
+      setSavingNotificationSettings(false);
+    }
+  };
   return (
     <BackScreen title="SETTINGS">
       <Label>ACCOUNT</Label>
@@ -68,6 +97,53 @@ export default function Settings() {
         <Copy>IN/OUT · {historyCount} sessions</Copy>
         <ActionRow title="Open Profile" icon="person-outline" onPress={() => router.push("/profile")} />
         <ActionRow title="Personalize my experience" icon="palette" onPress={() => router.push("/personalize")} />
+      </Disclosure>
+      <Disclosure title="Practice notifications" icon="notifications-active">
+        <Copy>Optional local notifications stay on this phone. They are off until you enable a category. Scheduled prompts are limited to three days each week; achievement alerts are limited to one each week.</Copy>
+        {([
+          ["dailyReset", "Daily Reset"],
+          ["motivation", "Motivational reminders"],
+          ["checkIn", "Practice check-in with log action"],
+          ["achievements", "Achievement alerts"],
+        ] as const).map(([key, label]) => <View key={key} style={s.row}>
+          <Copy>{label}</Copy>
+          <Switch disabled={savingNotificationSettings} accessibilityLabel={t(label)} value={notificationSettings[key]}
+            onValueChange={value => { void saveNotificationSettings({ ...notificationSettings, [key]: value }); }}
+            trackColor={{ true: colors.blue }} />
+        </View>)}
+        <Copy style={s.small}>Check-in notifications include “Log practice” and “Not now” actions. Quiet hours use your phone’s local time.</Copy>
+        <SessionDatePicker timeOnly disabled={savingNotificationSettings} value={new Date(2026, 0, 1, notificationSettings.hour, notificationSettings.minute)}
+          onChange={date => { void saveNotificationSettings({ ...notificationSettings, hour: date.getHours(), minute: date.getMinutes() }); }} />
+        <Label>NOTIFY ON (UP TO THREE DAYS)</Label>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+          {[2, 3, 4, 5, 6, 7, 1].map(day => {
+            const selected = notificationSettings.weekdays.includes(day);
+            const label = new Date(2026, 5, 6 + day).toLocaleDateString(locale(), { weekday: "short" });
+            return <Chip key={day} translate={false} title={label} selected={selected} onPress={() => {
+              if (savingNotificationSettings) return;
+              if (!selected && notificationSettings.weekdays.length >= 3) {
+                setNotificationError("Choose no more than three notification days each week.");
+                return;
+              }
+              void saveNotificationSettings({ ...notificationSettings, weekdays: selected
+                ? notificationSettings.weekdays.filter(value => value !== day)
+                : [...notificationSettings.weekdays, day].sort() });
+            }} />;
+          })}
+        </View>
+        <Label>QUIET HOURS</Label>
+        <View style={s.row}>
+          <Copy>Apply quiet hours to all IN/OUT notifications</Copy>
+          <Switch disabled={savingNotificationSettings} accessibilityLabel={t("Apply quiet hours to all IN/OUT notifications")} value={notificationSettings.quietHoursEnabled}
+            onValueChange={value => { void saveNotificationSettings({ ...notificationSettings, quietHoursEnabled: value }); }}
+            trackColor={{ true: colors.blue }} />
+        </View>
+        <SessionDatePicker timeOnly disabled={savingNotificationSettings} label="QUIET HOURS START" value={new Date(2026, 0, 1, notificationSettings.quietStartHour, 0)}
+          onChange={date => { void saveNotificationSettings({ ...notificationSettings, quietStartHour: date.getHours() }); }} />
+        <SessionDatePicker timeOnly disabled={savingNotificationSettings} label="QUIET HOURS END" value={new Date(2026, 0, 1, notificationSettings.quietEndHour, 0)}
+          onChange={date => { void saveNotificationSettings({ ...notificationSettings, quietEndHour: date.getHours() }); }} />
+        {notificationError ? <Copy accessibilityRole="alert" style={{ color: colors.danger }}>{notificationError}</Copy> : null}
+        <Button title="Reset notification settings" secondary disabled={savingNotificationSettings} onPress={() => { void saveNotificationSettings({ ...notificationDefaults, weekdays: [...notificationDefaults.weekdays] }); }} />
       </Disclosure>
       <Disclosure title="Session preferences" icon="tune">
         {(

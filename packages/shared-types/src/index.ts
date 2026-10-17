@@ -88,6 +88,18 @@ export interface SessionRecord {
   endReason: "completed" | "ended" | "unwell" | null;
 }
 export interface Preferences {
+  notifications?: {
+    dailyReset: boolean;
+    motivation: boolean;
+    checkIn: boolean;
+    achievements: boolean;
+    hour: number;
+    minute: number;
+    weekdays: number[];
+    quietStartHour: number;
+    quietEndHour: number;
+    achievementNoticeLog?: Array<{ id: string; at: number }>;
+  };
   guidance?: {
     voice?: boolean; nature?: boolean; breathingVoice?: boolean; restingVoice?: boolean;
     voiceId?: "existing" | "female" | "male"; language?: "en" | "es" | "pt";

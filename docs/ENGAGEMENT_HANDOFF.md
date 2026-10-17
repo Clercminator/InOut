@@ -25,11 +25,14 @@ Existing canonical events are retained rather than duplicated: `app_open` repres
 ## 2. Notifications
 
 - `nativeReminderAdapter()` implements the existing on-device practice reminder permission, schedule, list, and cancel interface. `ReminderService` continues to persist local schedules and enforce existing Free/Pro reminder limits.
-- `scheduleDailyReset({ enabled, hour, minute, weekdays })` in `reminder-native.ts` is a reusable local weekly-schedule API for the future Daily Reset. Weekdays use Expo's 1–7 convention. It does not create a Challenge screen or persist preferences; a future caller must store its category preference and call `nativeReminderAdapter().permission(true)` at the appropriate user action.
-- `ReminderEffects` suppresses presentation during active/post-session practice, de-duplicates response taps, and routes cold-start reminder opens. Daily Reset currently opens Home until its future destination exists.
+- The Settings notification controls persist local-only category preferences for Daily Reset, rotating motivational prompts, practice check-ins, and achievement alerts. New categories are all off by default. At most three selected weekdays are scheduled per calendar week; achievement alerts are capped at one per rolling seven days and use an unreserved selected day/time.
+- Check-in notifications expose “Log practice” and “Not now” actions. The log action opens the existing manual-session form, or returns to an active/post session instead of interrupting it. Notification text is neutral and does not include the achievement name, profile, ritual, ratings, or notes.
+- Optional quiet hours are off by default. When enabled, engagement and achievement notices are shifted outside the configured local-time interval; existing practice reminders are shifted as well. Settings default to 22:00–08:00 when the user enables quiet hours. Foreground reconciliation updates one-shot schedules after date or timezone changes.
+- `scheduleDailyReset({ enabled, hour, minute, weekdays })` remains a reusable native weekly-schedule API. The Settings category scheduler uses the same Daily Reset category with the user's shared time/day preferences.
+- `ReminderEffects` suppresses presentation during active/post-session practice, de-duplicates response taps, and routes cold-start opens to Home, practice, manual logging, or progress as appropriate.
 - Android's `monochrome-icon.png` is a 1024-square white-on-transparent PNG and is configured as the small notification icon; tint is `#5B2DFF`. The installed Expo Notifications content API has no local-notification large-icon field.
 
-Only practice reminders and the Daily Reset scheduling interface are implemented here. Motivational-message rotation, outside-app check-in action buttons/manual-form routing, achievement notifications, independent category switches, quiet hours, and category-wide frequency caps still need implementation and native acceptance. Do not enable them implicitly.
+Provider notification configuration and native acceptance still need verification on physical iOS and Android devices, including action-button presentation, timezone changes and OS quiet-hour interactions. Practice reminders created by the user remain separate from the three-day engagement-prompt cap and continue to use existing Free/Pro limits.
 
 ## 3. Post-session ads
 
@@ -53,7 +56,7 @@ Spoken cues remain one-shot and skip expired phase cues; music uses the existing
 
 ## 5. Implementation ownership
 
-This change owns the supplied audio registry/assets; typed analytics and consent wiring; Firebase platform config; local reminder scheduling/telemetry and Daily Reset API; post-session ad lifecycle telemetry/disclosure; privacy copy; and focused regression tests. Primary modules are `approved-audio.ts`, `analytics.ts`, `telemetry.ts`, `telemetry-native.ts`, `commercial.ts`, `ads.ts`, `ad-disclosure.ts`, `reminders.ts`, `reminder-native.ts`, `reminder-context.tsx`, `session-effects.tsx`, `session-controller.ts`, `subscriptions.ts`, `share-exercise.tsx`, and the existing provider/settings/result routes.
+This change owns the supplied audio registry/assets; typed analytics and consent wiring; Firebase platform config; local reminder scheduling/telemetry and notification categories; post-session ad lifecycle telemetry/disclosure; privacy copy; and regression tests. Primary modules are `approved-audio.ts`, `analytics.ts`, `telemetry.ts`, `telemetry-native.ts`, `commercial.ts`, `ads.ts`, `ad-disclosure.ts`, `local-notifications.ts`, `reminders.ts`, `reminder-native.ts`, `reminder-context.tsx`, `session-effects.tsx`, `session-controller.ts`, `subscriptions.ts`, `share-exercise.tsx`, and the existing provider/settings/result routes.
 
 No Challenge UI/content, breathing engine, store product identifiers, remote notification backend, or ad configuration was changed.
 
@@ -62,12 +65,12 @@ No Challenge UI/content, breathing engine, store product identifiers, remote not
 Automated checks run:
 
 - `npm run typecheck`
-- `npm test` — 180 passed
-- `npm run test:mobile` — 201 passed
+- `npm test` — 184 passed
+- `npm run test:mobile` — 202 passed
 - `npm run locales:check`
 - `npm run release:pages`
-- `npx expo export --platform android` from `apps/mobile` — bundle exported with the selected supplied audio assets
+- `npx expo export --platform android` from `apps/mobile` — bundle exported with selected supplied audio assets and the notification changes
 
-Still required before release: Android/iOS device checks for all voice selections and phase timing; music/texture loop continuity, pause/resume, offline, headphones and interruptions; reminder permission/weekday/timezone/cold-start behavior; ad consent, test inventory, Pro/reviewer suppression and explicit Done navigation; Firebase consent/withdrawal and Crashlytics behavior on each configured platform. No production ad, analytics, store, or physical-device dashboard acceptance was performed.
+Still required before release: Android/iOS device checks for all voice selections and phase timing; music/texture loop continuity, pause/resume, offline, headphones and interruptions; notification permission, category action buttons, quiet hours, weekday/timezone/cold-start behavior; ad consent, test inventory, Pro/reviewer suppression and explicit Done navigation; Firebase consent/withdrawal and Crashlytics behavior on each configured platform. No production ad, analytics, store, or physical-device dashboard acceptance was performed.
 
 Remaining owner/platform work: provide platform Firebase service files through protected build inputs; confirm provenance for the four excluded male recordings; supply PT-BR voice or ambience only if desired; decide whether native large-icon support is required beyond Expo's configured small icon; and define category preferences/timing for the unimplemented notification types listed above.

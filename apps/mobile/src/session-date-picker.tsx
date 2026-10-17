@@ -8,7 +8,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Button, Copy, Label } from "./ui";
 
-export function SessionDatePicker({ value, onChange, disabled = false, timeOnly = false }: { value: Date; onChange: (value: Date) => void; disabled?: boolean; timeOnly?: boolean }) {
+export function SessionDatePicker({ value, onChange, disabled = false, timeOnly = false, label = "REMINDER TIME" }: { value: Date; onChange: (value: Date) => void; disabled?: boolean; timeOnly?: boolean; label?: string }) {
   const { colors, mode: themeMode } = useTheme();
   useLanguage();
   const [mode, setMode] = useState<"date" | "time" | null>(null);
@@ -23,7 +23,7 @@ export function SessionDatePicker({ value, onChange, disabled = false, timeOnly 
     } else { setDraft(value); setMode(kind); }
   };
   return <View style={{ gap: 10 }}>
-    <Label>{timeOnly ? "REMINDER TIME" : "START DATE & TIME"}</Label>
+    <Label>{timeOnly ? label : "START DATE & TIME"}</Label>
     <Copy>{!timeOnly ? `${value.toLocaleDateString(locale(), { year: "numeric", month: "short", day: "numeric" })} · ` : ""}{value.toLocaleTimeString(locale(), { hour: "2-digit", minute: "2-digit" })}</Copy>
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
       {!timeOnly && <Button title="Choose date" secondary disabled={disabled} onPress={() => open("date")} />}

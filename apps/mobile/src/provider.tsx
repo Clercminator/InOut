@@ -29,6 +29,7 @@ import { ExperienceProvider } from "./experience-context";
 import { experienceFor } from "./experience";
 import { ReminderService } from "./reminders";
 import { nativeReminderAdapter } from "./reminder-native";
+import { notificationPreferences } from "./local-notifications";
 import { ReminderContext, ReminderEffects } from "./reminder-context";
 
 export function SessionProvider({ children }: PropsWithChildren) {
@@ -47,7 +48,8 @@ export function SessionProvider({ children }: PropsWithChildren) {
       const sessionController = new SessionController(store, clock.now, randomUUID, services.entitlements, services.analytics);
       setController(sessionController);
       const reminderService = new ReminderService({ read: () => store.readReminders(), write: items => store.writeReminders(items) },
-        nativeReminderAdapter(() => goalContent[goalForDay(sessionController.preferences)].reminder), () => services.entitlements.has("advancedReminders"), () => experienceFor(sessionController.preferences).rituals.map(r => r.id),
+        nativeReminderAdapter(() => goalContent[goalForDay(sessionController.preferences)].reminder,
+          () => notificationPreferences(sessionController.preferences)), () => services.entitlements.has("advancedReminders"), () => experienceFor(sessionController.preferences).rituals.map(r => r.id),
         category => services.analytics.track("notification_schedule_failed", { outcome: "failed", errorCategory: category }));
       const shareService = new ShareLinksService({ read: () => store.readShareLinks(), write: items => store.writeShareLinks(items) }, {
         identity: async () => {

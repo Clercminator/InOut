@@ -12,13 +12,22 @@ let mockListener: (response: unknown) => void;
 let mockHandler: { handleNotification(): Promise<{ shouldShowBanner: boolean; shouldPlaySound: boolean }> } | null;
 const mockRemove = jest.fn();
 const mockClear = jest.fn(async () => {});
-const response = (id = "a", date = 1) => ({ actionIdentifier: "open", notification: { date, request: { identifier: `inout-reminder:${id}:2`, content: { data: { reminderId: id } } } } });
-jest.mock("expo-router", () => ({ router: { push: (...args: unknown[]) => mockPush(...args) } }));
-jest.mock("../src/reminder-native", () => ({ notifications: () => ({
+const mockConfigure = jest.fn(async () => {});
+const mockScheduleAchievement = jest.fn(async () => null);
+const response = (id = "a", date = 1, notificationType?: string, actionIdentifier = "open") => ({
+  actionIdentifier,
+  notification: { date, request: { identifier: `inout-reminder:${id}:2`, content: { data: { reminderId: id, ...(notificationType ? { notificationType } : {}) } } } },
+});
+jest.mock("expo-router", () => ({ router: { push: (...args: unknown[]) => mockPush(...args), replace: (...args: unknown[]) => mockPush(...args) } }));
+jest.mock("../src/reminder-native", () => ({
+  configureEngagementNotifications: () => mockConfigure(),
+  scheduleAchievementNotification: () => mockScheduleAchievement(),
+  notifications: () => ({
   DEFAULT_ACTION_IDENTIFIER: "open", setNotificationHandler: (handler: typeof mockHandler) => { mockHandler = handler; },
   addNotificationResponseReceivedListener: (listener: typeof mockListener) => { mockListener = listener; return { remove: mockRemove }; },
   getLastNotificationResponseAsync: async () => response(), clearLastNotificationResponseAsync: () => mockClear(),
-}) }));
+  }),
+}));
 
 test("notification delivery stays quiet during practice, handles a tap once, and never auto-starts", async () => {
   const controller = new SessionController({ preferences: () => ({ ...defaultPreferences, onboardingComplete: true }), pending: () => null, save: () => {} } as unknown as LocalStore, () => 1000, () => "session");
@@ -37,4 +46,22 @@ test("notification delivery stays quiet during practice, handles a tap once, and
   await act(async () => { mockListener(response("removed", 3)); });
   expect(mockPush).toHaveBeenCalledTimes(2);
   await view.unmount(); expect(mockRemove).toHaveBeenCalled(); expect(mockHandler).toBeNull();
+});
+
+test("check-in notification actions route to manual logging or safely dismiss", async () => {
+  const controller = new SessionController({ preferences: () => ({ ...defaultPreferences, onboardingComplete: true }), pending: () => null, save: () => {} } as unknown as LocalStore, () => 1000, () => "session");
+  const service = new ReminderService({ read: () => [], write: () => {} }, { permission: async () => true, list: async () => [], cancel: async () => {}, schedule: async () => {} }, () => false, () => []);
+  mockPush.mockClear();
+  const view = await render(<SessionContext.Provider value={controller}><ReminderContext.Provider value={service}><ReminderEffects /></ReminderContext.Provider></SessionContext.Provider>);
+  await waitFor(() => expect(mockListener).toBeTruthy());
+  mockPush.mockClear();
+  await act(async () => { mockListener(response("check-in", 10, "check-in")); });
+  expect(mockPush).toHaveBeenCalledWith("/add-session");
+  mockPush.mockClear();
+  await act(async () => { mockListener(response("check-in", 11, "check-in", "LOG_PRACTICE")); });
+  expect(mockPush).toHaveBeenCalledWith("/add-session");
+  mockPush.mockClear();
+  await act(async () => { mockListener(response("check-in", 12, "check-in", "DISMISS_CHECK_IN")); });
+  expect(mockPush).not.toHaveBeenCalled();
+  await view.unmount();
 });
