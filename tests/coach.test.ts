@@ -4,7 +4,7 @@ import { DatabaseSync } from "node:sqlite";
 import { LocalStore, type Database } from "../apps/mobile/src/storage";
 import { SessionController } from "../apps/mobile/src/session-controller";
 import { EntitlementService, commercialPolicy } from "../apps/mobile/src/entitlements";
-import { emptyCoach, programs, coachProtocol, dailyRecommendation, comfortableCycles, validateCoach, generateWeek, type CoachSession } from "../apps/mobile/src/coach";
+import { emptyCoach, programs, discoverPrograms, programDuration, coachProtocol, dailyRecommendation, comfortableCycles, validateCoach, generateWeek, type CoachSession } from "../apps/mobile/src/coach";
 import { createCoachAiAdapter, validateCoachAiOutput, type CoachAiDependencies } from "../apps/mobile/src/coach-ai";
 import { totalDuration } from "../packages/breathing-engine/src/index";
 import { dayKey } from "../apps/mobile/src/progress";
@@ -211,4 +211,15 @@ test("AI timeouts abort without replacing the deterministic recommendation", asy
   t.mock.timers.tick(5001);
   const result = await pending;
   assert.equal(result.source, "local"); assert.equal(result.value.protocolId, recommendation.protocolId); assert.equal(signal?.aborted, true);
+});
+
+test("program discovery considers all selected goals with stable ties and bounded durations", () => {
+ const preferences = { theme: "system", audio: "silent", haptics: false, keepAwake: false, onboardingComplete: true, pro: false, journey: { version: 1, step: "complete", primaryGoal: "sleep", secondaryGoals: ["focus", "pressure"] } } as const;
+ const discovery = discoverPrograms({ ...preferences, journey: { ...preferences.journey, secondaryGoals: [...preferences.journey.secondaryGoals] } });
+ assert.equal(discovery[0].id, "focus-on-demand");
+ assert.ok(discovery.find(p => p.id === "evening-wind-down")!.matchedGoals.includes("sleep"));
+ for (const p of programs) { const duration = programDuration(p, 1); assert.ok(duration.min > 0); assert.ok(duration.max <= 60); }
+ const entitlements = new EntitlementService();
+ assert.equal(entitlements.programAccess("find-your-rhythm").requiresPro, false);
+ assert.equal(entitlements.programAccess("focus-on-demand").requiresPro, true);
 });

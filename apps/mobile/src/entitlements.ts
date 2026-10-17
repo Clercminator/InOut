@@ -99,7 +99,7 @@ export class EntitlementService {
     this.refresh();
   }
   has(capability: Capability): boolean { return proCapabilities.includes(capability) && (!productConfig.proFeatures.includes(capability) || this.state.pro); }
-  programAccess(id: string) { return { allowed: !productConfig.proProgramIds.includes(id) || this.has("guidedPrograms") }; }
+  programAccess(id: string) { const requiresPro = productConfig.proProgramIds.includes(id); return { allowed: !requiresPro || this.has("guidedPrograms"), requiresPro }; }
   protocolAccess(protocol: Pick<Protocol, "id" | "plan">) {
     const locked = [protocol.id, ...(protocol.plan?.blocks.map(b => b.protocolId) ?? [])].some(id => productConfig.proProtocolIds.includes(id));
     return { allowed: !locked || this.state.pro, requiresPro: locked };

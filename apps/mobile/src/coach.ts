@@ -2,7 +2,7 @@ import { protocols } from "@inout/protocols";
 import type { PracticeGoal, Preferences, SessionRecord } from "@inout/shared-types";
 import { addDays, dayKey } from "./progress";
 import { experienceFor } from "./experience";
-import { goalForDay, recommendPractice } from "./personalization";
+import { goalForDay, recommendPractice, selectedGoals } from "./personalization";
 
 export const coachProtocolIds = ["diaphragmatic", "coherent", "extended-exhale", "equal", "box"] as const;
 export type CoachProtocolId = typeof coachProtocolIds[number];
@@ -130,4 +130,20 @@ export function generateWeek(preferences: Preferences, history: SessionRecord[],
 export function weeklyReview(history: SessionRecord[], now: number) {
   const recent = history.filter(r => r.stage === "result" && r.endReason === "completed" && r.finishedAt !== null && r.finishedAt <= now && r.finishedAt >= now - 7 * 86400000);
   return { sessions: recent.length, minutes: Math.floor(recent.reduce((sum, r) => sum + r.engine.elapsedAtAnchor, 0) / 60000), days: new Set(recent.map(r => r.completionLocalDay ?? dayKey(new Date(r.finishedAt!)))).size };
+}
+
+const programGoals: Record<ProgramId, PracticeGoal[]> = {
+  "find-your-rhythm": ["learn", "stress"],
+  "evening-wind-down": ["sleep", "stress"],
+  "focus-on-demand": ["focus", "pressure"],
+  "build-your-practice": ["learn", "performance", "energy"],
+};
+export function discoverPrograms(preferences: Preferences) {
+  const goals = selectedGoals(preferences);
+  return programs.map(program => ({ ...program, matchedGoals: goals.filter(goal => programGoals[program.id].includes(goal)) }))
+    .sort((a, b) => b.matchedGoals.length - a.matchedGoals.length || programs.indexOf(programFor(a.id)!) - programs.indexOf(programFor(b.id)!));
+}
+export function programDuration(program: ProgramDefinition, availableMinutes: number) {
+  const seconds = program.steps.map(step => comfortableCycles(step.protocolId, Math.min(step.seconds, availableMinutes * 60)) * cycleMs(step.protocolId) / 1000);
+  return { min: Math.min(...seconds), max: Math.max(...seconds) };
 }

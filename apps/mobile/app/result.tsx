@@ -132,7 +132,7 @@ export default function Result() {
           <Copy>Stopped for discomfort. Breathe naturally and rest.</Copy>
         )}
       </Card>}
-      {saved === "1" && !controller.error && controller.latestAwards.length > 0 && <Card style={{ backgroundColor: colors.accentSurface }}><AchievementMark /><Label>NEW ACHIEVEMENT</Label><Title>{controller.latestAwards[0].label}</Title><Copy>Your earned badges stay with you. Take a moment to enjoy your progress.</Copy><Button title="Share achievement" onPress={() => router.push({ pathname: "/milestone", params: { badge: controller.latestAwards[0].id } })} /><Button title="Close celebration" secondary onPress={() => controller.dismissAwards()} /></Card>}
+      {saved === "1" && !controller.error && controller.latestAwards.length > 0 && <Card style={{ backgroundColor: colors.accentSurface }}><AchievementMark /><Label>NEW ACHIEVEMENT</Label><Title>{controller.latestAwards[0].label}</Title><Copy>Your earned badges stay with you. Take a moment to enjoy your progress.</Copy><Button title="Share achievement" onPress={() => router.push(controller.latestAwards[0].id.startsWith("daily-reset-") ? { pathname: "/challenge-share", params: { daily: record.id } } : { pathname: "/milestone", params: { badge: controller.latestAwards[0].id } })} /><Button title="Close celebration" secondary onPress={() => controller.dismissAwards()} /></Card>}
       {!!record.note && <Card><Label>NOTE</Label><Copy translate={false}>{record.note}</Copy></Card>}
       <SaveError />
       {record.source !== "manual" && record.protocol && <ShareExercise protocol={record.protocol} title={record.dailyReset ? "Invite a friend" : "Share this exercise"} />}

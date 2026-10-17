@@ -1,9 +1,11 @@
+import { goalContent } from "../src/personalization";
+import { AchievementMark } from "../src/achievement-mark";
 import { useState } from "react";
 import { View } from "react-native";
 import { router } from "expo-router";
 import { BackScreen, Title, Label, Copy, Card, Button, Chip, Disclosure, ActionRow } from "../src/ui";
 import { useSession, SaveError } from "../src/provider";
-import { programs, programFor, coachProtocol, coachProtocolIds, weeklyReview } from "../src/coach";
+import { programs, discoverPrograms, programDuration, programFor, coachProtocol, coachProtocolIds, weeklyReview } from "../src/coach";
 import { dayKey } from "../src/progress";
 import { useProgressDate } from "../src/progress-ui";
 import { protocolTitle, message, locale } from "../src/i18n";
@@ -27,6 +29,7 @@ export default function Coach() {
   };
   const offer = () => router.push({ pathname: "/pro", params: { source: "coach" } });
   return <BackScreen title="Coach & programs">
+    {controller.entitlements.state.pro && <Label>IN/OUT PRO</Label>}
     <Title>Your next small step.</Title>
     <Copy>Approved practices, at your pace. Programs count practice days, not deadlines. Missed days never erase progress.</Copy>
     {busy && <Copy>Finish your current session before changing your plan.</Copy>}
@@ -49,7 +52,7 @@ export default function Coach() {
         <View style={{ height: 6, borderRadius: 3, width: `${100 * enrollment.completed.length / current.days}%`, backgroundColor: colors.accent }} />
       </View>
       {!controller.entitlements.programAccess(current.id).allowed ? <><Copy>Your progress is saved. Pro access is needed to continue this program.</Copy><Button title="Explore InOut Pro" onPress={offer} /></> : <>
-        {enrollment.status === "completed" ? <Copy>Program complete. Keep the rhythms you enjoyed, or repeat at your own pace.</Copy>
+        {enrollment.status === "completed" ? <><AchievementMark earned /><Copy>Program complete. Keep the rhythms you enjoyed, or repeat at your own pace.</Copy><Copy>{message("{0} sessions completed. Your progress stays saved on this phone.", [enrollment.completed.length])}</Copy></>
           : enrollment.status === "paused" ? <Button title="Resume program" disabled={busy} onPress={() => controller.pauseProgram(false)} />
             : <>
               {controller.coachSession({ enrollmentId: enrollment.id, step: enrollment.completed.length }) ? <>
@@ -65,13 +68,20 @@ export default function Coach() {
       <Disclosure title="Upcoming practices" icon="calendar-today">{current.steps.slice(enrollment.completed.length, enrollment.completed.length + 3).map((step, i) => <Copy key={i}>{message("Day {0}", [enrollment.completed.length + i + 1])} · {protocolTitle(coachProtocol(step.protocolId)!)} · {practiceDuration(Math.min(step.seconds, state.availableMinutes * 60) * 1000)}</Copy>)}</Disclosure>
     </Card>}
     <Label>GUIDED PROGRAMS</Label>
-    {programs.map(program => {
-      const allowed = controller.entitlements.programAccess(program.id).allowed;
+    {discoverPrograms(controller.preferences).map(program => {
+      const { allowed, requiresPro } = controller.entitlements.programAccess(program.id);
+      const duration = programDuration(program, state.availableMinutes);
+      const completed = state.enrollments.filter(e => e.programId === program.id && e.status === "completed").at(-1);
       const saved = state.enrollments.find(e => e.programId === program.id && e.status !== "completed");
       return <Card key={program.id}>
-        <Label>{program.id === "find-your-rhythm" ? "FREE" : "IN/OUT PRO"}</Label><Title>{program.title}</Title><Copy>{program.description}</Copy>
-        <Copy>{message("{0} practice days", [program.days])}</Copy>
-        <Disclosure title="Preview program" icon="visibility">{program.steps.slice(0, 3).map((step, i) => <Copy key={i}>{message("Day {0}", [i + 1])} · {protocolTitle(coachProtocol(step.protocolId)!)} · {practiceDuration(step.seconds * 1000)}</Copy>)}<Copy>{program.steps[0].explanation}</Copy></Disclosure>
+        <Label>{requiresPro ? "IN/OUT PRO" : "FREE INTRODUCTORY PROGRAM"}</Label><Title>{program.title}</Title><Copy>{program.description}</Copy>
+        <Copy>{message("{0} practice days · {1}–{2} per session", [program.days, practiceDuration(duration.min * 1000), practiceDuration(duration.max * 1000)])}</Copy>
+        <Copy>{goalContent[program.goal].title}</Copy>
+        {program.matchedGoals.length > 0 && <Label>RECOMMENDED FOR YOUR GOALS</Label>}
+        <Copy>One guided practice per day, with familiar rhythms repeated throughout the program.</Copy>
+        {saved && <Copy>{message("{0} of {1} practice days complete", [saved.completed.length, program.days])}</Copy>}
+        {!saved && completed && <Copy>{message("{0} sessions completed. Your progress stays saved on this phone.", [completed.completed.length])}</Copy>}
+        <Disclosure title="Preview program" icon="visibility">{program.steps.slice(0, 3).map((step, i) => <Copy key={i}>{message("Day {0}", [i + 1])} · {protocolTitle(coachProtocol(step.protocolId)!)} · {practiceDuration(Math.min(step.seconds, state.availableMinutes * 60) * 1000)}</Copy>)}<Copy>{program.steps[0].explanation}</Copy></Disclosure>
         {!(saved?.id === state.activeEnrollmentId && saved?.status === "active") && <Button title={allowed ? saved ? "Continue program" : "Start program" : "Explore InOut Pro"} disabled={busy} secondary={!allowed} onPress={() => allowed ? controller.enrollProgram(program.id) : offer()} />}
       </Card>;
     })}

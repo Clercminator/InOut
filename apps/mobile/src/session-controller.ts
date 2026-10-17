@@ -267,7 +267,7 @@ export class SessionController {
       if (c.dailyReset && c.endReason === "completed") once("daily_reset_completed");
       if (c.post !== null) once("state_after_logged");
       const coach = c.coach;
-      if (coach && "enrollmentId" in coach && this.store.coachState().enrollments.some(e => e.id === coach.enrollmentId && e.status === "completed")) once("guided_program_completed");
+      if (coach && "enrollmentId" in coach && this.store.coachState().enrollments.some(e => e.id === coach.enrollmentId && e.status === "completed" && e.completed.at(-1)?.sessionId === c.id)) once("guided_program_completed");
       if (c.challengeTest && this.testAttempts().some(a => a.id === c.id)) { once("challenge_attempt_completed"); once("challenge_completed"); }
     }
   }
@@ -414,6 +414,7 @@ export class SessionController {
     };
     this.save();
     this.analytics.track("session_started");
+    if (!this.error && coaching && "enrollmentId" in coaching.tag && this.coachState().enrollments.some(e => e.id === (coaching.tag as { enrollmentId: string }).enrollmentId && e.completed.length > 0)) this.analytics.track("guided_program_returned");
     if (pre !== null) this.analytics.track("state_before_logged");
     if (protocol.plan && protocol.id !== "shared-practice") this.analytics.track("mix_started");
     else if (protocol.id !== "shared-practice" && !protocols.some(p => p.id === protocol.id)) this.analytics.track("custom_started");
