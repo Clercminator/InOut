@@ -1,6 +1,6 @@
-import { audioSettings } from "./audio-preferences";
-import { loopedAudio } from "./looped-audio";
-import { selectedVoice, musicTracks } from "./approved-audio";
+import { audioSettings, voiceCueIndex } from "./audio-preferences";
+import { loopedAudio, type AudioLoop } from "./looped-audio";
+import { selectedMusicTrack, selectedVoice } from "./approved-audio";
 import { t } from "./i18n";
 import { isCyclic } from "@inout/protocols";
 import { voices } from "./voice-library";
@@ -32,7 +32,7 @@ export function NativeSessionEffects() {
   const voiceBank = selectedVoice(controller.preferences);
   const voiceEnabled = settings.voice && session?.voiceAllowed !== false && !!voiceBank;
   const natureEnabled = settings.nature;
-  const track = settings.music ? musicTracks.find(track => track.id === settings.musicId) ?? musicTracks[0] : undefined;
+  const track = settings.music ? selectedMusicTrack(settings.musicId) : undefined;
   const audio = voiceEnabled ? "voice" : natureEnabled || track ? "tones" : "silent";
   const { breathSound, guidanceVolume, chime, celebration, celebrationVolume } = experienceFor(controller.preferences);
   const players = useRef<Array<AudioPlayer | undefined>>([]);
@@ -41,15 +41,23 @@ export function NativeSessionEffects() {
   const cue = useRef("");
   const announced = useRef("");
   const deliveredHaptic = useRef({ lastKey: "" });
-  const breath = useRef<AudioPlayer | null>(null);
-  const texturePlayers = useRef<Partial<Record<"in" | "out" | "hum", AudioPlayer>>>({});
+  const textureLoops = useRef<Partial<Record<"in" | "out" | "hum", AudioLoop>>>({});
+  const activeTexture = useRef<"in" | "out" | "hum" | null>(null);
+  const textureGain = useRef(0);
+  const musicLoop = useRef<ReturnType<typeof loopedAudio> | null>(null);
   const completedId = useRef("");
+  const [appActive, setAppActive] = useState(AppState.currentState === "active");
   const audioKey = `${audio}:${voiceBank?.language}:${voiceBank?.id}:${running}:${session?.stage}`;
   const [readyAudioKey, setReadyAudioKey] = useState<string | null>(null);
   const audioReady = audio === "silent" || readyAudioKey === audioKey;
   const view = controller.view();
   const phases = session && view ? session.engine.plan.blocks[view.blockIndex].phases : [];
   const guidance = view ? breathingGuidance(phases, view.phaseIndex, view.phaseElapsedMs) : null;
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", state => setAppActive(state === "active"));
+    return () => subscription.remove();
+  }, []);
 
   useEffect(() => {
     if (!running) return;
@@ -180,38 +188,38 @@ export function NativeSessionEffects() {
     players.current.forEach((p) => p?.pause());
     // Skip expired cues after stalls. Only the current phase is announced, never a backlog.
     if (audio === "voice" && audioReady && (guidance?.holding || view.phase.type === "freeBreathing" ? settings.restingVoice : settings.breathingVoice) && view.phaseElapsedMs < 300) {
-      const indexes = { inhale: 0, inhaleTopUp: 1, exhale: 2, hold: 4, hum: 5, retention: 6, recovery: 7, freeBreathing: 8 };
-      let index = indexes[view.phase.type];
-      if (guidance?.holding && !guidance.full) index = 6;
-      if (session?.protocol && isCyclic(session.protocol) && view.phase.type === "retention") index = 4;
-      if (audio === "voice" && (view.phase.nostril === "left" || view.phase.nostril === "right")) {
-        if (view.phase.type === "inhale") index = view.phase.nostril === "left" ? 9 : 10;
-        if (view.phase.type === "exhale") index = view.phase.nostril === "left" ? 11 : 12;
+      const index = voiceCueIndex(
+        view.phase,
+        guidance?.holding ?? false,
+        guidance?.full ?? false,
+        !!session?.protocol && isCyclic(session.protocol),
+      );
+      if (index !== undefined) {
+        const player = players.current[index];
+        const requiredMs = (voiceBank?.durations[index] ?? Infinity) + 100;
+        if (player && view.phaseRemainingMs >= requiredMs)
+          void player
+            .seekTo(0)
+            .then(() => {
+              const currentView = controller.view();
+              if (
+                generation.current === gen &&
+                controller.current?.id === session?.id &&
+                controller.current?.engine.status === "running" &&
+                currentView?.cueKey === view.cueKey &&
+                currentView.phaseRemainingMs >= requiredMs &&
+                currentView.phaseElapsedMs < 300 &&
+                AppState.currentState === "active"
+              )
+                player.play();
+            })
+            .catch(() => {
+              if (generation.current === gen) {
+                controller.analytics.track("audio_playback_failed", { outcome: "failed", errorCategory: "playback" });
+                controller.pause("interruption");
+              }
+            });
       }
-      const player = players.current[index];
-      const requiredMs = (voiceBank?.durations[index] ?? Infinity) + 100;
-      if (player && view.phaseRemainingMs >= requiredMs)
-        void player
-          .seekTo(0)
-          .then(() => {
-            const currentView = controller.view();
-            if (
-              generation.current === gen &&
-              controller.current?.id === session?.id &&
-              controller.current?.engine.status === "running" &&
-              currentView?.cueKey === view.cueKey &&
-              currentView.phaseRemainingMs >= requiredMs &&
-              currentView.phaseElapsedMs < 300 &&
-              AppState.currentState === "active"
-            )
-              player.play();
-          })
-          .catch(() => {
-                if (generation.current === gen) {
-                  controller.analytics.track("audio_playback_failed", { outcome: "failed", errorCategory: "playback" });
-                  controller.pause("interruption");
-                }
-              });
     }
   }, [
     running,
@@ -225,12 +233,22 @@ export function NativeSessionEffects() {
   ]);
 
   useEffect(() => {
-    if (!running || !audioReady || !track || AppState.currentState !== "active") return;
-    return loopedAudio(track.source, () => audioSettings(controller.preferences).musicVolume, () => {
+    if (session?.stage !== "active" || !track) return;
+    const loop = loopedAudio(track.source, () => audioSettings(controller.preferences).musicVolume, () => {
       controller.analytics.track("audio_playback_failed", { outcome: "failed", errorCategory: "playback" });
       controller.pause("interruption");
-    }, track.crossfadeMs);
-  }, [running, audioReady, track, controller]);
+    }, track.crossfadeMs, false);
+    musicLoop.current = loop;
+    return () => {
+      loop();
+      if (musicLoop.current === loop) musicLoop.current = null;
+    };
+  }, [session?.id, session?.stage, track, controller]);
+
+  useEffect(() => {
+    if (running && audioReady && appActive) musicLoop.current?.resume();
+    else musicLoop.current?.pause();
+  }, [running, audioReady, appActive, session?.id, session?.stage, track]);
 
   // Haptics use engine deadlines independently of React's display refresh.
   useEffect(() => {
@@ -259,62 +277,72 @@ export function NativeSessionEffects() {
     }
   }, [running, session?.id, view?.cueKey]);
 
-  // Keep decoded textures ready across phases instead of constructing a player per breath.
+  // Keep short nature recordings looping with a small overlap instead of restarting a decoder per breath.
   useEffect(() => {
-    if (!natureEnabled) return;
+    if (!natureEnabled || session?.stage !== "active") return;
     const sources = { ...breathTextures[breathSound], hum: humTexture };
-    const pool = Object.fromEntries(Object.entries(sources).map(([key, source]) => {
-      const player = createAudioPlayer(source, { updateInterval: 100, keepAudioSessionActive: false });
-      player.loop = true;
-      player.volume = 0;
-      return [key, player];
-    })) as Record<"in" | "out" | "hum", AudioPlayer>;
-    texturePlayers.current = pool;
+    const loops = Object.fromEntries(Object.entries(sources).map(([key, source]) => [
+      key,
+      loopedAudio(source, () => activeTexture.current === key ? textureGain.current : 0, () => {
+        controller.analytics.track("audio_playback_failed", { outcome: "failed", errorCategory: "playback" });
+        controller.pause("interruption");
+      }, 120, false),
+    ])) as Record<"in" | "out" | "hum", AudioLoop>;
+    textureLoops.current = loops;
     return () => {
-      Object.values(pool).forEach(player => { player.volume = 0; player.pause(); player.remove(); });
-      texturePlayers.current = {};
-      breath.current = null;
+      activeTexture.current = null;
+      textureGain.current = 0;
+      Object.values(loops).forEach(loop => loop());
+      textureLoops.current = {};
     };
-  }, [natureEnabled, breathSound]);
+  }, [natureEnabled, breathSound, session?.id, session?.stage, controller]);
 
   useEffect(() => {
-    if (!running || !natureEnabled || !audioReady || !view || !guidance?.texture || AppState.currentState !== "active") return;
-    const player = texturePlayers.current[guidance.texture];
-    if (!player) return;
-    breath.current = player;
+    if (!running || !natureEnabled || !audioReady || !view || !guidance?.texture || !appActive) return;
+    const loop = textureLoops.current[guidance.texture];
+    if (!loop) return;
     let disposed = false;
     const update = () => {
       if (disposed) return false;
       const current = controller.view();
       if (!current || controller.current?.id !== session?.id ||
         controller.current?.engine.status !== "running" || current.cueKey !== view.cueKey || AppState.currentState !== "active") {
-        player.volume = 0;
-        player.pause();
+        activeTexture.current = null;
+        textureGain.current = 0;
+        loop.pause();
         return false;
       }
-      const gain = breathingGuidance(phases, current.phaseIndex, current.phaseElapsedMs).envelope
-        * audioSettings(controller.preferences).natureVolume;
-      if (Math.abs(player.volume - gain) > 0.002 || gain === 0) player.volume = gain;
+      const currentGuidance = breathingGuidance(phases, current.phaseIndex, current.phaseElapsedMs);
+      const currentTexture = currentGuidance.texture;
+      const gain = currentGuidance.envelope * audioSettings(controller.preferences).natureVolume;
+      if (currentTexture !== activeTexture.current) {
+        Object.entries(textureLoops.current).forEach(([key, other]) => {
+          if (key !== currentTexture) other?.pause();
+        });
+        activeTexture.current = currentTexture;
+        textureGain.current = gain;
+        if (currentTexture) textureLoops.current[currentTexture]?.resume();
+      } else textureGain.current = gain;
       return true;
     };
-    void player.seekTo((view.phaseElapsedMs % 4000) / 1000).then(() => {
-      if (update()) player.play();
-    }).catch(() => { if (!disposed) controller.pause("interruption"); });
-    // Volume follows the engine clock even between React renders.
+    update();
     const fade = setInterval(update, 32);
     return () => {
       disposed = true;
       clearInterval(fade);
-      player.volume = 0;
-      player.pause();
-      if (breath.current === player) breath.current = null;
+      if (activeTexture.current === guidance.texture) {
+        activeTexture.current = null;
+        textureGain.current = 0;
+      }
+      loop.pause();
     };
-  }, [running, session?.id, view?.cueKey, natureEnabled, audioReady, controller, breathSound]);
+  }, [running, session?.id, view?.cueKey, natureEnabled, audioReady, appActive, controller, breathSound]);
 
   useEffect(() => {
-    if (breath.current) breath.current.volume = running && AppState.currentState === "active"
-      ? (guidance?.envelope ?? 0) * settings.natureVolume : 0;
-  }, [running, view?.phaseElapsedMs, natureEnabled, settings.natureVolume]);
+    if (activeTexture.current && running && appActive) {
+      textureGain.current = (guidance?.envelope ?? 0) * settings.natureVolume;
+    }
+  }, [running, appActive, view?.phaseElapsedMs, natureEnabled, settings.natureVolume]);
 
   useEffect(() => {
     if (

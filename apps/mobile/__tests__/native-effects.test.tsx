@@ -15,6 +15,10 @@ const mockActivate = jest.fn((_active: boolean) => Promise.resolve());
 const mockPlayers: {
   volume: number;
   loop: boolean;
+  updateInterval: number;
+  isLoaded: boolean;
+  duration: number;
+  currentTime: number;
   play: jest.Mock;
   pause: jest.Mock;
   remove: jest.Mock;
@@ -46,10 +50,14 @@ jest.mock("expo-keep-awake", () => ({
 jest.mock("expo-audio", () => ({
   setAudioModeAsync: () => Promise.resolve(),
   setIsAudioActiveAsync: (active: boolean) => mockActivate(active),
-  createAudioPlayer: () => {
+  createAudioPlayer: (_source: number, options: { updateInterval?: number } = {}) => {
     const player = {
       volume: 1,
       loop: false,
+      updateInterval: options.updateInterval ?? 0,
+      isLoaded: true,
+      duration: 4,
+      currentTime: 0,
       play: jest.fn(),
       pause: jest.fn(),
       remove: jest.fn(),
@@ -85,6 +93,7 @@ beforeEach(() => {
       pending: () => null,
       history: () => [],
       save: () => {},
+      savePreferences: () => {},
     } as unknown as LocalStore,
     () => now,
     () => "native-test",
@@ -143,7 +152,7 @@ test("native audio-focus loss requires explicit resume", async () => {
   await act(async () => {
     await Promise.resolve();
   });
-  const guard = mockPlayers.find((p) => p.loop && p.listener)!;
+  const guard = mockPlayers.find((p) => p.loop && p.updateInterval === 100)!;
   expect(guard).toBeTruthy();
   await act(async () => {
     guard.listener?.({ playing: true });
@@ -241,10 +250,12 @@ test("airflow reuses decoded players, stays quiet in holds and resumes from the 
   mockController.preferences.audio = "tones";
   mockController.start(null, 2, protocols.find(p => p.id === "box")!);
   await render(<NativeSessionEffects />);
-  const inhalation = mockPlayers.find(p => p.loop && !p.listener)!;
+  const loops = mockPlayers.filter(p => p.loop && p.updateInterval === 50);
+  expect(loops).toHaveLength(6);
+  const inhalation = loops[0];
   expect(inhalation.play).toHaveBeenCalled();
   expect(inhalation.volume).toBe(0);
-  await act(async () => { now = 2000; mockController.tick(); });
+  await act(async () => { now = 2000; mockController.tick(); jest.advanceTimersByTime(32); });
   expect(inhalation.volume).toBeCloseTo(0.35);
   await act(async () => { mockController.pause(); });
   expect(inhalation.volume).toBe(0);
@@ -252,13 +263,13 @@ test("airflow reuses decoded players, stays quiet in holds and resumes from the 
   await act(async () => { now = 50000; mockController.resume(); });
   const resumed = inhalation;
   expect(resumed.volume).toBeCloseTo(0.35);
-  await act(async () => { now = 52000; mockController.tick(); });
+  await act(async () => { now = 52000; mockController.tick(); jest.advanceTimersByTime(32); });
   expect(resumed.volume).toBe(0);
   expect(resumed.pause).toHaveBeenCalled();
-  await act(async () => { now = 56000; mockController.tick(); });
-  const exhalation = mockPlayers.filter(p => p.loop && !p.listener)[1];
+  await act(async () => { now = 56000; mockController.tick(); jest.advanceTimersByTime(32); });
+  const exhalation = loops[2];
   expect(exhalation).not.toBe(resumed);
-  await act(async () => { now = 60000; mockController.tick(); });
+  await act(async () => { now = 60000; mockController.tick(); jest.advanceTimersByTime(32); });
   expect(exhalation.volume).toBe(0);
   expect(exhalation.pause).toHaveBeenCalled();
 });
@@ -284,8 +295,8 @@ test("silent guidance uses gentle transitions and never vibrates during holds", 
 test("ending a session silences every breath loop and never restarts it on later ticks", async () => {
   mockController.start(null);
   await render(<NativeSessionEffects />);
-  const texture = mockPlayers.find(p => p.loop && !p.listener)!;
-  await act(async () => { now = 1000; mockController.tick(); });
+  const texture = mockPlayers.find(p => p.loop && p.updateInterval === 50)!;
+  await act(async () => { now = 1000; mockController.tick(); jest.advanceTimersByTime(32); });
   expect(texture.volume).toBeGreaterThan(0);
   await act(async () => { mockController.end("unwell"); });
   expect(texture.volume).toBe(0);
@@ -307,8 +318,8 @@ test.each(protocols)("$id breath-sound mode has no phase beeps and releases its 
   mockController.preferences.audio = "tones";
   mockController.start(null, 1, protocol, true);
   const screen = await render(<NativeSessionEffects />);
-  const textures = mockPlayers.filter(p => p.loop && !p.listener);
-  expect(textures).toHaveLength(3);
+  const textures = mockPlayers.filter(p => p.loop && p.updateInterval === 50);
+  expect(textures).toHaveLength(6);
   const nonLooping = mockPlayers.filter(p => !p.loop);
   expect(nonLooping).toHaveLength(1); // Completion chime only.
   for (const phase of protocol.phases) {
@@ -317,7 +328,7 @@ test.each(protocols)("$id breath-sound mode has no phase beeps and releases its 
       expect(nonLooping[0].play).not.toHaveBeenCalled();
     }
   }
-  expect(mockPlayers.filter(p => p.loop && !p.listener)).toEqual(textures);
+  expect(mockPlayers.filter(p => p.loop && p.updateInterval === 50)).toEqual(textures);
   await screen.unmount();
   textures.forEach(p => expect(p.remove).toHaveBeenCalledTimes(1));
 });
@@ -327,8 +338,51 @@ test.each([[true, true], [true, false], [false, true], [false, false]])("indepen
   mockController.preferences.guidance = { voice, nature };
   mockController.start(null, 1, protocols.find(p => p.id === "box")!);
   const screen = await render(<NativeSessionEffects />);
-  expect(mockPlayers.filter(p => p.loop && !p.listener)).toHaveLength(nature ? 3 : 0);
+  expect(mockPlayers.filter(p => p.loop && p.updateInterval === 50)).toHaveLength(nature ? 6 : 0);
   expect(mockPlayers.filter(p => !p.loop)).toHaveLength(voice ? 13 : nature ? 1 : 0);
   await screen.unmount();
   mockPlayers.forEach(p => expect(p.remove).toHaveBeenCalledTimes(1));
+});
+
+test("music pause and resume keep position and session termination releases both decoders", async () => {
+  mockController.preferences.guidance = { voice: false, nature: false, music: true, musicId: "bliss-breath", musicVolume: 0.4 };
+  mockController.start(null);
+  const screen = await render(<NativeSessionEffects />);
+  let musicPlayers = mockPlayers.filter(p => p.loop && p.updateInterval === 50);
+  expect(musicPlayers).toHaveLength(2);
+  expect(musicPlayers[0].play).toHaveBeenCalledTimes(1);
+  expect(musicPlayers[0].volume).toBe(0.4);
+  await act(async () => {
+    mockController.setPreferences({
+      ...mockController.preferences,
+      guidance: { ...mockController.preferences.guidance, musicVolume: 0.2 },
+    });
+  });
+  expect(mockController.preferences.guidance?.musicVolume).toBe(0.2);
+  await act(async () => {
+    jest.advanceTimersByTime(25);
+  });
+  expect(musicPlayers[0].volume).toBe(0.2);
+  musicPlayers[0].currentTime = 42;
+  await act(async () => { mockController.pause(); });
+  expect(musicPlayers[0].pause).toHaveBeenCalled();
+  await act(async () => { mockController.resume(); });
+  expect(musicPlayers[0].currentTime).toBe(42);
+  expect(musicPlayers[0].play).toHaveBeenCalledTimes(2);
+  await act(async () => {
+    mockController.setPreferences({
+      ...mockController.preferences,
+      guidance: { ...mockController.preferences.guidance, musicId: "westerpark" },
+    });
+  });
+  expect(musicPlayers.every(player => player.remove.mock.calls.length === 1)).toBe(true);
+  musicPlayers = mockPlayers.filter(p => p.loop && p.updateInterval === 50 && p.remove.mock.calls.length === 0);
+  expect(musicPlayers).toHaveLength(2);
+  expect(musicPlayers[0].play).toHaveBeenCalledTimes(1);
+  await act(async () => { mockController.end("ended"); });
+  musicPlayers.forEach(player => expect(player.remove).toHaveBeenCalledTimes(1));
+  const playCount = musicPlayers.reduce((sum, player) => sum + player.play.mock.calls.length, 0);
+  await act(async () => { now = 999999; jest.advanceTimersByTime(5000); });
+  expect(musicPlayers.reduce((sum, player) => sum + player.play.mock.calls.length, 0)).toBe(playCount);
+  await screen.unmount();
 });

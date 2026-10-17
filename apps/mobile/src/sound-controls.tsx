@@ -1,5 +1,5 @@
 import { audioSettings } from "./audio-preferences";
-import { selectedVoice, voiceBanks, musicTracks } from "./approved-audio";
+import { selectedMusicTrack, selectedVoice, voiceBanks, musicTracks } from "./approved-audio";
 import { Switch } from "./localized-native";
 import type { Preferences } from "@inout/shared-types";
 import { useLanguage } from "./use-language";
@@ -58,12 +58,15 @@ export function SoundControls({ compact = false }: { compact?: boolean }) {
       if (token === generation.current) { stop(); setError("Sound preview unavailable. Check media volume and silent mode, then try again."); }
     }, () => { if (token === generation.current) stop(); });
     audioPreview.current = preview;
-    const track = musicTracks.find(track => track.id === settings.musicId) ?? musicTracks[0];
+    const track = selectedMusicTrack(settings.musicId);
     const clips: { source: number; volume: number; at: number }[] = [];
     if (kind === "breath") clips.push({ source: breathPreviews[e.breathSound], volume: settings.natureVolume, at: 0 });
     if (kind === "chime") clips.push({ source: chimes[e.chime === "off" ? "bell" : e.chime], volume: e.celebrationVolume, at: 0 });
     if (kind === "music" && track) clips.push({ source: track.source, volume: settings.musicVolume, at: 0 });
-    if (kind === "voice" && bank) [0, 2].forEach((index, i) => { const source = bank.cues[index]; if (source !== undefined) clips.push({ source, volume: settings.voiceVolume, at: i * 3000 }); });
+    if (kind === "voice" && bank) [0, 2].forEach((index, i) => {
+      const source = bank.cues[index];
+      if (source !== undefined) clips.push({ source, volume: settings.voiceVolume, at: i * 3000 });
+    });
     if (!clips.length) { stop(); return; }
     await preview.start(clips, kind === "chime" ? 2200 : kind === "music" ? 15000 : 6200);
   };
@@ -105,7 +108,7 @@ export function SoundControls({ compact = false }: { compact?: boolean }) {
     <Label>NATURAL BREATHING SOUNDS</Label>
     {toggle("Natural breathing sounds", settings.nature, nature => update({ nature }))}
     {settings.nature && <>
-      <View style={s.row}>{(["air", "ocean"] as const).map(breathSound => <Chip key={breathSound} title={breathSound === "air" ? "Air" : "Ocean"} selected={e.breathSound === breathSound} onPress={() => { stop(); controller.updateExperience({ breathSound }); }} />)}</View>
+      <View style={s.row}>{(["air", "ocean", "warm"] as const).map(breathSound => <Chip key={breathSound} title={breathSound === "air" ? "Air" : breathSound === "ocean" ? "Ocean" : "Warm"} selected={e.breathSound === breathSound} onPress={() => { stop(); controller.updateExperience({ breathSound }); }} />)}</View>
       {volume("NATURE VOLUME", "natureVolume")}
       <Button title="Preview breath sounds · 6 sec" secondary disabled={playing || controller.current?.stage === "active"} onPress={() => void preview("breath")} />
       <Copy style={s.small}>Inhale, a quiet hold, exhale, then rest. Preview uses a short sample rhythm. During practice, sound follows your protocol.</Copy>
