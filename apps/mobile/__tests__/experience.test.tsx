@@ -1,3 +1,4 @@
+import ResultShare from "../app/result-share";
 import { emptyTestStore, appendAttempt, selectDaily, type TestStore, type PendingTest, type ChallengeAttempt, type TestId } from "../src/challenge-tests";
 import ChallengeTest from "../app/challenge-test";
 import ChallengeAttemptResult from "../app/challenge-attempt";
@@ -606,4 +607,21 @@ test.each(["en", "es", "pt"] as const)("coach navigation and program titles loca
   await render(wrap(<Coach />));
   expect(screen.getByText(t("Find Your Rhythm"))).toBeTruthy();
   expect(screen.getByRole("button", { name: t("Start program") })).toBeTruthy();
+});
+
+
+test("result artwork waits for loading, captures square and story, and cleans temporary files", async () => {
+  mockController.start(7); mockController.end("ended");
+  mockParams = { id: mockController.current!.id };
+  await render(wrap(<ResultShare />));
+  expect(screen.getByRole("button", { name: "Share result" })).toBeDisabled();
+  await fireEvent(screen.getByTestId("result-share-background"), "load");
+  await fireEvent.press(screen.getByRole("button", { name: "Share result" }));
+  await waitFor(() => expect(mockCapture).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ width: 1080, height: 1080 })));
+  await waitFor(() => expect(screen.getByRole("button", { name: "Share result" })).not.toBeDisabled());
+  await fireEvent.press(screen.getByRole("button", { name: "Story · 9:16" }));
+  expect(screen.getByRole("button", { name: "Share result" })).toBeDisabled();
+  await fireEvent(screen.getByTestId("result-share-background"), "load");
+  await fireEvent.press(screen.getByRole("button", { name: "Share result" }));
+  await waitFor(() => expect(mockCapture).toHaveBeenLastCalledWith(expect.anything(), expect.objectContaining({ width: 1080, height: 1920 })));
 });

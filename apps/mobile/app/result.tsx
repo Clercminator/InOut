@@ -105,11 +105,6 @@ export default function Result() {
       {!!record.note && <Card><Label>NOTE</Label><Copy translate={false}>{record.note}</Copy></Card>}
       <SaveError />
       {record.source !== "manual" && record.protocol && <ShareExercise protocol={record.protocol} />}
-      {shift !== null && <View style={s.row}>
-        <Copy>Include my tension change when sharing</Copy>
-        <Switch accessibilityLabel={t("Include my tension change when sharing")} value={shareRatingsFor === record.id} onValueChange={enabled => setShareRatingsFor(enabled ? record.id : null)} />
-      </View>}
-      <Copy style={s.small}>Sharing includes your practice name and duration. Tension ratings stay private unless you choose to include them.</Copy>
       <View style={{ gap: 8 }}>
         <Button
           title="Return to Home"
@@ -127,13 +122,7 @@ export default function Result() {
           title="Share result"
           secondary
           disabled={!!controller.error}
-          onPress={() => {
-            void Share.share({
-              message: `IN/OUT · ${recordTitle(record)}\n${duration(view.sessionElapsedMs)}${shareRatingsFor === record.id && shift !== null ? ` · ${t(shiftText(record))} (${t("self-reported")})` : ""}`,
-            }).catch(() =>
-              Alert.alert("Sharing unavailable", "Please try again."),
-            );
-          }}
+          onPress={() => router.push({ pathname: "/result-share", params: { id: record.id } })}
         />
         </View>
         {record.source !== "manual" && <View style={{ flexGrow: 1, flexBasis: 140 }}><Button

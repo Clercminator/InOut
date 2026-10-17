@@ -42,7 +42,7 @@ const pages = {
 };
 mkdirSync(out,{recursive:true});
 copyFileSync(root+'apps/mobile/assets/icon.png',out+'icon.png');
-copyFileSync(root+'release/assets/google-play-feature.png',out+'social.png');
+copyFileSync(root+'release/assets/current/visual/feature-graphic-en-US-1024x500.png',out+'social.png');
 copyFileSync(root+'apps/web/site.css',out+'site.css');
 for(const [slug,[title,description,body]] of Object.entries(pages)) {
   const path = slug === 'index' ? '/' : '/'+slug;

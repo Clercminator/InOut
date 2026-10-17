@@ -448,25 +448,15 @@ test("cyclic breathing requires explicit safety confirmation", () => {
   expect(mockController.current?.protocolId).toBe("box");
 });
 
-test("result sharing keeps tension private by default and includes it only after explicit selection", async () => {
+test("result sharing opens a private preview before any data leaves the device", async () => {
   mockParams = { id: "test-session" };
-  mockController.start(7);
-  now = 48000;
-  mockController.tick();
-  mockController.answer(3, "Calmer");
-  const share = jest.spyOn(Share, "share").mockResolvedValue({ action: Share.sharedAction });
-  try {
-    const rendered = await render(<Result />);
-    await fireEvent.press(screen.getByRole("button", { name: "Share result" }));
-    expect(share).toHaveBeenLastCalledWith({ message: "IN/OUT · Physiological Sigh\n48s" });
-    await fireEvent(screen.getByLabelText("Include my tension change when sharing"), "valueChange", true);
-    await fireEvent.press(screen.getByRole("button", { name: "Share result" }));
-    expect(share).toHaveBeenLastCalledWith({ message: expect.stringContaining("Tension down 4 points (self-reported)") });
-    await rendered.unmount();
-    await render(<Result />);
-    await fireEvent.press(screen.getByRole("button", { name: "Share result" }));
-    expect(share).toHaveBeenLastCalledWith({ message: "IN/OUT · Physiological Sigh\n48s" });
-  } finally { share.mockRestore(); }
+  mockController.start(7); now = 48000; mockController.tick(); mockController.answer(3, "Calmer");
+  const share = jest.spyOn(Share, "share");
+  await render(<Result />);
+  await fireEvent.press(screen.getByRole("button", { name: "Share result" }));
+  expect(mockPush).toHaveBeenCalledWith({ pathname: "/result-share", params: { id: "test-session" } });
+  expect(share).not.toHaveBeenCalled();
+  share.mockRestore();
 });
 
 test("cyclic pre-session requires precautions and lets the user end each hold immediately", async () => {
