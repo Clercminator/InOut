@@ -2,11 +2,13 @@
 
 IN/OUT is a native iPhone and Android breathing app built with React Native and Expo. Core practice, routines and history work offline without an account. Publisher: **David Clerc**. Support: **davidclerc@imrtech.xyz**.
 
-Three maintained documents cover the project:
+Five maintained documents cover the project:
 
 - **This README:** implementation, development, engineering backlog, QA and release evidence.
 - **[PROJECT_CONTEXT.md](PROJECT_CONTEXT.md):** product direction, design principles and business/research decisions.
 - **[OWNER_SETUP_CHECKLIST.md](OWNER_SETUP_CHECKLIST.md):** one ordered list of everything the owner must do for functionality, testing access and Android/iOS publication.
+- **[docs/CROSS_PLATFORM_RELEASE_READINESS.md](docs/CROSS_PLATFORM_RELEASE_READINESS.md):** evidence-based Android/iOS status, test gaps and release blockers.
+- **[docs/IOS_OWNER_SETUP.md](docs/IOS_OWNER_SETUP.md):** Apple enrollment follow-up, App Store Connect, subscriptions, RevenueCat, TestFlight and review steps.
 
 The updated [Stitch design reference](UI/inout/DESIGN.md) remains with the exported design assets; it is not another status tracker. Release JSON files remain the machine-readable content and readiness sources.
 
@@ -16,7 +18,7 @@ The updated [Stitch design reference](UI/inout/DESIGN.md) remains with the expor
 
 Short, revocable exercise sharing is deployed: Supabase **InOut**, organization **IMR TECH**, São Paulo (`sa-east-1`), project `jvmrsoxknaidcbqoasst`; browser practice runs on the existing public site. The current mobile changes are committed on `codex/android-onboarding-release`; release evidence and remaining device checks are in the owner checklist.
 
-RevenueCat/AdMob adapters and event wiring exist, but production provider acceptance remains open. All seven [readiness gates](release/readiness.json) remain false and store metadata remains a draft. Automated checks, live browser/API tests, physical native acceptance and store approval are distinct milestones. All manual actions belong in the [owner checklist](OWNER_SETUP_CHECKLIST.md).
+RevenueCat/AdMob adapters and event wiring exist, but production provider acceptance remains open. All seven [readiness gates](release/readiness.json) remain false and store metadata remains a draft. Automated checks, live browser/API tests, physical native acceptance and store approval are distinct milestones. The [owner checklist](OWNER_SETUP_CHECKLIST.md) remains the master task list; see the [cross-platform readiness report](docs/CROSS_PLATFORM_RELEASE_READINESS.md) and [iOS owner setup](docs/IOS_OWNER_SETUP.md) for platform-specific evidence and Apple steps.
 
 ## Commercial implementation and trying it
 
