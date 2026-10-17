@@ -151,7 +151,7 @@ function AdContextEffects({ controller, commercial }: { controller: SessionContr
   const path = usePathname();
   useEffect(() => {
     let foreground = AppState.currentState === "active";
-    const update = () => commercial?.ads.setContext({ path, foreground, sessionStage: controller.current?.stage ?? null, challengeActive: !!controller.pendingTest() });
+    const update = () => commercial?.ads.setContext({ path, foreground, sessionStage: controller.current?.stage ?? null, challengeActive: controller.hasActiveChallenge() });
     update();
     const unsubscribe = controller.subscribe(update);
     const appState = AppState.addEventListener("change", state => { foreground = state === "active"; update(); });

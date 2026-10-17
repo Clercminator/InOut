@@ -59,6 +59,7 @@ export default function Pre() {
       ? `${seconds} sec`
       : `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
   };
+  if (controller.pendingFitness()) return <Redirect href={{ pathname: "/fitness-challenge", params: { id: controller.pendingFitness()!.challengeId } }} />;
   if (controller.pendingTest()) return <Redirect href={{ pathname: "/challenge-test", params: { id: controller.pendingTest()!.challengeId } }} />;
   if (controller.current?.stage === "active")
     return <Redirect href="/session" />;

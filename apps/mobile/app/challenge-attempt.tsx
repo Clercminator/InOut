@@ -35,12 +35,12 @@ export default function ChallengeAttemptResult() {
       {d.id === "state-shift-60" && <><Label>{message("{0} in 60 seconds", [a.value > 0 ? `+${a.value}` : a.value])}</Label><Copy>Self-reported tension · 1–10</Copy><Copy>Results vary. A change in either direction is a valid result.</Copy></>}
       {d.id === "nasal-10" && <Copy>{a.completed ? "Ten comfortable minutes. A practice for everyday life." : "Every attempt teaches you something. Try again when it feels right."}</Copy>}
     </View>
-    {d.type === "benchmark" && <Card><Label>PERSONAL HISTORY</Label><Copy>{message("Best: {0} sec", [best?.toFixed(1) ?? "—"])}</Copy><Copy>{message("Attempts: {0}", [comparison.attemptCount])}</Copy>
+    {d.type === "benchmark" && d.id !== "comfort-hold" && <Card><Label>PERSONAL HISTORY</Label><Copy>{message("Best: {0} sec", [best?.toFixed(1) ?? "—"])}</Copy><Copy>{message("Attempts: {0}", [comparison.attemptCount])}</Copy>
       {comparison.previousAttempt !== null && <Copy>{message("Previous attempt: {0} sec", [comparison.previousAttempt.toFixed(1)])}</Copy>}
       {comparison.previousBest !== null && <Copy>{message("Previous best: {0} sec", [comparison.previousBest.toFixed(1)])}</Copy>}
       {comparison.isPersonalBest && <Copy>{message("+{0} sec from your previous best", [comparison.improvement!.toFixed(1)])}</Copy>}
-      {d.id === "comfort-hold" && <Copy>Repeatability matters more than duration. Always stop at the first desire to breathe.</Copy>}
     </Card>}
+    {d.id === "comfort-hold" && <Copy>Repeatability matters more than duration. Always stop at the first desire to breathe.</Copy>}
     <Button title="Share result" onPress={() => router.push({ pathname: "/challenge-share", params: { attempt: a.id } })} />
     <Button title="Try again" secondary onPress={() => { c.analytics.track("challenge_retried"); router.replace({ pathname: "/challenge-test", params: { id: d.id } }); }} />
     <Button title="Done" secondary onPress={() => router.replace("/(tabs)/challenges")} />

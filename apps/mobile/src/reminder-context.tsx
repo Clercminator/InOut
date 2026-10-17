@@ -52,8 +52,8 @@ export function ReminderEffects() {
     if (!sdk || !service) return;
     sdk.setNotificationHandler({ handleNotification: async () => ({
       shouldPlaySound: false, shouldSetBadge: false,
-      shouldShowBanner: controller.current?.stage !== "active" && controller.current?.stage !== "post",
-      shouldShowList: controller.current?.stage !== "active" && controller.current?.stage !== "post",
+      shouldShowBanner: controller.current?.stage !== "active" && controller.current?.stage !== "post" && !controller.hasActiveChallenge?.(),
+      shouldShowList: controller.current?.stage !== "active" && controller.current?.stage !== "post" && !controller.hasActiveChallenge?.(),
     }) });
     const handled = new Set<string>();
     const open = (response: import("expo-notifications").NotificationResponse | null) => {
@@ -67,6 +67,7 @@ export function ReminderEffects() {
         controller.analytics.track("checkin_action", { outcome: "dismissed" });
         return;
       }
+      if (controller.pendingFitness?.()) { router.push({ pathname: "/fitness-challenge", params: { id: controller.pendingFitness()!.challengeId } }); return; }
       if (notificationType === "check-in" && response.actionIdentifier === "LOG_PRACTICE") {
         controller.analytics.track("checkin_action", { outcome: "success" });
         if (controller.current?.stage === "active") { router.push("/session"); return; }

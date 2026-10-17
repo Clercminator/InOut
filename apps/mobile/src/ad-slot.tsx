@@ -21,7 +21,7 @@ export function AdSlot({ placement }: { placement: AdPlacement }) {
   const [height, setHeight] = useState(90);
   const eligible = useRef(false);
   const requested = useRef(new Set<string>());
-  const context = { path, foreground, sessionStage: controller.current?.stage ?? null, challengeActive: !!controller.pendingTest?.() };
+  const context = { path, foreground, sessionStage: controller.current?.stage ?? null, challengeActive: controller.hasActiveChallenge?.() ?? !!controller.pendingTest?.() };
   eligible.current = !!services?.ads.allowed(placement, context);
   const allowed = eligible.current;
   const automatic = services?.ads.mode === "live" || (!__DEV__ && services?.ads.mode === "test");

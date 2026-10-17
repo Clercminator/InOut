@@ -1,3 +1,4 @@
+import { emptyFitness, fitnessDefinition, appendFitness, isFitnessBest, type FitnessId, type FitnessResult } from "./personal-challenges";
 import { dailyResetProtocol, dailyResetStats, emptyDailyReset } from "./daily-reset";
 import { audioSettings } from "./audio-preferences";
 import { testCatalog, attemptComparison, type TestId, type PendingTest, type ChallengeAttempt } from "./challenge-tests";
@@ -117,6 +118,72 @@ export class SessionController {
       if (!before || before.startedAt !== this.challenges().find(s => s.challengeId === id)?.startedAt) { this.analytics.track("challenge_started"); this.analytics.track("challenge_program_joined"); }
     });
   }
+  private fitnessAnchor: number | null = null;
+  private fitnessCache: ReturnType<typeof emptyFitness> | null = null;
+  fitnessState() { return this.fitnessCache ??= this.store.fitness?.() ?? emptyFitness(); }
+  pendingFitness() { return this.fitnessState().pending; }
+  hasActiveChallenge() { return !!this.pendingTest() || !!this.pendingFitness(); }
+  beginFitness(id: FitnessId, confirmed: boolean) {
+    if (!confirmed || !fitnessDefinition(id) || this.error || this.hasActiveChallenge() || (this.current && this.current.stage !== "result")) return false;
+    const pending = { id: this.id(), challengeId: id, startedAt: this.now(), elapsedMs: 0, status: id === "push-ups" ? "paused" as const : "running" as const };
+    return this.mutate(() => {
+      this.store.updateFitness(s => s.pending ? s : { ...s, pending });
+      this.fitnessAnchor = pending.status === "running" ? this.monotonic() : null;
+      this.analytics.track("challenge_started", { challengeType: id });
+    });
+  }
+  fitnessElapsed() {
+    const p = this.pendingFitness();
+    return p ? p.elapsedMs + (p.status === "running" && this.fitnessAnchor !== null ? Math.max(0, this.monotonic() - this.fitnessAnchor) : 0) : 0;
+  }
+  checkpointFitness(status?: "paused" | "finished") {
+    const p = this.pendingFitness(); if (!p || p.status === "finished" || this.error) return false;
+    const elapsedMs = this.fitnessElapsed(), now = this.now();
+    const next = { ...p, elapsedMs, status: status ?? p.status, ...(status === "finished" ? { finishedAt: now, localDay: dayKey(new Date(now)) } : {}) };
+    // Freeze the measured interval before IO; a retry never counts time spent resolving storage errors.
+    this.fitnessAnchor = null;
+    const saved = this.mutate(() => this.store.updateFitness(s => s.pending?.id === p.id ? { ...s, pending: next } : s));
+    if (saved && next.status === "running") this.fitnessAnchor = this.monotonic();
+    if (!saved) next.status = "paused";
+    return saved;
+  }
+  resumeFitness() {
+    const p = this.pendingFitness(); if (!p || p.status !== "paused" || p.challengeId === "push-ups" || this.error) return false;
+    return this.mutate(() => { this.store.updateFitness(s => ({ ...s, pending: { ...p, status: "running" } })); this.fitnessAnchor = this.monotonic(); });
+  }
+  editFitnessDraft(note: string, repetitions?: number) {
+    const p = this.pendingFitness(); if (!p || this.error || note.length > 500 || (repetitions !== undefined && (!Number.isSafeInteger(repetitions) || repetitions < 0 || repetitions > 99999))) return false;
+    return this.mutate(() => this.store.updateFitness(s => s.pending?.id === p.id ? { ...s, pending: { ...s.pending, note, repetitions } } : s));
+  }
+  discardFitness() {
+    if (this.error) return false;
+    this.fitnessAnchor = null;
+    return this.mutate(() => { this.store.updateFitness(s => ({ ...s, pending: null })); this.analytics.track("challenge_abandoned"); });
+  }
+  saveFitness() {
+    const p = this.pendingFitness(); if (!p || this.error || p.status !== "finished") return null;
+    const unit = fitnessDefinition(p.challengeId)!.unit;
+    const value = unit === "seconds" ? Math.floor(p.elapsedMs / 100) / 10 : p.repetitions ?? 0;
+    if (value <= 0) return null;
+    const result: FitnessResult = { id: p.id, challengeId: p.challengeId, startedAt: p.startedAt, finishedAt: p.finishedAt!, localDay: p.localDay!, value, unit, note: p.note?.trim() || undefined, source: "self-reported" };
+    return this.mutate(() => {
+      const before = this.fitnessState();
+      this.store.updateFitness(s => appendFitness(s, result));
+      if (!before.results.some(r => r.id === result.id)) {
+        this.analytics.track("challenge_attempt_completed", { challengeType: p.challengeId });
+        if (isFitnessBest(result, before.results)) this.analytics.track("challenge_personal_best", { challengeType: p.challengeId });
+      }
+    }) ? result.id : null;
+  }
+  editFitnessResult(id: string, value: number, note: string) {
+    const result = this.fitnessState().results.find(r => r.id === id);
+    if (!result || this.error || result.unit !== "repetitions" || !Number.isSafeInteger(value) || value <= 0 || value > 99999 || note.length > 500) return false;
+    return this.mutate(() => this.store.updateFitness(s => ({ ...s, results: s.results.map(r => r.id === id ? { ...r, value, note: note.trim() || undefined } : r) })));
+  }
+  deleteFitnessResult(id: string) {
+    if (this.error) return false;
+    return this.mutate(() => this.store.updateFitness(s => ({ ...s, results: s.results.filter(r => r.id !== id) })));
+  }
   dailyReset() { return this.store.dailyReset?.() ?? emptyDailyReset(); }
   startDailyReset() {
     const previous = this.current?.id;
@@ -134,7 +201,7 @@ export class SessionController {
   dailyChallenge() { try { return this.store.dailyChallenge(this.entitlements.state.pro, this.now()); } catch { return null; } }
   excludeTest(id: TestId, excluded: boolean) { return this.mutate(() => this.store.excludeTest(id, excluded)); }
   beginTest(id: PendingTest["challengeId"], confirmed: boolean) {
-    if (!confirmed || this.error || !this.entitlements.challengeAccess(id).allowed || this.testState().excluded.includes(id) || this.testState().pending || (this.current && this.current.stage !== "result")) return false;
+    if (!confirmed || this.error || !this.entitlements.challengeAccess(id).allowed || this.testState().excluded.includes(id) || this.hasActiveChallenge() || (this.current && this.current.stage !== "result")) return false;
     return this.mutate(() => { if (!this.entitlements.challengeAccess(id).allowed || this.testState().pending) throw Error("Challenge access changed"); this.store.setPendingTest({ id: this.id(), challengeId: id, startedAt: this.now() }); this.analytics.track("challenge_started"); });
   }
   finishTest(elapsedMs: number) {
@@ -210,10 +277,13 @@ export class SessionController {
     private id: () => string,
     readonly entitlements = new EntitlementService(),
     readonly analytics = new AnalyticsService(),
+    private monotonic: () => number = () => performance.now(),
   ) {
     const savedPreferences = store.preferences();
     this.preferences = { ...savedPreferences, ...languagePreference(savedPreferences) };
     setLanguage(isLanguage(this.preferences.language) ? this.preferences.language : "en");
+    if (this.pendingFitness()?.status === "running") this.store.updateFitness(s => ({ ...s, pending: { ...s.pending!, status: "paused" } }));
+    this.fitnessCache = null;
     const pending = store.pending();
     if (pending) {
       this.current = {
@@ -302,7 +372,7 @@ export class SessionController {
     if (!this.entitlements.protocolAccess(protocol).allowed) { this.analytics.track("premium_lock_tapped"); this.routineNotice = "This protocol requires InOut Pro."; this.emit(); return; }
     if (
       this.error ||
-      !!this.store.testStore?.().pending ||
+      this.hasActiveChallenge() ||
       !availableForPractice(protocol) ||
       (includesHighIntensity(protocol) && !safetyConfirmed) ||
       (this.current && this.current.stage !== "result")
@@ -578,6 +648,7 @@ export class SessionController {
   private mutate(action: () => void): boolean {
     try {
       action();
+      this.fitnessCache = null;
       this.pendingMutation = null;
       this.libraryError = null;
       this.emit();
@@ -617,6 +688,7 @@ export class SessionController {
     this.pause();
     return this.mutate(() => {
       this.store.reset();
+      this.fitnessAnchor = null;
       this.coachCache = null;
       this.onLocalDataReset?.();
       this.current = null;

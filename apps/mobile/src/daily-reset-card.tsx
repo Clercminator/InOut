@@ -12,6 +12,7 @@ export function openDailyReset(c: SessionController) {
   if (c.current?.stage === "active") { router.push("/session"); return; }
   if (c.current?.stage === "post") { router.push("/post"); return; }
   if (c.pendingTest()) { router.push({ pathname: "/challenge-test", params: { id: c.pendingTest()!.challengeId } }); return; }
+  if (c.pendingFitness()) { router.push({ pathname: "/fitness-challenge", params: { id: c.pendingFitness()!.challengeId } }); return; }
   c.requestSafety(() => c.startDailyReset(), dailyResetProtocol());
   router.push("/practice-safety");
 }

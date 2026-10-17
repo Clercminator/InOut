@@ -8,13 +8,13 @@ import * as Sharing from "expo-sharing";
 import { BackScreen, Title, Copy, Button, Chip } from "../src/ui";
 import { useSession } from "../src/provider";
 import { definitionForState, challengeCatalog } from "../src/challenges";
-import { challengeShareData, attemptShareData, dailyResetShareData } from "../src/challenge-share";
+import { challengeShareData, attemptShareData, dailyResetShareData, fitnessShareData } from "../src/challenge-share";
 import { ChallengeArt } from "../src/challenge-art";
 import { message, t } from "../src/i18n";
 import { useLanguage } from "../src/use-language";
 export default function ChallengeShare() {
   useLanguage();
-  const { id, attempt, daily } = useLocalSearchParams<{ id?: string; attempt?: string; daily?: string }>(), c = useSession();
+  const { id, attempt, daily, fitness } = useLocalSearchParams<{ id?: string; attempt?: string; daily?: string; fitness?: string }>(), c = useSession();
   const state = c.challenges().find(s => s.challengeId === id), current = challengeCatalog().find(d => d.id === id);
   const d = current ? definitionForState(current, state) : undefined;
   const [includeRating, setIncludeRating] = useState(false);
@@ -22,16 +22,17 @@ export default function ChallengeShare() {
   const [story, setStory] = useState(true), [busy, setBusy] = useState(false), [error, setError] = useState("");
   const card = useRef<View>(null), busyRef = useRef(false), { width } = useWindowDimensions();
   const [ready, setReady] = useState(false);
-  const data = daily ? dailyResetShareData(c.dailyReset(), daily, story, c.history().find(r => r.id === daily)) : result ? attemptShareData(result, c.testAttempts(), story, includeRating) : d && state ? challengeShareData(d, state, story) : null;
+  const fitnessResult = c.fitnessState().results.find(r => r.id === fitness);
+  const data = fitnessResult ? fitnessShareData(fitnessResult, c.fitnessState().results, story) : daily ? dailyResetShareData(c.dailyReset(), daily, story, c.history().find(r => r.id === daily)) : result ? attemptShareData(result, c.testAttempts(), story, includeRating) : d && state ? challengeShareData(d, state, story) : null;
   if (!data) return <BackScreen title="Challenges"><Copy>Your next milestone is ahead.</Copy></BackScreen>;
   const w = Math.min(360, width - 40), scale = w / 360;
   const share = async () => {
-    if (busyRef.current || !ready) return; busyRef.current = true; setBusy(true); setError(""); c.analytics.track("challenge_share_tapped");
+    if (busyRef.current || !ready) return; busyRef.current = true; setBusy(true); setError(""); c.analytics.track("challenge_share_tapped", fitnessResult ? { challengeType: fitnessResult.challengeId } : daily ? { challengeType: "daily-reset" } : undefined);
     let uri: string | undefined;
     try {
       if (!await Sharing.isAvailableAsync()) throw Error();
       uri = await captureRef(card, { format: "png", quality: 1, result: "tmpfile", width: data.width, height: data.height });
-      c.analytics.track("native_share_opened"); c.analytics.track("challenge_share_opened");
+      c.analytics.track("native_share_opened"); c.analytics.track("challenge_share_opened", fitnessResult ? { challengeType: fitnessResult.challengeId } : undefined);
       if (Platform.OS === "ios") { const result = await Share.share({ url: uri }, { subject: data.title }); if (result.action === Share.sharedAction) { c.analytics.track("challenge_share_completed"); c.analytics.track("challenge_shared"); } }
       else await Sharing.shareAsync(uri, { mimeType: "image/png", dialogTitle: data.title });
     } catch { setError("Could not share. Please try again."); }
@@ -54,6 +55,6 @@ export default function ChallengeShare() {
     {!!error && <Copy accessibilityRole="alert">{error}</Copy>}
     <Button title={busy ? "Preparing card…" : "Share achievement"} disabled={busy || !ready} onPress={() => { void share(); }} />
     {daily && <ShareExercise protocol={dailyResetProtocol()} title="Invite a friend" />}
-    <Button title="Share app link" secondary onPress={() => { void Share.share({ message: `${t("Try a breathing challenge with IN/OUT.")}\n${data.destination}` }).catch(() => setError("Could not share. Please try again.")); }} />
+    <Button title="Share app link" secondary onPress={() => { void Share.share({ message: `${t(fitnessResult ? "Keep your own fitness records with IN/OUT. Every result is self-reported." : "Try a breathing challenge with IN/OUT.")}\n${data.destination}` }).catch(() => setError("Could not share. Please try again.")); }} />
   </BackScreen>;
 }

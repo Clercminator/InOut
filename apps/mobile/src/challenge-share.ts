@@ -1,3 +1,4 @@
+import { fitnessDefinition, isFitnessBest, type FitnessResult } from "./personal-challenges";
 import { dailyResetStats, isDailyResetCompletion } from "./daily-reset";
 import { attemptComparison, testDefinition, testCatalog, type ChallengeAttempt } from "./challenge-tests";
 import { definitionForState, challengeShareable, type ChallengeDefinition, type UserChallenge } from "./challenges";
@@ -31,4 +32,11 @@ export function dailyResetShareData(state: import("./daily-reset").DailyResetSta
   return { width: 1080, height: story ? 1920 : 1080, title: t("The 60-Second Reset"), art: "dawn" as const,
     status: t("CHALLENGE COMPLETE"), metric: message("{0} day streak", [stats.current]),
     detail: message("{0} completed days · Best streak: {1}", [stats.total, stats.best]), destination: info.supportUrl };
+}
+
+export function fitnessShareData(result: FitnessResult, history: FitnessResult[], story: boolean) {
+  const d = fitnessDefinition(result.challengeId)!;
+  return { width: 1080, height: story ? 1920 : 1080, title: t(d.title), art: "growth" as const, destination: info.supportUrl,
+    status: t(isFitnessBest(result, history) ? "PERSONAL BEST" : "ATTEMPT SAVED"),
+    metric: message("{0} {1}", [result.value, t(result.unit)]), detail: t("Self-reported fitness record") };
 }

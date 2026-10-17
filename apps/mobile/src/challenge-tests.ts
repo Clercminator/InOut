@@ -40,7 +40,7 @@ export function attemptComparison(a: ChallengeAttempt, history: ChallengeAttempt
   const best = personalBest(prior.map(r => ({ value: r.value, timestamp: r.finishedAt })), { metricId: d.id, direction: d.direction, unit: d.unit, challengeType: d.type });
   const improvement = best ? (d.direction === "higher_is_better" ? a.value - best.value : best.value - a.value) : null;
   // Baselines and subjective state changes are never advertised as competitive PBs.
-  const isPersonalBest = a.completed && d.type === "benchmark" && improvement !== null && improvement > 0.049;
+  const isPersonalBest = a.completed && d.type === "benchmark" && d.id !== "comfort-hold" && improvement !== null && improvement > 0.049;
   const currentBest = personalBest([...prior, ...(a.completed ? [a] : [])].map(r => ({ value: r.value, timestamp: r.finishedAt })), { metricId: d.id, direction: d.direction, unit: d.unit, challengeType: d.type });
   return { currentBest: currentBest?.value ?? null, previousBest: best?.value ?? null, previousAttempt: prior[0]?.value ?? null, improvement,
     improvementPercent: best && best.value !== 0 && improvement !== null ? improvement / Math.abs(best.value) * 100 : null,

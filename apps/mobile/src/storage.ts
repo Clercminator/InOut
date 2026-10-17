@@ -1,3 +1,4 @@
+import { emptyFitness, validateFitness, type FitnessStore } from "./personal-challenges";
 import { emptyDailyReset, validateDailyReset, creditDailyReset, type DailyResetState } from "./daily-reset";
 import { validateGuidance } from "./audio-preferences";
 import { languagePreference } from "./language-preference";
@@ -77,6 +78,16 @@ export class LocalStore {
       const history = this.history();
       this.writeRewards(reconcileRewards(history, this.rewards(history), experienceFor(this.preferences()).weeklyGoal));
     }
+    });
+  }
+  fitness(): FitnessStore {
+    const row = this.db.getFirstSync<{ payload: string }>("SELECT payload FROM settings WHERE key='fitness-v1'");
+    const value = row ? JSON.parse(row.payload) : emptyFitness(); validateFitness(value); return value;
+  }
+  updateFitness(change: (state: FitnessStore) => FitnessStore) {
+    this.db.withTransactionSync(() => {
+      const value = change(this.fitness()); validateFitness(value);
+      this.db.runSync("INSERT INTO settings(key,payload) VALUES('fitness-v1',?) ON CONFLICT(key) DO UPDATE SET payload=excluded.payload", JSON.stringify(value));
     });
   }
   dailyReset(): DailyResetState {

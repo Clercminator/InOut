@@ -52,7 +52,7 @@ export default function Result() {
   }, [id, adEligible, commercial, controller, controller.preferences]);
   useFocusEffect(useCallback(() => {
     if (!commercial || !adEligible) return;
-    commercial.ads.setContext({ path: "/result", foreground: AppState.currentState === "active", sessionStage: "result", challengeActive: !!controller.pendingTest?.() });
+    commercial.ads.setContext({ path: "/result", foreground: AppState.currentState === "active", sessionStage: "result", challengeActive: controller.hasActiveChallenge?.() ?? !!controller.pendingTest?.() });
     commercial.ads.prepareCompletion(id);
     return () => commercial.ads.cancelCompletion();
   }, [commercial, adEligible, id, controller, commercial?.ads.ready]));
@@ -81,7 +81,7 @@ export default function Result() {
       {record.dailyReset && record.endReason === "completed" && !controller.error && <Card>
         <Label>{dailyCredit ? "Daily completion earned" : "Today is complete"}</Label>
         <Title>{message("{0} day streak", [dailyStats.current])}</Title>
-        <Copy>{message("{0} completed days · Best streak: {1}", [dailyStats.total, dailyStats.best])}</Copy>
+        <Copy>{message("{0} completed days Â· Best streak: {1}", [dailyStats.total, dailyStats.best])}</Copy>
         <Copy>Today is complete. Repeat whenever you like; one daily award is saved.</Copy>
       </Card>}
       {saved === "1" && !controller.error && <WeeklyGoal compact />}

@@ -1,0 +1,52 @@
+import React from "react";
+import { act, fireEvent, render, screen } from "@testing-library/react-native";
+import FitnessChallenge from "../app/fitness-challenge";
+import FitnessResultScreen from "../app/fitness-result";
+import { SessionController } from "../src/session-controller";
+import { defaultPreferences, type LocalStore } from "../src/storage";
+import { emptyFitness, validateFitness, type FitnessStore } from "../src/personal-challenges";
+import { setLanguage } from "../src/i18n";
+let mockController: SessionController;
+let mockParams: { id: string; fresh?: string };
+const mockReplace = jest.fn();
+jest.mock("expo-router", () => ({ router: { push: jest.fn(), replace: (...args: unknown[]) => mockReplace(...args), canGoBack: () => false }, useLocalSearchParams: () => mockParams, useFocusEffect: (effect: () => void) => require("react").useEffect(effect, [effect]) }));
+jest.mock("../src/provider", () => ({ useSession: () => { require("react").useSyncExternalStore(mockController.subscribe, mockController.getRevision); return mockController; }, SaveError: () => null }));
+jest.mock("../src/celebration", () => ({ Celebration: () => null }));
+let now: number;
+beforeEach(() => {
+ jest.useFakeTimers(); now = 100000; mockParams = { id: "plank" }; mockReplace.mockClear();
+ let state = emptyFitness();
+ const store = { preferences: () => ({ ...defaultPreferences, language: "en", languageSource: "manual" }), pending: () => null, fitness: () => state, updateFitness: (change: (s: FitnessStore) => FitnessStore) => { const next = change(state); validateFitness(next); state = next; } } as unknown as LocalStore;
+ mockController = new SessionController(store, () => now, () => "result-1", undefined, undefined, () => now); setLanguage("en");
+});
+afterEach(() => { jest.useRealTimers(); });
+test("stopwatch requires safety, keeps pause/resume usable, and saves a real result", async () => {
+ const view = await render(<FitnessChallenge />);
+ expect(screen.getByText("Start stopwatch")).toBeTruthy();
+ await fireEvent.press(screen.getByText("Start stopwatch")); expect(mockController.pendingFitness()).toBeNull();
+ await fireEvent.press(screen.getByText("I am ready to exercise safely and stop whenever needed"));
+ await fireEvent.press(screen.getByText("Start stopwatch")); expect(mockController.pendingFitness()?.status).toBe("running");
+ await act(async () => { now += 5000; jest.advanceTimersByTime(1000); });
+ await fireEvent.press(screen.getByText("Pause")); expect(mockController.pendingFitness()?.status).toBe("paused");
+ await fireEvent.press(screen.getByText("Resume")); expect(mockController.pendingFitness()?.status).toBe("running");
+ await act(async () => { now += 2000; }); await fireEvent.press(screen.getByText("Finish"));
+ await fireEvent.press(screen.getByText("Save result"));
+ expect(mockController.fitnessState().results[0].value).toBe(7);
+ expect(mockReplace).toHaveBeenCalledWith({ pathname: "/fitness-result", params: { id: "result-1", fresh: "1" } }); await view.unmount();
+});
+test("manual repetitions save without a running timer and remain editable", async () => {
+ mockParams = { id: "push-ups" }; const view = await render(<FitnessChallenge />);
+ await fireEvent.press(screen.getByText("I am ready to exercise safely and stop whenever needed"));
+ await fireEvent.press(screen.getByText("Enter repetitions"));
+ await fireEvent.changeText(screen.getByLabelText("Completed repetitions"), "12");
+ await fireEvent.changeText(screen.getByLabelText("Private note (optional)"), "Private note");
+ await fireEvent.press(screen.getByText("Save result")); expect(mockController.fitnessState().results[0].value).toBe(12);
+ await view.unmount(); mockParams = { id: "result-1" }; const result = await render(<FitnessResultScreen />);
+ await fireEvent.press(screen.getByText("Edit result")); await fireEvent.changeText(screen.getByLabelText("Completed repetitions"), "15");
+ await fireEvent.press(screen.getByText("Save changes")); expect(mockController.fitnessState().results[0].value).toBe(15); await result.unmount();
+});
+test("leaving the screen pauses an unfinished attempt", async () => {
+ const view = await render(<FitnessChallenge />);
+ await fireEvent.press(screen.getByText("I am ready to exercise safely and stop whenever needed")); await fireEvent.press(screen.getByText("Start stopwatch"));
+ now += 1200; await view.unmount(); expect(mockController.pendingFitness()?.status).toBe("paused"); expect(mockController.pendingFitness()?.elapsedMs).toBe(1200);
+});

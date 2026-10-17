@@ -1,3 +1,5 @@
+import { fitnessChallenges, fitnessBest } from "../../src/personal-challenges";
+import { message, t } from "../../src/i18n";
 import { DailyResetCard } from "../../src/daily-reset-card";
 import { AdSlot } from "../../src/ad-slot";
 import { useCallback, useState } from "react";
@@ -63,6 +65,13 @@ export default function Challenges() {
 
     {active.map(d => <ChallengeCard compact key={d.id} definition={d} state={states.find(s => s.challengeId === d.id)} pro={pro} />)}
 
+    <Label>PERSONAL BEST CHALLENGES</Label>
+    {c.pendingFitness() && <ActionRow title="Resume unfinished challenge" icon="timer" onPress={() => router.push({ pathname: "/fitness-challenge", params: { id: c.pendingFitness()!.challengeId } })} />}
+    {fitnessChallenges.map(d => { const best = fitnessBest(c.fitnessState().results, d.id); return <Card key={d.id}>
+      <Label>FREE · PERSONAL BEST</Label><Title>{d.title}</Title><Copy>Self-reported fitness record</Copy>
+      {best && <Copy>{message("Personal best: {0} {1}", [best.value, t(best.unit)])}</Copy>}
+      <Button title={d.type === "manual" ? "Enter repetitions" : "Open stopwatch"} secondary onPress={() => router.push({ pathname: "/fitness-challenge", params: { id: d.id } })} />
+    </Card>; })}
     <Label>TEST YOURSELF</Label>
 
     {tests.filter(d => d.type !== "real_world").map(d => <Card key={d.id}><View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}><View style={{ width: 86 }}><ChallengeArt art={d.art} height={86} /></View><View style={{ flex: 1, gap: 6 }}><Label>{d.title}</Label><Copy>{d.description}</Copy></View></View><Copy>{d.duration}</Copy>{c.testState().excluded.includes(d.id) && <Copy>Marked unsuitable</Copy>}<Button title={c.entitlements.challengeAccess(d.id).allowed ? "View test" : "View Pro test"} secondary onPress={() => open(d.id)} /></Card>)}
