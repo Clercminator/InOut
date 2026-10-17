@@ -1,6 +1,6 @@
 import { refreshDeviceLanguage } from "./device-language";
 import { getDeviceLanguage } from "./language-preference";
-import { goalContent } from "./personalization";
+import { goalContent, goalForDay } from "./personalization";
 import { WelcomeEmailEffects } from "./welcome-email-ui";
 import { ShareLinksService } from "./share-links";
 import { ShareLinksContext } from "./share-links-context";
@@ -47,7 +47,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
       const sessionController = new SessionController(store, clock.now, randomUUID, services.entitlements, services.analytics);
       setController(sessionController);
       const reminderService = new ReminderService({ read: () => store.readReminders(), write: items => store.writeReminders(items) },
-        nativeReminderAdapter(() => goalContent[sessionController.preferences.journey?.primaryGoal ?? "stress"].reminder), () => services.entitlements.has("advancedReminders"), () => experienceFor(sessionController.preferences).rituals.map(r => r.id));
+        nativeReminderAdapter(() => goalContent[goalForDay(sessionController.preferences)].reminder), () => services.entitlements.has("advancedReminders"), () => experienceFor(sessionController.preferences).rituals.map(r => r.id));
       const shareService = new ShareLinksService({ read: () => store.readShareLinks(), write: items => store.writeShareLinks(items) }, {
         identity: async () => {
           const secret = (randomUUID() + randomUUID()).replaceAll("-", ""), createdAt = Date.now();

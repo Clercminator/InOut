@@ -1,9 +1,8 @@
 import { useTheme } from "../src/theme";
 import { recordTitle, message, t, countLabel } from "../src/i18n";
 import { useLanguage } from "../src/use-language";
-import { Alert, Switch } from "../src/localized-native";
 import { useCallback, useState } from "react";
-import { AppState, Share, View } from "react-native";
+import { AppState, View } from "react-native";
 import { useCommercial } from "../src/commercial-context";
 import { router, useLocalSearchParams, useFocusEffect } from "expo-router";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
@@ -17,12 +16,12 @@ import { AchievementMark } from "../src/achievement-mark";
 import { Celebration } from "../src/celebration";
 import { WeeklyGoal } from "../src/practice-rewards";
 import { ShareExercise } from "../src/share-exercise";
+import { programFor } from "../src/coach";
 export default function Result() {
   const { colors } = useTheme();
   const s = useStyles();
   useLanguage();
   const { id, saved } = useLocalSearchParams<{ id: string; saved?: string }>();
-  const [shareRatingsFor, setShareRatingsFor] = useState<string | null>(null);
   const controller = useSession();
   const commercial = useCommercial();
   const [leaving, setLeaving] = useState(false);
@@ -50,6 +49,8 @@ export default function Result() {
   const shift = stateShift(record.pre, record.post);
   const resultColor = shift !== null && shift > 0 ? colors.exhale : colors.accent;
   const view = snapshot(record.engine, record.engine.anchorAt);
+  const enrollment = controller.coachState().enrollments.find(e => e.completed.some(step => step.sessionId === record.id));
+  const program = enrollment && programFor(enrollment.programId);
   return (
     <Screen title="STATE SHIFT">
       {saved === "1" && controller.current?.id === id && !controller.error && record.endReason === "completed" && <Celebration
@@ -59,7 +60,12 @@ export default function Result() {
         message={shift !== null && shift > 0 ? "You reported less tension. A moment worth celebrating — your session is saved." : "Your practice is part of your progress. Nicely done."}
       />}
       {saved === "1" && !controller.error && <WeeklyGoal compact />}
-      {record.coach && !controller.error && <Button title="Return to coach" secondary onPress={() => router.replace("/coach")} />}
+      {record.coach && !controller.error && <Card>
+        {program && enrollment && <><Label>PROGRAM PROGRESS</Label><Title>{program.title}</Title>
+          <Copy>{message("{0} of {1} practice days complete", [enrollment.completed.length, program.days])}</Copy>
+          <Copy>{enrollment.status === "completed" ? "Program complete. Keep the rhythms you enjoyed, or repeat at your own pace." : "Your progress is saved. Come back on your next practice day."}</Copy></>}
+        <Button title="Return to coach" secondary onPress={() => router.replace("/coach")} />
+      </Card>}
       <View style={s.resultHeader}>
         <View style={s.row}>
           <View style={s.inlineLabel}>

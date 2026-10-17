@@ -1,4 +1,5 @@
 import ResultShare from "../app/result-share";
+import Result from "../app/result";
 import { emptyTestStore, appendAttempt, selectDaily, type TestStore, type PendingTest, type ChallengeAttempt, type TestId } from "../src/challenge-tests";
 import ChallengeTest from "../app/challenge-test";
 import ChallengeAttemptResult from "../app/challenge-attempt";
@@ -588,6 +589,15 @@ test("Free coach opens its program through setup and retains the draft under aud
   expect(mockController.current?.coach).toEqual({ enrollmentId: run, step: 0 });
   expect(mockController.current?.engine.plan.blocks[0].cycles).toBe(12);
   expect(experienceFor(mockController.preferences).breathSound).toBe("ocean");
+  await act(async () => { jest.advanceTimersByTime(300000); mockController.tick(); mockController.answer(null, null); });
+  mockParams = { id: mockController.current!.id };
+  await view.rerender(wrap(<Result />));
+  expect(screen.getByText("1 of 7 practice days complete")).toBeTruthy();
+  await fireEvent.press(screen.getByRole("button", { name: "Return to coach" }));
+  expect(mockReplace).toHaveBeenLastCalledWith("/coach");
+  await view.rerender(wrap(<Coach />));
+  expect(screen.queryByRole("button", { name: "Start today's session" })).toBeNull();
+  expect(screen.getByText("Your progress is saved. Come back on your next practice day.")).toBeTruthy();
 });
 
 test("premium program preview does not activate access and rejected deep links return to coach", async () => {
