@@ -95,6 +95,7 @@ export interface Preferences {
     music?: boolean; musicId?: string;
   };
   telemetryEnabled?: boolean;
+  freeAdsNoticeSeen?: boolean;
   welcomeEmail?: { email: string; consentAt: number; status: "pending" | "sent" | "review" };
   journey?: OnboardingJourney;
   theme?: "system" | "light" | "dark";

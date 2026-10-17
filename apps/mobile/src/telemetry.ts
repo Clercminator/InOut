@@ -1,8 +1,8 @@
-import type { AnalyticsSink, ProductEvent, PaywallSource } from "./analytics";
+import type { AnalyticsSink, ProductEvent, ProductEventProperties } from "./analytics";
 
 export interface TelemetryAdapter {
   consent(enabled: boolean): Promise<void>;
-  record(event: ProductEvent, context?: { source: PaywallSource }): Promise<void>;
+  record(event: ProductEvent, properties?: ProductEventProperties): Promise<void>;
 }
 export class TelemetrySink implements AnalyticsSink {
   private enabled = false;
@@ -25,8 +25,8 @@ export class TelemetrySink implements AnalyticsSink {
     }).catch(() => { this.ready = false; this.requested = undefined; });
     return this.queue;
   }
-  record(event: ProductEvent, context?: { source: PaywallSource }) {
+  record(event: ProductEvent, properties?: ProductEventProperties) {
     if (!this.enabled || !this.ready || event === "state_before_logged" || event === "state_after_logged") return;
-    void this.adapter.record(event, context).catch(() => {});
+    void this.adapter.record(event, properties).catch(() => {});
   }
 }

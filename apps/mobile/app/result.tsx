@@ -1,7 +1,7 @@
 import { useTheme } from "../src/theme";
 import { recordTitle, message, t, countLabel } from "../src/i18n";
 import { useLanguage } from "../src/use-language";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AppState, View } from "react-native";
 import { useCommercial } from "../src/commercial-context";
 import { router, useLocalSearchParams, useFocusEffect } from "expo-router";
@@ -17,6 +17,8 @@ import { Celebration } from "../src/celebration";
 import { WeeklyGoal } from "../src/practice-rewards";
 import { ShareExercise } from "../src/share-exercise";
 import { programFor } from "../src/coach";
+import { Alert } from "../src/localized-native";
+import { freeAdsDisclosure, shouldShowFreeAdsDisclosure } from "../src/ad-disclosure";
 export default function Result() {
   const { colors } = useTheme();
   const s = useStyles();
@@ -25,6 +27,7 @@ export default function Result() {
   const controller = useSession();
   const commercial = useCommercial();
   const [leaving, setLeaving] = useState(false);
+  const disclosureShown = useRef("");
   const completion = controller.challenges().find(s => s.status === "completed" && !s.celebrationSeen && s.completedSteps.some(step => step.sessionId === id));
   const completionId = completion?.challengeId;
   useFocusEffect(useCallback(() => { if (saved === "1" && completionId && !controller.error) router.push({ pathname: "/challenge-complete", params: { id: completionId } }); }, [saved, completionId, controller.error]));
@@ -33,6 +36,18 @@ export default function Result() {
       ? controller.current
       : controller.history().find((r) => r.id === id);
   const adEligible = saved === "1" && controller.current?.id === id && record?.stage === "result" && record.endReason === "completed" && record.source !== "manual" && !completionId && !controller.error;
+  useEffect(() => {
+    if (!id || !adEligible || !commercial || !shouldShowFreeAdsDisclosure(
+      controller.preferences.freeAdsNoticeSeen === true,
+      commercial.entitlements.has("adFree"),
+      commercial.ads.mode === "preview",
+    ) || disclosureShown.current === id) return;
+    disclosureShown.current = id;
+    Alert.alert(t(freeAdsDisclosure.title), t(freeAdsDisclosure.message), [{
+      text: t(freeAdsDisclosure.dismiss),
+      onPress: () => controller.setPreferences({ ...controller.preferences, freeAdsNoticeSeen: true }),
+    }]);
+  }, [id, adEligible, commercial, controller, controller.preferences]);
   useFocusEffect(useCallback(() => {
     if (!commercial || !adEligible) return;
     commercial.ads.setContext({ path: "/result", foreground: AppState.currentState === "active", sessionStage: "result", challengeActive: !!controller.pendingTest?.() });
@@ -128,7 +143,7 @@ export default function Result() {
           title="Share result"
           secondary
           disabled={!!controller.error}
-          onPress={() => router.push({ pathname: "/result-share", params: { id: record.id } })}
+          onPress={() => { controller.analytics.track("share_result_invoked"); router.push({ pathname: "/result-share", params: { id: record.id } }); }}
         />
         </View>
         {record.source !== "manual" && <View style={{ flexGrow: 1, flexBasis: 140 }}><Button

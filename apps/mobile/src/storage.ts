@@ -225,6 +225,7 @@ export class LocalStore {
         (!Array.isArray(p.favoriteProtocolIds) ||
           p.favoriteProtocolIds.some((id: unknown) => typeof id !== "string"))) ||
       (p.onboardingComplete !== undefined && typeof p.onboardingComplete !== "boolean") ||
+      (p.freeAdsNoticeSeen !== undefined && typeof p.freeAdsNoticeSeen !== "boolean") ||
       (p.pro !== undefined && typeof p.pro !== "boolean")
     )
       throw new Error("Saved settings could not be read.");
@@ -267,6 +268,15 @@ export class LocalStore {
   }
   writeAdFrequency(value: unknown) {
     this.db.runSync("INSERT INTO settings(key,payload) VALUES('ad-frequency-v1',?) ON CONFLICT(key) DO UPDATE SET payload=excluded.payload", JSON.stringify(value));
+  }
+  claimFirstOpen(): boolean {
+    let claimed = false;
+    this.db.withTransactionSync(() => {
+      if (this.db.getFirstSync("SELECT key FROM settings WHERE key='analytics-first-open-v1'")) return;
+      this.db.runSync("INSERT INTO settings(key,payload) VALUES('analytics-first-open-v1','true')");
+      claimed = true;
+    });
+    return claimed;
   }
   readShareLinks(): ManagedShare[] {
     const row = this.db.getFirstSync<{ payload: string }>("SELECT payload FROM settings WHERE key='share-links-v1'");

@@ -23,6 +23,7 @@ export function ShareExercise({ protocol }: { protocol: Protocol }) {
   return <>
     <Button title="Share this exercise" secondary disabled={busy || links?.busy} onPress={() => {
       setBusy(true); setError("");
+      let deliveryAttempted = false;
       void (async () => {
         if (!sharingConfig.apiUrl || !links) throw new Error("Exercise sharing is not available online yet. Please try again later.");
         const base = shareBase();
@@ -35,9 +36,16 @@ export function ShareExercise({ protocol }: { protocol: Protocol }) {
         finally { clearTimeout(timeout); }
         const link = await links.create(shareSnapshot(protocol), protocol.name);
         if (!link) throw new Error(links.message || "Could not create the link. Try again.");
+        controller.analytics.track("share_exercise_link_created");
+        deliveryAttempted = true;
         const result = await Share.share({ message: `${t("Try this breathing practice in your browser.")}\n${shareUrl(link.id)}` });
         if (result.action === Share.sharedAction) controller.analytics.track("share_created");
-      })().catch(error => setError(publicError(error, "Sharing is temporarily unavailable. Please try again online."))).finally(() => setBusy(false));
+      })().catch(error => {
+        controller.analytics.track(deliveryAttempted ? "share_delivery_failed" : "share_link_failed", {
+          outcome: "failed", errorCategory: deliveryAttempted ? "delivery" : "link",
+        });
+        setError(publicError(error, "Sharing is temporarily unavailable. Please try again online."));
+      }).finally(() => setBusy(false));
     }} />
     <Copy>Only the breathing cadence is uploaded. Names, ratings and notes stay private. Links expire after 30 days and can be revoked from Shared links.</Copy>
     <Button title="Manage shared links" secondary onPress={() => router.push("/shared-links")} />

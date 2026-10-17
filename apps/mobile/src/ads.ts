@@ -1,6 +1,7 @@
 import { EntitlementService } from "./entitlements";
 import { productConfig } from "./product-config";
 import { adUnit } from "./monetization";
+import type { ProductEvent, ProductEventProperties } from "./analytics";
 
 export const adPlacements = { today: "/", progress: "/progress", challenges: "/challenges" } as const;
 export type AdPlacement = keyof typeof adPlacements;
@@ -25,7 +26,8 @@ export class AdService {
   private candidate: { id: string; loaded: boolean; show(): Promise<void>; dispose(): void } | null = null;
   private showing = false;
   private finishShowing?: () => void;
-  constructor(private entitlements: EntitlementService, readonly mode: "test" | "live" | "preview", private storage?: AdFrequencyStorage, private now = Date.now) {
+  constructor(private entitlements: EntitlementService, readonly mode: "test" | "live" | "preview", private storage?: AdFrequencyStorage, private now = Date.now,
+    private track: (event: ProductEvent, properties?: ProductEventProperties) => void = () => {}) {
     this.startedAt = now();
     this.frequency = { seen: [], count: 0, day: "", shown: 0, lastAd: 0, lastPaywall: 0, highWater: now() };
     try {
@@ -126,15 +128,31 @@ export class AdService {
     const cleanup: (() => void)[] = [];
     const candidate = { id, loaded: false, show: () => ad.show(), dispose: () => cleanup.splice(0).forEach(fn => fn()) };
     this.candidate = candidate;
-    cleanup.push(ad.addAdEventListener(sdk.AdEventType.LOADED, () => { if (this.candidate === candidate && this.completionAllowed()) candidate.loaded = true; else this.cancelCompletion(); }));
-    cleanup.push(ad.addAdEventListener(sdk.AdEventType.ERROR, () => { this.finishShowing?.(); this.cancelCompletion(); }));
-    cleanup.push(ad.addAdEventListener(sdk.AdEventType.CLOSED, () => { this.finishShowing?.(); this.cancelCompletion(); }));
-    if (this.completionAllowed()) ad.load(); else this.cancelCompletion();
-    } catch { this.cancelCompletion(); }
+    cleanup.push(ad.addAdEventListener(sdk.AdEventType.LOADED, () => {
+      if (this.candidate === candidate && this.completionAllowed()) { candidate.loaded = true; this.track("ad_loaded"); }
+      else this.cancelCompletion();
+    }));
+    cleanup.push(ad.addAdEventListener(sdk.AdEventType.OPENED, () => this.track("ad_impression")));
+    cleanup.push(ad.addAdEventListener(sdk.AdEventType.ERROR, () => {
+      this.track("ad_failed", { outcome: "failed" });
+      this.finishShowing?.(); this.cancelCompletion();
+    }));
+    cleanup.push(ad.addAdEventListener(sdk.AdEventType.CLOSED, () => {
+      this.track("ad_dismissed", { outcome: "dismissed" });
+      this.finishShowing?.(); this.cancelCompletion();
+    }));
+    if (this.completionAllowed()) { this.track("ad_requested"); ad.load(); } else this.cancelCompletion();
+    } catch { this.track("ad_failed", { outcome: "failed" }); this.cancelCompletion(); }
   }
   async showCompletion(id: string) {
     const candidate = this.candidate;
-    if (!candidate?.loaded || candidate.id !== id || !this.completionAllowed() || !this.withinCaps()) { this.cancelCompletion(); return; }
+    if (!candidate || candidate.id !== id) { this.cancelCompletion(); return; }
+    if (!candidate.loaded) {
+      if (this.completionAllowed()) this.track("ad_unavailable", { outcome: "unavailable" });
+      this.cancelCompletion();
+      return;
+    }
+    if (!this.completionAllowed() || !this.withinCaps()) { this.cancelCompletion(); return; }
     this.frequency.lastAd = this.now(); this.frequency.shown++; this.frequency.count = 0; this.persist();
     if (this.blocked) { this.cancelCompletion(); return; }
     this.showing = true;

@@ -207,8 +207,11 @@ export function NativeSessionEffects() {
               player.play();
           })
           .catch(() => {
-            if (generation.current === gen) controller.pause("interruption");
-          });
+                if (generation.current === gen) {
+                  controller.analytics.track("audio_playback_failed", { outcome: "failed", errorCategory: "playback" });
+                  controller.pause("interruption");
+                }
+              });
     }
   }, [
     running,
@@ -223,7 +226,10 @@ export function NativeSessionEffects() {
 
   useEffect(() => {
     if (!running || !audioReady || !track || AppState.currentState !== "active") return;
-    return loopedAudio(track.source, () => audioSettings(controller.preferences).musicVolume, () => controller.pause("interruption"), track.crossfadeMs);
+    return loopedAudio(track.source, () => audioSettings(controller.preferences).musicVolume, () => {
+      controller.analytics.track("audio_playback_failed", { outcome: "failed", errorCategory: "playback" });
+      controller.pause("interruption");
+    }, track.crossfadeMs);
   }, [running, audioReady, track, controller]);
 
   // Haptics use engine deadlines independently of React's display refresh.

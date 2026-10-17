@@ -62,12 +62,16 @@ export class SubscriptionService {
   getRevision = () => this.revision;
   private emit() { this.revision++; this.listeners.forEach((fn) => fn()); }
   private apply(grant: EntitlementGrant) {
+    const wasPro = this.entitlements.state.subscriptionPro;
     if (grant.source === "development") {
       if (this.adapter.mode !== "development" && !this.adapter.testStore) throw new Error("Unexpected mock grant");
       this.entitlements.acceptDevelopmentGrant(grant);
     } else this.entitlements.acceptStoreGrant(grant);
     this.entitlements.billingReady = this.entitlements.billingEvidenceReady;
     this.entitlements.refresh();
+    const isPro = this.entitlements.state.subscriptionPro;
+    if (grant.source === "store" && !wasPro && isPro) this.analytics.track("pro_entitlement_activated");
+    if (grant.source === "store" && wasPro && !isPro) this.analytics.track("pro_entitlement_expired");
   }
   remoteStarted(operation: "purchase" | "restore") {
     this.busy = true; this.message = "";
@@ -88,7 +92,10 @@ export class SubscriptionService {
         this.analytics.track(operation === "purchase" ? "purchase_success" : "restore_success");
         this.analytics.track(operation === "restore" ? "subscription_restored" : grant.status === "trial" ? "trial_started" : "subscription_started");
       }
-    } catch { this.message = "The store response could not be verified. Try restoring purchases."; }
+    } catch {
+      if (operation === "purchase") this.analytics.track("purchase_failed", { outcome: "failed" });
+      this.message = "The store response could not be verified. Try restoring purchases.";
+    }
     finally { this.busy = false; this.emit(); }
     return unlocked;
   }
@@ -96,6 +103,7 @@ export class SubscriptionService {
     this.busy = false;
     this.message = cancelled ? "Purchase cancelled. Nothing changed." : "The store could not complete this request. Try again.";
     if (cancelled) this.analytics.track("purchase_cancelled");
+    else this.analytics.track("purchase_failed", { outcome: "failed" });
     this.emit();
   }
   remoteClosed() { if (this.busy) { this.busy = false; this.emit(); } }
@@ -132,9 +140,16 @@ export class SubscriptionService {
     if (this.adapter.mode === "store") this.analytics.track("purchase_started");
     let grant: EntitlementGrant;
     try { grant = await this.adapter.purchase(id); }
-    catch (error) { if (this.adapter.mode === "store" && error instanceof SubscriptionError && error.reason === "cancelled") this.analytics.track("purchase_cancelled"); throw error; }
+    catch (error) {
+      if (this.adapter.mode === "store" && error instanceof SubscriptionError && error.reason === "cancelled") this.analytics.track("purchase_cancelled");
+      else if (this.adapter.mode === "store") this.analytics.track("purchase_failed", { outcome: "failed" });
+      throw error;
+    }
     this.apply(grant);
-    if (!this.entitlements.state.subscriptionPro) { this.message = "The store has not activated Pro. Try restoring after the purchase finishes."; return; }
+    if (!this.entitlements.state.subscriptionPro) {
+      if (grant.source === "store") this.analytics.track("purchase_failed", { outcome: "failed" });
+      this.message = "The store has not activated Pro. Try restoring after the purchase finishes."; return;
+    }
     this.message = this.adapter.mode === "development" ? "Demo Pro activated. No purchase or charge occurred." : "Pro is active.";
     this.confirmPurchase(grant);
     if (grant.source === "store") this.analytics.track("purchase_success");

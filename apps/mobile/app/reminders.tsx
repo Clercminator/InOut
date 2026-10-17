@@ -25,7 +25,7 @@ export default function Reminders() {
   const dayName = (day: number, short = false) => new Date(2026, 5, 6 + day).toLocaleDateString(locale(), { weekday: short ? "short" : "long" });
   const valid = draft && draft.label.trim() && draft.weekdays.length && (!draft.ritualId || rituals.some(r => r.id === draft.ritualId));
   return <BackScreen title="REMINDERS" avoidKeyboard footer={draft ? <ActionFooter>
-    <Button title={service.busy ? "Saving…" : "Save reminder"} disabled={!valid || service.busy} onPress={() => { void service.save(draft).then(saved => { if (saved) setDraft(null); }); }} />
+    <Button title={service.busy ? "Saving…" : "Save reminder"} disabled={!valid || service.busy} onPress={() => { void service.save(draft).then(saved => { if (saved) { controller.analytics.track("reminder_scheduled"); setDraft(null); } }); }} />
     <Button title="Cancel" secondary disabled={service.busy} onPress={() => setDraft(null)} />
   </ActionFooter> : undefined}>
     <Title>Make room for your practice.</Title>

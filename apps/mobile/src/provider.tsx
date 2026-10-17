@@ -47,7 +47,8 @@ export function SessionProvider({ children }: PropsWithChildren) {
       const sessionController = new SessionController(store, clock.now, randomUUID, services.entitlements, services.analytics);
       setController(sessionController);
       const reminderService = new ReminderService({ read: () => store.readReminders(), write: items => store.writeReminders(items) },
-        nativeReminderAdapter(() => goalContent[goalForDay(sessionController.preferences)].reminder), () => services.entitlements.has("advancedReminders"), () => experienceFor(sessionController.preferences).rituals.map(r => r.id));
+        nativeReminderAdapter(() => goalContent[goalForDay(sessionController.preferences)].reminder), () => services.entitlements.has("advancedReminders"), () => experienceFor(sessionController.preferences).rituals.map(r => r.id),
+        category => services.analytics.track("notification_schedule_failed", { outcome: "failed", errorCategory: category }));
       const shareService = new ShareLinksService({ read: () => store.readShareLinks(), write: items => store.writeShareLinks(items) }, {
         identity: async () => {
           const secret = (randomUUID() + randomUUID()).replaceAll("-", ""), createdAt = Date.now();
@@ -75,12 +76,12 @@ export function SessionProvider({ children }: PropsWithChildren) {
     const unsubscribeStore = commercial.subscriptions.listen();
     void commercial.reviewer?.refresh();
     if (commercial.subscriptions.adapter.mode !== "unavailable") void commercial.subscriptions.load();
-    commercial.analytics.track("app_open");
     const timer = setInterval(commercial.entitlements.checkExpiry, 1000);
     const checkpointTimer = setInterval(() => { void commercial.reviewer?.checkpoint(); }, 30000);
     const reviewerTimer = setInterval(() => { void commercial.reviewer?.refresh(); }, 15 * 60000);
     const foreground = AppState.addEventListener("change", (state) => {
       if (state === "active") {
+        commercial.analytics.track("app_open");
         commercial.entitlements.refresh();
         void commercial.reviewer?.refresh();
         if (commercial.subscriptions.adapter.mode === "store") void commercial.subscriptions.load();

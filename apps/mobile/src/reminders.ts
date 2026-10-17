@@ -41,7 +41,7 @@ export class ReminderService {
   getRevision = () => this.revision;
   private emit() { this.revision++; this.listeners.forEach(fn => fn()); }
   constructor(private storage: { read(): Reminder[]; write(items: Reminder[]): void }, private adapter: ReminderAdapter,
-    private hasPro: () => boolean, private ritualIds: () => string[]) {
+    private hasPro: () => boolean, private ritualIds: () => string[], private onScheduleFailure: (category: "permission" | "scheduler") => void = () => {}) {
     try { const items = storage.read(); validateReminders(items); this.items = items; } catch { this.readable = false; this.message = "Reminders could not be read. Your saved data has been preserved."; }
   }
   async save(reminder: Reminder) {
@@ -58,9 +58,14 @@ export class ReminderService {
     if (this.busy || !this.readable) return false;
     const generation = this.generation;
     this.busy = true; this.message = ""; this.emit();
+    let permissionFailure = false;
     try {
       validateReminders(next);
-      if (request && !await this.adapter.permission(true)) throw new Error("Notifications are off. Enable them in phone settings, then try again.");
+      if (request) {
+        permissionFailure = true;
+        if (!await this.adapter.permission(true)) throw new Error("Notifications are off. Enable them in phone settings, then try again.");
+        permissionFailure = false;
+      }
       if (generation !== this.generation) return false;
       this.storage.write(next);
       this.items = next;
@@ -68,6 +73,7 @@ export class ReminderService {
       this.message = "Reminder changes saved on this phone.";
       return true;
     } catch (error) {
+      if (permissionFailure) this.onScheduleFailure("permission");
       this.message = error instanceof Error ? error.message : "Reminders could not be scheduled. Try again.";
       return false;
     } finally { this.busy = false; this.emit(); if (this.rerun) { this.rerun = false; void this.reconcile(); } }
@@ -94,6 +100,7 @@ export class ReminderService {
         for (const weekday of r.weekdays) await this.adapter.schedule(`${reminderPrefix}${r.id}:${weekday}`, r, weekday);
       }
     } catch (error) {
+      this.onScheduleFailure("scheduler");
       // Best effort removal avoids silently leaving a partially updated schedule.
       try { for (const id of await this.adapter.list()) if (id.startsWith(reminderPrefix)) await this.adapter.cancel(id); } catch {}
       throw error;

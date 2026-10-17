@@ -6,18 +6,19 @@ export default ({ config }: ConfigContext) => {
   if (errors.length) throw new Error(errors.join("\n"));
   const links = require("../../release/links.json");
   const { admob } = require("../../release/monetization.json");
-  const googleServicesFile = process.env.GOOGLE_SERVICES_JSON;
+  const androidGoogleServicesFile = process.env.GOOGLE_SERVICES_JSON;
+  const iosGoogleServicesFile = process.env.GOOGLE_SERVICES_PLIST;
   return ({
   ...config,
-  extra: { ...config.extra, firebaseConfigured: !!googleServicesFile, ...(process.env.EXPO_PUBLIC_EAS_PROJECT_ID ? { eas: { projectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID } } : {}) },
-  ios: { ...config.ios, ...(links.origin && links.appleTeamId ? { appleTeamId: links.appleTeamId, associatedDomains: [`applinks:${new URL(links.origin).host}`] } : {}) },
-  android: { ...config.android, ...(googleServicesFile ? { googleServicesFile } : {}), ...(links.origin && links.androidSha256.length ? { intentFilters: [{ action: "VIEW", autoVerify: true, category: ["BROWSABLE", "DEFAULT"], data: [{ scheme: "https", host: new URL(links.origin).host, path: links.path }] }] } : {}) },
+  extra: { ...config.extra, firebasePlatforms: { android: !!androidGoogleServicesFile, ios: !!iosGoogleServicesFile }, ...(process.env.EXPO_PUBLIC_EAS_PROJECT_ID ? { eas: { projectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID } } : {}) },
+  ios: { ...config.ios, ...(iosGoogleServicesFile ? { googleServicesFile: iosGoogleServicesFile } : {}), ...(links.origin && links.appleTeamId ? { appleTeamId: links.appleTeamId, associatedDomains: [`applinks:${new URL(links.origin).host}`] } : {}) },
+  android: { ...config.android, ...(androidGoogleServicesFile ? { googleServicesFile: androidGoogleServicesFile } : {}), ...(links.origin && links.androidSha256.length ? { intentFilters: [{ action: "VIEW", autoVerify: true, category: ["BROWSABLE", "DEFAULT"], data: [{ scheme: "https", host: new URL(links.origin).host, path: links.path }] }] } : {}) },
   plugins: [...(config.plugins ?? []),
-    ...(googleServicesFile ? ["@react-native-firebase/app", "@react-native-firebase/crashlytics"] : []),
+    ...(androidGoogleServicesFile || iosGoogleServicesFile ? ["@react-native-firebase/app", "@react-native-firebase/crashlytics"] : []),
     "expo-secure-store",
     ["expo-localization", { supportedLocales: ["en", "es", "pt"], allowDynamicLocaleChangesAndroid: true }],
     "expo-sharing",
-    "expo-notifications",
+    ["expo-notifications", { icon: "./assets/monochrome-icon.png", color: "#5B2DFF" }],
     ["expo-image-picker", { photosPermission: "Choose a photo for your private IN/OUT profile.", cameraPermission: false, microphonePermission: false }],
     "@react-native-community/datetimepicker",
     ["expo-build-properties", { android: { kotlinVersion: "2.2.21" } }],

@@ -32,10 +32,19 @@ export function ReminderEffects() {
       const responseId = `${response.notification.request.identifier}:${response.notification.date}`;
       if (handled.has(responseId)) return;
       handled.add(responseId);
+      const notificationType = response.notification.request.content.data?.notificationType;
       const id = response.notification.request.content.data?.reminderId;
       const reminder = service.items.find(r => r.id === id && r.enabled);
       void sdk.clearLastNotificationResponseAsync().catch(() => {});
+      if (notificationType === "daily-reset") {
+        if (controller.current?.stage === "active") { router.push("/session"); return; }
+        if (controller.current?.stage === "post") { router.push("/post"); return; }
+        controller.analytics.track("reminder_opened");
+        router.replace("/(tabs)");
+        return;
+      }
       if (!reminder) return;
+      controller.analytics.track("reminder_opened");
       if (controller.current?.stage === "active") { router.push("/session"); return; }
       if (controller.current?.stage === "post") { router.push("/post"); return; }
       if (!controller.preferences.onboardingComplete) { router.push("/onboarding"); return; }

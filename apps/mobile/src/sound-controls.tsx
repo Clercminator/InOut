@@ -28,6 +28,7 @@ export function SoundControls({ compact = false }: { compact?: boolean }) {
     const guidance = { ...settings, ...patch };
     controller.setPreferences({ ...controller.preferences, guidance,
       audio: guidance.voice ? "voice" : guidance.nature || guidance.music ? "tones" : "silent" });
+    if (["voice", "nature", "music"].some(key => key in patch)) controller.analytics.track("audio_mode_selected");
   };
   const toggle = (title: string, value: boolean, onValueChange: (value: boolean) => void) => <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}><Copy style={{ flex: 1 }}>{title}</Copy><Switch accessibilityLabel={title} value={value} onValueChange={onValueChange} /></View>;
   const volume = (title: string, key: "voiceVolume" | "natureVolume" | "musicVolume") => <><Label>{title}</Label><View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>{[0, 0.25, 0.5, 0.7, 1].map(value => <Chip key={value} title={`${Math.round(value * 100)}%`} selected={settings[key] === value} onPress={() => update({ [key]: value })} />)}</View></>;

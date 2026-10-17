@@ -51,6 +51,14 @@ function setup() {
   };
 }
 
+test("first-open measurement is claimed once across local store instances", () => {
+  const env = setup();
+  try {
+    assert.equal(env.store.claimFirstOpen(), true);
+    assert.equal(new LocalStore(env.adapter).claimFirstOpen(), false);
+  } finally { env.db.close(); }
+});
+
 test("personal profiles, weekly goals, audio choices and one-tap rituals survive cold launch", () => {
   const env = setup();
   try {

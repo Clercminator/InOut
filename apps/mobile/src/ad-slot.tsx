@@ -20,6 +20,7 @@ export function AdSlot({ placement }: { placement: AdPlacement }) {
   const [failed, setFailed] = useState(false);
   const [height, setHeight] = useState(90);
   const eligible = useRef(false);
+  const requested = useRef(new Set<string>());
   const context = { path, foreground, sessionStage: controller.current?.stage ?? null, challengeActive: !!controller.pendingTest?.() };
   eligible.current = !!services?.ads.allowed(placement, context);
   const allowed = eligible.current;
@@ -42,6 +43,15 @@ export function AdSlot({ placement }: { placement: AdPlacement }) {
     void prepare();
     return () => { mounted = false; };
   }, [services, allowed, automatic, foreground, path]);
+  useEffect(() => {
+    if (!services || !allowed || !ready || failed || width <= 0 || services.ads.mode === "preview") return;
+    const unitId = adUnit("banner", services.ads.mode);
+    if (!unitId) return;
+    const key = `${path}:${width}:${unitId}`;
+    if (requested.current.has(key)) return;
+    requested.current.add(key);
+    services.analytics.track("ad_requested");
+  }, [services, allowed, ready, failed, width, path]);
   if (!services || !services.ads.allowed(placement, context)) return null;
   if (services.ads.mode === "preview") return null;
   // No empty ad card, compulsory button, or error interrupts normal practice.
@@ -65,7 +75,7 @@ export function AdSlot({ placement }: { placement: AdPlacement }) {
       onAdLoaded={dimensions => { setHeight(h => Math.max(h, dimensions.height)); services.analytics.track("ad_loaded"); }}
       onSizeChange={dimensions => setHeight(h => Math.max(h, dimensions.height))}
       onAdImpression={() => services.analytics.track("ad_impression")}
-      onAdFailedToLoad={() => { setFailed(true); services.analytics.track("ad_failed"); }} />}
+      onAdFailedToLoad={() => { setFailed(true); services.analytics.track("ad_failed", { outcome: "failed" }); }} />}
     </View>
   </View>;
 }

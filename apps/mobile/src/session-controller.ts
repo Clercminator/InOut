@@ -44,7 +44,10 @@ export class SessionController {
   }
   enrollProgram(id: string) {
     if (!programFor(id) || !this.entitlements.programAccess(id).allowed) return false;
-    return this.changeCoach(state => enrollProgram(state, id, this.id(), this.now()));
+    const before = this.coachState().activeEnrollmentId;
+    const changed = this.changeCoach(state => enrollProgram(state, id, this.id(), this.now()));
+    if (changed && this.coachState().activeEnrollmentId !== before) this.analytics.track("guided_program_started");
+    return changed;
   }
   configureCoach(patch: Partial<Pick<CoachState, "availableMinutes" | "useFeedback">>) {
     return this.changeCoach(state => ({ ...state, ...patch }));
@@ -183,6 +186,8 @@ export class SessionController {
       if (c.endReason === "completed") { once("session_completed"); if (c.protocol?.plan && c.protocolId !== "shared-practice") once("mix_completed"); }
       else once("session_abandoned");
       if (c.post !== null) once("state_after_logged");
+      const coach = c.coach;
+      if (coach && "enrollmentId" in coach && this.store.coachState().enrollments.some(e => e.id === coach.enrollmentId && e.status === "completed")) once("guided_program_completed");
       if (c.challengeTest && this.testAttempts().some(a => a.id === c.id)) { once("challenge_attempt_completed"); once("challenge_completed"); }
     }
   }
@@ -449,6 +454,7 @@ export class SessionController {
       this.historyCache = null;
       this.captureRewards(previous);
       if (practiceStats(this.history(), new Date(this.now())).current > streakBefore) this.analytics.track("streak_extended");
+      this.analytics.track("external_practice_logged");
       this.pendingManualId = null;
     }) ? record.id : null;
   }
@@ -482,7 +488,9 @@ export class SessionController {
       const previous = this.preferences.journey;
       this.store.savePreferences(preferences);
       this.preferences = preferences;
-      this.analytics.setConsent(preferences.telemetryEnabled === true);
+      void this.analytics.setConsent(preferences.telemetryEnabled === true).then(() => {
+        if (preferences.telemetryEnabled === true && this.store.claimFirstOpen()) this.analytics.track("app_first_open");
+      });
       const journey = preferences.journey;
       if (journey?.primaryGoal && journey.primaryGoal !== previous?.primaryGoal) this.analytics.track("onboarding_goal_selected");
       if (journey?.step === "value" && previous?.step !== "value") this.analytics.track("onboarding_value_viewed");

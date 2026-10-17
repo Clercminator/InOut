@@ -9,18 +9,19 @@ jest.mock("react-native-google-mobile-ads", () => ({
   default: () => ({ initialize: mockInitialize, setRequestConfiguration: mockConfigure }),
   AdsConsent: { gatherConsent: (...args: unknown[]) => mockConsent(...args), showPrivacyOptionsForm: async () => {}, getConsentInfo: async () => ({ canRequestAds: false }) },
   MaxAdContentRating: { G: "G" }, TestIds: { BANNER: "test-banner", INTERSTITIAL: "test-interstitial" },
-  InterstitialAd: { createForAdRequest: (...args: unknown[]) => mockFactory(...args) }, AdEventType: { LOADED: "loaded", CLOSED: "closed", ERROR: "error" },
+  InterstitialAd: { createForAdRequest: (...args: unknown[]) => mockFactory(...args) }, AdEventType: { LOADED: "loaded", OPENED: "opened", CLOSED: "closed", ERROR: "error" },
 }));
 const context = { path: "/result", foreground: true, sessionStage: "result" };
 function fixture(saved: unknown = null) {
   let now = 1000000, persisted = saved;
   const events = new Map<string, () => void>();
   const load = jest.fn(), show = jest.fn(async () => {});
+  const track = jest.fn();
   mockFactory.mockImplementation(() => ({ load, show, addAdEventListener: (type: string, listener: () => void) => { events.set(type, listener); return () => events.delete(type); } }));
   const entitlements = new EntitlementService(true, () => now);
   const storage = { read: () => persisted, write: (value: unknown) => { persisted = JSON.parse(JSON.stringify(value)); } };
-  const ads = new AdService(entitlements, "test", storage, () => now);
-  return { ads, entitlements, events, load, show, storage, tick: (ms = 600001) => { now += ms; }, now: () => now };
+  const ads = new AdService(entitlements, "test", storage, () => now, track);
+  return { ads, entitlements, events, load, show, storage, track, tick: (ms = 600001) => { now += ms; }, now: () => now };
 }
 beforeEach(() => { jest.clearAllMocks(); mockConsent.mockResolvedValue({ canRequestAds: true }); mockInitialize.mockResolvedValue([]); mockConfigure.mockResolvedValue(undefined); });
 
@@ -65,12 +66,22 @@ test("completion ads require consent, app age, third unique completion, Done, in
   f.ads.prepareCompletion("early"); expect(f.load).not.toHaveBeenCalled(); f.tick(180001);
   f.ads.prepareCompletion("second"); f.ads.prepareCompletion("second"); expect(f.load).not.toHaveBeenCalled();
   f.ads.prepareCompletion("third"); expect(f.load).toHaveBeenCalledTimes(1); expect(f.show).not.toHaveBeenCalled();
+  expect(f.track).toHaveBeenCalledWith("ad_requested");
   expect(mockFactory).toHaveBeenCalledWith("test-interstitial", { requestNonPersonalizedAdsOnly: true });
-  f.events.get("loaded")!(); const done = f.ads.showCompletion("third"); expect(f.show).toHaveBeenCalledTimes(1); f.events.get("closed")!(); await done;
+  f.events.get("loaded")!(); const done = f.ads.showCompletion("third"); expect(f.show).toHaveBeenCalledTimes(1);
+  f.events.get("opened")!(); f.events.get("closed")!(); await done;
+  expect(f.track.mock.calls.map(call => call[0])).toEqual(["ad_requested", "ad_loaded", "ad_impression", "ad_dismissed"]);
   for (const id of ["four", "five", "six"]) f.ads.prepareCompletion(id); expect(f.load).toHaveBeenCalledTimes(1);
   f.tick(); f.ads.prepareCompletion("seven"); f.events.get("loaded")!(); const next = f.ads.showCompletion("seven"); f.events.get("closed")!(); await next;
   f.tick(); for (const id of ["eight", "nine", "ten"]) f.ads.prepareCompletion(id); expect(f.load).toHaveBeenCalledTimes(2);
   const restarted = new AdService(f.entitlements, "test", f.storage, f.now); await restarted.prepare(); restarted.setContext(context); f.tick(); restarted.prepareCompletion("eleven"); expect(f.load).toHaveBeenCalledTimes(2);
+});
+test("Done records unavailable inventory without delaying navigation", async () => {
+  const f = fixture(); await f.ads.prepare(); f.ads.setContext(context); f.tick();
+  for (const id of ["one", "two", "three"]) f.ads.prepareCompletion(id);
+  await f.ads.showCompletion("three");
+  expect(f.track).toHaveBeenCalledWith("ad_unavailable", { outcome: "unavailable" });
+  expect(f.show).not.toHaveBeenCalled();
 });
 test.each(["/session", "/challenge-attempt", "/safety", "/onboarding", "/pre", "/post", "/pro"])("%s blocks interstitial preload and showing", async path => {
   const f = fixture(); await f.ads.prepare(); f.tick(); f.ads.setContext({ ...context, path });
