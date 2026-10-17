@@ -103,7 +103,7 @@ test("real pricing comparison rejects unknown currencies; restore and cancellati
   assert.equal(annualIsBetterValue([{id:"annual",title:"Annual",price:"x",period:"year"}]),false);
   assert.equal(annualIsBetterValue([{id:"annual",title:"Annual",price:"60",priceAmount:60,currency:"USD",period:"year"},{id:"monthly",title:"Monthly",price:"10",priceAmount:10,currency:"USD",period:"month"}]),true);
   const events:ProductEvent[]=[]; const grant={source:"store" as const,status:"active" as const,active:true,verifiedAt:1000,expiresAt:10000,graceUntil:null};
-  const svc=new SubscriptionService({mode:"store",offers:async()=>[{id:"monthly",title:"Monthly",price:"x",period:"month"}],refresh:async()=>grant,purchase:async()=>{throw new SubscriptionError("cancelled","cancelled");},restore:async()=>grant,managementUrl:async()=>null},new EntitlementService(false,()=>1000),new AnalyticsService({record:e=>events.push(e)}));
+  const svc=new SubscriptionService({mode:"store",offers:async()=>[{id:"monthly",title:"Monthly",price:"x",period:"month"}],refresh:async()=>({...grant,status:"free",active:false,expiresAt:0}),purchase:async()=>{throw new SubscriptionError("cancelled","cancelled");},restore:async()=>grant,managementUrl:async()=>null},new EntitlementService(false,()=>1000),new AnalyticsService({record:e=>events.push(e)}));
   await svc.load(); await svc.purchase("monthly"); await svc.restore();
   assert.ok(events.includes("purchase_cancelled")); assert.ok(events.includes("restore_started")); assert.ok(events.includes("restore_success")); assert.ok(!events.includes("purchase_success"));
 });

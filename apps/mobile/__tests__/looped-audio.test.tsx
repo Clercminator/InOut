@@ -36,3 +36,16 @@ test("disposing during asynchronous seek cannot restart a player", async () => {
   stop(); await Promise.resolve();
   expect(mockPlayers[1].play).not.toHaveBeenCalled();
 });
+
+test("a decoder load failure reports once and cannot restart or leak after cleanup", () => {
+  const fail = jest.fn(), stop = loopedAudio(1, () => 1, fail);
+  // A native error can arrive after load, independently of the breathing clock.
+  const status = mockPlayers[1].addListener.mock.calls[0][1];
+  status({ error: "decode failed" });
+  status({ error: "decode failed" });
+  jest.advanceTimersByTime(20000);
+  expect(fail).toHaveBeenCalledTimes(1);
+  mockPlayers.forEach(p => expect(p.volume).toBe(0));
+  stop();
+  mockPlayers.forEach(p => expect(p.remove).toHaveBeenCalledTimes(1));
+});

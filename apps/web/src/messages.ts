@@ -12,7 +12,7 @@ const translations: Record<string, [string, string]> = {
   "Stop · I feel unwell": ["Detener · Me siento mal", "Parar · Estou me sentindo mal"],
   "Practice again": ["Volver a practicar", "Praticar novamente"],
   "Keep your practice close.": ["Ten tu práctica a mano.", "Tenha sua prática por perto."],
-  "Open this exercise in In/Out": ["Abrir este ejercicio en In/Out", "Abrir este exercício no In/Out"],
+  "Open this exercise in IN/OUT": ["Abrir este ejercicio en IN/OUT", "Abrir este exercício no IN/OUT"],
   "If In/Out is not installed, you can keep practicing here.": ["Si no tienes In/Out instalado, puedes seguir practicando aquí.", "Se o In/Out não estiver instalado, você pode continuar praticando aqui."],
   "Privacy": ["Privacidad", "Privacidade"],
   "Support": ["Ayuda", "Ajuda"],

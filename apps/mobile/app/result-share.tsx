@@ -13,7 +13,8 @@ export default function ResultShare() {
   useLanguage();
   const { id } = useLocalSearchParams<{ id: string }>(), c = useSession();
   const record = c.current?.id === id ? c.current : c.history().find(r => r.id === id);
-  const [story, setStory] = useState(false), [includeRating, setIncludeRating] = useState(false);
+  const [story, setStory] = useState(false), [ratingConsentFor, setRatingConsentFor] = useState<string | null>(null);
+  const includeRating = ratingConsentFor === id;
   const [busy, setBusy] = useState(false), [ready, setReady] = useState(false), [error, setError] = useState("");
   const capture = useRef<View>(null), locked = useRef(false), { width } = useWindowDimensions();
   if (!record || record.stage !== "result") return <BackScreen><Copy>Session unavailable</Copy></BackScreen>;
@@ -46,7 +47,7 @@ export default function ResultShare() {
       </View>
       <Copy translate={false} allowFontScaling={false} style={{ position: "absolute", left: 80 * scale, right: 80 * scale, top: (story ? 1680 : 975) * scale, color: "#d7b8ff", fontSize: 27 * scale, lineHeight: 36 * scale }}>inout.imrtech.xyz</Copy>
     </View>
-    {record.pre !== null && record.post !== null && <Chip title="Include my tension change when sharing" selected={includeRating} onPress={() => { if (!busy) setIncludeRating(!includeRating); }} />}
+    {record.pre !== null && record.post !== null && <Chip title="Include my tension change when sharing" selected={includeRating} onPress={() => { if (!busy) setRatingConsentFor(includeRating ? null : id); }} />}
     <Copy>Only the visible card is shared. Your name, photo and notes stay private.</Copy>
     <Copy>Some apps share the image without its link. Use Share invitation link to send the link separately.</Copy>
     {!!error && <Copy accessibilityRole="alert">{error}</Copy>}

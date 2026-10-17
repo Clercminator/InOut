@@ -635,3 +635,18 @@ test("result artwork waits for loading, captures square and story, and cleans te
   await fireEvent.press(screen.getByRole("button", { name: "Share result" }));
   await waitFor(() => expect(mockCapture).toHaveBeenLastCalledWith(expect.anything(), expect.objectContaining({ width: 1080, height: 1920 })));
 });
+
+test("measurement sharing consent belongs only to the explicitly selected result", async () => {
+  const complete = (pre: number, post: number) => {
+    mockController.start(pre, 1);
+    jest.advanceTimersByTime(600000); mockController.tick(); mockController.answer(post, null);
+    mockParams = { id: mockController.current!.id };
+  };
+  complete(7, 3);
+  const view = await render(wrap(<ResultShare />));
+  await fireEvent.press(screen.getByRole("button", { name: "Include my tension change when sharing" }));
+  expect(screen.getByText(/7 → 3/)).toBeTruthy();
+  await act(async () => { complete(8, 4); });
+  await view.rerender(wrap(<ResultShare />));
+  expect(screen.queryByText(/8 → 4/)).toBeNull();
+});

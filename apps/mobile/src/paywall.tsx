@@ -28,7 +28,7 @@ export function Paywall(props: PaywallProps) {
   const closing = useRef(false);
   useEffect(() => { if (props.completionError) closing.current = false; }, [props.completionError]);
   const close = () => {
-    if (services?.subscriptions.purchaseConfirmation) return;
+    if (services?.subscriptions.purchaseConfirmation && services.entitlements.state.pro) return;
     if (closing.current) return;
     closing.current = true;
     services?.analytics.track("paywall_dismissed");
