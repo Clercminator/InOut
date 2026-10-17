@@ -1,6 +1,6 @@
 import { useLanguage } from "./use-language";
 import { useEffect, useRef, useState } from "react";
-import { AppState } from "react-native";
+import { AppState, View } from "react-native";
 import { adUnit } from "./monetization";
 import { usePathname } from "expo-router";
 import { useCommercial } from "./commercial-context";
@@ -16,6 +16,9 @@ export function AdSlot({ placement }: { placement: AdPlacement }) {
   const [foreground, setForeground] = useState(AppState.currentState === "active");
   const [ready, setReady] = useState(false);
   const [notice, setNotice] = useState("");
+  const [width, setWidth] = useState(0);
+  const [failed, setFailed] = useState(false);
+  const [height, setHeight] = useState(90);
   const eligible = useRef(false);
   const context = { path, foreground, sessionStage: controller.current?.stage ?? null, challengeActive: !!controller.pendingTest?.() };
   eligible.current = !!services?.ads.allowed(placement, context);
@@ -24,6 +27,7 @@ export function AdSlot({ placement }: { placement: AdPlacement }) {
   useEffect(() => () => { eligible.current = false; }, []);
   useEffect(() => { const sub = AppState.addEventListener("change", (s) => setForeground(s === "active")); return () => sub.remove(); }, []);
   useEffect(() => {
+    if (!allowed) { setFailed(false); return; }
     if (!services || !allowed || !automatic) return;
     let mounted = true;
     const prepare = async () => {
@@ -36,8 +40,7 @@ export function AdSlot({ placement }: { placement: AdPlacement }) {
       }
     };
     void prepare();
-    const retry = setInterval(() => { void prepare(); }, 60000);
-    return () => { mounted = false; clearInterval(retry); };
+    return () => { mounted = false; };
   }, [services, allowed, automatic, foreground, path]);
   if (!services || !services.ads.allowed(placement, context)) return null;
   if (services.ads.mode === "preview") return null;
@@ -55,11 +58,14 @@ export function AdSlot({ placement }: { placement: AdPlacement }) {
   const sdk = require("react-native-google-mobile-ads") as typeof import("react-native-google-mobile-ads");
   const unitId = adUnit("banner", services.ads.mode);
   if (!unitId) return null;
-  return <Card><Label>{services.ads.mode === "test" ? "TEST AD" : "ADVERTISEMENT"}</Label>
-    <sdk.BannerAd unitId={unitId} size={sdk.BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
+  return <View style={{ paddingHorizontal: 20, paddingVertical: 6, gap: 4 }}><Label>{services.ads.mode === "test" ? "TEST AD" : "ADVERTISEMENT"}</Label>
+    <View testID="banner-container" onLayout={event => setWidth(Math.floor(event.nativeEvent.layout.width))} style={{ minHeight: height, alignItems: "center" }}>
+    {width > 0 && !failed && <sdk.BannerAd key={width} unitId={unitId} size={sdk.BannerAdSize.ANCHORED_ADAPTIVE_BANNER} width={width}
       requestOptions={{ requestNonPersonalizedAdsOnly: true }}
-      onAdLoaded={() => services.analytics.track("ad_loaded")}
+      onAdLoaded={dimensions => { setHeight(h => Math.max(h, dimensions.height)); services.analytics.track("ad_loaded"); }}
+      onSizeChange={dimensions => setHeight(h => Math.max(h, dimensions.height))}
       onAdImpression={() => services.analytics.track("ad_impression")}
-      onAdFailedToLoad={() => { setReady(false); setNotice("No ad available right now."); services.analytics.track("ad_failed"); }} />
-  </Card>;
+      onAdFailedToLoad={() => { setFailed(true); services.analytics.track("ad_failed"); }} />}
+    </View>
+  </View>;
 }

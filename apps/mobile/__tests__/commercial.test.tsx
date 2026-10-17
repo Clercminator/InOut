@@ -32,7 +32,7 @@ jest.mock("react-native-google-mobile-ads", () => ({
   MaxAdContentRating: { G: "G" },
   TestIds: { BANNER: "test-banner" },
   BannerAdSize: { ANCHORED_ADAPTIVE_BANNER: "adaptive" },
-  BannerAd: () => require("react").createElement(require("react-native").View, { testID: "native-banner" }),
+  BannerAd: (props: object) => require("react").createElement(require("react-native").View, { ...props, testID: "native-banner" }),
 }));
 jest.mock("expo-router", () => ({ router: { canGoBack: () => false, replace: jest.fn(), push: jest.fn() }, useLocalSearchParams: () => ({}), usePathname: () => mockPath }));
 jest.mock("../src/provider", () => ({ useSession: () => mockController }));
@@ -69,7 +69,11 @@ test("live banners load automatically, stay absent for unresolved billing, and d
   await render(wrap(s, <AdSlot placement="today" />));
   expect(screen.queryByTestId("native-banner")).toBeNull();
   await act(async () => { s.entitlements.billingReady = true; s.entitlements.refresh(); });
-  expect(screen.getByTestId("native-banner")).toBeTruthy();
+  await fireEvent(screen.getByTestId("banner-container"), "layout", { nativeEvent: { layout: { width: 280 } } });
+  expect(screen.getByTestId("native-banner").props.width).toBe(280);
+  await fireEvent(screen.getByTestId("native-banner"), "adFailedToLoad", new Error("no-fill"));
+  expect(screen.queryByTestId("native-banner")).toBeNull();
+  expect(screen.getByTestId("banner-container").props.style.minHeight).toBe(90);
   expect(screen.queryByText("Review ad privacy choices")).toBeNull();
   await act(async () => { s.entitlements.simulate("active"); });
   expect(screen.queryByTestId("native-banner")).toBeNull();
@@ -189,7 +193,8 @@ test("mounted banners disappear immediately when privacy choices are reopened an
   s.ads = new AdService(s.entitlements, "test");
   await render(wrap(s, <AdSlot placement="today" />));
   await fireEvent.press(screen.getByRole("button", { name: "Load native test ad" }));
-  expect(screen.getByTestId("native-banner")).toBeTruthy();
+  await fireEvent(screen.getByTestId("banner-container"), "layout", { nativeEvent: { layout: { width: 280 } } });
+  expect(screen.getByTestId("native-banner").props.width).toBe(280);
   let closeForm!: () => void;
   mockPrivacyOptions.mockImplementationOnce(() => new Promise<void>(resolve => { closeForm = resolve; }));
   mockConsentInfo.mockResolvedValueOnce({ canRequestAds: false });

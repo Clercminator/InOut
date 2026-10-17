@@ -2,7 +2,7 @@ import { EntitlementService } from "./entitlements";
 import { productConfig } from "./product-config";
 import { adUnit } from "./monetization";
 
-export const adPlacements = { today: "/", progress: "/progress" } as const;
+export const adPlacements = { today: "/", progress: "/progress", challenges: "/challenges" } as const;
 export type AdPlacement = keyof typeof adPlacements;
 export interface AdContext { path: string; foreground: boolean; sessionStage: string | null; challengeActive?: boolean; }
 interface Frequency { seen: string[]; count: number; day: string; shown: number; lastAd: number; lastPaywall: number; highWater: number; }
@@ -41,10 +41,12 @@ export class AdService {
   set ready(value: boolean) { if (this.currentReady === value) return; this.currentReady = value; this.revision++; this.listeners.forEach(fn => fn()); }
   subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; };
   getRevision = () => this.revision;
-  private canRequest() { return this.entitlements.accessReady && this.entitlements.billingReady && !this.entitlements.has("adFree") && !this.paywalls && (!this.context || this.context.foreground && !this.context.challengeActive && !["pre", "active", "post"].includes(this.context.sessionStage ?? "") && ["/", "/progress", "/result"].includes(this.context.path)); }
+  private canRequest() { return this.entitlements.accessReady && this.entitlements.billingReady && !this.entitlements.has("adFree") && !this.paywalls && (!this.context || this.context.foreground && !this.context.challengeActive && !["pre", "active", "post"].includes(this.context.sessionStage ?? "") && ["/", "/progress", "/challenges", "/result"].includes(this.context.path)); }
   setContext(context: AdContext) {
+    const changed = JSON.stringify(this.context) !== JSON.stringify(context);
     this.context = context;
     if (!this.completionAllowed()) this.cancelCompletion();
+    if (changed) { this.revision++; this.listeners.forEach(fn => fn()); }
   }
   allowed(placement: AdPlacement, context: AdContext) {
     return this.canRequest() && context.foreground && !context.challengeActive &&

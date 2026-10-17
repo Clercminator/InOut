@@ -43,7 +43,7 @@ export default function Today() {
   const recent = records.find(r => r.source !== "manual" && protocols.some(p => p.id === r.protocolId));
   const returning = welcomeMessage(records);
   const [photoFailed, setPhotoFailed] = useState(false);
-  return <Screen tabScreen hideHeader>
+  return <Screen tabScreen hideHeader footer={<AdSlot placement="today" />}>
     <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 8 }}>
       <View style={{ flex: 1, gap: 4 }}><Copy style={{ color: colors.secondaryText }}>{experience.name ? "Welcome," : "Welcome to InOut"}</Copy><Title translate={!experience.name}>{experience.name || "A little space to breathe."}</Title></View>
       <Pressable accessibilityRole="button" accessibilityLabel={message("{0} day streak", [stats.current])} onPress={() => router.push({ pathname: "/(tabs)/progress", params: { view: "Overview" } })} style={{ width: 48, height: 48, borderRadius: 24, borderWidth: 3, borderColor: colors.accentBorder, alignItems: "center", justifyContent: "center" }}><Copy style={{ fontFamily: typography.metric, fontSize: 19 }}>{stats.current}</Copy></Pressable>
@@ -78,7 +78,7 @@ export default function Today() {
       {recent && <Button title={message("Start {0}", [protocolTitle(protocols.find(p => p.id === recent.protocolId)!)])} secondary onPress={() => router.push({ pathname: "/pre", params: { id: recent.protocolId } })} />}
       <ActionRow title="My rituals" icon="auto-awesome" onPress={() => router.push("/rituals")} />
     </Card>}
-    <WeeklyGoal /><AdSlot placement="today" />
+    <WeeklyGoal />
   </Screen>;
 }
 

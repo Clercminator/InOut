@@ -31,7 +31,7 @@ export default function Progress() {
   const weekMinutes = Math.floor(weekRecords.reduce((sum, r) => sum + r.engine.elapsedAtAnchor, 0) / 60000);
   const shift = paired.length ? `${(paired.reduce((n, r) => n + r.pre!, 0) / paired.length).toFixed(1)} → ${(paired.reduce((n, r) => n + r.post!, 0) / paired.length).toFixed(1)}` : "—";
   const daily = Array.from({ length: 7 }, (_, i) => { const date = addDays(weekStart, i); return { key: dayKey(date), label: date.toLocaleDateString(locale(), { weekday: "narrow" }), records: weekRecords.filter(r => dayKey(new Date(r.engine.startedAt)) === dayKey(date)) }; });
-  return <Screen tabScreen hideHeader>
+  return <Screen tabScreen hideHeader footer={<AdSlot placement="progress" />}>
     <View style={{ gap: 6 }}><Title>Results</Title><Copy>Your practice, taking shape.</Copy></View>
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>{[
       [String(stats.current), "DAY STREAK"], [String(weekMinutes), "MINUTES THIS WEEK"], [String(stats.count), "SESSIONS"], [shift, "AVERAGE STATE SHIFT"],
@@ -57,7 +57,7 @@ export default function Progress() {
         {controller.rewards().badges.slice(0, 3).map(b => <Copy key={b.id}>{b.label} · {b.date}</Copy>)}
         <Button title="View all badges" secondary onPress={() => setSection("Badges")} />
       </Disclosure>
-      <AdSlot placement="progress" />
+      
     </>}
     {productConfig.manualLogging && <Button title="Add session" onPress={() => router.push("/add-session")} />}
     <IconButton icon="refresh" title="Refresh data" onPress={() => setNotice(controller.refreshHistory() ? "Local session data refreshed." : "Refresh failed. Please retry.")} />

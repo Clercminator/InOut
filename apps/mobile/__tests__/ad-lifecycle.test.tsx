@@ -24,6 +24,18 @@ function fixture(saved: unknown = null) {
 }
 beforeEach(() => { jest.clearAllMocks(); mockConsent.mockResolvedValue({ canRequestAds: true }); mockInitialize.mockResolvedValue([]); mockConfigure.mockResolvedValue(undefined); });
 
+test("eligible tab changes notify subscribers and safety never allows a request", async () => {
+  const f = fixture(), update = jest.fn();
+  f.ads.subscribe(update);
+  f.ads.setContext({ ...context, path: "/challenges", sessionStage: null });
+  expect(update).toHaveBeenCalled();
+  expect(f.ads.allowed("challenges", { ...context, path: "/challenges", sessionStage: null })).toBe(true);
+  f.ads.setContext({ ...context, path: "/practice-safety", sessionStage: null });
+  await f.ads.prepare();
+  expect(mockConsent).not.toHaveBeenCalled();
+  expect(mockInitialize).not.toHaveBeenCalled();
+});
+
 test("consent is cached across eligible surfaces, refreshed hourly, and failures retry after a minute", async () => {
   const f = fixture(); await f.ads.prepare(); await f.ads.prepare();
   expect(mockConsent).toHaveBeenCalledTimes(1); expect(mockInitialize).toHaveBeenCalledTimes(1);
