@@ -1,7 +1,6 @@
 import { GoalMark, OnboardingHero } from "./onboarding-art";
 import { PulseArtwork } from "./pulse-orb";
 import { Celebration } from "./celebration";
-import { RemotePaywall } from "./remote-paywall";
 import { t, locale, message, countLabel } from "./i18n";
 import { useLanguage } from "./use-language";
 import { Pressable, Switch, TextInput } from "./localized-native";
@@ -13,7 +12,7 @@ import type { DevelopmentSubscriptionProvider } from "./subscription-providers/t
 import { Screen, IconButton, Title, Label, Card, Copy, Button, Disclosure, ActionFooter, useStyles } from "./ui";
 
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { useTheme } from "./theme";
+import { ThemeSurface, useTheme } from "./theme";
 import { productConfig } from "./product-config";
 import { annualIsBetterValue, defaultPlan, type PlanId } from "./subscriptions";
 function introDuration(period: string) {
@@ -23,8 +22,10 @@ function introDuration(period: string) {
 }
 type PaywallProps = { entry?: string; onClose?: () => void; completionError?: string | null };
 export function Paywall(props: PaywallProps) {
+  return <ThemeSurface mode="dark"><PaywallContent {...props} /></ThemeSurface>;
+}
+function PaywallContent(props: PaywallProps) {
   const services = useCommercial();
-  const [fallback, setFallback] = useState(false);
   const closing = useRef(false);
   useEffect(() => { if (props.completionError) closing.current = false; }, [props.completionError]);
   const close = () => {
@@ -48,11 +49,9 @@ export function Paywall(props: PaywallProps) {
   if (props.entry === "onboarding" && pro) return <Screen><Copy>Your Pro access is ready.</Copy>{props.completionError && <Copy accessibilityRole="alert">{props.completionError}</Copy>}<Button title="Continue to Home" onPress={close} /></Screen>;
   if (props.entry === "onboarding" && services?.subscriptions.adapter.mode === "store" && !services.entitlements.billingReady)
     return <Screen><Copy accessibilityRole="alert">{services.subscriptions.message || "Contacting the store…"}</Copy><Button title="Refresh plans & status" secondary disabled={services.subscriptions.busy} onPress={() => { void services.subscriptions.load(); }} /><Button title="Continue to Home" onPress={close} /></Screen>;
-  if (services?.subscriptions.adapter.remotePaywall && !pro && !fallback)
-    return <RemotePaywall services={services} entry={props.entry ?? "profile"} onClose={close} onFallback={() => setFallback(true)} completionError={props.completionError} />;
-  return <FallbackPaywall {...props} onClose={props.onClose ? close : undefined} />;
+  return <NativePaywall {...props} onClose={close} />;
 }
-function FallbackPaywall({ entry = "profile", onClose, completionError }: PaywallProps) {
+function NativePaywall({ entry = "profile", onClose, completionError }: PaywallProps) {
   const { colors } = useTheme();
   const styles = useStyles();
   const [selected, setSelected] = useState<PlanId | null>(null);
@@ -63,7 +62,7 @@ function FallbackPaywall({ entry = "profile", onClose, completionError }: Paywal
   const [reviewerOpen, setReviewerOpen] = useState(false);
   const [reviewCode, setReviewCode] = useState("");
   useEffect(() => services?.ads.paywallOpened(), [services]);
-  const close = () => { services?.analytics.track("paywall_dismissed"); if (onClose) onClose(); else if (router.canGoBack()) router.back(); else router.replace("/(tabs)"); };
+  const close = () => onClose?.();
   useEffect(() => { const listener = BackHandler.addEventListener("hardwareBackPress", () => { close(); return true; }); return () => listener.remove(); }, [onClose, services]);
   useEffect(() => {
     if (entry === "onboarding") services?.analytics.track("onboarding_paywall_viewed");
@@ -89,7 +88,7 @@ function FallbackPaywall({ entry = "profile", onClose, completionError }: Paywal
     {entry === "protocol" && <Copy>Unlock this protocol and make more room for your practice.</Copy>}
     {entry === "coach" && <Copy>Pro includes multiweek guided programs and continuing weekly plans. Find Your Rhythm and basic recommendations remain free.</Copy>}
     {productConfig.proChallengeIds.length > 0 && <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}><MaterialIcons accessible={false} name="emoji-events" size={26} color={colors.gold} /><Copy style={{ flex: 1 }}>More challenges for sleep, focus and consistent practice.</Copy></View>}
-    <Copy>{productConfig.proProtocolIds.length || productConfig.guidedSessionsPerMonth !== null ? "Core breathing, State Shift and safety remain Free. Explore Pro for more options." : "All ten breathing protocols, cues, State Shift and safety remain Free. Pro removes ads and saved-routine limits."}</Copy>
+    <Copy>Core breathing, State Shift and safety remain Free. Explore Pro for more options.</Copy>
     <Copy>Unlock every pacer theme instantly with IN/OUT Pro.</Copy>
     <View style={{ gap: 16 }}>{[["learn", "Guided programs for your goals"], ["focus", "Weekly plans that fit your life"], ["performance", "Private practice insights"], ["pressure", "Unlimited saved patterns & mixes"], ["stress", "A practice without ads"]].map(([mark, label]) => <View key={label} style={{ flexDirection: "row", gap: 14, alignItems: "center" }}><GoalMark goal={mark as "learn" | "focus" | "performance" | "pressure" | "stress"} size={40} /><Copy style={{ flex: 1, fontWeight: "600" }}>{label}</Copy></View>)}</View>
     {demo && <Card><Label>DEVELOPMENT DEMO</Label><Copy>No money is charged. These plans and optional trial simulate store behavior; they are not real offers.</Copy></Card>}
@@ -107,8 +106,8 @@ function FallbackPaywall({ entry = "profile", onClose, completionError }: Paywal
     <Button title="Restore purchases" secondary disabled={subscriptions.busy} onPress={() => { void subscriptions.restore(); }} />
     <Disclosure title="Subscription details" icon="manage-accounts" initiallyOpen={state.pro}>
     <View style={{ gap: 8 }}><Label>YOUR ACCESS</Label><Copy>{state.pro ? "InOut Pro" : "Free"}</Copy>{state.productId && <Copy translate={false}>{state.productId}{state.planId ? ` · ${state.planId}` : ""}</Copy>}
-      {state.expiresAt && <Copy>Access until: {new Date(state.expiresAt).toLocaleDateString(locale())}</Copy>}
-      {state.status === "cancelled" && <Copy>Renewal is cancelled. Pro remains active until the paid period ends.</Copy>}
+      {state.subscriptionPro && state.expiresAt && <Copy>Access until: {new Date(state.expiresAt).toLocaleDateString(locale())}</Copy>}
+      {state.subscriptionPro && state.status === "cancelled" && <Copy>Renewal is cancelled. Pro remains active until the paid period ends.</Copy>}
       {state.status === "billingRetry" && <Copy>The store reported a payment issue. Check your payment method.</Copy>}
       {state.status === "grace" && <Copy>Pro remains available during the store's grace period. Update your payment method.</Copy>}
       {state.needsRefresh && <Copy>Connect to refresh your store access. Basic breathing stays available offline.</Copy>}

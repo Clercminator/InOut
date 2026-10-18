@@ -5,10 +5,11 @@ import type { CustomerInfo, PurchasesOffering } from "react-native-purchases";
 import { Paywall } from "../src/paywall";
 import { CommercialContext, type CommercialServices } from "../src/commercial-context";
 import { EntitlementService } from "../src/entitlements";
-import { SubscriptionService, unavailableSubscriptions } from "../src/subscriptions";
+import { SubscriptionService, SubscriptionError, unavailableSubscriptions } from "../src/subscriptions";
 import { grantFromCustomerInfo } from "../src/subscription-providers/revenuecat";
 import { AnalyticsService } from "../src/analytics";
 import { AdService } from "../src/ads";
+import { ThemeSurface } from "../src/theme";
 import { setLanguage } from "../src/i18n";
 
 let mockPaywall: any;
@@ -26,7 +27,16 @@ function info(verification = "VERIFIED", expiration = Date.now() + 86400000, wil
 function services(): CommercialServices {
   const entitlements = new EntitlementService(false), analytics = new AnalyticsService();
   return { entitlements, analytics, ads: new AdService(entitlements, "preview"), subscriptions: new SubscriptionService({
-    ...unavailableSubscriptions, mode: "store", remotePaywall: { offering: jest.fn().mockResolvedValue(offering), verify: value => grantFromCustomerInfo(value as CustomerInfo) },
+    ...unavailableSubscriptions, mode: "store",
+    offers: async () => [
+      { id: "weekly", title: "Weekly Pro", price: "$1.23", period: "week" },
+      { id: "monthly", title: "Monthly Pro", price: "$4.56", period: "month" },
+      { id: "annual", title: "Annual Pro", price: "$45.67", period: "year" },
+    ],
+    refresh: async () => ({ source: "store", active: false, status: "free", verifiedAt: Date.now(), expiresAt: 0, graceUntil: null }),
+    purchase: jest.fn(async () => grantFromCustomerInfo(info())),
+    restore: jest.fn(async () => grantFromCustomerInfo(info())),
+    remotePaywall: { offering: jest.fn().mockResolvedValue(offering), verify: value => grantFromCustomerInfo(value as CustomerInfo) },
   }, entitlements, analytics) };
 }
 async function mount(s: CommercialServices, close = jest.fn()) {
@@ -34,21 +44,23 @@ async function mount(s: CommercialServices, close = jest.fn()) {
   return close;
 }
 
-test.each([["en", "en-US"], ["es", "es-419"], ["pt", "pt-BR"]] as const)("native paywall uses %s locale and the configured offering", async (language, locale) => {
-  const s = services(); setLanguage(language); await mount(s);
-  expect(screen.getByTestId("remote-paywall")).toBeTruthy();
-  expect(s.subscriptions.adapter.remotePaywall!.offering).toHaveBeenCalledWith(locale);
-  expect(mockPaywall.options).toEqual({ offering, displayCloseButton: true });
+test.each(["onboarding", "profile", "theme", "coach", "quota", "protocol"])("%s always uses the branded native offer with one free exit", async entry => {
+  const s = services(); setLanguage("en");
+  await render(<ThemeSurface mode="light"><CommercialContext.Provider value={s}><Paywall entry={entry} /></CommercialContext.Provider></ThemeSurface>);
+  expect(screen.queryByTestId("remote-paywall")).toBeNull();
+  expect(s.subscriptions.adapter.remotePaywall!.offering).not.toHaveBeenCalled();
+  expect(screen.getAllByRole("button", { name: "Continue for free" })).toHaveLength(1);
+  expect(screen.getByRole("button", { name: "Monthly Pro" }).props.accessibilityState.selected).toBe(true);
+  expect(screen.getByText("$4.56")).toBeTruthy();
+  await fireEvent.press(screen.getByRole("button", { name: "Annual Pro" }));
+  await fireEvent.press(screen.getByRole("button", { name: "Continue with Annual Pro" }));
+  expect(s.subscriptions.adapter.purchase).toHaveBeenCalledWith("annual");
 });
+
 test.each(["purchase", "restore"] as const)("verified %s unlocks immediately and completes onboarding once", async operation => {
   setLanguage("en");
   const s = services(), close = await mount(s);
-  const props = mockPaywall;
-  await act(async () => {
-    props[operation === "purchase" ? "onPurchaseStarted" : "onRestoreStarted"]();
-    props[operation === "purchase" ? "onPurchaseCompleted" : "onRestoreCompleted"]({ customerInfo: info() });
-    props.onDismiss();
-  });
+  await fireEvent.press(screen.getByRole("button", { name: operation === "purchase" ? "Continue with Monthly Pro" : "Restore purchases" }));
   expect(s.entitlements.state.subscriptionPro).toBe(true);
   expect(s.entitlements.has("adFree")).toBe(true);
   expect(s.subscriptions.busy).toBe(false);
@@ -59,18 +71,23 @@ test.each(["purchase", "restore"] as const)("verified %s unlocks immediately and
   }
   expect(close).toHaveBeenCalledTimes(1);
 });
+
 test("cancel, error, unverified and expired responses cannot grant Pro or close onboarding", async () => {
   const s = services(), close = await mount(s);
-  await act(async () => { mockPaywall.onPurchaseStarted(); mockPaywall.onPurchaseCancelled(); });
-  expect(s.subscriptions.busy).toBe(false);
-  expect(s.subscriptions.message).toMatch(/cancelled/);
-  await act(async () => { mockPaywall.onPurchaseError(); });
+  for (const error of [new SubscriptionError("cancelled", "cancelled"), new Error("offline")]) {
+    (s.subscriptions.adapter.purchase as jest.Mock).mockRejectedValueOnce(error);
+    await fireEvent.press(screen.getByRole("button", { name: "Continue with Monthly Pro" }));
+    expect(s.subscriptions.busy).toBe(false);
+    expect(s.subscriptions.message).toBeTruthy();
+  }
   for (const customerInfo of [info("FAILED"), info("NOT_REQUESTED"), info("VERIFIED", Date.now() - 1)]) {
-    await act(async () => { mockPaywall.onPurchaseCompleted({ customerInfo }); });
+    (s.subscriptions.adapter.purchase as jest.Mock).mockImplementationOnce(async () => grantFromCustomerInfo(customerInfo));
+    await fireEvent.press(screen.getByRole("button", { name: "Continue with Monthly Pro" }));
     expect(s.entitlements.state.pro).toBe(false);
   }
   expect(close).not.toHaveBeenCalled();
 });
+
 test("cancelled renewal retains paid access only until expiry; stale offline grants expire", () => {
   const s = services();
   expect(s.subscriptions.remoteCompleted(info("VERIFIED", Date.now() + 86400000, false), "restore")).toBe(true);
@@ -80,7 +97,7 @@ test("cancelled renewal retains paid access only until expiry; stale offline gra
   expect(s.entitlements.state.pro).toBe(false);
 });
 test("offline offering failure keeps a free exit available", async () => {
-  const s = services(); (s.subscriptions.adapter.remotePaywall!.offering as jest.Mock).mockRejectedValue(new Error("offline"));
+  const s = services(); s.subscriptions.adapter.offers = jest.fn().mockRejectedValue(new Error("offline"));
   const close = await mount(s);
   expect(screen.queryByTestId("remote-paywall")).toBeNull();
   await fireEvent.press(screen.getByRole("button", { name: /Continue (for free|to Home)/ }));

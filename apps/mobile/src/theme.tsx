@@ -31,6 +31,10 @@ function makeTheme(mode: "dark" | "light") {
 const themes = { dark: makeTheme("dark"), light: makeTheme("light") };
 const ThemeContext = createContext(themes.dark);
 export const useTheme = () => useContext(ThemeContext);
+/** A branded surface without changing the device or persisted app appearance. */
+export function ThemeSurface({ mode, children }: PropsWithChildren<{ mode: "dark" | "light" }>) {
+  return <ThemeContext.Provider value={themes[mode]}>{children}</ThemeContext.Provider>;
+}
 const styleCache = new WeakMap<Function, WeakMap<ThemeColors, unknown>>();
 export function useThemedStyles<T>(factory: (colors: ThemeColors) => T): T {
   const { colors } = useTheme();
