@@ -1,3 +1,4 @@
+import { resolvePacerTheme, type PacerThemeId } from "./pacer-theme";
 import type { ThemeColors } from "@inout/design-tokens";
 import { useTheme, useThemedStyles } from "./theme";
 import { useLanguage } from "./use-language";
@@ -11,16 +12,18 @@ import { useExperience } from "./experience-context";
 
 type Snapshot = ReturnType<typeof snapshot>;
 
-export function BoxVisual({ view, running, reduced }: {
+export function BoxVisual({ view, running, reduced, pacerTheme }: {
   view: Snapshot;
   running: boolean;
   reduced: boolean;
+  pacerTheme?: PacerThemeId;
 }) {
   const { colors, palettes } = useTheme();
   const styles = useLocalStyles();
   useLanguage();
   const palette = palettes[useExperience().experience.palette];
-  const phaseColors = [palette.accent, palette.hold, palette.exhale, colors.rest];
+  const theme = pacerTheme ? resolvePacerTheme(pacerTheme).preview : null;
+  const phaseColors = theme ? [theme.ring, theme.glow, theme.ring, theme.secondaryText] : [palette.accent, palette.hold, palette.exhale, colors.rest];
   const [size, setSize] = useState(0);
   const progress = useRef(new Animated.Value(0)).current;
   const phase = view.phaseIndex % 4;
@@ -36,6 +39,7 @@ export function BoxVisual({ view, running, reduced }: {
       duration: view.phaseRemainingMs,
       easing: Easing.linear,
       useNativeDriver: true,
+      isInteraction: false,
     });
     animation.start();
     return () => animation.stop();
@@ -53,7 +57,7 @@ export function BoxVisual({ view, running, reduced }: {
     };
   }), [progress, size]);
 
-  return <View pointerEvents="none" accessible={false} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={StyleSheet.absoluteFill}>
+  return <View testID="box-session-geometry" pointerEvents="none" accessible={false} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={StyleSheet.absoluteFill}>
     <View style={styles.halo} />
     <View style={styles.frame} onLayout={(event) => setSize(event.nativeEvent.layout.width)}>
       <View style={[styles.track, { borderRadius: size * 0.09 }]} />

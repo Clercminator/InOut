@@ -8,7 +8,7 @@ import { Redirect, router, useFocusEffect } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { Screen, Label, Title, Copy, Button, ActionFooter, useStyles } from "../src/ui";
 import { useSession, SaveError } from "../src/provider";
-import { PulseSessionVisual } from "../src/pulse-session-visual";
+import { SessionVisual } from "../src/session-visual";
 
 import { breathingGuidance } from "../src/breathing-guidance";
 import { practiceDuration } from "../src/format";
@@ -134,7 +134,9 @@ export default function Session() {
         colors={["#171029", "#0E0A19"]}
         style={[s.card, { padding: 16, borderWidth: 1, borderColor: colors.sessionBorder, borderRadius: 24 }]}
       >
-        <PulseSessionVisual
+        <SessionVisual
+          protocolId={block.protocolId}
+          animationType={animationType}
           key={record.id}
           view={view}
           running={running}

@@ -1,4 +1,6 @@
-import { View, useWindowDimensions } from "react-native";
+import { useEffect, useState } from "react";
+import { BoxVisual } from "./box-visual";
+import { AccessibilityInfo, View, useWindowDimensions } from "react-native";
 import type { snapshot } from "@inout/breathing-engine";
 import type { Phase, Preferences } from "@inout/shared-types";
 import { PulseOrb } from "./pulse-orb";
@@ -7,9 +9,16 @@ import { breathingGuidance } from "./breathing-guidance";
 import { Copy } from "./ui";
 import { t } from "./i18n";
 
-export function PulseSessionVisual({ view, phases, running, cycleLabel, pacerTheme }: {
-  view: ReturnType<typeof snapshot>; phases: Phase[]; running: boolean; cycleLabel?: string; pacerTheme?: Preferences["pacerTheme"];
+export function PulseSessionVisual({ view, phases, running, cycleLabel, pacerTheme, geometry = "pulse" }: {
+  view: ReturnType<typeof snapshot>; phases: Phase[]; running: boolean; cycleLabel?: string; pacerTheme?: Preferences["pacerTheme"]; geometry?: "pulse" | "box";
 }) {
+  const [reduced, setReduced] = useState(true);
+  useEffect(() => {
+    let active = true;
+    void AccessibilityInfo.isReduceMotionEnabled().then(v => { if (active) setReduced(v); }).catch(() => {});
+    const sub = AccessibilityInfo.addEventListener("reduceMotionChanged", setReduced);
+    return () => { active = false; sub.remove(); };
+  }, []);
   const { width, height, fontScale } = useWindowDimensions();
   const guidance = breathingGuidance(phases, view.phaseIndex, view.phaseElapsedMs);
   const size = Math.max(120, Math.min(260, width - 88, height * .32));
@@ -23,7 +32,9 @@ export function PulseSessionVisual({ view, phases, running, cycleLabel, pacerThe
   </View>;
   return <View testID="pulse-session-visual" style={{ width: "100%", gap: 12, alignItems: "center", padding: 12, backgroundColor: theme.preview.background, borderRadius: 24 }}>
     <View style={{ width: "100%", alignItems: "center", justifyContent: "center" }}>
-      <PulseOrb key={view.blockIndex} view={view} phases={phases} running={running} size={size} theme={pacerTheme ?? "default"} />
+      {geometry === "box" ? <View style={{ width: size, height: size }} pointerEvents="none">
+        <BoxVisual view={view} running={running} reduced={reduced} pacerTheme={pacerTheme ?? "default"} />
+      </View> : <PulseOrb view={view} phases={phases} running={running} size={size} theme={pacerTheme ?? "default"} />}
       {!separate && <View style={{ position: "absolute", backgroundColor: `${theme.preview.surface}E8`, borderColor: `${theme.preview.ring}88`, borderWidth: 1, borderRadius: 28, maxWidth: "90%" }}>{readout}</View>}
     </View>
     {separate && <View style={{ backgroundColor: theme.preview.surface, borderColor: `${theme.preview.ring}88`, borderWidth: 1, borderRadius: 20 }}>{readout}</View>}

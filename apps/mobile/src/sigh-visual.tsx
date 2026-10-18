@@ -1,3 +1,4 @@
+import { resolvePacerTheme, type PacerThemeId } from "./pacer-theme";
 import type { ThemeColors } from "@inout/design-tokens";
 import { useTheme, useThemedStyles } from "./theme";
 import { t } from "./i18n";
@@ -26,18 +27,22 @@ export function SighVisual({
   animationType = "sigh",
   phases = [],
   cycleLabel,
+  pacerTheme,
 }: {
   view: Snapshot;
   running: boolean;
   animationType?: Protocol["animationType"];
   phases?: Phase[];
   cycleLabel?: string;
+  pacerTheme?: PacerThemeId;
 }) {
-  const { colors: c, palettes } = useTheme();
+  const { colors: baseColors, palettes } = useTheme();
+  const theme = pacerTheme ? resolvePacerTheme(pacerTheme).preview : null;
+  const c = theme ? { ...baseColors, text: theme.text, secondaryText: theme.secondaryText, rest: theme.glow, sessionBorder: theme.ring } : baseColors;
   const styles = useLocalStyles();
   useLanguage();
   const { experience } = useExperience();
-  const palette = palettes[experience.palette];
+  const palette = theme ? { accent: theme.ring, exhale: theme.ring, hold: theme.glow } : palettes[experience.palette];
   const [reduced, setReduced] = useState(true);
   const { fontScale, width } = useWindowDimensions();
   const separateReadout = fontScale > 1.3 || width < 350;
@@ -111,11 +116,11 @@ export function SighVisual({
     accessible accessibilityLabel={cycleLabel ? `${t(running ? guidance.label : "Paused")}. ${Math.ceil(view.phaseRemainingMs / 1000)}. ${t(cycleLabel)}` : t(`${running ? guidance.label : "Paused"}. ${Math.ceil(view.phaseRemainingMs / 1000)} seconds remaining. Cycle ${view.currentCycle} of ${view.totalCycles}${view.phase.nostril ? `. ${view.phase.nostril} nostril` : ""}`)}>
     <Copy style={[styles.phase, { color: running ? phaseColor : c.secondaryText }]}>{running ? guidance.label.toUpperCase() : "PAUSED"}</Copy>
     {view.phase.nostril && <Copy>{view.phase.nostril.toUpperCase()} NOSTRIL</Copy>}
-    <Copy style={styles.timer}>{Math.ceil(view.phaseRemainingMs / 1000).toString().padStart(2, "0")}</Copy>
-    {cycleLabel ? <Copy style={styles.cycle}>{cycleLabel}</Copy> : <Copy style={styles.cycle}>CYCLE {view.currentCycle}/{view.totalCycles}</Copy>}
+    <Copy style={[styles.timer, { color: c.text }]}>{Math.ceil(view.phaseRemainingMs / 1000).toString().padStart(2, "0")}</Copy>
+    {cycleLabel ? <Copy style={[styles.cycle, { color: c.secondaryText }]}>{cycleLabel}</Copy> : <Copy style={[styles.cycle, { color: c.secondaryText }]}>CYCLE {view.currentCycle}/{view.totalCycles}</Copy>}
   </View>;
   return (
-    <View style={{ gap: 16 }}>
+    <View testID={`specialized-${animationType}`} style={{ gap: 16, backgroundColor: theme?.background, borderRadius: 24, padding: theme ? 12 : 0 }}>
     <View style={[styles.area, separateReadout && { maxWidth: 180 }]}>
       {animationType === "box" && <BoxVisual view={view} running={running} reduced={reduced} />}
       {animationType !== "alternating" && animationType !== "ripple" && <Animated.View
