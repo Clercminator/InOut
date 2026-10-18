@@ -21,7 +21,7 @@ export function PulseSessionVisual({ view, phases, running, cycleLabel, pacerThe
   }, []);
   const { width, height, fontScale } = useWindowDimensions();
   const guidance = breathingGuidance(phases, view.phaseIndex, view.phaseElapsedMs);
-  const size = Math.max(120, Math.min(260, width - 88, height * .32));
+  const size = Math.max(96, Math.min(260, width - 104, height * .32));
   const separate = fontScale > 1.3 || width < 350;
   const theme = resolvePacerTheme(pacerTheme);
   const readout = <View accessible accessibilityLabel={`${t(running ? guidance.label : "Paused")}. ${Math.ceil(view.phaseRemainingMs / 1000)}. ${view.phase.nostril ? t(view.phase.nostril + " nostril") : ""}`}
@@ -30,9 +30,10 @@ export function PulseSessionVisual({ view, phases, running, cycleLabel, pacerThe
     <Copy style={{ color: theme.preview.text, fontSize: separate ? 38 : 48, lineHeight: separate ? 46 : 56, fontWeight: "700", fontVariant: ["tabular-nums"] }}>{Math.ceil(view.phaseRemainingMs / 1000)}</Copy>
     {view.phase.nostril && <Copy style={{ color: theme.preview.text }}>{view.phase.nostril.toUpperCase()} NOSTRIL</Copy>}
   </View>;
-  return <View testID="pulse-session-visual" style={{ width: "100%", gap: 12, alignItems: "center", padding: 12, backgroundColor: theme.preview.background, borderRadius: 24 }}>
+  return <View testID="pulse-session-visual" style={{ width: "100%", gap: 12, alignItems: "center", padding: 12, backgroundColor: theme.preview.background, borderRadius: 24, overflow: "hidden" }}>
     <View style={{ width: "100%", alignItems: "center", justifyContent: "center" }}>
-      {geometry === "box" ? <View style={{ width: size, height: size }} pointerEvents="none">
+      {geometry === "box" ? <View testID="box-orb-container" style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }} pointerEvents="none">
+        <PulseOrb view={view} phases={phases} running={running} size={size * .6} theme={pacerTheme ?? "default"} />
         <BoxVisual view={view} running={running} reduced={reduced} pacerTheme={pacerTheme ?? "default"} />
       </View> : <PulseOrb view={view} phases={phases} running={running} size={size} theme={pacerTheme ?? "default"} />}
       {!separate && <View style={{ position: "absolute", backgroundColor: `${theme.preview.surface}E8`, borderColor: `${theme.preview.ring}88`, borderWidth: 1, borderRadius: 28, maxWidth: "90%" }}>{readout}</View>}

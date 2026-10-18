@@ -80,7 +80,7 @@ export default function Settings() {
       <Label>EXPERIENCE</Label>
       <Disclosure title="Appearance & language" icon="palette">
       <ThemePicker value={preferences.theme ?? "system"} onChange={theme => controller.setPreferences({ ...preferences, theme })} />
-      <Card>
+      <View style={{ gap: 12, alignSelf: "stretch" }}>
         <Label>PACER THEMES</Label>
         {preferences.pacerTheme && !controller.isPacerThemeAvailable(preferences.pacerTheme) && <Copy accessibilityRole="alert">Your selected theme is saved and will be available again when IN/OUT Pro is restored. Pulse Default is active for now.</Copy>}
         <PacerThemePicker
@@ -98,7 +98,7 @@ export default function Settings() {
             router.push({ pathname: "/pro", params: { source: "theme" } });
           }}
         />
-      </Card>
+      </View>
       <Card>
         <Label>LANGUAGE</Label>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>

@@ -8,6 +8,16 @@ import { planFor, protocols } from "@inout/protocols";
 const state = start(planFor(protocols.find((p) => p.id === "box")!), 0);
 afterEach(() => jest.restoreAllMocks());
 
+test.each([[0, 3000], [1, 6000], [2, 5000], [3, 2000]])("square edge %s uses its actual phase duration", async (phase, duration) => {
+  const protocol = protocols.find(p => p.id === "box")!;
+  const lengths = [3000, 6000, 5000, 2000];
+  const custom = { ...protocol, phases: protocol.phases.map((p, i) => ({ ...p, durationMs: lengths[i] })) };
+  const elapsed = lengths.slice(0, phase).reduce((sum, ms) => sum + ms, 0) + 500;
+  const timing = jest.spyOn(Animated, "timing").mockReturnValue({ start: jest.fn(), stop: jest.fn(), reset: jest.fn() });
+  await render(<BoxVisual view={snapshot(start(planFor(custom), 0), elapsed)} running reduced={false} />);
+  expect(timing).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ toValue: phase + 1, duration: duration - 500, useNativeDriver: true }));
+});
+
 test("box motion uses native timing and resumes from engine phase time", async () => {
   const stop = jest.fn();
   const timing = jest.spyOn(Animated, "timing").mockReturnValue({ start: jest.fn(), stop, reset: jest.fn() });

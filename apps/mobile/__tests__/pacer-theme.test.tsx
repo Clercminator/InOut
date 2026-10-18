@@ -15,6 +15,23 @@ import {
 import { setLanguage } from "../src/i18n";
 
 beforeEach(() => setLanguage("en"));
+afterEach(() => jest.restoreAllMocks());
+
+test("gallery fills the measured width with two columns and falls back for narrow or enlarged text", async () => {
+  const dimensions = jest.spyOn(require("react-native"), "useWindowDimensions").mockReturnValue({ width: 360, height: 800, scale: 2, fontScale: 1 });
+  const props = { value: "default" as const, progress: { practiceDays: 0, earnedThemeIds: [] }, pro: false,
+    onApply: jest.fn(), onUpgrade: jest.fn(), onLockedTap: jest.fn(), onPreview: jest.fn(), onGalleryOpened: jest.fn(), onDismissNotice: jest.fn(), noticeThemeIds: [] };
+  const r = await render(<PacerThemePicker {...props} />);
+  await fireEvent(screen.getByTestId("pacer-theme-grid"), "layout", { nativeEvent: { layout: { width: 284 } } });
+  expect(screen.getByTestId("pacer-theme-card-default")).toHaveStyle({ width: 136 });
+  expect(screen.getByTestId("pacer-theme-card-dark-muted")).toHaveStyle({ width: 136 });
+  await fireEvent(screen.getByTestId("pacer-theme-grid"), "layout", { nativeEvent: { layout: { width: 240 } } });
+  expect(screen.getByTestId("pacer-theme-card-default")).toHaveStyle({ width: 240 });
+  dimensions.mockReturnValue({ width: 360, height: 800, scale: 2, fontScale: 1.6 });
+  await r.rerender(<PacerThemePicker {...props} />);
+  await fireEvent(screen.getByTestId("pacer-theme-grid"), "layout", { nativeEvent: { layout: { width: 284 } } });
+  expect(screen.getByTestId("pacer-theme-card-default")).toHaveStyle({ width: 284 });
+});
 
 function record(id: string, day: string, overrides: Partial<SessionRecord> = {}): SessionRecord {
   const [year, month, date] = day.split("-").map(Number);

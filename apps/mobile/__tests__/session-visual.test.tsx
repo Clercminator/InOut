@@ -19,7 +19,8 @@ test("Box geometry survives every theme and customized four-phase timings", asyn
   for (const theme of pacerThemes) {
     await r.rerender(<SessionVisual protocolId="box" view={snapshot(state, 4000)} phases={p.phases} running pacerTheme={theme.id} />);
     expect(screen.getByTestId("box-session-geometry", { includeHiddenElements: true })).toBeTruthy();
-    expect(screen.queryByTestId("pulse-orb", { includeHiddenElements: true })).toBeNull();
+    expect(screen.getByTestId("pulse-orb", { includeHiddenElements: true })).toBeTruthy();
+    expect(screen.getByTestId("box-orb-container", { includeHiddenElements: true })).toHaveStyle({ alignItems: "center", justifyContent: "center" });
   }
   expect(rendererFor("box-2", p.phases)).toBe("box");
 });

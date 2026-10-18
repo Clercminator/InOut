@@ -38,7 +38,7 @@ export function OnboardingDemo() {
   }, [engine]);
   const view = snapshot(engine ?? idle, now);
   return <View style={{ gap: 16 }}>
-    <View style={{ borderRadius: 32, padding: 24, alignItems: "center", gap: 18, backgroundColor: "#171024" }}>
+    <View style={{ borderRadius: 32, padding: 24, alignItems: "center", gap: 18, backgroundColor: "#171024", overflow: "hidden" }}>
       <PulseOrb view={engine ? view : snapshot(idle, 0)} phases={phases} running={!!engine} size={Math.min(228, width - 96)} />
       <Copy accessibilityLiveRegion="polite" style={{ color: "#FFFFFF", fontSize: 24, lineHeight: 32, textAlign: "center", fontWeight: "700" }}>{engine ? view.phase.type === "inhale" ? "Breathe in" : "Breathe out" : finished ? "Return to natural breathing." : "Follow your own comfort."}</Copy>
     </View>

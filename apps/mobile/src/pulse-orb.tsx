@@ -50,10 +50,10 @@ export function PulseOrb({ view, phases, running, motionEnabled = true, size = 2
     // Phase boundaries and resume resync from the authoritative snapshot; timer ticks do not restart native animation.
   }, [view.cueKey, phases, running, reduced, motionEnabled, volume]);
   return <View pointerEvents="none" testID="pulse-orb" accessible={false} importantForAccessibility="no-hide-descendants"
-    style={{ width: size, height: size, maxWidth: "100%", alignSelf: "center" }}>
-    <View style={[StyleSheet.absoluteFill, { borderRadius: size / 2, backgroundColor: `${base.glow}14`, transform: [{ scale: 1.08 }] }]} />
-    <Animated.View style={[StyleSheet.absoluteFill, { borderRadius: size / 2, transform: [{ scale: reduced || !motionEnabled ? .9 : scale }] }]}>
-      <Image testID="pulse-branded-art" source={artwork} resizeMode="contain" style={StyleSheet.absoluteFill} />
+    style={{ width: size, height: size, maxWidth: "100%", alignSelf: "center", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+    <View style={[StyleSheet.absoluteFill, { borderRadius: size / 2, backgroundColor: `${base.glow}14` }]} />
+    <Animated.View style={{ width: "100%", height: "100%", alignItems: "center", justifyContent: "center", transform: [{ scale: reduced || !motionEnabled ? .9 : scale }] }}>
+      <Image testID="pulse-branded-art" source={artwork} resizeMode="contain" style={{ width: "100%", height: "100%" }} />
     </Animated.View>
   </View>;
 }

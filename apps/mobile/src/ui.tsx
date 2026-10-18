@@ -134,6 +134,7 @@ export function Button({
   testID,
   translate = true,
   accessibilityLabel,
+  compact = false,
 }: {
   title: string;
   onPress: () => void;
@@ -144,6 +145,7 @@ export function Button({
   testID?: string;
   translate?: boolean;
   accessibilityLabel?: string;
+  compact?: boolean;
 }) {
   const { colors: c, palettes } = useTheme();
   const s = useStyles();
@@ -161,6 +163,7 @@ export function Button({
       onPress={onPress}
       style={({ pressed }) => [
         s.button,
+        compact && { minHeight: 44, paddingHorizontal: 8, paddingVertical: 8 },
         { backgroundColor: accent },
         outlined && s.secondaryButton,
         variant === "quiet" && { backgroundColor: "transparent", borderWidth: 0 },
@@ -174,6 +177,7 @@ export function Button({
         translate={translate}
         style={[
           s.buttonText,
+          compact && { fontSize: 14, lineHeight: 20 },
           outlined && { color: c.text },
           danger && { color: c.danger },
         ]}

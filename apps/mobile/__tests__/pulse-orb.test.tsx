@@ -19,6 +19,12 @@ test("native ribbons remain still during holds", async () => {
 });
 afterEach(() => { jest.restoreAllMocks(); jest.useRealTimers(); });
 
+test("brand image is explicitly sized inside a clipped, centered animation viewport", async () => {
+  await render(<PulseOrb view={snapshot(start(testingPlan, 0), 0)} phases={testingPlan.blocks[0].phases} running size={180} />);
+  expect(screen.getByTestId("pulse-orb", { includeHiddenElements: true })).toHaveStyle({ width: 180, height: 180, overflow: "hidden", alignItems: "center", justifyContent: "center" });
+  expect(screen.getByTestId("pulse-branded-art", { includeHiddenElements: true })).toHaveStyle({ width: "100%", height: "100%" });
+});
+
 test("orb respects reduced motion and does not schedule animation", async () => {
   jest.spyOn(AccessibilityInfo, "isReduceMotionEnabled").mockResolvedValue(true);
   const timing = jest.spyOn(Animated, "timing");
