@@ -555,15 +555,14 @@ test("resuming a paused cyclic hold releases it instead of asking for another ho
 test("discomfort pauses immediately before the user confirms ending", async () => {
   mockController.start(7);
   now = 2000;
-  const alert = jest.spyOn(Alert, "alert").mockImplementation(() => {});
   await render(<Session />);
   await fireEvent.press(screen.getByRole("button", { name: "I feel unwell" }));
   expect(mockController.current?.engine.status).toBe("paused");
   expect(mockController.view()?.sessionElapsedMs).toBe(2000);
-  alert.mock.calls[0][2]?.[0].onPress?.();
+  expect(screen.getByText("Stop and breathe naturally")).toBeTruthy();
+  await fireEvent.press(screen.getByTestId("confirm-end-session"));
   expect(mockController.current?.endReason).toBe("unwell");
   expect(mockController.current?.post).toBeNull();
-  alert.mockRestore();
 });
 
 test("leaving the active route pauses without discarding the session", async () => {

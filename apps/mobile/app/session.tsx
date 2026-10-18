@@ -2,12 +2,12 @@ import { useTheme } from "../src/theme";
 import { recordTitle, message, t } from "../src/i18n";
 import { useLanguage } from "../src/use-language";
 import { Alert } from "../src/localized-native";
-import { useCallback, useEffect } from "react";
-import { BackHandler, View, useWindowDimensions } from "react-native";
-import { Redirect, router, useFocusEffect } from "expo-router";
+import { View, useWindowDimensions } from "react-native";
+import { Redirect, router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
-import { Screen, Label, Title, Copy, Button, ActionFooter, useStyles } from "../src/ui";
+import { Screen, Label, Title, Copy, Button, useStyles } from "../src/ui";
 import { useSession, SaveError } from "../src/provider";
+import { SessionControls } from "../src/session-controls";
 import { SessionVisual } from "../src/session-visual";
 
 import { breathingGuidance } from "../src/breathing-guidance";
@@ -21,18 +21,8 @@ export default function Session() {
   const stackedControls = width < 360 || fontScale > 1.3;
   useLanguage();
   const controller = useSession();
-  useFocusEffect(
-    useCallback(() => () => controller.pause("interruption"), [controller]),
-  );
   const record = controller.current;
   const view = controller.view();
-  useEffect(() => {
-    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
-      controller.pause();
-      return true;
-    });
-    return () => sub.remove();
-  }, [controller]);
   if (!record || !view) return <Redirect href="/(tabs)" />;
   if (record.stage === "post") return <Redirect href="/post" />;
   if (record.stage === "result")
@@ -56,61 +46,12 @@ export default function Session() {
     nextIndex = nextPhases.findIndex(p => p.durationMs > 0);
   }
   const nextLabel = nextIndex < 0 ? "Session complete" : `${breathingGuidance(nextPhases, nextIndex).label} · ${practiceDuration(nextPhases[nextIndex].durationMs)}`;
-  const end = () => {
-    controller.pause();
-    Alert.alert(
-      "End this session?",
-      "Your elapsed time will be saved as an ended session.",
-      [
-        { text: "Keep paused", style: "cancel" },
-        {
-          text: "End session",
-          style: "destructive",
-          onPress: () => controller.end("ended"),
-        },
-      ],
-    );
-  };
-  const unwell = () => {
-    controller.pause();
-    Alert.alert(
-      "Stop and breathe naturally",
-      "Let go of the pacing. Sit or lie somewhere safe. Do not push through discomfort.",
-      [{ text: "End session", onPress: () => controller.end("unwell") }],
-      { cancelable: false },
-    );
-  };
   return (
     <Screen
       title="ACTIVE SESSION"
-      footer={
-        <ActionFooter>
-        <View
-          testID="session-controls"
-          style={{
-            paddingHorizontal: 16,
-            paddingBottom: 8,
-            paddingTop: 12,
-            gap: 8,
-          }}
-        >
-          {intense && running && holding && <Button title={view.phase.type === "retention" ? "Breathe in now" : "Release now"} onPress={() => controller.releaseHold()} />}
-          <Button
-            title={running ? "Pause" : "Resume"}
-            disabled={!!controller.error || unavailable}
-            onPress={() => (running ? controller.pause() : controller.resume())}
-          />
-          <View style={{ flexDirection: stackedControls ? "column" : "row", gap: 8 }}>
-            <View style={{ flex: stackedControls ? undefined : 1 }}>
-              <Button title="End session" secondary onPress={end} />
-            </View>
-            <View style={{ flex: stackedControls ? undefined : 1 }}>
-              <Button title="I feel unwell" danger onPress={unwell} />
-            </View>
-          </View>
-        </View>
-        </ActionFooter>
-      }
+      footer={<SessionControls controller={controller} running={running} disabled={!!controller.error || unavailable}
+        compact={stackedControls} release={intense && holding ? view.phase.type === "retention" ? "Breathe in now" : "Release now" : undefined} />}
+
     >
       <Title translate={false}>{recordTitle(record)}</Title>
       <Label>
