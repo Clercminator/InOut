@@ -28,12 +28,24 @@ for (const language of ["en","es","pt"]) test(`public Daily Reset completes in $
   assert.equal((element("play") as HTMLButtonElement).disabled,false);
   assert.equal(element("timer").textContent,"1:00");
   assert.equal(element("next").hidden,true);
+  const localized = language === "es" ? ["Un momento para respirar.", "Empezar práctica"]
+    : language === "pt" ? ["Um momento para respirar.", "Começar prática"]
+    : ["A moment to breathe.", "Start practice"];
+  assert.equal(w.document.documentElement.lang,language);
+  assert.equal(w.document.querySelector("h1")?.textContent,localized[0]);
+  assert.equal((element("play") as HTMLButtonElement).textContent,localized[1]);
   (element("play") as HTMLButtonElement).click();elapsed=20000;update();
   hidden=true;w.document.dispatchEvent(new w.Event("visibilitychange"));elapsed=50000;update();
   assert.equal(element("timer").textContent,"0:40");
   hidden=false;(element("play") as HTMLButtonElement).click();elapsed=90000;update();
   assert.equal(element("timer").textContent,"0:00");assert.equal(element("next").hidden,false);
   assert.equal(element("again").hidden,false);assert.ok(w.document.querySelector("[data-install-invitation]"));
+  assert.equal(element("status").textContent,language === "es" ? "Práctica completada. Vuelve a tu respiración natural."
+    : language === "pt" ? "Prática concluída. Volte à sua respiração natural."
+    : "Practice complete. Return to your natural breathing.");
   assert.equal(element("guide").style.transform,"scale(1)");
+  assert.equal(element("native").textContent,language === "es" ? "Abrir este ejercicio en IN/OUT"
+    : language === "pt" ? "Abrir este exercício no IN/OUT" : "Open this exercise in IN/OUT");
+  assert.equal(w.document.querySelectorAll('a[href^="https://apps.apple.com"],a[href^="https://play.google.com"]').length,0);
  } finally { w.close(); }
 });
