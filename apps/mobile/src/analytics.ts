@@ -16,9 +16,10 @@ export const productEvents = [
   "guided_program_started", "guided_program_completed", "share_result_invoked", "share_exercise_link_created", "purchase_failed",
   "pro_entitlement_activated", "pro_entitlement_expired", "ad_requested", "ad_dismissed", "ad_unavailable",
   "audio_playback_failed", "notification_schedule_failed", "share_delivery_failed", "share_link_failed",
+  "theme_gallery_opened", "theme_previewed", "theme_applied", "theme_earned", "theme_locked_tapped", "theme_paywall_opened",
 ] as const;
 export type ProductEvent = typeof productEvents[number];
-export const paywallSources = ["onboarding", "profile", "protocol", "quota", "insights", "custom", "reminders", "challenges", "other"] as const;
+export const paywallSources = ["onboarding", "profile", "protocol", "quota", "insights", "custom", "reminders", "challenges", "theme", "other"] as const;
 export type PaywallSource = typeof paywallSources[number];
 export const analyticsPropertyValues = {
   platform: ["android", "ios", "web"],

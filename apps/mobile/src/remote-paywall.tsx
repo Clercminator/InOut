@@ -45,6 +45,7 @@ export function RemotePaywall({ services, entry, onClose, onFallback, completion
       <Button title="Subscription details" variant="quiet" onPress={onFallback} />
     </ActionFooter>}>
     <View style={{ flex: 1 }}>
+      {entry === "theme" && <Copy>Unlock every pacer theme instantly with IN/OUT Pro.</Copy>}
       {NativePaywall && offering ? <NativePaywall key={language} style={{ flex: 1 }} options={{ offering, displayCloseButton: true }}
         onDismiss={onClose}
         onPurchaseStarted={() => services.subscriptions.remoteStarted("purchase")}

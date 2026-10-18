@@ -133,6 +133,7 @@ export function Button({
   danger = false,
   testID,
   translate = true,
+  accessibilityLabel,
 }: {
   title: string;
   onPress: () => void;
@@ -142,6 +143,7 @@ export function Button({
   danger?: boolean;
   testID?: string;
   translate?: boolean;
+  accessibilityLabel?: string;
 }) {
   const { colors: c, palettes } = useTheme();
   const s = useStyles();
@@ -153,6 +155,7 @@ export function Button({
     <Pressable
       testID={testID}
       accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ? t(accessibilityLabel) : undefined}
       accessibilityState={{ disabled }}
       disabled={disabled}
       onPress={onPress}

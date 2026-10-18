@@ -1,7 +1,7 @@
 import { WelcomeEmailOptIn } from "../src/welcome-email-ui";
 import { useShareLinks } from "../src/share-links-context";
 import { useReminders } from "../src/reminder-context";
-import { ThemePicker } from "../src/theme-picker";
+import { PacerThemePicker, ThemePicker } from "../src/theme-picker";
 import { useTheme } from "../src/theme";
 import { useLanguage } from "../src/use-language";
 import { Alert, Switch } from "../src/localized-native";
@@ -78,6 +78,25 @@ export default function Settings() {
       <Label>EXPERIENCE</Label>
       <Disclosure title="Appearance & language" icon="palette">
       <ThemePicker value={preferences.theme ?? "system"} onChange={theme => controller.setPreferences({ ...preferences, theme })} />
+      <Card>
+        <Label>PACER THEMES</Label>
+        {preferences.pacerTheme && !controller.isPacerThemeAvailable(preferences.pacerTheme) && <Copy accessibilityRole="alert">Your selected theme is saved and will be available again when IN/OUT Pro is restored. Pulse Default is active for now.</Copy>}
+        <PacerThemePicker
+          value={controller.effectivePacerTheme()}
+          progress={controller.pacerThemeProgress()}
+          noticeThemeIds={controller.pacerThemeNotice}
+          pro={commercial?.entitlements.state.pro ?? controller.entitlements.state.pro}
+          onApply={theme => { controller.applyPacerTheme(theme); }}
+          onLockedTap={() => controller.analytics.track("theme_locked_tapped")}
+          onPreview={() => controller.analytics.track("theme_previewed")}
+          onGalleryOpened={() => controller.analytics.track("theme_gallery_opened")}
+          onDismissNotice={() => controller.dismissPacerThemeNotice()}
+          onUpgrade={() => {
+            controller.analytics.track("theme_paywall_opened");
+            router.push({ pathname: "/pro", params: { source: "theme" } });
+          }}
+        />
+      </Card>
       <Card>
         <Label>LANGUAGE</Label>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>

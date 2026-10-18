@@ -24,6 +24,7 @@ import { productConfig } from "./product-config";
 import { challengeCatalog } from "./challenges";
 import { emptyCoach, programFor, enrollProgram, programSession, coachProtocol, comfortableCycles, generateWeek, type CoachState, type CoachSession } from "./coach";
 import { addDays } from "./progress";
+import { earnedPacerThemeIds, pacerThemes, qualifyingPacerPracticeDays, type PacerThemeId, type PacerThemeProgress } from "./pacer-theme";
 
 export class SessionController {
   pendingSafety: { protocol?: Protocol; warning?: string; begin: () => void } | null = null;
@@ -102,12 +103,14 @@ export class SessionController {
   private preferencesError: string | null = null;
   private pendingPreferences: Preferences | null = null;
   private historyCache: SessionRecord[] | null = null;
+  private pacerThemeProgressCache: PacerThemeProgress | null = null;
   private routinesCache: SavedRoutine[] | null = null;
   private libraryError: string | null = null;
   private pendingMutation: (() => void) | null = null;
   private pendingManualId: string | null = null;
   routineNotice: string | null = null;
   latestAwards: Badge[] = [];
+  pacerThemeNotice: PacerThemeId[] = [];
   challenges() { return this.store.challenges?.() ?? []; }
   enrollChallenge(id: string) {
     const d = challengeCatalog().find(d => d.id === id);
@@ -282,6 +285,7 @@ export class SessionController {
     const savedPreferences = store.preferences();
     this.preferences = { ...savedPreferences, ...languagePreference(savedPreferences) };
     setLanguage(isLanguage(this.preferences.language) ? this.preferences.language : "en");
+    if (typeof store.pacerThemeProgress === "function") this.pacerThemeProgress();
     if (this.pendingFitness()?.status === "running") this.store.updateFitness(s => ({ ...s, pending: { ...s.pending!, status: "paused" } }));
     this.fitnessCache = null;
     const pending = store.pending();
@@ -320,11 +324,20 @@ export class SessionController {
     try {
       if (this.current) {
         if (this.current.endReason === "completed" && this.current.finishedAt !== null && !this.current.completionLocalDay) this.current = { ...this.current, completionLocalDay: dayKey(new Date(this.current.finishedAt)) };
+        const pacerThemesBefore = this.current.stage === "result" && typeof this.store.pacerThemeUnlocks === "function"
+          ? this.store.pacerThemeUnlocks()
+          : null;
         const previous = this.current.stage === "result" ? this.rewards() : null;
         const streakBefore = previous ? practiceStats(this.history(), new Date(this.now())).current : null;
         const challengesBefore = this.challenges();
         const dailyBefore = this.dailyReset().credits.length;
-        this.store.save(this.current, this.entitlements.state.pro);
+        this.store.save(this.current, this.entitlements.state.pro, this.now());
+        if (pacerThemesBefore && typeof this.store.pacerThemeProgress === "function") {
+          this.historyCache = null;
+          const progress = this.store.pacerThemeProgress(this.history(), this.now());
+          this.capturePacerThemeUnlocks(pacerThemesBefore, progress.earnedThemeIds);
+          this.pacerThemeProgressCache = progress;
+        }
         if (this.current.stage === "result" && this.current.coach) this.coachCache = null;
         for (const state of this.challenges()) {
           const old = challengesBefore.find(s => s.challengeId === state.challengeId);
@@ -529,9 +542,59 @@ export class SessionController {
   history() {
     return (this.historyCache ??= this.store.history());
   }
+  pacerThemeProgress(): PacerThemeProgress {
+    if (this.pacerThemeProgressCache) return this.pacerThemeProgressCache;
+    const before = typeof this.store.pacerThemeUnlocks === "function" ? this.store.pacerThemeUnlocks() : [];
+    const records = this.history();
+    const now = this.now();
+    const practiceDays = qualifyingPacerPracticeDays(records, now).length;
+    const progress = typeof this.store.pacerThemeProgress === "function"
+      ? this.store.pacerThemeProgress(records, now)
+      : { practiceDays, earnedThemeIds: earnedPacerThemeIds(practiceDays) };
+    this.capturePacerThemeUnlocks(before, progress.earnedThemeIds);
+    this.pacerThemeProgressCache = progress;
+    return progress;
+  }
+  private capturePacerThemeUnlocks(before: readonly PacerThemeId[], after: readonly PacerThemeId[]) {
+    const previous = new Set(before);
+    const newlyEarned = after.filter(id => !previous.has(id));
+    if (!newlyEarned.length) return;
+    for (const _theme of newlyEarned) this.analytics.track("theme_earned");
+    this.pacerThemeNotice = [...new Set([...this.pacerThemeNotice, ...newlyEarned])];
+  }
+  isPacerThemeAvailable(themeId: PacerThemeId) {
+    const theme = pacerThemes.find(item => item.id === themeId);
+    if (!theme) return false;
+    const earned = this.pacerThemeProgressCache?.earnedThemeIds ??
+      (typeof this.store.pacerThemeUnlocks === "function" ? this.store.pacerThemeUnlocks() : []);
+    return this.entitlements.state.pro || theme.unlockDays === 0 || earned.includes(themeId);
+  }
+  effectivePacerTheme(): PacerThemeId {
+    const selected = this.preferences.pacerTheme ?? "default";
+    return this.isPacerThemeAvailable(selected) ? selected : "default";
+  }
+  applyPacerTheme(themeId: PacerThemeId) {
+    if (!this.isPacerThemeAvailable(themeId)) {
+      this.analytics.track("theme_locked_tapped");
+      return false;
+    }
+    if (this.preferences.pacerTheme === themeId) return true;
+    this.setPreferences({ ...this.preferences, pacerTheme: themeId });
+    if (this.preferences.pacerTheme !== themeId || this.preferencesError) return false;
+    this.analytics.track("theme_applied");
+    return true;
+  }
+  dismissPacerThemeNotice() {
+    this.pacerThemeNotice = [];
+    this.emit();
+  }
   refreshHistory() {
     if (this.error) return false;
-    return this.mutate(() => { this.historyCache = this.store.history(); });
+    return this.mutate(() => {
+      this.historyCache = this.store.history();
+      this.pacerThemeProgressCache = null;
+      this.pacerThemeProgress();
+    });
   }
   addManualSession(input: ManualSessionInput, id = this.id()) {
     if (!productConfig.manualLogging) return null;
@@ -561,6 +624,8 @@ export class SessionController {
     this.mutate(() => {
       this.store.remove(id);
       this.historyCache = null;
+      this.pacerThemeProgressCache = null;
+      this.pacerThemeProgress();
       if (this.current?.id === id && this.current.stage === "result") this.current = null;
     });
   }
@@ -569,6 +634,8 @@ export class SessionController {
     this.mutate(() => {
       this.store.clearHistory();
       this.historyCache = [];
+      this.pacerThemeProgressCache = null;
+      this.pacerThemeProgress();
       if (this.current?.stage === "result") this.current = null;
     });
   }
@@ -697,6 +764,8 @@ export class SessionController {
       this.historyCache = [];
       this.routinesCache = [];
       this.rewardCache = null;
+      this.pacerThemeProgressCache = null;
+      this.pacerThemeNotice = [];
       this.latestAwards = [];
       this.preferences = { ...defaultPreferences, ...languagePreference(defaultPreferences) };
       this.analytics.setConsent(false);

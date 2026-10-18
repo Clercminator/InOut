@@ -21,6 +21,7 @@ import { ShareExercise } from "../src/share-exercise";
 import { programFor } from "../src/coach";
 import { Alert } from "../src/localized-native";
 import { freeAdsDisclosure, shouldShowFreeAdsDisclosure } from "../src/ad-disclosure";
+import { pacerThemes } from "../src/pacer-theme";
 export default function Result() {
   const { colors } = useTheme();
   const s = useStyles();
@@ -78,6 +79,12 @@ export default function Result() {
         title={record.dailyReset ? "The 60-Second Reset" : shift !== null && shift > 0 ? "A little lighter." : "Session saved!"}
         message={shift !== null && shift > 0 ? "You reported less tension. A moment worth celebrating — your session is saved." : "Your practice is part of your progress. Nicely done."}
       />}
+      {saved === "1" && controller.current?.id === id && !controller.error && record.endReason === "completed" && !!controller.pacerThemeNotice.length && <Card>
+        <Label>NEW PACER THEME</Label>
+        <Copy accessibilityRole="alert">{message("New pacer theme available: {0}.", [t(pacerThemes.find(theme => theme.id === controller.pacerThemeNotice[0])?.name ?? "Default")])}</Copy>
+        <Button title="Explore pacer themes" onPress={() => { controller.dismissPacerThemeNotice(); router.push("/settings"); }} />
+        <Button title="Dismiss" secondary onPress={() => controller.dismissPacerThemeNotice()} />
+      </Card>}
       {record.dailyReset && record.endReason === "completed" && !controller.error && <Card>
         <Label>{dailyCredit ? "Daily completion earned" : "Today is complete"}</Label>
         <Title>{message("{0} day streak", [dailyStats.current])}</Title>

@@ -4,7 +4,9 @@ import { act, fireEvent, render, screen } from "@testing-library/react-native";
 import { snapshot, start } from "@inout/breathing-engine";
 import Testing, { testingPlan } from "../app/testing";
 import { PulseOrb } from "../src/pulse-orb";
+import { PulseSessionVisual } from "../src/pulse-session-visual";
 import { protocols, planFor } from "@inout/protocols";
+import { pacerThemes } from "../src/pacer-theme";
 
 jest.mock("expo-router", () => ({ useFocusEffect: jest.fn(), router: { canGoBack: () => false, replace: jest.fn() } }));
 
@@ -23,6 +25,18 @@ test("orb respects reduced motion and does not schedule animation", async () => 
   await render(<PulseOrb view={snapshot(start(testingPlan, 0), 2000)} phases={testingPlan.blocks[0].phases} running />);
   expect(screen.getByTestId("pulse-orb", { includeHiddenElements: true })).toBeTruthy();
   expect(timing).not.toHaveBeenCalled();
+});
+
+test("every pacer theme changes the live session background and readable phase labels", async () => {
+  const protocol = protocols.find(p => p.id === "coherent")!;
+  const view = snapshot(start(planFor(protocol), 0), 0);
+  const rendered = await render(<PulseSessionVisual view={view} phases={protocol.phases} running pacerTheme="default" />);
+  for (const theme of pacerThemes) {
+    await rendered.rerender(<PulseSessionVisual view={view} phases={protocol.phases} running pacerTheme={theme.id} />);
+    expect(screen.getByTestId("pulse-session-visual")).toHaveStyle({ backgroundColor: theme.preview.background });
+    expect(screen.getByText("Inhale")).toHaveStyle({ color: theme.preview.secondaryText });
+    expect(screen.getByTestId("pulse-orb", { includeHiddenElements: true })).toBeTruthy();
+  }
 });
 
 test("orb uses remaining phase time, avoids restarting on ticks, and cancels on pause", async () => {

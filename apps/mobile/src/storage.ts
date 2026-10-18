@@ -19,6 +19,7 @@ import { validEmail } from "./welcome-email";
 import { dayKey } from "./progress";
 import { enrollChallenge, reconcileChallenges, validateChallenges, type UserChallenge } from "./challenges";
 import { emptyCoach, validateCoach, recordCoachSession, type CoachState } from "./coach";
+import { earnedPacerThemeIds, isPacerThemeId, qualifyingPacerPracticeDays, type PacerThemeId, type PacerThemeProgress } from "./pacer-theme";
 
 export interface Database {
   execSync(sql: string): void;
@@ -29,6 +30,7 @@ export interface Database {
 }
 export const defaultPreferences: Preferences = {
   theme: "system",
+  pacerTheme: "default",
   languageSource: "device",
   audio: "tones",
   haptics: true,
@@ -54,7 +56,7 @@ export class LocalStore {
     `),
     );
   }
-  save(record: SessionRecord, pro = false) {
+  save(record: SessionRecord, pro = false, now = Date.now()) {
     if (!validRating(record.pre) || !validRating(record.post))
       throw new Error("Invalid tension rating");
     this.db.withTransactionSync(() => {
@@ -77,8 +79,35 @@ export class LocalStore {
       this.writeChallenges(reconcileChallenges(this.challenges(), [record], pro));
       const history = this.history();
       this.writeRewards(reconcileRewards(history, this.rewards(history), experienceFor(this.preferences()).weeklyGoal));
+      this.pacerThemeProgress(history, now);
     }
     });
+  }
+  pacerThemeUnlocks(): PacerThemeId[] {
+    const row = this.db.getFirstSync<{ payload: string }>("SELECT payload FROM settings WHERE key='pacer-theme-unlocks-v1'");
+    if (!row) return [];
+    const value: unknown = JSON.parse(row.payload);
+    if (!value || typeof value !== "object") throw new Error("Saved pacer themes could not be read. Your data has been preserved.");
+    const state = value as { version?: unknown; earnedThemeIds?: unknown };
+    if (state.version !== 1 || !Array.isArray(state.earnedThemeIds) ||
+        state.earnedThemeIds.some(id => !isPacerThemeId(id)) ||
+        new Set(state.earnedThemeIds).size !== state.earnedThemeIds.length) {
+      throw new Error("Saved pacer themes could not be read. Your data has been preserved.");
+    }
+    return state.earnedThemeIds;
+  }
+  pacerThemeProgress(records: SessionRecord[] = this.history(), now = Date.now()): PacerThemeProgress {
+    const practiceDays = qualifyingPacerPracticeDays(records, now);
+    const earnedThemeIds = earnedPacerThemeIds(practiceDays.length, this.pacerThemeUnlocks());
+    const row = this.db.getFirstSync<{ payload: string }>("SELECT payload FROM settings WHERE key='pacer-theme-unlocks-v1'");
+    const existing = row ? JSON.parse(row.payload) as { version: number; earnedThemeIds: PacerThemeId[] } : null;
+    if (!existing || JSON.stringify(existing.earnedThemeIds) !== JSON.stringify(earnedThemeIds)) {
+      this.db.runSync(
+        "INSERT INTO settings(key,payload) VALUES('pacer-theme-unlocks-v1',?) ON CONFLICT(key) DO UPDATE SET payload=excluded.payload",
+        JSON.stringify({ version: 1, earnedThemeIds }),
+      );
+    }
+    return { practiceDays: practiceDays.length, earnedThemeIds };
   }
   fitness(): FitnessStore {
     const row = this.db.getFirstSync<{ payload: string }>("SELECT payload FROM settings WHERE key='fitness-v1'");
@@ -247,13 +276,15 @@ export class LocalStore {
           p.favoriteProtocolIds.some((id: unknown) => typeof id !== "string"))) ||
       (p.onboardingComplete !== undefined && typeof p.onboardingComplete !== "boolean") ||
       (p.freeAdsNoticeSeen !== undefined && typeof p.freeAdsNoticeSeen !== "boolean") ||
-      (p.pro !== undefined && typeof p.pro !== "boolean")
+      (p.pro !== undefined && typeof p.pro !== "boolean") ||
+      (p.pacerTheme !== undefined && !["default", "dark-muted", "sky", "neon", "mono", "mustard", "light", "ember", "aurora", "matcha"].includes(p.pacerTheme))
     )
       throw new Error("Saved settings could not be read.");
     return {
       ...p,
       telemetryEnabled: p.telemetryEnabled === true,
       theme: ["system", "light", "dark"].includes(p.theme) ? p.theme : "system",
+      pacerTheme: ["default", "dark-muted", "sky", "neon", "mono", "mustard", "light", "ember", "aurora", "matcha"].includes(p.pacerTheme) ? p.pacerTheme : "default",
       ...languagePreference(p),
       favoriteProtocolIds: p.favoriteProtocolIds ?? [],
       // A pre-funnel installation with saved preferences is not forced through onboarding again.

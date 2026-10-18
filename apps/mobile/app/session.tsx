@@ -139,6 +139,7 @@ export default function Session() {
           view={view}
           running={running}
           phases={record.engine.plan.blocks[view.blockIndex].phases}
+          pacerTheme={controller.effectivePacerTheme()}
           cycleLabel={intense ? block.cycles === 30 ? message("Breath {0} of 30", [view.currentCycle]) : view.phase.type === "retention" ? "Optional retention" : "Recovery breath" : undefined}
         />
         <Copy style={[s.small, { textAlign: "center", color: "#E2D6F5" }]}>Next: {nextLabel}</Copy>
