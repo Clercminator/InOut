@@ -87,7 +87,10 @@ export function NativeSessionEffects() {
         if (mounted) setReadyAudioKey(audioKey);
       })
       .catch(() => {
-        if (mounted && audio !== "silent") controller.pause("interruption");
+        if (mounted && audio !== "silent") {
+          controller.analytics.track("audio_playback_failed", { outcome: "failed", errorCategory: "playback" });
+          controller.pause("interruption");
+        }
       });
     return () => {
       mounted = false;
@@ -139,6 +142,7 @@ export function NativeSessionEffects() {
         status.mediaServicesDidReset ||
         (hasPlayed && !status.playing && !status.isBuffering)
       ) {
+        if (status.error || status.mediaServicesDidReset) controller.analytics.track("audio_playback_failed", { outcome: "failed", errorCategory: "playback" });
         controller.pause("interruption");
         guard.pause();
       }

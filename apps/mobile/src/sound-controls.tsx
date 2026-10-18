@@ -55,7 +55,11 @@ export function SoundControls({ compact = false }: { compact?: boolean }) {
     const token = generation.current;
     setPreviewState("loading");
     const preview = createAudioPreview(() => {
-      if (token === generation.current) { stop(); setError("Sound preview unavailable. Check media volume and silent mode, then try again."); }
+      if (token === generation.current) {
+        stop();
+        controller.analytics.track("audio_playback_failed", { outcome: "failed", errorCategory: "playback" });
+        setError("Sound preview unavailable. Check media volume and silent mode, then try again.");
+      }
     }, () => { if (token === generation.current) stop(); }, state => { if (token === generation.current) setPreviewState(state); });
     audioPreview.current = preview;
     const track = selectedMusicTrack(settings.musicId);

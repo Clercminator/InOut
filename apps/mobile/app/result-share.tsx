@@ -29,7 +29,11 @@ export default function ResultShare() {
       uri = await captureRef(capture, { format: "png", quality: 1, result: "tmpfile", width: 1080, height: story ? 1920 : 1080 });
       if (Platform.OS === "ios") await Share.share({ url: uri, message: text });
       else await Sharing.shareAsync(uri, { mimeType: "image/png", dialogTitle: t("Share result") });
-    } catch { setError("Could not share. Please try again."); }
+      c.analytics.track("native_share_opened");
+    } catch {
+      c.analytics.track("share_delivery_failed", { outcome: "failed", errorCategory: "delivery" });
+      setError("Could not share. Please try again.");
+    }
     finally { if (uri) releaseCapture(uri); locked.current = false; setBusy(false); }
   };
   return <BackScreen title="SHARE YOUR PRACTICE"><Title>A moment worth keeping.</Title>
@@ -45,13 +49,21 @@ export default function ResultShare() {
         <Copy translate={false} allowFontScaling={false} style={{ color: "#d7b8ff", fontSize: (story ? 26 : 20) * scale, lineHeight: (story ? 36 : 26) * scale }}>{data.status}</Copy>
         {data.measurement && <Copy translate={false} allowFontScaling={false} numberOfLines={2} style={{ color: "#f9f7ff", fontSize: (story ? 25 : 18) * scale, lineHeight: (story ? 32 : 24) * scale }}>{data.measurement}</Copy>}
       </View>
-      <Copy translate={false} allowFontScaling={false} style={{ position: "absolute", left: 80 * scale, right: 80 * scale, top: (story ? 1680 : 975) * scale, color: "#d7b8ff", fontSize: 27 * scale, lineHeight: 36 * scale }}>inout.imrtech.xyz</Copy>
+      <Copy testID="result-share-invitation" allowFontScaling={false} numberOfLines={2} adjustsFontSizeToFit style={{ position: "absolute", left: 80 * scale, right: 80 * scale, top: (story ? 1680 : 935) * scale, color: "#FFFFFF", fontSize: (story ? 32 : 26) * scale, lineHeight: (story ? 42 : 32) * scale }}>Try a breathing practice with IN/OUT.</Copy>
+      <Copy translate={false} allowFontScaling={false} style={{ position: "absolute", left: 80 * scale, right: 80 * scale, top: (story ? 1790 : 1010) * scale, color: "#d7b8ff", fontSize: 27 * scale, lineHeight: 36 * scale }}>inout.imrtech.xyz</Copy>
     </View>
     {record.pre !== null && record.post !== null && <Chip title="Include my tension change when sharing" selected={includeRating} onPress={() => { if (!busy) setRatingConsentFor(includeRating ? null : id); }} />}
     <Copy>Only the visible card is shared. Your name, photo and notes stay private.</Copy>
     <Copy>Some apps share the image without its link. Use Share invitation link to send the link separately.</Copy>
     {!!error && <Copy accessibilityRole="alert">{error}</Copy>}
     <Button title={busy ? "Preparing card…" : "Share result"} disabled={busy || !ready} onPress={() => void share()} />
-    <Button title="Share invitation link" secondary onPress={() => { void Share.share({ message: text }).catch(() => setError("Could not share. Please try again.")); }} />
+    <Button title="Share invitation link" secondary disabled={busy} onPress={() => {
+      if (locked.current) return;
+      locked.current = true; setBusy(true); setError("");
+      void Share.share({ message: text }).then(() => c.analytics.track("native_share_opened")).catch(() => {
+        c.analytics.track("share_delivery_failed", { outcome: "failed", errorCategory: "delivery" });
+        setError("Could not share. Please try again.");
+      }).finally(() => { locked.current = false; setBusy(false); });
+    }} />
   </BackScreen>;
 }

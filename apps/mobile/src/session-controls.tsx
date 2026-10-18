@@ -5,7 +5,7 @@ import type { SessionController } from "./session-controller";
 import { ActionFooter, Button, Copy, Title } from "./ui";
 import { useTheme } from "./theme";
 
-type Dialog = "end" | "unwell";
+type Dialog = "end";
 /** Controls do not re-render at the 20 Hz engine checkpoint/display cadence. */
 export const SessionControls = memo(function SessionControls({ controller, running, disabled, compact, release }: {
   controller: SessionController; running: boolean; disabled: boolean; compact: boolean;
@@ -33,7 +33,7 @@ export const SessionControls = memo(function SessionControls({ controller, runni
   const finish = () => {
     const kind = currentDialog.current;
     if (!kind) return;
-    dismiss(); controller.end(kind === "unwell" ? "unwell" : "ended");
+    dismiss(); controller.end("ended");
   };
   return <>
     <ActionFooter><View testID="session-controls" pointerEvents="auto" style={{ gap: 8 }}>
@@ -42,7 +42,7 @@ export const SessionControls = memo(function SessionControls({ controller, runni
         onPress={() => running ? controller.pause() : controller.resume()} />
       <View style={{ flexDirection: compact ? "column" : "row", gap: 8 }}>
         <View style={{ flex: compact ? undefined : 1 }}><Button title="End session" secondary onPress={() => show("end")} /></View>
-        <View style={{ flex: compact ? undefined : 1 }}><Button title="I feel unwell" danger onPress={() => show("unwell")} /></View>
+        <View style={{ flex: compact ? undefined : 1 }}><Button title="I feel unwell" danger onPress={() => { dismiss(); controller.end("unwell"); }} /></View>
       </View>
     </View></ActionFooter>
     <Modal visible={dialog !== null} transparent animationType="none" onRequestClose={dismiss} statusBarTranslucent>
@@ -51,9 +51,9 @@ export const SessionControls = memo(function SessionControls({ controller, runni
           borderColor: colors.accent, backgroundColor: colors.card, overflow: "hidden" }}>
           <ScrollView keyboardShouldPersistTaps="always" contentContainerStyle={{ padding: 24, gap: 18 }}>
             <Copy translate={false} style={{ color: colors.accent, fontWeight: "700" }}>IN/OUT</Copy>
-            <Title>{dialog === "unwell" ? "Stop and breathe naturally" : "End your session?"}</Title>
-            <Copy>{dialog === "unwell" ? "Let go of the pacing. Sit or lie somewhere safe. Do not push through discomfort." : "You can keep breathing or end this practice."}</Copy>
-            {dialog !== "unwell" && <Button title="Continue breathing" disabled={disabled} onPress={() => { dismiss(); controller.resume(); }} />}
+            <Title>End your session?</Title>
+            <Copy>You can keep breathing or end this practice.</Copy>
+            <Button title="Continue breathing" disabled={disabled} onPress={() => { dismiss(); controller.resume(); }} />
             <Button title="End session" danger testID="confirm-end-session" onPress={finish} />
           </ScrollView>
         </View>

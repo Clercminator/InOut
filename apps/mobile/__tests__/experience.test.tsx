@@ -676,3 +676,13 @@ test.each(["light", "dark"] as const)("Home preserves the approved untinted Puls
   expect(artwork.props.source).toEqual(require("../assets/pulse-orb.png"));
   expect(artwork.props.style.tintColor).toBeUndefined();
 });
+
+test.each(["en", "es", "pt"] as const)("result image includes a localized invitation in %s", async language => {
+  mockController.start(7, 1);
+  jest.advanceTimersByTime(600000); mockController.tick(); mockController.answer(3, null);
+  mockParams = { id: mockController.current!.id };
+  setLanguage(language);
+  await render(wrap(<ResultShare />));
+  expect(screen.getByTestId("result-share-invitation")).toHaveTextContent(t("Try a breathing practice with IN/OUT."));
+  expect(screen.getByText("inout.imrtech.xyz")).toBeTruthy();
+});

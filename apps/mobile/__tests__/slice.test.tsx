@@ -552,17 +552,20 @@ test("resuming a paused cyclic hold releases it instead of asking for another ho
   expect(mockController.view()?.sessionElapsedMs).toBe(130000);
 });
 
-test("discomfort pauses immediately before the user confirms ending", async () => {
+test("discomfort ends immediately and the result presents safety guidance", async () => {
   mockController.start(7);
   now = 2000;
-  await render(<Session />);
+  const rendered = await render(<Session />);
   await fireEvent.press(screen.getByRole("button", { name: "I feel unwell" }));
-  expect(mockController.current?.engine.status).toBe("paused");
+  expect(mockController.current?.engine.status).toBe("ended");
   expect(mockController.view()?.sessionElapsedMs).toBe(2000);
-  expect(screen.getByText("Stop and breathe naturally")).toBeTruthy();
-  await fireEvent.press(screen.getByTestId("confirm-end-session"));
   expect(mockController.current?.endReason).toBe("unwell");
   expect(mockController.current?.post).toBeNull();
+  expect(screen.queryByTestId("confirm-end-session")).toBeNull();
+  mockParams = { id: mockController.current!.id };
+  await rendered.rerender(<Result />);
+  expect(screen.getByText("Stop and breathe naturally")).toBeTruthy();
+  expect(screen.getByText("Let go of the pacing. Sit or lie somewhere safe. Do not push through discomfort.")).toBeTruthy();
 });
 
 test("leaving the active route pauses without discarding the session", async () => {

@@ -59,7 +59,7 @@ export default function Reminders() {
     </>}
     <Copy>Free includes one reminder. Pro includes up to five. Existing reminders remain available.</Copy>
     <Button title="Practice notifications" secondary onPress={() => router.push("/settings")} />
-    <Button title="Explore Pro" secondary onPress={() => router.push("/pro")} />
+    {!controller.entitlements.state.pro && <Button title="Explore Pro" secondary onPress={() => router.push("/pro")} />}
     <Button title="Retry reminder scheduling" secondary disabled={service.busy} onPress={() => { void service.reconcile(); }} />
     <Button title="Open notification settings" secondary onPress={() => { void Linking.openSettings().catch(() => setNotice("Could not open phone settings.")); }} />
   </BackScreen>;

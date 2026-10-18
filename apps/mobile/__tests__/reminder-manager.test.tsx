@@ -6,10 +6,12 @@ import { ReminderService, type Reminder } from "../src/reminders";
 import { defaultPreferences } from "../src/storage";
 import { setLanguage } from "../src/i18n";
 jest.mock("expo-router", () => ({ router: { push: jest.fn(), back: jest.fn(), canGoBack: () => true } }));
-jest.mock("../src/provider", () => ({ useSession: () => ({ preferences: require("../src/storage").defaultPreferences, analytics: { track: jest.fn() } }) }));
+let mockPro = false;
+jest.mock("../src/provider", () => ({ useSession: () => ({ preferences: require("../src/storage").defaultPreferences, analytics: { track: jest.fn() }, entitlements: { state: { pro: mockPro } } }) }));
 jest.mock("expo-crypto", () => ({ randomUUID: () => "new-reminder" }));
 
 test("presets save one reminder, summaries reflect days, and pause/edit replace schedules", async () => {
+  mockPro = false;
   setLanguage("en");
   let items: Reminder[] = [];
   const scheduled = new Set<string>();
@@ -35,4 +37,13 @@ test("presets save one reminder, summaries reflect days, and pause/edit replace 
   expect(screen.getByText(/Monday–Friday ·/)).toBeTruthy();
   await fireEvent.press(screen.getByRole("button", { name: "Enable reminder" }));
   expect(items[0].hour).toBe(21); expect(scheduled.size).toBe(5);
+});
+
+test("Pro reminder settings suppress the upgrade prompt", async () => {
+  mockPro = true;
+  const service = new ReminderService({ read: () => [], write: () => {} }, {
+    permission: async () => true, list: async () => [], cancel: async () => {}, schedule: async () => {},
+  }, () => true, () => []);
+  await render(<ReminderContext.Provider value={service}><Reminders /></ReminderContext.Provider>);
+  expect(screen.queryByRole("button", { name: "Explore Pro" })).toBeNull();
 });

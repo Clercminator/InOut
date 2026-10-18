@@ -73,6 +73,10 @@ export default function Result() {
   const program = enrollment && programFor(enrollment.programId);
   return (
     <Screen title={record.dailyReset ? "Daily Reset" : "STATE SHIFT"}>
+      {record.endReason === "unwell" && <Card style={{ borderColor: colors.danger }}>
+        <Title>Stop and breathe naturally</Title>
+        <Copy accessibilityRole="alert">Let go of the pacing. Sit or lie somewhere safe. Do not push through discomfort.</Copy>
+      </Card>}
       {saved === "1" && controller.current?.id === id && !controller.error && record.endReason === "completed" && <Celebration
         variant="saved"
         awards={controller.latestAwards}
@@ -114,7 +118,7 @@ export default function Result() {
         <View style={s.row}>
           <View>
             <Label>BEFORE</Label>
-            <Copy style={[s.rating, { color: colors.muted }]}>
+            <Copy style={[s.rating, { color: colors.secondaryText }]}>
               {record.pre ?? "—"}
             </Copy>
           </View>
@@ -131,7 +135,7 @@ export default function Result() {
         <Label>CADENCE</Label>
         <Copy>
           {record.engine.plan.blocks.flatMap((block) => block.phases)
-            .map((phase) => `${phase.label} ${phase.durationMs / 1000}s`)
+            .map((phase) => `${t(phase.label)} ${phase.durationMs / 1000}s`)
             .join(" · ")}
         </Copy>
         {record.effect && <Copy>{record.effect}</Copy>}

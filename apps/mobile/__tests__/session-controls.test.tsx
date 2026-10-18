@@ -48,6 +48,15 @@ test("End opens immediately, Continue resumes, and confirmation never earns comp
   expect(c.current?.engine.status).not.toBe("completed");
   expect(c.latestAwards).toHaveLength(0);
 });
+
+test("I feel unwell ends and saves immediately without a confirmation or completion credit", async () => {
+  await render(<Harness />); now = 2200;
+  await fireEvent.press(screen.getByRole("button", { name: "I feel unwell" }));
+  expect(c.current).toMatchObject({ stage: "result", endReason: "unwell", engine: { status: "ended", elapsedAtAnchor: 2200 } });
+  expect(c.history()).toHaveLength(1);
+  expect(c.latestAwards).toHaveLength(0);
+  expect(screen.queryByTestId("confirm-end-session")).toBeNull();
+});
 test("Android Back opens and dismisses the dialog; background dismisses it permanently", async () => {
   const r = await render(<Harness />);
   await act(() => { expect(back()).toBe(true); });

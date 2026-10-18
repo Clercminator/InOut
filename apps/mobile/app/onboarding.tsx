@@ -70,7 +70,7 @@ export default function Onboarding() {
         <View style={{ gap: 10 }}><Label>A LITTLE SPACE FOR YOU</Label><Title>Change your pace. Find your breath.</Title><Copy>A few guided breaths. A moment to reset. A practice that grows with you.</Copy></View>
         <View style={{ flexDirection: "row", gap: 10, alignItems: "center" }}><GoalMark goal="stress" size={36} /><Copy style={{ flex: 1 }}>Start free. No account needed.</Copy></View>
       </>}
-      {step === "goals" && <><Title>What brings you here?</Title><Copy>Choose your main goal. You can change it anytime in your profile.</Copy><GoalPicker /></>}
+      {step === "goals" && <><Title>What brings you here?</Title><GoalPicker /></>}
       {step === "personalize" && <>
         <OnboardingHero compact /><Title>A little time, just for you.</Title><Copy>How much time usually fits your day? Your Coach will keep practices within this time.</Copy>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>{[1, 3, 5, 10].map(minutes => <Chip key={minutes} title={message("{0} min", [minutes])} selected={controller.coachState().availableMinutes === minutes} onPress={() => controller.configureCoach({ availableMinutes: minutes })} />)}</View>
