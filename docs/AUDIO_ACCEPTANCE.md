@@ -4,7 +4,7 @@
 
 The requested `release-assets/audio/` folder is not present in this checkout. The supplied release recordings are in `release/assets/current/audio/`. They remain owner-supplied, unmodified, and untracked. The mobile app's bundled audio is under `apps/mobile/assets/audio/`.
 
-Inventory counts are **77 bundled-directory files** (64 MP3, 13 WAV) and **21 supplied-release files** (20 MP3, 1 WAV). The latter includes 16 byte-identical copies of selected supplied recordings already in the mobile bundle, plus five unused alternatives. Thus 98 files are present across both trees, including those 16 duplicate copies.
+Final workspace check: **77 bundled-directory files** (64 MP3, 13 WAV) and **21 supplied-release files** (15 MP3, 1 WAV, 5 M4A). Eleven supplied voice files match the bundled selections byte-for-byte. The five original full-length music MP3 names recorded below are no longer in the current supplied folder; it now contains five shortened `acortada.m4a` tracks. The approved full-length bundled MP3s remain unchanged. No replacement, conversion or deletion was performed. Evidence: `artifacts/release-120-audio.json`.
 
 Durations, sample rates, channels, and average MP3 bitrates below were read from MPEG audio frames or WAV headers; file sizes are exact bytes. Audio content, accent, voice gender, edits, and loop audibility have not been established by listening. `EN`/`ES`, `FEMALE`/`MALE`, and cue names in the source tree are treated as the owner's labels, not independent acoustic verification.
 
@@ -23,7 +23,7 @@ No language or voice substitution is performed. Missing spoken cues remain silen
 
 ## Supplied release originals
 
-All five music originals below are integrated byte-for-byte into `apps/mobile/assets/audio/supplied/`. Their bitrate is 320 kbps, 48 kHz, stereo.
+At Copilot integration, all five music originals below were copied byte-for-byte into `apps/mobile/assets/audio/supplied/`. The bundled files remain 320 kbps, 48 kHz, stereo. The source names in this table describe that earlier integration snapshot, not the current supplied folder.
 
 | Exact source path under `release/assets/current/audio/` | Bundled mapping | Size (bytes) | Duration |
 |---|---|---:|---:|
@@ -49,7 +49,7 @@ The following supplied voice recordings are integrated byte-for-byte. MP3 encodi
 | `voice/ES/FEMALE/In/In - Marcela - Youthful, Smooth and Natural - Elevenlabs.mp3` | `voice-es-female-in.mp3` | Spanish female inhale | 42,014 | 1.567 s |
 | `voice/ES/FEMALE/Out/Exhala - Marcela - Youthful, Smooth and Natural - elevenlabs.mp3` | `voice-es-female-out.mp3` | Spanish female exhale | 44,522 | 1.724 s |
 
-Five supplied release files are **not integrated**:
+Five supplied release voice alternatives are **not integrated** (the five new M4A music files are listed in the final-inventory section below):
 
 | Exact source path under `release/assets/current/audio/` | Encoding | Size (bytes) | Duration | Status |
 |---|---|---:|---:|---|
@@ -114,6 +114,11 @@ The 13 mobile WAV files are PCM, 24 kHz, mono, 16-bit (384 kbps) except `focus.w
 | `warm-out.wav` | Warm exhale texture | 192,044 | 4.000 s |
 
 ## Missing, ambiguous, and unused recordings
+
+The final source inventory also contains five unintegrated shortened music files under `release/assets/current/audio/music/`: `Song - bliss breath - acortada.m4a` (3,523,422 bytes), `Song - Sweet and spicy - acortada.m4a` (3,651,808), `Song - The awakening - acortada.m4a` (5,201,360), `Song - the initiation - acortada.m4a` (5,039,852), and `Song - westerpark - acortada.m4a` (2,914,440). These are preserved owner files; this stabilization request explicitly excludes replacing existing recordings.
+
+Exact absent cue slots: both supplied English voices lack `top-up`, `complete`, `hum`, `recover`, `inhale-left`, `inhale-right`, `exhale-left`, `exhale-right`; supplied Spanish female additionally lacks an approved `natural`/flow cue. Their supplied hold is deliberately reused for retention. Existing 13-cue banks remain the explicit complete option; there is no silent voice substitution.
+
 
 - Supplied Spanish female has inhale, exhale, and hold only. The similarly named supplied `ES` flow file remains unused because its filename is English and its spoken language is not confirmed.
 - Supplied English female and male each have inhale, exhale, hold, and flow. They do not provide top-up, hum, nostril-specific, recovery, or every legacy phase cue; the app does not substitute another voice.

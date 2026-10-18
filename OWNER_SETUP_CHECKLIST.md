@@ -1,10 +1,71 @@
 # InOut — owner acceptance and submission
 
-Updated October 15, 2026. Only account, credential, legal, store and physical-device actions remain here. Engineering evidence belongs in README. Record acceptance with date, candidate commit/build, device/OS, result and approver. Private keys, reviewer codes and identity documents stay in the relevant secure service.
+Updated October 18, 2026. Final 1.2.0 stabilization and owner acceptance are tracked here; detailed platform evidence is in `docs/CROSS_PLATFORM_RELEASE_READINESS.md`. Record acceptance with date, candidate commit/build, device/OS, result and approver. Private keys, reviewer codes and identity documents stay in the relevant secure service.
 
-Signed Android internal-test candidate: `artifacts/android-1.1.0-4/inout-1.1.0-4-store-test.aab` — **1.1.0 (4)**, package `com.imrtech.inout`, source commit `ec14fb4`. [EAS build](https://expo.dev/accounts/imr-tech/projects/inout/builds/98126c25-9ba4-4629-9b28-bc74b3d5c87a) succeeded; **not submitted to Google Play**. Signature and existing upload certificate match; 1,951 entry digests verified; API 36, non-debuggable, permissions checked, 56 native libraries pass 16 KB ELF checks. The bundled Android public SDK key matches RevenueCat. Real store billing and test ads only. SHA-256: `92c1d758c59f164d36e178889bb9a53f9860511449de6abd94c885de3726d938`.
+Final implementation source: **`56e6a8a`**; Android build source (artifact-glob correction only): **`8373a570668e54ed65fb9b70015d537ebdbdb04c`**. The finished EAS `store-test` build is **`89eefe91-f2b0-4b1c-9b28-e839b539a361`**, marketing version **1.2.0**, Android **versionCode 5**, iOS **build 1**, package/bundle **`com.imrtech.inout`**. Its final AAB is `artifacts\android-1.2.0-5\inout-1.2.0-5-store-test-89eefe91.aab` (155,948,859 bytes; SHA-256 `aacaafe8c0b95fbef2f985034f98d5c5f32ad999e4c8899c62029015dedf04bc`). The existing remote upload certificate matches the verified Play upload certificate: `F4:B3:B0:19:3A:FC:F9:5D:62:1E:61:38:28:B7:64:94:C4:AD:A9:EC:CD:44:D6:BB:4E:94:28:B0:66:43:E9:9F`. Nothing has been uploaded to either store or submitted for review.
 
-Verification: 169 domain tests, 187 mobile tests, TypeScript, web lint, 1,464 messages per locale, Android export and release metadata pass. Expo Doctor: 20/21; `expo`, `expo-constants`, `expo-linking`, `expo-notifications`, `expo-router` are one patch below current recommendations. Native build passed; patch upgrades remain pending. Evidence: `artifacts/android-1.1.0-4/aab-verification.json`, `monetization-verification.json`, `artifacts/android-mobile-final.log`, `artifacts/android-release-verification.log` (the corrected final paywall suite is also in `artifacts/remote-paywall-final-tests.log`). Physical purchase/restore, UMP/ad delivery and UX smoke tests remain open. Obtain the separate Play App Signing certificate for verified links.
+The final AAB passed cryptographic signature verification, certificate match, ZIP entry-digest verification (1,974 entries), package/version checks, permission checks and 16 KB alignment checks for all 56 packaged native libraries. Firebase Android configuration is embedded. The `store-test` profile uses real store billing and test ads; test ad identifiers were found in the bundle. Supplemental EAS artifacts are retained locally in `artifacts\android-1.2.0-5\eas-artifacts-89eefe91.tar.gz` and extracted under `artifacts\android-1.2.0-5\second-build-89eefe91\eas-artifacts\`: one generated JavaScript source map and 56 unique native `.sym` files across four ABIs. No R8/ProGuard mapping file was generated. The first verified AAB remains preserved at `artifacts\android-1.2.0-5\inout-1.2.0-5-store-test.aab` (SHA-256 `6e9d103a2e80fc1b03a92796f5fe16a3b23c6d95c30dec0e42b75dc9a17ac010`) as a fallback.
+
+Verification: **208 domain tests, 218 mobile tests / 18 suites**, TypeScript, web lint/build, **1,578 messages per locale**, Android/iOS store-mode exports, normal metadata and store-test preflight pass. Expo Doctor **21/21**. Production preflight intentionally rejects seven unaccepted gates and draft metadata. Evidence: `artifacts/release-120-*.log`. No physical-device, live purchase/ad or iOS native-build acceptance is implied.
+
+Previous signed Android **1.1.0 (4)** remains preserved at `artifacts/android-1.1.0-4/inout-1.1.0-4-store-test.aab`, EAS `98126c25-9ba4-4629-9b28-bc74b3d5c87a`, SHA-256 `92c1d758c59f164d36e178889bb9a53f9860511449de6abd94c885de3726d938`.
+
+| Classification | Current status / next evidence |
+| --- | --- |
+| A. Completed in code | Daily reward/streak deduplication, persistent fitness records/timers/manual reps, artwork-ready capture, EN/ES/PT browser pause/completion invitation, Coach completion/Free-Pro differentiation, Home navigation, supplied audio mappings/loop lifecycle, purchase feedback/restore/duplicate guards, consent/frequency/ad suppression and first-open retry checks pass. |
+| B. Android device acceptance | Install the exact Play internal candidate after owner upload authorization. Test the phone sequence below, real billing/restore, consented test ads, opt-in Firebase receipt and crash diagnostics. |
+| C. Apple enrollment | Organization enrollment, App Store Connect, products/agreements, signing, TestFlight and sandbox/device acceptance remain unavailable. Source 1.2.0 (1) and EAS profiles are prepared. |
+| D. Owner/configuration | Authorize public-site deployment; approve metadata/legal/privacy and analytics decision; supply actual store URLs, Apple Team ID and Play signing fingerprint; validate reviewer grant and provider dashboards. No gate closed without evidence. |
+| E. Unresolved defects/limitations | Public website is stale and its approved exercise preview image is 404. No unresolved failing local tests. Native behavior remains unaccepted; iOS/web analytics and acquisition attribution are not configured. Missing supplied voice cues are documented in `docs/AUDIO_ACCEPTANCE.md`. |
+
+### Google Play Internal testing handoff
+
+**Ready for an owner-authorized Internal testing upload: YES.** No Play Console upload or rollout has been performed. EAS history showed version codes 2, 3 and 4 before this build, but this workspace has no Play Console inventory; the owner must confirm code 5 is unused in Play before uploading.
+
+1. In Play Console, open the existing **IN/OUT: Breathing Exercises** app. Check the version-code history in App bundle explorer and all release tracks/drafts (including Internal testing) for **versionCode 5**. If 5 is already present/uploaded, stop; Play will not accept another bundle with the same code. Do not change the version or start another build without owner authorization.
+2. Open **Test and release → Testing → Internal testing** for that existing app. Keep its current tester lists/groups and license-testing configuration; do not create a new app or track.
+3. After the owner authorizes the upload, create the Internal testing release and upload exactly `artifacts\android-1.2.0-5\inout-1.2.0-5-store-test-89eefe91.aab`. Confirm Play identifies `com.imrtech.inout`, version name `1.2.0`, version code `5`. The AAB is not directly installable.
+4. If Play requests localized release notes, select the relevant existing listing languages and enter/review these concise notes:
+   - **English (en-US):** New daily challenges and saved progress. Improved exercise tracking, program discovery, sharing, and reminders. Practice remains available offline.
+   - **Spanish (Latin America, es-419):** Nuevos desafíos diarios y progreso guardado. Mejoras en el seguimiento de ejercicios, los programas, el uso compartido y los recordatorios. La práctica sigue disponible sin conexión.
+   - **Portuguese (Brazil, pt-BR):** Novos desafios diários e progresso salvo. Melhorias no acompanhamento de exercícios, na descoberta de programas, no compartilhamento e nos lembretes. A prática continua disponível offline.
+5. Save the release, review Play's validation results, then roll it out to **Internal testing** using the existing tester configuration. Do not choose Production or submit a production release.
+6. Wait for Play processing to finish and the release to become available to testers. Resolve any Play validation errors; processing and propagation time vary. Use the existing internal-test opt-in link and the Google account already on the tester list.
+7. On the owner's Android phone, open the opt-in link, join the test, then install/update **IN/OUT** from Google Play. Do not sideload the AAB.
+8. To verify upgrade-data preservation, update the installed app through Play without uninstalling or clearing storage. Confirm local history, preferences, saved patterns/mixes, and Coach progress remain. Record phone model, Android version, installed version and outcome.
+
+Google Play must still accept the existing upload key/App Signing configuration and any required app-content, Data safety, Ads, app-access, audience, and content-rating declarations. If Play prompts for a different signing key or a new app, stop and resolve that with the owner; do not replace signing credentials. Internal testing does not close the seven separate production-acceptance gates.
+
+### Next Android phone acceptance, in order
+
+1. After confirming code 5 is unused in Play, authorize/upload this AAB to the existing internal track; add the same account to internal testers and License testing. Install through Play, then upgrade from 1.1.0 (4) and confirm private history/preferences survive. An AAB is not directly installable on the phone.
+2. Complete Daily Reset, save the result, return Home, repeat on the same day (one daily reward), then return the next local day. Check streak/history, restart and offline behavior.
+3. Plank/wall sit: start, pause, resume, background/lock, reopen and recover after process death; downtime must not inflate elapsed time. Push-ups: enter/edit reps and note, save/restart, check independent bests/delete. Confirm no ads during any active attempt.
+4. Complete/resume Free and Pro Coach programs, including a same-day repeat; check completion once, discovery for multiple goals, downgrade and return Home.
+5. Share square/Story results and a separate exercise invitation through WhatsApp/share sheet. Images must load before capture and omit private notes/measurements by default. After approved site deployment, test EN/ES/PT recipient completion without installation, background pause, invitation fallback, expiry and revocation.
+6. Audition all six voice choices, Air/Ocean/Warm and five music tracks independently; test missing-cue silence, repeated music boundaries, pause/calls/headphones/cleanup and saved choices. Confirm ES-LATAM/PT-BR accents. Existing complete banks remain available; shortened owner M4A files were preserved but not substituted.
+7. With test accounts: purchase/cancel/pending, immediate success/Pro badge, duplicate purchase prevention, cold-launch refresh, restore, expiry/offline limits and reviewer bypass. Confirm no Pro/reviewer ads, stable eligible Free banners, consent controls and capped interstitials only after completed practice/Done.
+8. Notifications: deny/allow, schedule/tap/cold start/timezone and suppress during active sessions. Check all locales, large text, TalkBack, reduced motion and both themes. With explicit telemetry consent, verify Firebase events/Crashlytics; turn consent off and confirm silence.
+
+### Public website deployment pending approval
+
+Live check: `/reset.html` and `/reset.js` return 200 but are stale; `/exercise-og-background.png` returns 404. Prepared tracked changes include generated `api/exercise.mjs`, `apps/web/public/reset.html`, `reset.js`, the approved preview image and localization. Shared snapshot expiry/revocation behavior is unchanged. Evidence: `artifacts/engagement-live-web.json`.
+
+After explicit website deployment authorization, use a fresh checkout so unrelated owner files are excluded. From this repository root (choose a new checkout path if it already exists):
+
+```powershell
+git worktree add --detach artifacts/web-120-checkout HEAD
+Set-Location artifacts/web-120-checkout
+npm ci
+npm run release:pages
+npm run lint:web
+npx vercel project inspect --non-interactive
+# If unlinked, run npx vercel link and select the EXISTING project serving inout.imrtech.xyz.
+# Confirm the owner/project before the next command; do not create another project.
+npx vercel deploy --prod
+```
+
+Then verify the canonical site's EN/ES/PT invitation flow, preview-image HTTP 200, localized metadata and expired/revoked links. No deployment command was executed during stabilization. Store URLs and verified signing associations remain separate owner inputs.
 
 ## Required before store submission
 
@@ -95,7 +156,7 @@ Before submission, record weekly/monthly/yearly rendering, purchase/cancellation
 ### Verified HTTPS links and measurement
 
 - [ ] The domain is already configured at **inout.imrtech.xyz**. Supply the Apple Team ID, Play Console → App integrity → app-signing certificate SHA-256, and real store URLs. Root `.well-known` endpoints are live with empty declarations. Populate `release/links.json` with real values; prepared scripts consume them. **Success:** HTTPS links open the signed app with browser/store fallback. Existing custom-scheme/browser sharing does not require this optional domain setup.
-- [ ] Confirm the existing **no remote product analytics for v1** decision. No analytics account/key is needed. Future remote collection is a separate business/privacy decision; current events accept no private free text, goals, ratings or user identifiers.
+- [ ] Confirm the actual analytics/privacy decision and validate Firebase reporting: Android already has the opt-in Firebase transport and `GOOGLE_SERVICES_JSON` in EAS preview/production. Both environments lack an iOS plist; web has no sink. Do not claim Day-1/Day-7 retention or acquisition funnels before consented event receipt, attribution/report setup and disclosures are accepted. No private free text, goals, ratings or local IDs are allowed. See the platform report for implementation limits; no new provider was introduced.
 
 
 ## UX and coach milestone acceptance (unreleased, October 14, 2026)
@@ -106,7 +167,7 @@ Before submission, record weekly/monthly/yearly rendering, purchase/cancellation
 - [ ] Complete and resume the Free introductory program offline; test skip/repeat, restarting the app, saved results and return to Coach. With valid Pro access, test premium programs, weekly edits/pause/repeat, expiry and the existing unavailable-store fallback.
 - [ ] Optional AI remains disabled (`productConfig.coachAiEnabled = false`). Local inspection found no coaching Edge Function or server-side entitlement/usage enforcement. The typed adapter has strict allowlists, consent gates, timeout, a local request cap and deterministic fallback, but no live transport. Before enabling it, implement authenticated server-side Pro verification, shared daily/rate/cost limits, and an OpenRouter adapter with an explicitly chosen model/token budget. Keep credentials server-side; require explicit consent before sending goal text or check-in categories. No cloud configuration or deployment was performed.
 
-The current Google Play internal-testing build remains unchanged. No native build, upload, versionCode increment or release was performed for these milestones.
+Historical October 14 milestones did not change the Play build. The October 17 candidate above now supersedes their source-version status; no Play upload was performed.
 
 ### Production-quality dashboard follow-up (2026-10-16)
 
@@ -118,8 +179,8 @@ The current Google Play internal-testing build remains unchanged. No native buil
 ### Android build 4 audit and next candidate (2026-10-16)
 
 - Build `98126c25-9ba4-4629-9b28-bc74b3d5c87a`, source `ec14fb4`, remains 1.1.0 (4). Preserved AAB SHA-256: `92c1d758c59f164d36e178889bb9a53f9860511449de6abd94c885de3726d938`. Original settings leave release minification disabled; the original log uses `mergeExtDexRelease`, with no R8 minification task. Its AAB has no ProGuard mapping and already contains 56 native `.sym` entries. No applicable build-4 mapping was found; do not upload a replacement from another build or enable obfuscation just for this warning.
-- Future Android builds explicitly retain `SYMBOL_TABLE` native symbols. EAS store-test/production artifact patterns retain native symbol output, JavaScript maps and release R8 output **if generated**. Download the exact build's artifacts together with its AAB, source commit and SHA-256 before EAS artifact expiry. [Expo artifact configuration](https://docs.expo.dev/eas/json/#buildartifactpaths), [Android native symbols](https://developer.android.com/build/include-native-symbols). No new native build was run in this pass.
-- Proposed next candidate: **1.1.1 (5)**. Latest EAS history still ends at build 4; verify Play Console has not used 5 before changing the local version. Keep the existing remote signing, package, products, entitlement and AdMob IDs. Upload/submission still requires owner approval.
+- Future Android builds explicitly retain `SYMBOL_TABLE` native symbols. EAS store-test/production artifact patterns retain native symbol output, JavaScript maps and release R8 output **if generated**. Download the exact build's artifacts together with its AAB, source commit and SHA-256 before EAS artifact expiry. [Expo artifact configuration](https://docs.expo.dev/eas/json/#buildartifactpaths), [Android native symbols](https://developer.android.com/build/include-native-symbols). The October 17 candidate above now exercises these artifact patterns; this paragraph records the earlier build-4 audit.
+- Superseded by the **1.2.0 (5)** candidate above. EAS history was checked before creation; Play Console still needs the pre-upload code check. Existing remote signing, package, products, entitlement, prices and AdMob IDs are unchanged. Store upload/submission still requires owner approval.
 - On that candidate, test all four voice/nature combinations and music past two full track boundaries; pause/resume, lock/calls/headphone changes, rapid selection changes and repeated sessions. Verify every new-session entry passes through safety. Check EN/ES-419/PT-BR, light/dark, narrow phones, enlarged text, TalkBack/reduced motion, anchored banners/no-fill/consent and immediate reviewer/Pro suppression.
-- Missing owner media: `voice/en/female`, both voices under `voice/es-419` and `voice/pt-BR`, `nature/air`, `nature/ocean`, and the sharing layout `asset-manifest.json`. Existing approved multilingual cues/textures remain available. Owner approved supplied recordings and flow/rest plus hold/both-holds mapping; no substitute media was generated.
+- The earlier missing-media list is superseded by `docs/AUDIO_ACCEPTANCE.md`: supplied EN female/male and ES female are integrated; PT supplied voices, ES male and specified missing cue slots remain absent. Existing Air/Ocean/Warm textures and approved share artwork are bundled. Five shortened M4A owner files are preserved, not substituted. No recordings were generated.
 - Dependency audit after the five Expo patches: 62 high and 5 moderate transitive advisories (grpc-js, braces, node-forge and sprintf-js chains). Automated suggested fixes include major changes/downgrades; these remain a separate dependency-maintenance task.

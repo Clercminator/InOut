@@ -1,5 +1,7 @@
 # iOS owner setup: IMR Tech SpA
 
+Prepared source is **1.2.0 (iOS build 1)**; Android versionCode 5 is independent. Both EAS environments already contain the iOS public SDK variable; its Apple product mapping still needs acceptance. No iOS Firebase plist is configured.
+
 This runbook is for after Apple completes IMR Tech SpA's Developer Program organization enrollment. It does not create credentials, products, prices, store records, or submissions. Do not share Apple private keys, certificates, RevenueCat secret keys, or account passwords in this repository.
 
 ## 1. Finish Apple organization enrollment
