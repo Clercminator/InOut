@@ -496,8 +496,8 @@ export class SessionController {
   canContinue() {
     const record = this.current;
     if (!record) return false;
-    const intense = record.protocol?.safetyCategory === "highIntensity" || record.engine.plan.blocks.some(b => b.protocolId === cyclic.id);
-    return !intense || !!(record.protocol && isCyclic(record.protocol) && record.safetyConfirmed === true);
+    const intense = record.protocol?.safetyCategory === "highIntensity" || record.engine.plan.blocks.some(b => b.protocolId === cyclic.id || b.protocolId === "high-intensity-cyclic-alt");
+    return !intense || record.safetyConfirmed === true;
   }
   releaseHold() {
     if (!this.current || this.error || this.current.stage !== "active" || this.current.engine.status !== "running" || !this.current.protocol || !isCyclic(this.current.protocol) || !this.canContinue()) return;

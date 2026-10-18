@@ -52,12 +52,16 @@ function protocol(
   cycles: number,
   animationType: Protocol["animationType"] = "wave",
   safetyCategory: Protocol["safetyCategory"] = "general",
+  description?: string,
+  searchTerms: string[] = [],
 ): Protocol {
   const duration = phases.reduce((n, p) => n + p.durationMs, 0) * cycles;
   return {
     id,
     version: 1,
     name,
+    description,
+    searchTerms,
     goalTags: goals,
     phases,
     defaultCycles: cycles,
@@ -68,7 +72,21 @@ function protocol(
     animationType,
     audioConfig: { enabled: true },
     hapticConfig: { enabled: true },
-    availability: safetyCategory === "highIntensity" ? "definitionOnly" : "enabled",
+    availability: safetyCategory === "highIntensity" && !["high-intensity-cyclic", "high-intensity-cyclic-alt"].includes(id) ? "definitionOnly" : "enabled",
+  };
+}
+
+export function breathingRate(protocol: Pick<Protocol, "phases" | "defaultCycles">) {
+  const cycleSeconds = protocol.phases.reduce((sum, phase) => sum + phase.durationMs, 0) / 1000;
+  return cycleSeconds > 0 ? Number((60 / cycleSeconds).toFixed(2)) : 0;
+}
+
+export function protocolSummary(protocol: Protocol) {
+  return {
+    rate: breathingRate(protocol),
+    cycleSeconds: protocol.phases.reduce((sum, phase) => sum + phase.durationMs, 0) / 1000,
+    cycleLabel: `${protocol.defaultCycles} ${protocol.defaultCycles === 1 ? "cycle" : "cycles"}`,
+    durationLabel: `${Math.round(protocol.defaultDuration / 1000)} sec`,
   };
 }
 // Versioned pacing presets, not claims of clinical efficacy. High-intensity use
@@ -102,6 +120,10 @@ export const protocols: Protocol[] = [
     ["Calm", "Recover"],
     [phase("inhale", 5), phase("exhale", 5)],
     18,
+    "wave",
+    "general",
+    "Steady, even breaths for a grounded and balanced rhythm.",
+    ["coherent", "steady", "balanced", "5 by 5", "even breathing"],
   ),
   protocol(
     "extended-exhale",
@@ -109,6 +131,10 @@ export const protocols: Protocol[] = [
     ["Calm", "Sleep"],
     [phase("inhale", 4), phase("exhale", 6)],
     12,
+    "wave",
+    "general",
+    "Longer exhales soften the system and encourage a gentle ease.",
+    ["extended exhale", "long exhale", "downshift", "ease", "4 by 6"],
   ),
   protocol(
     "4-7-8",
@@ -145,6 +171,9 @@ export const protocols: Protocol[] = [
     ],
     6,
     "alternating",
+    "general",
+    "Alternate nostrils and settle the mind with balanced, deliberate breath.",
+    ["nadi shodhana", "alternate nostril", "switch sides", "balance", "yogic"],
   ),
   protocol(
     "bhramari",
@@ -155,23 +184,94 @@ export const protocols: Protocol[] = [
     "ripple",
   ),
   {
-    ...protocol("high-intensity-cyclic", "Cyclic Breathwork", ["Perform", "Energize"],
+    ...protocol(
+      "high-intensity-cyclic",
+      "Stimulating Breath",
+      ["Perform", "Energize"],
+      [phase("inhale", 2), phase("exhale", 2)],
+      3,
+      "pulse",
+      "highIntensity",
+    ),
+    version: 2,
+    availability: "enabled",
+    defaultDuration: 648000,
+    durationPresets: [216000, 432000, 648000],
+    plan: {
+      blocks: [
+        { protocolId: "high-intensity-cyclic", protocolVersion: 1, cycles: 30, phases: [phase("inhale", 2), phase("exhale", 2)] },
+        { protocolId: "high-intensity-cyclic", protocolVersion: 1, cycles: 1, phases: [phase("retention", 60)] },
+        { protocolId: "high-intensity-cyclic", protocolVersion: 1, cycles: 1, phases: [phase("inhale", 3), phase("hold", 15), phase("exhale", 3), phase("freeBreathing", 15)] },
+      ],
+    },
+  },
+  protocol(
+    "box-2",
+    "Triangle Breathing",
+    ["Calm"],
+    [phase("inhale", 4), phase("exhale", 4), phase("hold", 4)],
+    10,
+    "wave",
+    "general",
+  ),
+  protocol(
+    "measured",
+    "Measured Breathing",
+    ["Calm", "Focus"],
+    [phase("inhale", 4), phase("hold", 1), phase("exhale", 7)],
+    10,
+    "wave",
+    "general",
+  ),
+  protocol(
+    "athletic",
+    "Athletic Preparation",
+    ["Perform"],
+    [phase("inhale", 3), phase("hold", 3), phase("exhale", 6), phase("hold", 3)],
+    8,
+    "wave",
+    "general",
+  ),
+  protocol(
+    "endurance",
+    "Endurance Pattern",
+    ["Perform"],
+    [phase("inhale", 4), phase("hold", 8), phase("exhale", 4)],
+    6,
+    "wave",
+    "general",
+  ),
+  protocol(
+    "swimmer",
+    "Swimmer's Rhythm",
+    ["Perform"],
+    [phase("inhale", 4), phase("hold", 8), phase("exhale", 6), phase("hold", 2)],
+    5,
+    "wave",
+    "general",
+  ),
+  {
+    ...protocol("high-intensity-cyclic-alt", "Power Breath", ["Perform", "Energize"],
       [phase("inhale", 2), phase("exhale", 2)], 3, "pulse", "highIntensity"),
     version: 2,
     availability: "enabled",
     defaultDuration: 648000,
     durationPresets: [216000, 432000, 648000],
     plan: { blocks: [
-      { protocolId: "high-intensity-cyclic", protocolVersion: 2, cycles: 30, phases: [phase("inhale", 2), phase("exhale", 2)] },
-      { protocolId: "high-intensity-cyclic", protocolVersion: 2, cycles: 1, phases: [phase("retention", 60)] },
-      { protocolId: "high-intensity-cyclic", protocolVersion: 2, cycles: 1, phases: [phase("inhale", 3), phase("hold", 15), phase("exhale", 3), phase("freeBreathing", 15)] },
+      { protocolId: "high-intensity-cyclic-alt", protocolVersion: 2, cycles: 30, phases: [phase("inhale", 2), phase("exhale", 2)] },
+      { protocolId: "high-intensity-cyclic-alt", protocolVersion: 2, cycles: 1, phases: [phase("retention", 60)] },
+      { protocolId: "high-intensity-cyclic-alt", protocolVersion: 2, cycles: 1, phases: [phase("inhale", 3), phase("hold", 15), phase("exhale", 3), phase("freeBreathing", 15)] },
     ] },
   },
 ];
-export const cyclic = protocols[9];
+export const cyclic = protocols.find((protocol) => protocol.id === "high-intensity-cyclic")!;
+export const altCyclic = protocols.find((protocol) => protocol.id === "high-intensity-cyclic-alt")!;
 export const isCyclic = (p: Pick<Protocol, "id" | "version">) => p.id === cyclic.id && p.version === cyclic.version;
-export const includesHighIntensity = (p: Protocol) => p.safetyCategory === "highIntensity" || p.id === cyclic.id || !!p.plan?.blocks.some(b => b.protocolId === cyclic.id);
-export const availableForPractice = (p: Protocol) => p.availability === "enabled" && (!includesHighIntensity(p) || isCyclic(p));
+export const isGuidedHighIntensity = (p: Pick<Protocol, "id" | "version">) =>
+  (p.id === cyclic.id && p.version === cyclic.version) ||
+  (p.id === altCyclic.id && p.version === altCyclic.version);
+export const includesHighIntensity = (p: Protocol) => p.safetyCategory === "highIntensity" || p.id === cyclic.id || p.id === altCyclic.id || !!p.plan?.blocks.some(b => b.protocolId === cyclic.id || b.protocolId === altCyclic.id);
+export const availableForPractice = (p: Protocol) => p.availability === "enabled" && (!includesHighIntensity(p) || isGuidedHighIntensity(p));
 export const sigh = protocols[0];
 export function planFor(
   protocol: Protocol,

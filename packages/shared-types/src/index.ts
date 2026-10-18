@@ -28,6 +28,8 @@ export interface Protocol {
   id: string;
   version: number;
   name: string;
+  description?: string;
+  searchTerms?: string[];
   goalTags: Goal[];
   phases: Phase[];
   defaultCycles: number;
@@ -112,6 +114,7 @@ export interface Preferences {
   welcomeEmail?: { email: string; consentAt: number; status: "pending" | "sent" | "review" };
   journey?: OnboardingJourney;
   theme?: "system" | "light" | "dark";
+  pacerTheme?: "default" | "dark-muted" | "sky" | "neon" | "mono" | "mustard" | "light" | "ember" | "aurora" | "matcha";
   language?: "en" | "es" | "pt";
   languageSource?: "device" | "manual";
   experience?: Experience;
