@@ -40,7 +40,7 @@ export interface ProductEventProperties {
   errorCategory?: typeof analyticsPropertyValues.errorCategory[number];
   source?: PaywallSource;
 }
-export interface AnalyticsSink { record(event: ProductEvent, properties?: ProductEventProperties): void; setConsent?(enabled: boolean): Promise<void>; }
+export interface AnalyticsSink { readonly collectionReady?: boolean; record(event: ProductEvent, properties?: ProductEventProperties): void; setConsent?(enabled: boolean): Promise<void>; }
 
 function safeProperties(value: ProductEventProperties | undefined): ProductEventProperties | undefined {
   if (!value || typeof value !== "object") return undefined;
@@ -60,6 +60,7 @@ function safeProperties(value: ProductEventProperties | undefined): ProductEvent
 // Only the finite paywall source is accepted as context; ratings, free text and identifiers are excluded.
 export class AnalyticsService {
   constructor(private sink?: AnalyticsSink) {}
+  get remoteReady() { return this.sink?.collectionReady === true; }
   get remoteAvailable() { return !!this.sink?.setConsent; }
   setConsent(enabled: boolean): Promise<void> { return this.sink?.setConsent?.(enabled) ?? Promise.resolve(); }
   paywallSource(value: string) {

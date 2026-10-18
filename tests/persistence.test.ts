@@ -1,4 +1,5 @@
 import test from "node:test";
+import { TelemetrySink } from "../apps/mobile/src/telemetry";
 import { setDeviceLocales } from "../apps/mobile/src/language-preference";
 import { AnalyticsService, type ProductEvent } from "../apps/mobile/src/analytics";
 import assert from "node:assert/strict";
@@ -685,5 +686,28 @@ test("reminder settings survive a cold launch and are removed by full local rese
     controller.onLocalDataReset = () => { invalidated = true; };
     assert.equal(controller.resetLocalData(), true); assert.equal(invalidated, true);
     assert.deepEqual(env.store.readReminders(), []);
+  } finally { env.db.close(); }
+});
+
+
+test("first-open credit survives unavailable transport and failed consent initialization", async () => {
+  const env = setup();
+  try {
+    const unavailable = env.controller();
+    unavailable.setPreferences({ ...unavailable.preferences, telemetryEnabled: true });
+    await new Promise(resolve => setImmediate(resolve));
+    let fail = true;
+    const events: ProductEvent[] = [];
+    const sink = new TelemetrySink({ consent: async () => { if (fail) throw Error("offline"); }, record: async event => { events.push(event); } });
+    const c = new SessionController(env.store, () => 1000, () => "id", undefined, new AnalyticsService(sink));
+    c.setPreferences({ ...c.preferences, telemetryEnabled: true });
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(events.includes("app_first_open"), false);
+    fail = false;
+    c.setPreferences({ ...c.preferences });
+    await new Promise(resolve => setImmediate(resolve));
+    c.setPreferences({ ...c.preferences });
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(events.filter(event => event === "app_first_open").length, 1);
   } finally { env.db.close(); }
 });

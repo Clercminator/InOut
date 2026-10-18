@@ -580,7 +580,7 @@ export class SessionController {
       this.store.savePreferences(preferences);
       this.preferences = preferences;
       void this.analytics.setConsent(preferences.telemetryEnabled === true).then(() => {
-        if (preferences.telemetryEnabled === true && this.store.claimFirstOpen()) this.analytics.track("app_first_open");
+        if (preferences.telemetryEnabled === true && this.analytics.remoteReady && this.store.claimFirstOpen()) this.analytics.track("app_first_open");
       });
       const journey = preferences.journey;
       if (journey?.primaryGoal && journey.primaryGoal !== previous?.primaryGoal) this.analytics.track("onboarding_goal_selected");

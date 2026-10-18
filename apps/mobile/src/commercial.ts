@@ -26,7 +26,7 @@ export function createCommercialServices(store: LocalStore): CommercialServices 
   const analytics = new AnalyticsService(sink ?? (development ? { record: (event) => console.info(`[IN/OUT dev event] ${event}`) } : undefined));
     const telemetryConsented = store.preferences().telemetryEnabled === true;
     void analytics.setConsent(telemetryConsented).then(() => {
-      if (telemetryConsented && store.claimFirstOpen()) analytics.track("app_first_open");
+      if (telemetryConsented && analytics.remoteReady && store.claimFirstOpen()) analytics.track("app_first_open");
     });
   let adapter = unavailableSubscriptions;
   if (configuration && native) {

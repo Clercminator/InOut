@@ -11,6 +11,7 @@ export class TelemetrySink implements AnalyticsSink {
   private requested: boolean | undefined;
   private generation = 0;
   constructor(private adapter: TelemetryAdapter) {}
+  get collectionReady() { return this.ready && this.enabled; }
   setConsent(enabled: boolean) {
     if (this.requested === enabled) return this.queue;
     this.requested = enabled;
