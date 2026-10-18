@@ -139,7 +139,7 @@ export class SessionController {
   checkpointFitness(status?: "paused" | "finished") {
     const p = this.pendingFitness(); if (!p || p.status === "finished" || this.error) return false;
     const elapsedMs = this.fitnessElapsed(), now = this.now();
-    const next = { ...p, elapsedMs, status: status ?? p.status, ...(status === "finished" ? { finishedAt: now, localDay: dayKey(new Date(now)) } : {}) };
+    const next = { ...p, elapsedMs, status: status ?? p.status, ...(status === "finished" ? { finishedAt: now, localDay: dayKey(new Date(now)), localTime: `${String(new Date(now).getHours()).padStart(2, "0")}:${String(new Date(now).getMinutes()).padStart(2, "0")}` } : {}) };
     // Freeze the measured interval before IO; a retry never counts time spent resolving storage errors.
     this.fitnessAnchor = null;
     const saved = this.mutate(() => this.store.updateFitness(s => s.pending?.id === p.id ? { ...s, pending: next } : s));
@@ -165,7 +165,7 @@ export class SessionController {
     const unit = fitnessDefinition(p.challengeId)!.unit;
     const value = unit === "seconds" ? Math.floor(p.elapsedMs / 100) / 10 : p.repetitions ?? 0;
     if (value <= 0) return null;
-    const result: FitnessResult = { id: p.id, challengeId: p.challengeId, startedAt: p.startedAt, finishedAt: p.finishedAt!, localDay: p.localDay!, value, unit, note: p.note?.trim() || undefined, source: "self-reported" };
+    const result: FitnessResult = { id: p.id, challengeId: p.challengeId, startedAt: p.startedAt, finishedAt: p.finishedAt!, localDay: p.localDay!, localTime: p.localTime, value, unit, note: p.note?.trim() || undefined, source: "self-reported" };
     return this.mutate(() => {
       const before = this.fitnessState();
       this.store.updateFitness(s => appendFitness(s, result));

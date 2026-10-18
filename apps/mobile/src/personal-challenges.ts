@@ -20,27 +20,28 @@ export const fitnessSafety = "Stop for pain, dizziness or unusual symptoms. Rest
 // Local records never satisfy this boundary and are never uploaded automatically.
 export interface VerifiedChallengeSubmission { consent: "explicit-opt-in"; verification: { provider: string; evidenceId: string }; challengeId: string; value: number; unit: PersonalChallengeDefinition["unit"] }
 export interface FitnessResult {
-  id: string; challengeId: FitnessId; startedAt: number; finishedAt: number; localDay: string;
+  id: string; challengeId: FitnessId; startedAt: number; finishedAt: number; localDay: string; localTime?: string;
   value: number; unit: "seconds" | "repetitions"; note?: string; source: "self-reported";
 }
 export interface FitnessPending {
   id: string; challengeId: FitnessId; startedAt: number; elapsedMs: number;
-  status: "running" | "paused" | "finished"; finishedAt?: number; localDay?: string; repetitions?: number; note?: string;
+  status: "running" | "paused" | "finished"; finishedAt?: number; localDay?: string; localTime?: string; repetitions?: number; note?: string;
 }
 export interface FitnessStore { version: 1; results: FitnessResult[]; pending: FitnessPending | null }
 export const emptyFitness = (): FitnessStore => ({ version: 1, results: [], pending: null });
 export function validateFitness(value: unknown): asserts value is FitnessStore {
   const s = value as FitnessStore;
   const noteValid = (n: unknown) => n === undefined || typeof n === "string" && n.length <= 500;
+  const localTimeValid = (v: unknown) => v === undefined || typeof v === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(v);
   const timeValid = (n: unknown) => typeof n === "number" && Number.isFinite(n) && n >= 0;
   if (!s || s.version !== 1 || !Array.isArray(s.results) || !(s.pending === null || typeof s.pending === "object" && s.pending)) throw Error("Invalid fitness history");
   for (const r of s.results) {
     const d = r && fitnessDefinition(r.challengeId);
-    if (!d || typeof r.id !== "string" || !r.id || !timeValid(r.startedAt) || !timeValid(r.finishedAt) || !validLocalDay(r.localDay) || !Number.isFinite(r.value) || r.value <= 0 || r.unit !== d.unit || r.source !== "self-reported" || !noteValid(r.note) || (d.unit === "repetitions" && (!Number.isSafeInteger(r.value) || r.value > 99999))) throw Error("Invalid fitness result");
+    if (!d || typeof r.id !== "string" || !r.id || !timeValid(r.startedAt) || !timeValid(r.finishedAt) || !validLocalDay(r.localDay) || !localTimeValid(r.localTime) || !Number.isFinite(r.value) || r.value <= 0 || r.unit !== d.unit || r.source !== "self-reported" || !noteValid(r.note) || (d.unit === "repetitions" && (!Number.isSafeInteger(r.value) || r.value > 99999))) throw Error("Invalid fitness result");
   }
   if (new Set(s.results.map(r => r.id)).size !== s.results.length) throw Error("Duplicate fitness result");
   const p = s.pending;
-  if (p && (!fitnessDefinition(p.challengeId) || !p.id || !timeValid(p.startedAt) || !Number.isFinite(p.elapsedMs) || p.elapsedMs < 0 || !["running", "paused", "finished"].includes(p.status) || !noteValid(p.note) || (p.repetitions !== undefined && (!Number.isSafeInteger(p.repetitions) || p.repetitions < 0 || p.repetitions > 99999)) || (p.status === "finished" && (!timeValid(p.finishedAt) || !validLocalDay(p.localDay))))) throw Error("Invalid unfinished fitness attempt");
+  if (p && (!fitnessDefinition(p.challengeId) || !p.id || !timeValid(p.startedAt) || !Number.isFinite(p.elapsedMs) || p.elapsedMs < 0 || !["running", "paused", "finished"].includes(p.status) || !noteValid(p.note) || !localTimeValid(p.localTime) || (p.repetitions !== undefined && (!Number.isSafeInteger(p.repetitions) || p.repetitions < 0 || p.repetitions > 99999)) || (p.status === "finished" && (!timeValid(p.finishedAt) || !validLocalDay(p.localDay))))) throw Error("Invalid unfinished fitness attempt");
 }
 export function fitnessBest(results: FitnessResult[], id: FitnessId) {
   return results.filter(r => r.challengeId === id).reduce<FitnessResult | null>((best, r) => !best || r.value > best.value ? r : best, null);

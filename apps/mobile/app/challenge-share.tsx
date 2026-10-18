@@ -33,7 +33,7 @@ export default function ChallengeShare() {
       if (!await Sharing.isAvailableAsync()) throw Error();
       uri = await captureRef(card, { format: "png", quality: 1, result: "tmpfile", width: data.width, height: data.height });
       c.analytics.track("native_share_opened"); c.analytics.track("challenge_share_opened", fitnessResult ? { challengeType: fitnessResult.challengeId } : undefined);
-      if (Platform.OS === "ios") { const result = await Share.share({ url: uri }, { subject: data.title }); if (result.action === Share.sharedAction) { c.analytics.track("challenge_share_completed"); c.analytics.track("challenge_shared"); } }
+      if (Platform.OS === "ios") { const result = await Share.share({ url: uri }, { subject: data.title }); if (result.action === Share.sharedAction) { c.analytics.track("challenge_share_completed"); c.analytics.track("challenge_shared", fitnessResult ? { challengeType: fitnessResult.challengeId } : daily ? { challengeType: "daily-reset" } : undefined); } }
       else await Sharing.shareAsync(uri, { mimeType: "image/png", dialogTitle: data.title });
     } catch { setError("Could not share. Please try again."); }
     finally { if (uri) releaseCapture(uri); busyRef.current = false; setBusy(false); }
@@ -41,7 +41,7 @@ export default function ChallengeShare() {
   return <BackScreen title="SHARE YOUR PRACTICE"><Title>A moment worth keeping.</Title>
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}><Chip title="Story · 9:16" selected={story} onPress={() => { if (!busy && !story) { setReady(false); setStory(true); } }} /><Chip title="Square · 1:1" selected={!story} onPress={() => { if (!busy && story) { setReady(false); setStory(false); } }} /></View>
     <View ref={card} collapsable={false} testID="challenge-share-card" style={{ width: w, aspectRatio: story ? 9 / 16 : 1, alignSelf: "center", backgroundColor: "#18102c" }}>
-      <Image key={String(story)} source={story ? require("../assets/sharing/result-story-background.png") : require("../assets/sharing/result-square-background.png")} onLoad={() => setReady(true)} onError={() => { setReady(false); setError("Could not load sharing artwork."); }} style={{ position: "absolute", width: "100%", height: "100%" }} />
+      <Image testID="challenge-share-background" key={String(story)} source={story ? require("../assets/sharing/result-story-background.png") : require("../assets/sharing/result-square-background.png")} onLoad={() => setReady(true)} onError={() => { setReady(false); setError("Could not load sharing artwork."); }} style={{ position: "absolute", width: "100%", height: "100%" }} />
       <View style={{ position: "absolute", top: (story ? 1090 : 660) * w / 1080, left: 80 * w / 1080, right: 80 * w / 1080, gap: 10 * w / 1080 }}>
         <Copy allowFontScaling={false} numberOfLines={2} adjustsFontSizeToFit style={{ color: "#f9f7ff", fontSize: (story ? 46 : 35) * w / 1080, lineHeight: (story ? 56 : 43) * w / 1080, fontWeight: "700" }}>{data.title}</Copy>
         <Copy allowFontScaling={false} numberOfLines={1} adjustsFontSizeToFit style={{ color: "#ffffff", fontSize: 60 * w / 1080, lineHeight: 74 * w / 1080, fontWeight: "800" }}>{data.metric}</Copy>

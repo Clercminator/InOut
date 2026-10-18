@@ -17,7 +17,7 @@ export default function FitnessResultScreen() {
     {fresh === "1" && !editing && <Celebration variant="saved" title="Result saved" message="A personal practice. A moment worth keeping." />}
     <Label>{best ? "PERSONAL BEST" : "ATTEMPT SAVED"}</Label><Title>{message("{0} {1}", [result.value, t(result.unit)])}</Title>
     <Copy>Self-reported fitness record</Copy><Copy>Manually entered or timed by you. This is not verified athletic performance.</Copy>
-    <Copy translate={false}>{result.localDay} · {new Date(result.finishedAt).toLocaleTimeString(locale())}</Copy>
+    <Copy translate={false}>{result.localDay} · {result.localTime ?? new Date(result.finishedAt).toLocaleTimeString(locale())}</Copy>
     {!!result.note && <Card><Label>Private note (optional)</Label><Copy translate={false}>{result.note}</Copy></Card>}
     {editing ? <Card><Label>Completed repetitions</Label><TextInput accessibilityLabel="Completed repetitions" keyboardType="number-pad" maxLength={5} value={value} onChangeText={setValue} style={{ padding: 14 }} />
       <TextInput accessibilityLabel="Private note (optional)" multiline maxLength={500} value={note} onChangeText={setNote} style={{ padding: 14 }} />

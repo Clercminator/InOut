@@ -61,3 +61,14 @@ test("daily award and session roll back together on failed write, then retry onc
   assert.equal(f.events.filter(e=>e==="daily_reset_awarded").length,1);
  } finally { f.db.close(); }
 });
+
+test("a reset crossing midnight retains its completion day when reflection is saved after restart",()=>{
+ const f=fixture();try{
+  f.advance(12*3600000-30000); f.c.startDailyReset();f.advance(60000);f.c.tick();
+  assert.equal(f.c.current?.completionLocalDay,"2026-09-02");assert.equal(f.store.dailyReset().credits.length,0);
+  f.advance(2*86400000);const recovered=new SessionController(new LocalStore(f.adapter),f.now,()=>"restart");
+  recovered.answer(null,null);assert.equal(f.store.dailyReset().credits[0].localDay,"2026-09-02");
+  assert.equal(dailyResetStats(f.store.dailyReset(),"2026-09-04").current,0);
+  assert.deepEqual(creditDailyReset(emptyDailyReset(),{...recovered.current!,source:"manual"}),emptyDailyReset());
+ }finally{f.db.close();}
+});

@@ -1,7 +1,12 @@
+import type { PersonalChallengeDefinition } from "./personal-challenges";
 import { protocols } from "@inout/protocols";
 import type { SessionRecord } from "@inout/shared-types";
 import { dayKey } from "./progress";
 
+export const dailyResetChallenge: PersonalChallengeDefinition = {
+  id: "daily-reset", type: "breathing", unit: "seconds", achievement: "daily-completion",
+  title: "The 60-Second Reset", instructions: "One gentle minute. Breathe comfortably, with no holds.",
+};
 export const dailyResetProtocol = () => ({ ...protocols.find(p => p.id === "coherent")!, defaultCycles: 6, defaultDuration: 60000 });
 export interface DailyCredit { sessionId: string; localDay: string; finishedAt: number }
 export interface DailyResetState { version: 1; credits: DailyCredit[] }

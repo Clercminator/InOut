@@ -1,3 +1,4 @@
+import { AnalyticsService, type ProductEvent } from "../apps/mobile/src/analytics";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { DatabaseSync } from "node:sqlite";
@@ -21,8 +22,9 @@ function setup() {
   };
   const store = new LocalStore(adapter);
   const entitlements = new EntitlementService(false, () => now, { read: () => store.readEntitlementCache(), write: g => store.writeEntitlementCache(g) });
-  const controller = () => new SessionController(store, () => now, () => `id-${++serial}`, entitlements);
-  return { db, store, entitlements, controller, now: () => now, advance: (ms: number) => { now += ms; }, fail: (value: boolean) => { fail = value; },
+  const events: ProductEvent[] = [];
+  const controller = () => new SessionController(store, () => now, () => `id-${++serial}`, entitlements, new AnalyticsService({ record: event => events.push(event) }));
+  return { db, store, entitlements, controller, events, now: () => now, advance: (ms: number) => { now += ms; }, fail: (value: boolean) => { fail = value; },
     grant: () => entitlements.acceptStoreGrant({ source: "store", status: "active", active: true, verifiedAt: now, expiresAt: now + 30 * 86400000, graceUntil: null }),
     complete: (c: SessionController, tag: CoachSession, repeat = false) => {
       const choice = c.coachSession(tag, repeat); assert.ok(choice);
@@ -222,4 +224,15 @@ test("program discovery considers all selected goals with stable ties and bounde
  const entitlements = new EntitlementService();
  assert.equal(entitlements.programAccess("find-your-rhythm").requiresPro, false);
  assert.equal(entitlements.programAccess("focus-on-demand").requiresPro, true);
+});
+
+test("program completion is emitted for the final credited session only, never for optional repeats",()=>{
+ const env=setup();try{
+  const c=env.controller();c.enrollProgram("find-your-rhythm");const enrollmentId=c.coachState().activeEnrollmentId!;
+  for(let step=0;step<7;step++){env.complete(c,{enrollmentId,step});env.advance(86400000);}
+  assert.equal(env.events.filter(e=>e==="guided_program_completed").length,1);
+  env.complete(c,{enrollmentId,step:6},true);c.retry();
+  assert.equal(env.events.filter(e=>e==="guided_program_completed").length,1);
+  assert.equal(env.events.filter(e=>e==="guided_program_returned").length,7);
+ }finally{env.db.close();}
 });

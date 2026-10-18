@@ -1,4 +1,5 @@
 const translations: Record<string, [string, string]> = {
+  "Explore IN/OUT and installation options": ["Explora IN/OUT y las opciones de instalación", "Explore o IN/OUT e as opções de instalação"],
   "Breathing safety": ["Seguridad al respirar", "Segurança ao respirar"],
   "A moment to breathe.": ["Un momento para respirar.", "Um momento para respirar."],
   "Shared breathing practice": ["Práctica de respiración compartida", "Prática de respiração compartilhada"],

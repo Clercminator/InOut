@@ -86,3 +86,15 @@ test("comfort hold never earns a duration personal best",()=>{
 test("fitness titles and instructions are localized in all three languages",()=>{
  for(const language of ["en","es","pt"] as const){setLanguage(language);for(const d of fitnessChallenges){assert.ok(t(d.title));assert.ok(t(d.instructions));if(language!=="en"){assert.notEqual(t(d.title),d.title);assert.notEqual(t(d.instructions),d.instructions);}}}setLanguage("en");
 });
+
+test("wall-clock jumps cannot inflate elapsed exercise and storage retries stay paused",()=>{
+ const f=fixture();try{
+  let monotonic=0;
+  const c=new SessionController(f.store,f.now,()=>"clock-test",undefined,undefined,()=>monotonic);
+  c.beginFitness("plank",true);monotonic=3000;f.advance(86400000);c.checkpointFitness();assert.equal(c.fitnessElapsed(),3000);
+  const run=f.adapter.runSync;let fail=true;
+  f.adapter.runSync=(sql,...args)=>{if(fail&&sql.includes("fitness-v1"))throw Error("disk full");return run(sql,...args);};
+  monotonic=6000;assert.equal(c.checkpointFitness(),false);monotonic=90000;fail=false;c.retry();
+  assert.equal(c.pendingFitness()?.status,"paused");assert.equal(c.fitnessElapsed(),6000);
+ }finally{f.db.close();}
+});

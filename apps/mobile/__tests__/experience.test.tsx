@@ -471,6 +471,8 @@ test("challenge completion shows its reward and shares only the generated card",
   expect(screen.getByTestId("challenge-share-card").props.style.aspectRatio).toBe(9 / 16);
   await fireEvent.press(screen.getByRole("button", { name: "Square · 1:1" }));
   expect(screen.getByTestId("challenge-share-card").props.style.aspectRatio).toBe(1);
+  expect(screen.getByRole("button", { name: "Share achievement" })).toBeDisabled();
+  await fireEvent(screen.getByTestId("challenge-share-background"), "load");
   await fireEvent.press(screen.getByRole("button", { name: "Share achievement" }));
   await waitFor(() => expect(Platform.OS === "ios" ? nativeShare : mockShare).toHaveBeenCalled());
   expect(mockCapture).toHaveBeenLastCalledWith(expect.anything(), expect.objectContaining({ width: 1080, height: 1080, format: "png" }));
@@ -545,6 +547,7 @@ test("State Shift share cards exclude ratings unless explicitly selected", async
   await fireEvent.press(screen.getByRole("button", { name: "Include my self-reported ratings on this card" }));
   expect(screen.getByText("4 → 7")).toBeTruthy();
   await fireEvent.press(screen.getByRole("button", { name: "Square · 1:1" }));
+  await fireEvent(screen.getByTestId("challenge-share-background"), "load");
   await fireEvent.press(screen.getByRole("button", { name: "Share achievement" }));
   await waitFor(() => expect(mockCapture).toHaveBeenLastCalledWith(expect.anything(), expect.objectContaining({ width: 1080, height: 1080 })));
 });

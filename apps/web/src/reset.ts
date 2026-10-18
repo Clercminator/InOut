@@ -29,7 +29,7 @@ try {
   element("length").textContent = `${format(totalDuration(plan))} · ${t("Shared breathing practice")}`;
   const native = element<HTMLAnchorElement>("native");
   native.href = `inout://shared?id=${id}`;
-  element("next").hidden = false;
+  element("next").hidden = true;
   native.addEventListener("click", () => analytics.track("shared_web_app_open_clicked"));
   for (const [label, href, host] of [["App Store", __IOS_STORE_URL__ || links.iosStoreUrl, "apps.apple.com"], ["Google Play", __ANDROID_STORE_URL__ || links.androidStoreUrl, "play.google.com"]]) {
     if (!href) continue;

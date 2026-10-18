@@ -1,3 +1,6 @@
+import { DailyResetCard } from "../src/daily-reset-card";
+import { ThemeProvider } from "../src/theme";
+import { t } from "../src/i18n";
 import React from "react";
 import { act, fireEvent, render, screen } from "@testing-library/react-native";
 import FitnessChallenge from "../app/fitness-challenge";
@@ -8,13 +11,13 @@ import { emptyFitness, validateFitness, type FitnessStore } from "../src/persona
 import { setLanguage } from "../src/i18n";
 let mockController: SessionController;
 let mockParams: { id: string; fresh?: string };
-const mockReplace = jest.fn();
-jest.mock("expo-router", () => ({ router: { push: jest.fn(), replace: (...args: unknown[]) => mockReplace(...args), canGoBack: () => false }, useLocalSearchParams: () => mockParams, useFocusEffect: (effect: () => void) => require("react").useEffect(effect, [effect]) }));
+const mockReplace = jest.fn(), mockPush = jest.fn();
+jest.mock("expo-router", () => ({ router: { push: (...args: unknown[]) => mockPush(...args), replace: (...args: unknown[]) => mockReplace(...args), canGoBack: () => false }, useLocalSearchParams: () => mockParams, useFocusEffect: (effect: () => void) => require("react").useEffect(effect, [effect]) }));
 jest.mock("../src/provider", () => ({ useSession: () => { require("react").useSyncExternalStore(mockController.subscribe, mockController.getRevision); return mockController; }, SaveError: () => null }));
 jest.mock("../src/celebration", () => ({ Celebration: () => null }));
 let now: number;
 beforeEach(() => {
- jest.useFakeTimers(); now = 100000; mockParams = { id: "plank" }; mockReplace.mockClear();
+ jest.useFakeTimers(); now = 100000; mockParams = { id: "plank" }; mockReplace.mockClear(); mockPush.mockClear();
  let state = emptyFitness();
  const store = { preferences: () => ({ ...defaultPreferences, language: "en", languageSource: "manual" }), pending: () => null, fitness: () => state, updateFitness: (change: (s: FitnessStore) => FitnessStore) => { const next = change(state); validateFitness(next); state = next; } } as unknown as LocalStore;
  mockController = new SessionController(store, () => now, () => "result-1", undefined, undefined, () => now); setLanguage("en");
@@ -49,4 +52,17 @@ test("leaving the screen pauses an unfinished attempt", async () => {
  const view = await render(<FitnessChallenge />);
  await fireEvent.press(screen.getByText("I am ready to exercise safely and stop whenever needed")); await fireEvent.press(screen.getByText("Start stopwatch"));
  now += 1200; await view.unmount(); expect(mockController.pendingFitness()?.status).toBe("paused"); expect(mockController.pendingFitness()?.elapsedMs).toBe(1200);
+});
+
+for (const language of ["en", "es", "pt"] as const) for (const theme of ["light", "dark"] as const) test(`Daily Reset and fitness controls work in ${language}/${theme}`, async () => {
+ setLanguage(language);
+ const view = await render(<ThemeProvider preference={theme}><DailyResetCard /></ThemeProvider>);
+ await fireEvent.press(screen.getByRole("button", { name: t("Start my 60-second reset") }));
+ expect(mockController.pendingSafety?.protocol?.id).toBe("coherent"); expect(mockController.current).toBeNull();
+ expect(mockPush).toHaveBeenCalledWith("/practice-safety");
+ await view.unmount();
+ const fitness = await render(<ThemeProvider preference={theme}><FitnessChallenge /></ThemeProvider>);
+ expect(screen.getByRole("button", { name: t("Start stopwatch") })).toBeDisabled();
+ expect(screen.getByText(t("Self-reported fitness record"))).toBeTruthy();
+ await fitness.unmount();
 });

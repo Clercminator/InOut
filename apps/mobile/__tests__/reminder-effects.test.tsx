@@ -65,3 +65,16 @@ test("check-in notification actions route to manual logging or safely dismiss", 
   expect(mockPush).not.toHaveBeenCalled();
   await view.unmount();
 });
+
+test("Daily Reset notifications route to the challenge without interrupting fitness", async () => {
+  const controller = new SessionController({ preferences: () => ({ ...defaultPreferences, onboardingComplete: true }), pending: () => null } as unknown as LocalStore, () => 1000, () => "session");
+  const service = new ReminderService({ read: () => [], write: () => {} }, { permission: async () => true, list: async () => [], cancel: async () => {}, schedule: async () => {} }, () => false, () => []);
+  const view = await render(<SessionContext.Provider value={controller}><ReminderContext.Provider value={service}><ReminderEffects /></ReminderContext.Provider></SessionContext.Provider>);
+  await act(async () => { mockListener(response("reset", 20, "daily-reset")); });
+  expect(mockPush).toHaveBeenLastCalledWith("/daily-reset"); expect(controller.current).toBeNull();
+  jest.spyOn(controller, "pendingFitness").mockReturnValue({ id: "fitness", challengeId: "plank", status: "running", startedAt: 1, elapsedMs: 1000 });
+  expect((await mockHandler!.handleNotification()).shouldShowBanner).toBe(false);
+  await act(async () => { mockListener(response("reset", 21, "daily-reset")); });
+  expect(mockPush).toHaveBeenLastCalledWith({ pathname: "/fitness-challenge", params: { id: "plank" } });
+  await view.unmount();
+});
