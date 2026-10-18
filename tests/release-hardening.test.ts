@@ -27,8 +27,7 @@ test("release fails closed for test providers, mocks, demo ads and open gates; a
   assert.equal(eas.build["store-test"].android.buildArtifactPaths[0], "android/app/build/outputs/mapping/release/**");
   assert.deepEqual(eas.build["store-test"].android.buildArtifactPaths, [
     "android/app/build/outputs/mapping/release/**",
-    "android/app/build/outputs/native-debug-symbols/release/**",
-    "android/app/build/intermediates/native_symbol_tables/release/**",
+    "android/app/build/{outputs/native-debug-symbols,intermediates/native_symbol_tables}/release/**",
     "android/app/build/generated/sourcemaps/react/release/**",
   ]);
   assert.deepEqual(eas.build.production.android.buildArtifactPaths, eas.build["store-test"].android.buildArtifactPaths);

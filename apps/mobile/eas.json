@@ -31,8 +31,7 @@
         "buildType": "app-bundle",
         "buildArtifactPaths": [
           "android/app/build/outputs/mapping/release/**",
-          "android/app/build/outputs/native-debug-symbols/release/**",
-          "android/app/build/intermediates/native_symbol_tables/release/**",
+          "android/app/build/{outputs/native-debug-symbols,intermediates/native_symbol_tables}/release/**",
           "android/app/build/generated/sourcemaps/react/release/**"
         ]
       },
@@ -61,8 +60,7 @@
         "credentialsSource": "remote",
         "buildArtifactPaths": [
           "android/app/build/outputs/mapping/release/**",
-          "android/app/build/outputs/native-debug-symbols/release/**",
-          "android/app/build/intermediates/native_symbol_tables/release/**",
+          "android/app/build/{outputs/native-debug-symbols,intermediates/native_symbol_tables}/release/**",
           "android/app/build/generated/sourcemaps/react/release/**"
         ]
       },
