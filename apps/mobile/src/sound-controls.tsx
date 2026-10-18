@@ -6,7 +6,7 @@ import { useLanguage } from "./use-language";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppState, Platform, View } from "react-native";
 import { useFocusEffect } from "expo-router";
-import { createAudioPreview } from "./preview-audio";
+import { createAudioPreview, type PreviewPlaybackState } from "./preview-audio";
 import { useSession } from "./provider";
 import { experienceFor } from "./experience";
 import { breathPreviews, chimes } from "./audio-library";
@@ -32,7 +32,7 @@ export function SoundControls({ compact = false }: { compact?: boolean }) {
   };
   const toggle = (title: string, value: boolean, onValueChange: (value: boolean) => void) => <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}><Copy style={{ flex: 1 }}>{title}</Copy><Switch accessibilityLabel={title} value={value} onValueChange={onValueChange} /></View>;
   const volume = (title: string, key: "voiceVolume" | "natureVolume" | "musicVolume") => <><Label>{title}</Label><View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>{[0, 0.25, 0.5, 0.7, 1].map(value => <Chip key={value} title={`${Math.round(value * 100)}%`} selected={settings[key] === value} onPress={() => update({ [key]: value })} />)}</View></>;
-  const [playing, setPlaying] = useState(false);
+  const [previewState, setPreviewState] = useState<PreviewPlaybackState | "vibration" | null>(null);
   const [error, setError] = useState("");
   const audioPreview = useRef<ReturnType<typeof createAudioPreview> | null>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -43,7 +43,7 @@ export function SoundControls({ compact = false }: { compact?: boolean }) {
     stopHaptics.current?.(); stopHaptics.current = null;
     timers.current.forEach(clearTimeout); timers.current = [];
     audioPreview.current?.stop(); audioPreview.current = null;
-    setPlaying(false);
+    setPreviewState(null);
   }, []);
   useFocusEffect(useCallback(() => stop, [stop]));
   useEffect(() => { const sub = AppState.addEventListener("change", state => { if (state !== "active") stop(); }); return () => sub.remove(); }, [stop]);
@@ -53,10 +53,10 @@ export function SoundControls({ compact = false }: { compact?: boolean }) {
     stop(); setError("");
     if (controller.current?.stage === "active") return;
     const token = generation.current;
-    setPlaying(true);
+    setPreviewState("loading");
     const preview = createAudioPreview(() => {
       if (token === generation.current) { stop(); setError("Sound preview unavailable. Check media volume and silent mode, then try again."); }
-    }, () => { if (token === generation.current) stop(); });
+    }, () => { if (token === generation.current) stop(); }, state => { if (token === generation.current) setPreviewState(state); });
     audioPreview.current = preview;
     const track = selectedMusicTrack(settings.musicId);
     const clips: { source: number; volume: number; at: number }[] = [];
@@ -67,7 +67,8 @@ export function SoundControls({ compact = false }: { compact?: boolean }) {
       const source = bank.cues[index];
       if (source !== undefined) clips.push({ source, volume: settings.voiceVolume, at: i * 3000 });
     });
-    if (!clips.length) { stop(); return; }
+    if (!clips.length) { stop(); setError("This sample is unavailable."); return; }
+    if (clips.every(clip => clip.volume === 0)) { stop(); setError("Raise the preview volume to hear this sample."); return; }
     await preview.start(clips, kind === "chime" ? 2200 : kind === "music" ? 15000 : 6200);
   };
   const previewTouch = () => {
@@ -78,7 +79,7 @@ export function SoundControls({ compact = false }: { compact?: boolean }) {
     const started = performance.now();
     let hapticInFlight = false;
     const phases = protocols.find(p => p.id === "box")!.phases.map((phase, i) => ({ ...phase, durationMs: i % 2 ? 1000 : 2000 }));
-    setPlaying(true);
+    setPreviewState("vibration");
     stopHaptics.current = startHapticPacer(() => {
       let elapsed = performance.now() - started;
       if (elapsed >= 6000 || AppState.currentState !== "active" || controller.current?.stage === "active") return null;
@@ -103,14 +104,14 @@ export function SoundControls({ compact = false }: { compact?: boolean }) {
       {toggle("Breathing guidance", settings.breathingVoice, breathingVoice => update({ breathingVoice }))}
       {toggle("Hold and rest guidance", settings.restingVoice, restingVoice => update({ restingVoice }))}
       {volume("VOICE VOLUME", "voiceVolume")}
-      <Button title="Preview voice" secondary disabled={playing || controller.current?.stage === "active"} onPress={() => void preview("voice")} />
+      <Button title="Preview voice" secondary disabled={controller.current?.stage === "active"} onPress={() => void preview("voice")} />
     </>}
     <Label>NATURAL BREATHING SOUNDS</Label>
     {toggle("Natural breathing sounds", settings.nature, nature => update({ nature }))}
     {settings.nature && <>
       <View style={s.row}>{(["air", "ocean", "warm"] as const).map(breathSound => <Chip key={breathSound} title={breathSound === "air" ? "Air" : breathSound === "ocean" ? "Ocean" : "Warm"} selected={e.breathSound === breathSound} onPress={() => { stop(); controller.updateExperience({ breathSound }); }} />)}</View>
       {volume("NATURE VOLUME", "natureVolume")}
-      <Button title="Preview breath sounds · 6 sec" secondary disabled={playing || controller.current?.stage === "active"} onPress={() => void preview("breath")} />
+      <Button title="Preview breath sounds · 6 sec" secondary disabled={controller.current?.stage === "active"} onPress={() => void preview("breath")} />
       <Copy style={s.small}>Inhale, a quiet hold, exhale, then rest. Preview uses a short sample rhythm. During practice, sound follows your protocol.</Copy>
     </>}
     {musicTracks.length > 0 && <>
@@ -119,7 +120,7 @@ export function SoundControls({ compact = false }: { compact?: boolean }) {
       {settings.music && <>
         <View style={{ gap: 8 }}>{musicTracks.map(track => <Chip key={track.id} title={track.title} selected={(settings.musicId ?? musicTracks[0].id) === track.id} onPress={() => update({ musicId: track.id })} />)}</View>
         {volume("MUSIC VOLUME", "musicVolume")}
-        <Button title="Preview music" secondary disabled={playing || controller.current?.stage === "active"} onPress={() => void preview("music")} />
+        <Button title="Preview music" secondary disabled={controller.current?.stage === "active"} onPress={() => void preview("music")} />
       </>}
     </>}
     <Label>VIBRATION</Label>
@@ -130,18 +131,19 @@ export function SoundControls({ compact = false }: { compact?: boolean }) {
         onPress={() => { stop(); controller.setPreferences({ ...controller.preferences, haptics: true, hapticMode }); }} />)}
     </View>
     <Copy style={s.small}>Gentle transitions: two light taps in, one soft tap out. Rhythm: gentle taps throughout each breath. Both stay quiet during holds.</Copy>
-    {controller.preferences.haptics && <Button title="Preview vibration · 6 sec" secondary disabled={playing || controller.current?.stage === "active"} onPress={previewTouch} />}
+    {controller.preferences.haptics && <Button title="Preview vibration · 6 sec" secondary disabled={controller.current?.stage === "active"} onPress={previewTouch} />}
     {!compact && <>
       <Label>COMPLETION CHIME</Label>
       <View style={s.row}>{(["bell", "bloom", "off"] as const).map(chime => <Chip key={chime} title={chime} selected={e.chime === chime} onPress={() => { stop(); controller.updateExperience({ chime }); }} />)}</View>
       <Label>CELEBRATION VOLUME</Label>
       <View style={s.row}>{[0.2, 0.45, 0.7, 1].map(celebrationVolume => <Chip key={celebrationVolume} title={`${Math.round(celebrationVolume * 100)}%`} selected={e.celebrationVolume === celebrationVolume}
         onPress={() => { stop(); controller.updateExperience({ celebrationVolume }); }} />)}</View>
-      {e.chime !== "off" && controller.preferences.audio !== "silent" && <Button title="Preview chime" secondary disabled={playing || controller.current?.stage === "active"} onPress={() => void preview("chime")} />}
+      {e.chime !== "off" && controller.preferences.audio !== "silent" && <Button title="Preview chime" secondary disabled={controller.current?.stage === "active"} onPress={() => void preview("chime")} />}
       <Copy style={s.small}>Silent mode mutes all sounds. Quiet celebrations mute reward sounds and touch. Previews play only when requested. Audio respects your phone volume and silent switch.</Copy>
     </>}
     {controller.preferences.haptics && <Copy style={s.small}>No vibration? Your phone may suppress touch feedback in system or battery settings. Some hardware does not support these effects.</Copy>}
-    {playing && <Button title="Stop preview" secondary onPress={stop} />}
+    {previewState && <Copy accessibilityLiveRegion="polite">{previewState === "loading" ? "Loading sample…" : previewState === "playing" ? "Playing sample" : previewState === "vibration" ? "Previewing vibration" : "Sample ready"}</Copy>}
+    {previewState && <Button title="Stop preview" secondary onPress={stop} />}
     {!!error && <Copy accessibilityRole="alert">{error}</Copy>}
   </View>;
 }

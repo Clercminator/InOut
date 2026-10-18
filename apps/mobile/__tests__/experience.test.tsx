@@ -653,3 +653,18 @@ test("measurement sharing consent belongs only to the explicitly selected result
   await view.rerender(wrap(<ResultShare />));
   expect(screen.queryByText(/8 → 4/)).toBeNull();
 });
+
+test("audio previews show loading until native playback, and music replaces voice without overlapping", async () => {
+  mockController.setPreferences({ ...mockController.preferences, audio: "voice", guidance: { voice: true, music: true } });
+  await render(wrap(<SoundControls compact />));
+  await fireEvent.press(screen.getByRole("button", { name: "Preview voice" }));
+  expect(screen.getByText("Loading sample…")).toBeTruthy();
+  expect(screen.queryByText("Playing sample")).toBeNull();
+  const voices = [...mockPlayers];
+  await act(async () => voices[0].addListener.mock.calls[0][1]({ playing: true }));
+  expect(screen.getByText("Playing sample")).toBeTruthy();
+  await fireEvent.press(screen.getByRole("button", { name: "Preview music" }));
+  expect(voices.every(player => player.remove.mock.calls.length === 1)).toBe(true);
+  expect(screen.getByText("Loading sample…")).toBeTruthy();
+  expect(mockPlayers).toHaveLength(3);
+});

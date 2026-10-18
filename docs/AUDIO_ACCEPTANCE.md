@@ -8,6 +8,12 @@ Final workspace check: **77 bundled-directory files** (64 MP3, 13 WAV) and **21 
 
 Durations, sample rates, channels, and average MP3 bitrates below were read from MPEG audio frames or WAV headers; file sizes are exact bytes. Audio content, accent, voice gender, edits, and loop audibility have not been established by listening. `EN`/`ES`, `FEMALE`/`MALE`, and cue names in the source tree are treated as the owner's labels, not independent acoustic verification.
 
+## Recovery preview verification
+
+Previews now display Loading before native playback and Playing only after `playbackStatusUpdate.playing`. A loaded player that never starts fails after two seconds; load failures time out after five seconds. Buffering, completion and interruption update the status. Selecting another preview stops and releases the previous players, including across screen instances. Muted preview volume produces explicit feedback. Existing session loops and phase-driven voice playback remain unchanged.
+
+Automated coverage exercises native status sequences, stalled playback, replacement, volume, cleanup and session loop boundaries. This does not prove audible output. On the development build, audition every available voice and track through speaker and headphones, switch samples while loading/playing, stop and navigate away, then verify voice-only, music-only, combined and silent sessions; pause/resume, a full track loop, headphone interruption and background/foreground. Check persisted selections after force-close. Physical listening acceptance remains pending.
+
 ## Integration and supported choices
 
 | Kind | Available app choices | Integrated behavior |
