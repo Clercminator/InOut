@@ -30,6 +30,7 @@ export default function ProtocolDetail() {
       <View style={{ gap: 8 }}>
       <Label>{protocol.goalTags.join(" · ").toUpperCase()}</Label>
       <Title>{protocol.name}</Title>
+      {protocol.description && <Copy>{protocol.description}</Copy>}
       <Copy>{protocol.phases.map((phase) => phase.label).join(" · ")}</Copy>
       </View>
       {isCyclic(protocol) ? <><CyclicOverview /><Card><CyclicSafety /></Card></> : <Card>
@@ -47,7 +48,7 @@ export default function ProtocolDetail() {
           Follow each phase gently and stop if you feel dizzy, faint or unwell.
         </Copy>
         <Label>
-          {protocol.defaultCycles} CYCLES · {Math.round(protocol.defaultDuration / 1000)} SECONDS
+          {protocol.defaultCycles} CYCLES · {Math.round(protocol.defaultDuration / 1000)} SECONDS · {protocol.phases.filter(phase => phase.durationMs > 0).reduce((sum, phase) => sum + phase.durationMs, 0) / 1000}s / cycle · {Number((60 / (protocol.phases.filter(phase => phase.durationMs > 0).reduce((sum, phase) => sum + phase.durationMs, 0) / 1000)).toFixed(1))} breaths/min
         </Label>
       </Card>}
       {!isCyclic(protocol) && <Card>

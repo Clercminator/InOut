@@ -24,7 +24,7 @@ import { RoutineEditor } from "../src/routine-editor";
 import { SessionController } from "../src/session-controller";
 import type { LocalStore } from "../src/storage";
 import type { SessionRecord, SavedRoutine } from "@inout/shared-types";
-import { protocols } from "@inout/protocols";
+import { catalogProtocols, protocols } from "@inout/protocols";
 
 let mockController: SessionController;
 const mockReplace = jest.fn();
@@ -407,11 +407,56 @@ test("library filters saved routines and goals without losing navigation", async
   await fireEvent.press(screen.getByRole("button", { name: "Saved" }));
   expect(screen.getByText("Coherent Breathing")).toBeTruthy();
   expect(screen.queryByText("Box Breathing")).toBeNull();
-  await fireEvent.press(screen.getByRole("button", { name: "Sleep" }));
+  await fireEvent.press(screen.getByRole("button", { name: "Calm & Unwind" }));
   expect(screen.getByText("4-7-8 Breathing")).toBeTruthy();
   expect(screen.queryByText("Coherent Breathing")).toBeNull();
   await fireEvent.press(screen.getByRole("button", { name: /4-7-8 Breathing, Prepare for sleep/ }));
   expect(mockPush).toHaveBeenCalledWith({ pathname: "/protocol", params: { id: "4-7-8" } });
+});
+
+test("actual 14 preset catalog is visible, searchable and launches working sessions", async () => {
+  const required = [
+    { id: "coherent", name: "Coherent Breathing", phases: [5, 5] },
+    { id: "box", name: "Box Breathing", phases: [4, 4, 4, 4] },
+    { id: "meditation-breathing", name: "Meditation Breathing", phases: [6, 2, 6, 2] },
+    { id: "traditional-yogic", name: "Traditional Yogic", phases: [4, 16, 8] },
+    { id: "equal", name: "Equal Breathing", phases: [4, 4] },
+    { id: "box-2", name: "Triangle Breathing", phases: [4, 4, 4] },
+    { id: "4-7-8", name: "4-7-8 Breathing", phases: [4, 7, 8] },
+    { id: "three-stage-breath", name: "Three-Stage Breath", phases: [3, 1, 5, 1] },
+    { id: "runner-rhythm", name: "Runner's Rhythm", phases: [3, 3] },
+    { id: "high-intensity-cyclic", name: "Stimulating Breath", phases: [2, 2] },
+    { id: "athletic", name: "Athletic Preparation", phases: [3, 3, 6, 3] },
+    { id: "endurance", name: "Endurance Pattern", phases: [4, 8, 4] },
+    { id: "swimmer", name: "Swimmer's Rhythm", phases: [4, 8, 6, 2] },
+    { id: "measured", name: "Measured Breathing", phases: [4, 1, 7] },
+  ] as const;
+
+  const visible = catalogProtocols.filter((protocol) => protocol.availability === "enabled");
+  expect(visible).toHaveLength(14);
+
+  const rendered = await render(<ProtocolLibrary />);
+  for (const preset of required) {
+    expect(screen.getByText(preset.name)).toBeTruthy();
+    const protocol = visible.find((item) => item.id === preset.id)!;
+    expect(protocol).toBeTruthy();
+    const cycle = protocol.phases.filter((phase) => phase.durationMs > 0).map((phase) => phase.durationMs / 1000);
+    expect(cycle).toEqual(preset.phases);
+    const expectedDuration = preset.id === "high-intensity-cyclic" ? 648000 : cycle.reduce((sum, value) => sum + value, 0) * protocol.defaultCycles * 1000;
+    expect(protocol.defaultDuration).toBe(expectedDuration);
+    mockController.start(null, protocol.defaultCycles, protocol, preset.id === "high-intensity-cyclic");
+    expect(mockController.current?.protocolId).toBe(protocol.id);
+    mockController.end("ended");
+  }
+
+  await fireEvent.changeText(screen.getByPlaceholderText("Search protocols"), "yogic");
+  expect(screen.getByText("Traditional Yogic")).toBeTruthy();
+  expect(screen.queryByText("Coherent Breathing")).toBeNull();
+  await fireEvent.changeText(screen.getByPlaceholderText("Search protocols"), "");
+  mockController.toggleFavorite("box");
+  await fireEvent.press(screen.getByRole("button", { name: "Saved" }));
+  expect(screen.getByText("Box Breathing")).toBeTruthy();
+  rendered.unmount();
 });
 
 test("clearing history removes a completed current record", () => {

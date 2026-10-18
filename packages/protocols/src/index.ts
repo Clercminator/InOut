@@ -183,6 +183,50 @@ export const protocols: Protocol[] = [
     6,
     "ripple",
   ),
+  protocol(
+    "meditation-breathing",
+    "Meditation Breathing",
+    ["Calm", "Sleep"],
+    [phase("inhale", 6), phase("hold", 2), phase("exhale", 6), phase("hold", 2)],
+    8,
+    "wave",
+    "general",
+    "A measured calm rhythm that settles the system without forcing.",
+    ["meditation breathing", "meditation", "calm breath", "6 by 2", "stillness"],
+  ),
+  protocol(
+    "traditional-yogic",
+    "Traditional Yogic",
+    ["Calm", "Focus"],
+    [phase("inhale", 4), phase("hold", 16), phase("exhale", 8)],
+    4,
+    "wave",
+    "retention",
+    "A classic yogic cadence that emphasizes measured retention and release.",
+    ["traditional yogic", "yogic breathing", "pranayama", "4 by 16 by 8", "traditional breath"],
+  ),
+  protocol(
+    "three-stage-breath",
+    "Three-Stage Breath",
+    ["Recover", "Focus"],
+    [phase("inhale", 3), phase("hold", 1), phase("exhale", 5), phase("hold", 1)],
+    6,
+    "wave",
+    "general",
+    "A gradual, steady pattern to settle attention and ease tension.",
+    ["three-stage breath", "three stage breath", "3 by 1 by 5 by 1", "layered breath", "stage rhythm"],
+  ),
+  protocol(
+    "runner-rhythm",
+    "Runner's Rhythm",
+    ["Perform", "Recover"],
+    [phase("inhale", 3), phase("exhale", 3)],
+    12,
+    "wave",
+    "general",
+    "A light, repeatable cadence for preparing the body without rushing the breath.",
+    ["runner's rhythm", "runners rhythm", "running rhythm", "3 by 3", "cadence"],
+  ),
   {
     ...protocol(
       "high-intensity-cyclic",
@@ -192,6 +236,8 @@ export const protocols: Protocol[] = [
       3,
       "pulse",
       "highIntensity",
+      "A rapid, guided breath pattern for a short energy surge under safe conditions.",
+      ["stimulating breath", "power breath", "rapid breath", "energize", "surge"],
     ),
     version: 2,
     availability: "enabled",
@@ -266,6 +312,23 @@ export const protocols: Protocol[] = [
 ];
 export const cyclic = protocols.find((protocol) => protocol.id === "high-intensity-cyclic")!;
 export const altCyclic = protocols.find((protocol) => protocol.id === "high-intensity-cyclic-alt")!;
+export const catalogProtocolIds = [
+  "coherent",
+  "box",
+  "meditation-breathing",
+  "traditional-yogic",
+  "equal",
+  "box-2",
+  "4-7-8",
+  "three-stage-breath",
+  "runner-rhythm",
+  "high-intensity-cyclic",
+  "athletic",
+  "endurance",
+  "swimmer",
+  "measured",
+] as const;
+export const catalogProtocols = catalogProtocolIds.map((id) => protocols.find((protocol) => protocol.id === id)!).filter(Boolean);
 export const isCyclic = (p: Pick<Protocol, "id" | "version">) => p.id === cyclic.id && p.version === cyclic.version;
 export const isGuidedHighIntensity = (p: Pick<Protocol, "id" | "version">) =>
   (p.id === cyclic.id && p.version === cyclic.version) ||
