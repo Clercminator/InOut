@@ -44,4 +44,6 @@ test("approved specialized geometry is retained; unregistered/custom/triangle st
   const phases = protocols.find(p => p.id === "coherent")!.phases;
   expect(rendererFor("custom", phases)).toBe("pulse");
   expect(rendererFor("triangle", phases)).toBe("pulse");
+  const triangle = protocols.find(p => p.id === "box-2")!;
+  expect(rendererFor(triangle.id, triangle.phases, triangle.animationType)).toBe("pulse");
 });

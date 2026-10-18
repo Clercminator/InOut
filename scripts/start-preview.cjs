@@ -6,7 +6,7 @@ const env = { ...process.env, INOUT_PREVIEW: "1", EXPO_NO_DOTENV: "1", EXPO_PUBL
 // Only public platform SDK keys enter Metro; private build credentials stay out.
 const file = resolve(mobile, ".env.store.local");
 if (existsSync(file)) {
-  const values = require("dotenv").parse(readFileSync(file));
+  const values = require("node:util").parseEnv(readFileSync(file, "utf8"));
   for (const name of ["EXPO_PUBLIC_REVENUECAT_ANDROID_KEY", "EXPO_PUBLIC_REVENUECAT_IOS_KEY"]) if (values[name]) env[name] = values[name];
 }
 delete env.INOUT_RELEASE; delete env.INOUT_STORE_TEST; delete env.EXPO_PUBLIC_REVENUECAT_TEST_KEY;

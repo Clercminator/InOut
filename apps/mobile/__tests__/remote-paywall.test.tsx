@@ -1,5 +1,6 @@
 jest.mock("expo-audio", () => ({}));
 import React from "react";
+import { BackHandler } from "react-native";
 import { act, fireEvent, render, screen } from "@testing-library/react-native";
 import type { CustomerInfo, PurchasesOffering } from "react-native-purchases";
 import { Paywall } from "../src/paywall";
@@ -13,11 +14,13 @@ import { ThemeSurface } from "../src/theme";
 import { setLanguage } from "../src/i18n";
 
 let mockPaywall: any;
+let mockFocused = true;
+beforeEach(() => { mockFocused = true; });
 jest.mock("react-native-purchases-ui", () => ({ default: { Paywall: (props: any) => {
   mockPaywall = props;
   return require("react").createElement(require("react-native").View, { testID: "remote-paywall" });
 } } }));
-jest.mock("expo-router", () => ({ router: { canGoBack: () => false, replace: jest.fn() } }));
+jest.mock("expo-router", () => ({ useFocusEffect: (effect: () => () => void) => require("react").useEffect(() => mockFocused ? effect() : undefined, [effect, mockFocused]), router: { canGoBack: () => false, replace: jest.fn() } }));
 const offering = { identifier: "default", availablePackages: [{ identifier: "$rc_weekly" }, { identifier: "$rc_monthly" }, { identifier: "$rc_annual" }] } as PurchasesOffering;
 function info(verification = "VERIFIED", expiration = Date.now() + 86400000, willRenew = true) {
   return { requestDate: new Date().toISOString(), entitlements: { verification, all: { in_out_pro: {
@@ -138,4 +141,22 @@ test("an active subscription never invokes a second purchase", async () => {
   s.subscriptions.adapter.purchase = jest.fn();
   await s.subscriptions.purchase("monthly");
   expect(s.subscriptions.adapter.purchase).not.toHaveBeenCalled();
+});
+
+test("opening legal pages releases the paywall Back handler and leaves the free exit usable", async () => {
+  const handlers = new Set<Parameters<typeof BackHandler.addEventListener>[1]>();
+  const back = jest.spyOn(BackHandler, "addEventListener").mockImplementation((_, fn) => {
+    handlers.add(fn); return { remove: () => { handlers.delete(fn); } };
+  });
+  const s = services(), close = jest.fn();
+  const content = () => <CommercialContext.Provider value={s}><Paywall onClose={close} /></CommercialContext.Provider>;
+  const view = await render(content());
+  expect(handlers.size).toBe(1);
+  mockFocused = false; await view.rerender(content());
+  expect(handlers.size).toBe(0); expect(close).not.toHaveBeenCalled();
+  mockFocused = true; await view.rerender(content());
+  expect(handlers.size).toBe(1);
+  await fireEvent.press(screen.getByRole("button", { name: "Continue for free" }));
+  expect(close).toHaveBeenCalledTimes(1);
+  await view.unmount(); back.mockRestore();
 });

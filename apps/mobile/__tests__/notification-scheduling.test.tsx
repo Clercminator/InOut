@@ -37,3 +37,15 @@ test("native reconciliation replaces conditional prompts, localizes actions, and
   expect(mockScheduled.size).toBe(0);
   jest.useRealTimers(); setLanguage("en");
 });
+
+test("editing quiet hours also reschedules an already earned achievement", async () => {
+  jest.useFakeTimers(); jest.setSystemTime(new Date(2026, 9, 12, 10)); mockAllowed = true; mockScheduled.clear();
+  const id = "inout-achievement:earned-badge";
+  mockScheduled.set(id, { identifier: id, content: { title: "IN/OUT", data: { notificationType: "achievement", awardId: "earned-badge", scheduledFor: new Date(2026, 9, 12, 23).toISOString() } } });
+  await configureEngagementNotifications({ ...defaultPreferences, notifications: { ...notificationDefaults, achievements: true, hour: 23, quietHoursEnabled: true } }, false, undefined, true);
+  expect(mockScheduled.size).toBe(1);
+  expect(mockScheduled.get(id).trigger.date.getHours()).toBe(8);
+  expect(mockScheduled.get(id).trigger.date.getDate()).toBe(13);
+  expect(mockScheduled.get(id).content.data.awardId).toBe("earned-badge");
+  jest.useRealTimers();
+});

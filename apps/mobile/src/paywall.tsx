@@ -4,9 +4,9 @@ import { Celebration } from "./celebration";
 import { t, locale, message, countLabel } from "./i18n";
 import { useLanguage } from "./use-language";
 import { Pressable, Switch, TextInput } from "./localized-native";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { BackHandler, Linking, View } from "react-native";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { useCommercial } from "./commercial-context";
 import type { DevelopmentSubscriptionProvider } from "./subscription-providers/test";
 import { Screen, IconButton, Title, Label, Card, Copy, Button, Disclosure, ActionFooter, useStyles } from "./ui";
@@ -63,7 +63,7 @@ function NativePaywall({ entry = "profile", onClose, completionError }: PaywallP
   const [reviewCode, setReviewCode] = useState("");
   useEffect(() => services?.ads.paywallOpened(), [services]);
   const close = () => onClose?.();
-  useEffect(() => { const listener = BackHandler.addEventListener("hardwareBackPress", () => { close(); return true; }); return () => listener.remove(); }, [onClose, services]);
+  useFocusEffect(useCallback(() => { const listener = BackHandler.addEventListener("hardwareBackPress", () => { close(); return true; }); return () => listener.remove(); }, [onClose, services]));
   useEffect(() => {
     if (entry === "onboarding") services?.analytics.track("onboarding_paywall_viewed");
     services?.analytics.track("paywall_viewed");
@@ -80,7 +80,7 @@ function NativePaywall({ entry = "profile", onClose, completionError }: PaywallP
     {chosen && !state.pro && <><Copy style={{ textAlign: "center", fontWeight: "600" }}>{message("{0} / {1}", [chosen.price, t(chosen.period)])}</Copy>
     <Button title={`${demo ? "Simulate" : "Continue with"} ${chosen.title}`} disabled={subscriptions.busy} onPress={() => { void subscriptions.purchase(chosen.id); }} /></>}
     {state.pro && <Copy accessibilityRole="alert">Your Pro access is ready.</Copy>}
-    {onClose && <Button title={state.pro ? "Continue to Home" : "Continue for free"} variant="quiet" disabled={subscriptions.busy} onPress={close} />}
+    {onClose && <Button title={state.pro ? "Continue to Home" : "Continue for free"} variant="quiet" onPress={close} />}
   </ActionFooter> : undefined}>
     {completionError && <Copy accessibilityRole="alert">{completionError}</Copy>}
     {entry === "onboarding" ? <><View style={{ alignItems: "center" }}><PulseArtwork size={150} /></View><Label>WELCOME TO YOUR NEXT CHAPTER</Label><Title>Make this practice yours.</Title><Copy>A personal breathing coach. More ways to grow.</Copy></> : <><View style={{ alignItems: "center" }}><PulseArtwork size={96} /></View><Title>{state.pro ? "Your Pro access is ready." : "More room for your practice."}</Title></>}

@@ -34,7 +34,7 @@ jest.mock("react-native-google-mobile-ads", () => ({
   BannerAdSize: { ANCHORED_ADAPTIVE_BANNER: "adaptive" },
   BannerAd: (props: object) => require("react").createElement(require("react-native").View, { ...props, testID: "native-banner" }),
 }));
-jest.mock("expo-router", () => ({ router: { canGoBack: () => false, replace: jest.fn(), push: jest.fn() }, useLocalSearchParams: () => ({}), usePathname: () => mockPath }));
+jest.mock("expo-router", () => ({ useFocusEffect: (effect: () => () => void) => require("react").useEffect(effect, [effect]), router: { canGoBack: () => false, replace: jest.fn(), push: jest.fn() }, useLocalSearchParams: () => ({}), usePathname: () => mockPath }));
 jest.mock("../src/provider", () => ({ useSession: () => mockController }));
 
 function services() {

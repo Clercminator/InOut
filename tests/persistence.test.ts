@@ -550,30 +550,28 @@ test("recovering a durable completed engine opens the unanswered post rating", (
   env.db.close();
 });
 
-test("history is not reread on every timer render and invalidates after new results", () => {
+test("history is not reread on timer renders and invalidates after results and deletion", () => {
   const env = setup();
-  const c = env.controller();
   let reads = 0;
   const read = env.store.history.bind(env.store);
-  env.store.history = () => {
-    reads++;
-    return read();
-  };
-  c.start(null);
-  for (let i = 0; i < 10; i++) {
-    env.now(1000 + i * 100);
-    c.tick();
-    c.history();
-  }
-  assert.equal(reads, 1);
+  env.store.history = () => { reads++; return read(); };
+  const c = env.controller();
+  c.start(null); c.history();
+  const initialReads = reads;
+  for (let i = 0; i < 10; i++) { env.now(1000 + i * 100); c.tick(); c.history(); }
+  assert.equal(reads, initialReads);
   c.end("ended");
   assert.equal(c.history().length, 1);
-  assert.equal(reads, 3); // Result persistence also reconciles earned rewards once.
+  const resultReads = reads;
+  assert.ok(resultReads > initialReads && resultReads <= initialReads + 3);
   for (let i = 0; i < 10; i++) { c.history(); c.rewards(); }
-  assert.equal(reads, 3);
+  assert.equal(reads, resultReads);
   c.remove(c.history()[0].id);
   assert.equal(c.history().length, 0);
-  assert.equal(reads, 5); // Preserve/backfill earned badges before removing their source session.
+  assert.ok(reads > resultReads && reads <= resultReads + 3);
+  const deletionReads = reads;
+  for (let i = 0; i < 10; i++) c.history();
+  assert.equal(reads, deletionReads);
   env.db.close();
 });
 

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import * as e from "../packages/breathing-engine/src/index";
-import { planFor, sigh, protocols } from "../packages/protocols/src/index";
+import { planFor, sigh, protocols, catalogProtocols } from "../packages/protocols/src/index";
 import { makeMixProtocol } from "../apps/mobile/src/custom-protocol";
 
 test("cyclic rounds include 30 breaths, optional retention and recovery with bounded round counts", () => {
@@ -124,9 +124,9 @@ test("arbitrary phases, zero holds and multiple mix blocks", () => {
   assert.equal(v.currentCycle, 2);
   assert.equal(v.completedCycles, 2);
 });
-test("all ten definitions validate and duration metadata reconciles", () => {
-  assert.equal(protocols.length, 10);
-  assert.equal(new Set(protocols.map((p) => p.id)).size, 10);
+test("the 14-protocol catalog and retained definitions validate with reconciled durations", () => {
+  assert.equal(catalogProtocols.length, 14);
+  assert.equal(new Set(protocols.map((p) => p.id)).size, protocols.length);
   for (const p of protocols) {
     e.validatePlan(planFor(p));
     assert.equal(e.totalDuration(planFor(p)), p.defaultDuration);

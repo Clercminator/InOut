@@ -124,7 +124,28 @@ async function applyEngagementNotifications(settings: LocalNotificationPreferenc
       { identifier: "DISMISS_CHECK_IN", buttonTitle: t("Not yet"), options: { opensAppToForeground: false } },
     ]);
   }
-  const reservedDays = new Set(prior.filter(item => settings.achievements && item.identifier.startsWith(achievementPrefix)).map(item => item.content.data?.scheduledFor).filter((value): value is string => typeof value === "string").map(value => notificationDayKey(new Date(value))));
+  const reservedDays = new Set<string>();
+  // Pending earned events must also follow edited times/quiet hours; never invent a new award.
+  for (const item of prior.filter(item => settings.achievements && item.identifier.startsWith(achievementPrefix))) {
+    const original = item.content.data?.scheduledFor;
+    if (typeof original !== "string" || !Number.isFinite(Date.parse(original))) continue;
+    const day = new Date(original);
+    let at: Date | null = null;
+    for (let offset = 0; offset < 8; offset++) {
+      const candidateDay = new Date(day.getFullYear(), day.getMonth(), day.getDate() + offset);
+      if (!settings.weekdays.includes(candidateDay.getDay() + 1)) continue;
+      const candidate = notificationTime(candidateDay, settings.hour, settings.minute, settings);
+      if (candidate.getTime() > Date.now() + 60_000) { at = candidate; break; }
+    }
+    await sdk.cancelScheduledNotificationAsync(item.identifier);
+    if (at) {
+      await sdk.scheduleNotificationAsync({ identifier: item.identifier,
+        content: { title: "IN/OUT", sound: false, color: "#5B2DFF", body: t("You earned a practice milestone."), data: { ...item.content.data, scheduledFor: at.toISOString() } },
+        trigger: { type: sdk.SchedulableTriggerInputTypes.DATE, date: at, channelId },
+      });
+      reservedDays.add(notificationDayKey(at));
+    }
+  }
   const scheduled: string[] = [];
   try {
     for (const item of buildEngagementSchedule(settings, new Date(), context)) {
