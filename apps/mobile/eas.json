@@ -68,6 +68,22 @@
         "image": "macos-tahoe-26.5-xcode-26.6",
         "credentialsSource": "remote"
       }
+    },
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "environment": "preview",
+      "autoIncrement": false,
+      "env": {
+        "INOUT_PREVIEW": "1",
+        "EXPO_NO_DOTENV": "1",
+        "EXPO_PUBLIC_REVENUECAT_MODE": "store",
+        "EXPO_PUBLIC_SUBSCRIPTION_PROVIDER": "revenuecat",
+        "EXPO_PUBLIC_ADS_MODE": "test"
+      },
+      "android": {
+        "buildType": "apk"
+      }
     }
   },
   "submit": {

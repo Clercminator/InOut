@@ -18,7 +18,8 @@
     "start:go": "npm run start -w @inout/mobile -- --go",
     "start:go:tunnel": "npm run start:go -- --tunnel",
     "locales:build": "node scripts/build-locales.cjs",
-    "locales:check": "node scripts/build-locales.cjs --check"
+    "locales:check": "node scripts/build-locales.cjs --check",
+    "start:preview": "node scripts/start-preview.cjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.5.8",

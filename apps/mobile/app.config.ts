@@ -1,18 +1,22 @@
 import type { ConfigContext } from "expo/config";
 
 export default ({ config }: ConfigContext) => {
+  const preview = process.env.INOUT_PREVIEW === "1";
+  if (preview && (process.env.INOUT_RELEASE === "1" || process.env.INOUT_STORE_TEST === "1")) throw new Error("The separate Preview app cannot be a store release.");
   const { buildPolicy } = require("../../scripts/build-policy.cjs");
   const errors = buildPolicy({ ...process.env, EXPO_PUBLIC_EAS_PROJECT_ID: process.env.EXPO_PUBLIC_EAS_PROJECT_ID || config.extra?.eas?.projectId }, require("../../release/readiness.json").gates, require("../../release/store-listing.json").status);
   if (errors.length) throw new Error(errors.join("\n"));
   const links = require("../../release/links.json");
   const { admob } = require("../../release/monetization.json");
-  const androidGoogleServicesFile = process.env.GOOGLE_SERVICES_JSON;
-  const iosGoogleServicesFile = process.env.GOOGLE_SERVICES_PLIST;
+  // The production Firebase files identify the production bundle, not the isolated preview.
+  const androidGoogleServicesFile = preview ? undefined : process.env.GOOGLE_SERVICES_JSON;
+  const iosGoogleServicesFile = preview ? undefined : process.env.GOOGLE_SERVICES_PLIST;
   return ({
   ...config,
+  ...(preview ? { name: "IN/OUT Preview", scheme: "inout-preview" } : {}),
   extra: { ...config.extra, firebasePlatforms: { android: !!androidGoogleServicesFile, ios: !!iosGoogleServicesFile }, ...(process.env.EXPO_PUBLIC_EAS_PROJECT_ID ? { eas: { projectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID } } : {}) },
-  ios: { ...config.ios, ...(iosGoogleServicesFile ? { googleServicesFile: iosGoogleServicesFile } : {}), ...(links.origin && links.appleTeamId ? { appleTeamId: links.appleTeamId, associatedDomains: [`applinks:${new URL(links.origin).host}`] } : {}) },
-  android: { ...config.android, ...(androidGoogleServicesFile ? { googleServicesFile: androidGoogleServicesFile } : {}), ...(links.origin && links.androidSha256.length ? { intentFilters: [{ action: "VIEW", autoVerify: true, category: ["BROWSABLE", "DEFAULT"], data: [{ scheme: "https", host: new URL(links.origin).host, path: links.path }] }] } : {}) },
+  ios: { ...config.ios, ...(preview ? { bundleIdentifier: "com.imrtech.inout.preview" } : {}), ...(iosGoogleServicesFile ? { googleServicesFile: iosGoogleServicesFile } : {}), ...(!preview && links.origin && links.appleTeamId ? { appleTeamId: links.appleTeamId, associatedDomains: [`applinks:${new URL(links.origin).host}`] } : {}) },
+  android: { ...config.android, ...(preview ? { package: "com.imrtech.inout.preview" } : {}), ...(androidGoogleServicesFile ? { googleServicesFile: androidGoogleServicesFile } : {}), ...(!preview && links.origin && links.androidSha256.length ? { intentFilters: [{ action: "VIEW", autoVerify: true, category: ["BROWSABLE", "DEFAULT"], data: [{ scheme: "https", host: new URL(links.origin).host, path: links.path }] }] } : {}) },
   plugins: [...(config.plugins ?? []),
     ...(androidGoogleServicesFile || iosGoogleServicesFile ? ["@react-native-firebase/app", "@react-native-firebase/crashlytics"] : []),
     "expo-secure-store",
