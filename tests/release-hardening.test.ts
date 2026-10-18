@@ -22,6 +22,16 @@ test("release fails closed for test providers, mocks, demo ads and open gates; a
   assert.ok(buildPolicy({ ...candidate, ADMOB_ANDROID_APP_ID: "ca-app-pub-3940256099942544~3347511713" }).length);
   const eas = JSON.parse(readFileSync("apps/mobile/eas.json", "utf8"));
   assert.equal(eas.build["store-test"].distribution, "store"); assert.equal(eas.build["store-test"].android.buildType, "app-bundle");
+  assert.equal(JSON.parse(readFileSync("apps/mobile/app.json", "utf8")).expo.android.versionCode, 6);
+  assert.match(readFileSync("apps/mobile/app.config.ts", "utf8"), /enableMinifyInReleaseBuilds:\s*true/);
+  assert.equal(eas.build["store-test"].android.buildArtifactPaths[0], "android/app/build/outputs/mapping/release/**");
+  assert.deepEqual(eas.build["store-test"].android.buildArtifactPaths, [
+    "android/app/build/outputs/mapping/release/**",
+    "android/app/build/outputs/native-debug-symbols/release/**",
+    "android/app/build/intermediates/native_symbol_tables/release/**",
+    "android/app/build/generated/sourcemaps/react/release/**",
+  ]);
+  assert.deepEqual(eas.build.production.android.buildArtifactPaths, eas.build["store-test"].android.buildArtifactPaths);
   assert.equal(eas.build.production.env.INOUT_RELEASE, "1");
 });
 test("RevenueCat runtime billing calls stay inside its adapter and generic service handles pending and restore", async () => {

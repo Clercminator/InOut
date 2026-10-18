@@ -21,7 +21,7 @@ export default ({ config }: ConfigContext) => {
     ["expo-notifications", { icon: "./assets/monochrome-icon.png", color: "#5B2DFF" }],
     ["expo-image-picker", { photosPermission: "Choose a photo for your private IN/OUT profile.", cameraPermission: false, microphonePermission: false }],
     "@react-native-community/datetimepicker",
-    ["expo-build-properties", { android: { kotlinVersion: "2.2.21" } }],
+    ["expo-build-properties", { android: { kotlinVersion: "2.2.21", enableMinifyInReleaseBuilds: true } }],
     "./plugins/with-kotlin-compiler.cjs",
     "./plugins/with-android-symbols.cjs",
     ["react-native-google-mobile-ads", {
