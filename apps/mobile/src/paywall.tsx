@@ -1,4 +1,4 @@
-import { GoalMark, OnboardingHero } from "./onboarding-art";
+import { GoalMark } from "./onboarding-art";
 import { PulseArtwork } from "./pulse-orb";
 import { Celebration } from "./celebration";
 import { t, locale, message, countLabel } from "./i18n";
@@ -83,7 +83,7 @@ function NativePaywall({ entry = "profile", onClose, completionError }: PaywallP
     {onClose && <Button title={state.pro ? "Continue to Home" : "Continue for free"} variant="quiet" disabled={subscriptions.busy} onPress={close} />}
   </ActionFooter> : undefined}>
     {completionError && <Copy accessibilityRole="alert">{completionError}</Copy>}
-    {entry === "onboarding" ? <><OnboardingHero compact /><Label>WELCOME TO YOUR NEXT CHAPTER</Label><Title>Make this practice yours.</Title><Copy>A personal breathing coach. More ways to grow.</Copy></> : <><View style={{ alignItems: "center" }}><PulseArtwork size={96} /></View><Title>{state.pro ? "Your Pro access is ready." : "More room for your practice."}</Title></>}
+    {entry === "onboarding" ? <><View style={{ alignItems: "center" }}><PulseArtwork size={150} /></View><Label>WELCOME TO YOUR NEXT CHAPTER</Label><Title>Make this practice yours.</Title><Copy>A personal breathing coach. More ways to grow.</Copy></> : <><View style={{ alignItems: "center" }}><PulseArtwork size={96} /></View><Title>{state.pro ? "Your Pro access is ready." : "More room for your practice."}</Title></>}
     {entry === "quota" && <Copy>Your guided allowance is used. Keep breathing with tones, or explore Pro.</Copy>}
     {entry === "protocol" && <Copy>Unlock this protocol and make more room for your practice.</Copy>}
     {entry === "coach" && <Copy>Pro includes multiweek guided programs and continuing weekly plans. Find Your Rhythm and basic recommendations remain free.</Copy>}

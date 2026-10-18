@@ -6,7 +6,7 @@ import { ReminderService, reminderPrefix, type Reminder } from "../apps/mobile/s
 import { practiceInsights } from "../apps/mobile/src/insights";
 import { manualSession } from "../apps/mobile/src/manual-session";
 import { encodeShare, decodeShare, shareSnapshot, sharedProtocol, validateShare } from "../packages/sharing/src/index";
-import { protocols, cyclic, planFor } from "../packages/protocols/src/index";
+import { protocols, cyclic, planFor, includesHighIntensity } from "../packages/protocols/src/index";
 import { totalDuration } from "../packages/breathing-engine/src/index";
 
 const reminder = (id = "a"): Reminder => ({ id, label: "Private ritual", hour: 8, minute: 30, weekdays: [2, 4, 6], enabled: true });
@@ -54,14 +54,14 @@ test("local reset invalidates a save waiting on system permission", async () => 
   assert.deepEqual(f.disk(), []); assert.equal([...f.scheduled].filter(id => id.startsWith(reminderPrefix)).length, 0);
 });
 test("sharing preserves every gentle protocol cadence and nostril instruction without private text", () => {
-  for (const protocol of protocols.filter(p => p.id !== cyclic.id && p.availability === "enabled")) {
+  for (const protocol of protocols.filter(p => !includesHighIntensity(p) && p.availability === "enabled")) {
     const shared = shareSnapshot({ ...protocol, name: "My private name" });
     const encoded = encodeShare(shared); assert.equal(encoded.includes("private"), false);
     const rebuilt = sharedProtocol(decodeShare(encoded));
     assert.equal(totalDuration(planFor(rebuilt)), totalDuration(planFor(protocol)));
     assert.deepEqual(planFor(rebuilt).blocks.map(b => b.phases.map(p => [p.type, p.durationMs, p.nostril])), planFor(protocol).blocks.map(b => b.phases.map(p => [p.type, p.durationMs, p.nostril])));
   }
-  assert.throws(() => shareSnapshot(cyclic));
+  for (const protocol of protocols.filter(includesHighIntensity)) assert.throws(() => shareSnapshot(protocol));
 });
 test("untrusted links reject unsafe sizes, unsupported phases and invalid timings, and strip extra fields", () => {
   for (const value of ["%", "x".repeat(12001), encodeURIComponent('{"v":2}'), encodeURIComponent('{"v":1,"blocks":[]}')]) assert.throws(() => decodeShare(value));

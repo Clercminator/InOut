@@ -12,6 +12,7 @@ import { challengeCatalog, enrollChallenge, type UserChallenge } from "../src/ch
 import Onboarding from "../app/onboarding";
 import Milestone from "../app/milestone";
 import ProtocolLibrary from "../app/(tabs)/protocols";
+import { ThemeSurface } from "../src/theme";
 import Settings from "../app/settings";
 import Today from "../app/(tabs)/index";
 import Progress from "../app/(tabs)/progress";
@@ -667,4 +668,11 @@ test("audio previews show loading until native playback, and music replaces voic
   expect(voices.every(player => player.remove.mock.calls.length === 1)).toBe(true);
   expect(screen.getByText("Loading sample…")).toBeTruthy();
   expect(mockPlayers).toHaveLength(3);
+});
+
+test.each(["light", "dark"] as const)("Home preserves the approved untinted Pulse artwork in %s appearance", async mode => {
+  await render(wrap(<ThemeSurface mode={mode}><Today /></ThemeSurface>));
+  const artwork = screen.getByTestId("pulse-artwork", { includeHiddenElements: true });
+  expect(artwork.props.source).toEqual(require("../assets/pulse-orb.png"));
+  expect(artwork.props.style.tintColor).toBeUndefined();
 });
