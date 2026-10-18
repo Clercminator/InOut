@@ -5,7 +5,8 @@ import { ReminderService } from "./reminders";
 import { configureEngagementNotifications, notifications, scheduleAchievementNotification } from "./reminder-native";
 import { useSession } from "./session-context";
 import { experienceFor } from "./experience";
-import { notificationPreferences } from "./local-notifications";
+import { notificationContext, notificationPreferences } from "./local-notifications";
+import { useCommercial } from "./commercial-context";
 import { useRef } from "react";
 export const ReminderContext = createContext<ReminderService | null>(null);
 const subscribe = () => () => {};
@@ -16,22 +17,32 @@ export function useReminders() {
   return service;
 }
 export function ReminderEffects() {
-  const service = useContext(ReminderContext);
+  const service = useReminders();
   const controller = useSession();
   const preferences = controller.preferences;
+  const commercial = useCommercial();
+  const entitlement = commercial?.entitlements ?? controller.entitlements;
+  const remindersEnabled = !!service?.items.some(item => item.enabled) || notificationPreferences(preferences).dailyReset;
+  const context = () => notificationContext(controller.history(), entitlement.state.pro, entitlement.billingReady,
+    !!service?.items.some(item => item.enabled) || notificationPreferences(controller.preferences).dailyReset);
+  const history = controller.history();
+  const pro = entitlement.state.pro, billingReady = entitlement.billingReady;
   useEffect(() => { void service?.reconcile(); }, [service, preferences]);
   useEffect(() => {
     if (!service) return;
-    void configureEngagementNotifications(preferences).catch(() => {
+    void configureEngagementNotifications(preferences, false, context()).catch(() => {
       controller.analytics.track("notification_schedule_failed", { outcome: "failed", errorCategory: "scheduler" });
     });
-  }, [service, preferences, controller]);
+  }, [service, preferences, controller, history, pro, billingReady, remindersEnabled]);
   const handledAwards = useRef(new Set<string>());
   useEffect(() => {
     const settings = notificationPreferences(preferences);
     if (!settings.achievements) return;
     const scheduleAwards = async () => {
-      for (const award of controller.latestAwards) {
+      const completedPrograms = controller.coachState().enrollments.filter(item => item.status === "completed" && item.completed.at(-1)?.sessionId === controller.current?.id);
+      const awards = [...controller.latestAwards, ...controller.pacerThemeNotice.map(id => ({ id: `theme-${id}` })),
+        ...completedPrograms.map(item => ({ id: `coach-${item.id}` }))];
+      for (const award of awards) {
         if (handledAwards.current.has(award.id)) continue;
         handledAwards.current.add(award.id);
         const current = notificationPreferences(controller.preferences);
@@ -39,21 +50,21 @@ export function ReminderEffects() {
         if (at === null) return;
         controller.setPreferences({ ...controller.preferences, notifications: {
           ...current,
-          achievementNoticeLog: [...(current.achievementNoticeLog ?? []).filter(item => item.at > at - 7 * 86400000), { id: award.id, at }],
+          achievementNoticeLog: [...(current.achievementNoticeLog ?? []).filter(item => item.id !== award.id).slice(-99), { id: award.id, at }],
         } });
       }
     };
     void scheduleAwards().catch(() => {
         controller.analytics.track("notification_schedule_failed", { outcome: "failed", errorCategory: "scheduler" });
     });
-  }, [controller, controller.latestAwards, preferences]);
+  }, [controller, controller.latestAwards, controller.pacerThemeNotice, controller.current?.stage, preferences]);
   useEffect(() => {
     const sdk = notifications();
     if (!sdk || !service) return;
-    sdk.setNotificationHandler({ handleNotification: async () => ({
+    sdk.setNotificationHandler({ handleNotification: async notification => ({
       shouldPlaySound: false, shouldSetBadge: false,
-      shouldShowBanner: controller.current?.stage !== "active" && controller.current?.stage !== "post" && !controller.hasActiveChallenge?.(),
-      shouldShowList: controller.current?.stage !== "active" && controller.current?.stage !== "post" && !controller.hasActiveChallenge?.(),
+      shouldShowBanner: !(notification?.request.content.data?.notificationType === "promotion" && (controller.entitlements.state.pro || !controller.entitlements.billingReady)) && controller.current?.stage !== "active" && controller.current?.stage !== "post" && !controller.hasActiveChallenge?.(),
+      shouldShowList: !(notification?.request.content.data?.notificationType === "promotion" && (controller.entitlements.state.pro || !controller.entitlements.billingReady)) && controller.current?.stage !== "active" && controller.current?.stage !== "post" && !controller.hasActiveChallenge?.(),
     }) });
     const handled = new Set<string>();
     const open = (response: import("expo-notifications").NotificationResponse | null) => {
@@ -88,6 +99,16 @@ export function ReminderEffects() {
         router.push("/daily-reset");
         return;
       }
+      if (["check-in", "motivation", "education", "reengagement", "promotion", "achievement"].includes(String(notificationType))) {
+        if (controller.current?.stage === "active") { router.push("/session"); return; }
+        if (controller.current?.stage === "post") { router.push("/post"); return; }
+        if (!controller.preferences.onboardingComplete) { router.push("/onboarding"); return; }
+      }
+      if (notificationType === "education") { router.push("/learn"); return; }
+      if (notificationType === "reengagement") { router.push("/pre"); return; }
+      if (notificationType === "promotion") {
+        router.push(controller.entitlements.state.pro || !controller.entitlements.billingReady ? "/(tabs)" : { pathname: "/pro", params: { source: "notification" } }); return;
+      }
       if (notificationType === "check-in") { router.push("/add-session"); return; }
       if (notificationType === "motivation") { router.push("/pre"); return; }
       if (notificationType === "achievement") { router.push("/(tabs)/progress"); return; }
@@ -106,7 +127,7 @@ export function ReminderEffects() {
     const foreground = AppState.addEventListener("change", state => {
       if (state === "active") {
         void service.reconcile();
-        void configureEngagementNotifications(controller.preferences).catch(() => {
+        void configureEngagementNotifications(controller.preferences, false, context(), true).catch(() => {
           controller.analytics.track("notification_schedule_failed", { outcome: "failed", errorCategory: "scheduler" });
         });
       }

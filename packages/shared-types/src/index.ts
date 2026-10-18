@@ -96,6 +96,10 @@ export interface Preferences {
     motivation: boolean;
     checkIn: boolean;
     achievements: boolean;
+    education?: boolean;
+    reengagement?: boolean;
+    promotions?: boolean;
+    quietHoursEnabled?: boolean;
     hour: number;
     minute: number;
     weekdays: number[];

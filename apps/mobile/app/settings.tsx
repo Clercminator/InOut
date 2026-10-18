@@ -17,7 +17,7 @@ import { SoundControls } from "../src/sound-controls";
 import { clearProfilePhotos } from "../src/profile-photo";
 import { useCommercial } from "../src/commercial-context";
 import { useRef, useState } from "react";
-import { notificationDefaults, notificationPreferences, validateNotificationPreferences, type LocalNotificationPreferences } from "../src/local-notifications";
+import { notificationContext, notificationDefaults, notificationPreferences, validateNotificationPreferences, type LocalNotificationPreferences } from "../src/local-notifications";
 import { configureEngagementNotifications, nativeReminderAdapter } from "../src/reminder-native";
 import { SessionDatePicker } from "../src/session-date-picker";
 import { locale } from "../src/i18n";
@@ -42,12 +42,14 @@ export default function Settings() {
     setNotificationError("");
     try {
       validateNotificationPreferences(next);
-      const wantsNotifications = next.dailyReset || next.motivation || next.checkIn || next.achievements;
+      const wantsNotifications = next.dailyReset || next.motivation || next.checkIn || next.achievements || next.education || next.reengagement || next.promotions;
       if (wantsNotifications && !await nativeReminderAdapter().permission(true))
         throw new Error("Notifications are off. Enable them in phone settings, then try again.");
       controller.setPreferences({ ...controller.preferences, notifications: next });
       if (controller.error) throw new Error(controller.error);
-      await configureEngagementNotifications({ ...controller.preferences, notifications: next });
+      await configureEngagementNotifications({ ...controller.preferences, notifications: next }, false,
+        notificationContext(controller.history(), controller.entitlements.state.pro, controller.entitlements.billingReady,
+          !!reminders?.items.some(item => item.enabled) || next.dailyReset));
     } catch (error) {
       setNotificationError(error instanceof Error ? error.message : "Notification settings could not be saved. Try again.");
     } finally {
@@ -59,7 +61,7 @@ export default function Settings() {
     <BackScreen title="SETTINGS">
       <Label>ACCOUNT</Label>
       <Disclosure title="Plan & privacy" icon="credit-card">
-        <Copy>{commercial?.entitlements.state.pro ? "Pro" : "Free"} · All ten breathing protocols included</Copy>
+        <Copy>{commercial?.entitlements.state.pro ? "Pro" : "Free"} · All 14 breathing protocols included</Copy>
         <ActionRow title="Pro & subscriptions" icon="credit-card" onPress={() => router.push("/pro")} />
         {commercial?.analytics.remoteAvailable && <>
           <View style={s.row}>
@@ -124,13 +126,17 @@ export default function Settings() {
           ["motivation", "Motivational reminders"],
           ["checkIn", "Practice check-in with log action"],
           ["achievements", "Achievement alerts"],
+          ["education", "Breathing education"],
+          ["reengagement", "Gentle return reminders"],
+          ["promotions", "Occasional Pro offers"],
         ] as const).map(([key, label]) => <View key={key} style={s.row}>
           <Copy>{label}</Copy>
-          <Switch disabled={savingNotificationSettings} accessibilityLabel={t(label)} value={notificationSettings[key]}
+          <Switch disabled={savingNotificationSettings} accessibilityLabel={t(label)} value={notificationSettings[key] ?? false}
             onValueChange={value => { void saveNotificationSettings({ ...notificationSettings, [key]: value }); }}
             trackColor={{ true: colors.blue }} />
         </View>)}
-        <Copy style={s.small}>Check-in notifications include “Log practice” and “Not now” actions. Quiet hours use your phone’s local time.</Copy>
+        <Copy style={s.small}>Check-ins offer Yes and Not yet. Yes opens a manual practice entry. Quiet hours follow your phone’s local time.</Copy>
+        <Copy style={s.small}>Return reminders use your last completed in-app practice and require practice reminders to be enabled. Pro offers are limited to one per four weeks and excluded while Pro or reviewer access is active.</Copy>
         <SessionDatePicker timeOnly disabled={savingNotificationSettings} value={new Date(2026, 0, 1, notificationSettings.hour, notificationSettings.minute)}
           onChange={date => { void saveNotificationSettings({ ...notificationSettings, hour: date.getHours(), minute: date.getMinutes() }); }} />
         <Label>NOTIFY ON (UP TO THREE DAYS)</Label>
@@ -162,7 +168,7 @@ export default function Settings() {
         <SessionDatePicker timeOnly disabled={savingNotificationSettings} label="QUIET HOURS END" value={new Date(2026, 0, 1, notificationSettings.quietEndHour, 0)}
           onChange={date => { void saveNotificationSettings({ ...notificationSettings, quietEndHour: date.getHours() }); }} />
         {notificationError ? <Copy accessibilityRole="alert" style={{ color: colors.danger }}>{notificationError}</Copy> : null}
-        <Button title="Reset notification settings" secondary disabled={savingNotificationSettings} onPress={() => { void saveNotificationSettings({ ...notificationDefaults, weekdays: [...notificationDefaults.weekdays] }); }} />
+        <Button title="Reset notification settings" secondary disabled={savingNotificationSettings} onPress={() => { void saveNotificationSettings({ ...notificationDefaults, achievementNoticeLog: notificationSettings.achievementNoticeLog, weekdays: [...notificationDefaults.weekdays] }); }} />
       </Disclosure>
       <Disclosure title="Session preferences" icon="tune">
         {(

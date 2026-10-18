@@ -6,7 +6,7 @@ import { t } from "./i18n";
 import {
   buildEngagementSchedule, checkInCategory, engagementNotificationPrefix,
   notificationDayKey, notificationPreferences, notificationTime, validateNotificationPreferences,
-  type LocalNotificationPreferences,
+  type LocalNotificationPreferences, type NotificationContext,
 } from "./local-notifications";
 import type { Preferences } from "@inout/shared-types";
 
@@ -86,17 +86,17 @@ export async function scheduleDailyReset(schedule: DailyResetSchedule): Promise<
 let configuredEngagementKey = "";
 let engagementConfiguration: { key: string; promise: Promise<void> } | null = null;
 let engagementQueue: Promise<void> = Promise.resolve();
-export function configureEngagementNotifications(preferences: Preferences, requestPermission = false): Promise<void> {
+export function configureEngagementNotifications(preferences: Preferences, requestPermission = false, context?: NotificationContext, force = false): Promise<void> {
   const settings = notificationPreferences(preferences);
   validateNotificationPreferences(settings);
   const today = new Date();
   const key = JSON.stringify([settings.dailyReset, settings.motivation, settings.checkIn, settings.achievements,
     settings.hour, settings.minute, settings.weekdays, settings.quietStartHour, settings.quietEndHour,
-    settings.quietHoursEnabled,
+    settings.quietHoursEnabled, settings.education, settings.reengagement, settings.promotions, preferences.language, context,
     today.getFullYear(), today.getMonth(), today.getDate(), today.getTimezoneOffset()]);
-  if (!requestPermission && configuredEngagementKey === key) return Promise.resolve();
+  if (!force && !requestPermission && configuredEngagementKey === key) return Promise.resolve();
   if (engagementConfiguration?.key === key) return engagementConfiguration.promise;
-    const promise = engagementQueue.catch(() => {}).then(() => applyEngagementNotifications(settings, requestPermission))
+    const promise = engagementQueue.catch(() => {}).then(() => applyEngagementNotifications(settings, requestPermission, context))
       .then(() => { configuredEngagementKey = key; });
     engagementQueue = promise;
   engagementConfiguration = { key, promise };
@@ -104,28 +104,31 @@ export function configureEngagementNotifications(preferences: Preferences, reque
   return promise;
 }
 
-async function applyEngagementNotifications(settings: LocalNotificationPreferences, requestPermission: boolean): Promise<void> {
-  const active = settings.dailyReset || settings.motivation || settings.checkIn || settings.achievements;
+async function applyEngagementNotifications(settings: LocalNotificationPreferences, requestPermission: boolean, context?: NotificationContext): Promise<void> {
+  const active = settings.dailyReset || settings.motivation || settings.checkIn || settings.achievements || settings.education || settings.reengagement || settings.promotions;
   const sdk = notifications();
   if (!sdk && !active) return;
   if (!sdk) throw new Error("Notifications need an installed native build. They are unavailable in Expo Go.");
   const adapter = nativeReminderAdapter();
+  const prior = await sdk.getAllScheduledNotificationsAsync();
+  // Remove obsolete conditional prompts even after permission revocation or a Pro grant.
+  for (const item of prior) if (item.identifier.startsWith(engagementNotificationPrefix) ||
+    (!settings.achievements && item.identifier.startsWith(achievementPrefix))) await sdk.cancelScheduledNotificationAsync(item.identifier);
   if (active && requestPermission && !await adapter.permission(true))
     throw new Error("Notifications are off. Enable them in phone settings, then try again.");
   if (active && !await adapter.permission(false))
     throw new Error("Notifications are off. Enable them in phone settings, then try again.");
   if (settings.checkIn) {
     await sdk.setNotificationCategoryAsync(checkInCategory, [
-      { identifier: "LOG_PRACTICE", buttonTitle: t("Log practice"), options: { opensAppToForeground: true } },
-      { identifier: "DISMISS_CHECK_IN", buttonTitle: t("Not now"), options: { opensAppToForeground: false } },
+      { identifier: "LOG_PRACTICE", buttonTitle: t("Yes"), options: { opensAppToForeground: true } },
+      { identifier: "DISMISS_CHECK_IN", buttonTitle: t("Not yet"), options: { opensAppToForeground: false } },
     ]);
   }
-  const prior = await sdk.getAllScheduledNotificationsAsync();
-  const priorEngagement = prior.filter(item => item.identifier.startsWith(engagementNotificationPrefix));
-  const priorAchievements = prior.filter(item => item.identifier.startsWith(achievementPrefix));
+  const reservedDays = new Set(prior.filter(item => settings.achievements && item.identifier.startsWith(achievementPrefix)).map(item => item.content.data?.scheduledFor).filter((value): value is string => typeof value === "string").map(value => notificationDayKey(new Date(value))));
   const scheduled: string[] = [];
   try {
-    for (const item of buildEngagementSchedule(settings)) {
+    for (const item of buildEngagementSchedule(settings, new Date(), context)) {
+      if (reservedDays.has(notificationDayKey(item.date))) continue;
       await sdk.scheduleNotificationAsync({
         identifier: item.id,
         content: {
@@ -143,10 +146,7 @@ async function applyEngagementNotifications(settings: LocalNotificationPreferenc
     }
     throw error;
   }
-  for (const item of priorEngagement) if (!scheduled.includes(item.identifier))
-    await sdk.cancelScheduledNotificationAsync(item.identifier);
-  if (!settings.achievements) for (const item of priorAchievements)
-    await sdk.cancelScheduledNotificationAsync(item.identifier);
+
 }
 
 export async function scheduleAchievementNotification(
@@ -159,7 +159,7 @@ export async function scheduleAchievementNotification(
   if (!/^[\w-]{1,80}$/.test(awardId)) throw new Error("Invalid achievement notification identifier.");
   const cutoff = now.getTime() - 7 * 86400000;
   const recent = (value.achievementNoticeLog ?? []).filter(item => item.at > cutoff);
-  if (recent.some(item => item.id === awardId) || recent.length >= 1) return null;
+  if (value.achievementNoticeLog?.some(item => item.id === awardId) || recent.length >= 1) return null;
   const sdk = notifications();
   if (!sdk) throw new Error("Notifications need an installed native build. They are unavailable in Expo Go.");
   if (!await nativeReminderAdapter().permission(false))

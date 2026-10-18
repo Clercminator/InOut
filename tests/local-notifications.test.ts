@@ -43,3 +43,31 @@ test("quiet-hour adjustment preserves daytime reminders and moves late reminders
   assert.equal(nextMorning.getHours(), 8);
   assert.equal(notificationTime(day, 23, 0, open).getDate(), day.getDate());
 });
+
+test("education rotates into the capped schedule and re-engagement requires confirmed inactivity and reminders", () => {
+  const now = new Date(2026, 9, 12, 10);
+  const settings = { ...notificationDefaults, education: true, reengagement: true };
+  const context = { lastPracticeAt: now.getTime() - 4 * 86400000, remindersEnabled: true, pro: false, billingReady: true };
+  assert.ok(buildEngagementSchedule(settings, now, context).some(item => item.type === "reengagement"));
+  for (const changed of [{ ...context, remindersEnabled: false }, { ...context, lastPracticeAt: now.getTime() }, { ...context, lastPracticeAt: null }]) {
+    const schedule = buildEngagementSchedule(settings, now, changed);
+    assert.ok(schedule.every(item => item.type === "education"));
+    assert.ok(schedule.length <= 3);
+  }
+});
+
+test("promotions occur no more than once in four weeks and never with Pro or unresolved billing", () => {
+  const settings = { ...notificationDefaults, promotions: true };
+  const context = { lastPracticeAt: null, remindersEnabled: true, pro: false, billingReady: true };
+  const dates = new Set<number>();
+  for (let day = 0; day < 90; day++) {
+    const now = new Date(2026, 9, 12 + day, 10);
+    for (const item of buildEngagementSchedule(settings, now, context)) dates.add(item.date.getTime());
+    assert.deepEqual(buildEngagementSchedule(settings, now, { ...context, pro: true }), []);
+    assert.deepEqual(buildEngagementSchedule(settings, now, { ...context, billingReady: false }), []);
+    assert.deepEqual(buildEngagementSchedule(settings, now), []);
+  }
+  const sorted = [...dates].sort((a, b) => a - b);
+  assert.ok(sorted.length >= 3);
+  for (let i = 1; i < sorted.length; i++) assert.ok(sorted[i] - sorted[i - 1] >= 27 * 86400000);
+});

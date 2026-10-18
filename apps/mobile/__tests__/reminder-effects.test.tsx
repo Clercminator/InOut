@@ -30,7 +30,7 @@ jest.mock("../src/reminder-native", () => ({
 }));
 
 test("notification delivery stays quiet during practice, handles a tap once, and never auto-starts", async () => {
-  const controller = new SessionController({ preferences: () => ({ ...defaultPreferences, onboardingComplete: true }), pending: () => null, save: () => {} } as unknown as LocalStore, () => 1000, () => "session");
+  const controller = new SessionController({ preferences: () => ({ ...defaultPreferences, onboardingComplete: true }), history: () => [], pending: () => null, save: () => {} } as unknown as LocalStore, () => 1000, () => "session");
   const service = new ReminderService({ read: () => [{ id: "a", label: "Private ritual name", hour: 8, minute: 0, weekdays: [2], enabled: true }], write: () => {} }, { permission: async () => true, list: async () => [], cancel: async () => {}, schedule: async () => {} }, () => false, () => []);
   mockPush.mockClear(); mockRemove.mockClear();
   const view = await render(<SessionContext.Provider value={controller}><ReminderContext.Provider value={service}><ReminderEffects /></ReminderContext.Provider></SessionContext.Provider>);
@@ -49,7 +49,7 @@ test("notification delivery stays quiet during practice, handles a tap once, and
 });
 
 test("check-in notification actions route to manual logging or safely dismiss", async () => {
-  const controller = new SessionController({ preferences: () => ({ ...defaultPreferences, onboardingComplete: true }), pending: () => null, save: () => {} } as unknown as LocalStore, () => 1000, () => "session");
+  const controller = new SessionController({ preferences: () => ({ ...defaultPreferences, onboardingComplete: true }), history: () => [], pending: () => null, save: () => {} } as unknown as LocalStore, () => 1000, () => "session");
   const service = new ReminderService({ read: () => [], write: () => {} }, { permission: async () => true, list: async () => [], cancel: async () => {}, schedule: async () => {} }, () => false, () => []);
   mockPush.mockClear();
   const view = await render(<SessionContext.Provider value={controller}><ReminderContext.Provider value={service}><ReminderEffects /></ReminderContext.Provider></SessionContext.Provider>);
@@ -67,7 +67,7 @@ test("check-in notification actions route to manual logging or safely dismiss", 
 });
 
 test("Daily Reset notifications route to the challenge without interrupting fitness", async () => {
-  const controller = new SessionController({ preferences: () => ({ ...defaultPreferences, onboardingComplete: true }), pending: () => null } as unknown as LocalStore, () => 1000, () => "session");
+  const controller = new SessionController({ preferences: () => ({ ...defaultPreferences, onboardingComplete: true }), history: () => [], pending: () => null } as unknown as LocalStore, () => 1000, () => "session");
   const service = new ReminderService({ read: () => [], write: () => {} }, { permission: async () => true, list: async () => [], cancel: async () => {}, schedule: async () => {} }, () => false, () => []);
   const view = await render(<SessionContext.Provider value={controller}><ReminderContext.Provider value={service}><ReminderEffects /></ReminderContext.Provider></SessionContext.Provider>);
   await act(async () => { mockListener(response("reset", 20, "daily-reset")); });
@@ -76,5 +76,20 @@ test("Daily Reset notifications route to the challenge without interrupting fitn
   expect((await mockHandler!.handleNotification()).shouldShowBanner).toBe(false);
   await act(async () => { mockListener(response("reset", 21, "daily-reset")); });
   expect(mockPush).toHaveBeenLastCalledWith({ pathname: "/fitness-challenge", params: { id: "plank" } });
+  await view.unmount();
+});
+
+test("education, return and promotion taps use existing routes and respect an active practice", async () => {
+  const controller = new SessionController({ preferences: () => ({ ...defaultPreferences, onboardingComplete: true }), history: () => [], pending: () => null, save: () => {} } as unknown as LocalStore, () => 1000, () => "session");
+  const service = new ReminderService({ read: () => [], write: () => {} }, { permission: async () => true, list: async () => [], cancel: async () => {}, schedule: async () => {} }, () => false, () => []);
+  const view = await render(<SessionContext.Provider value={controller}><ReminderContext.Provider value={service}><ReminderEffects /></ReminderContext.Provider></SessionContext.Provider>);
+  await act(async () => mockListener(response("education", 30, "education")));
+  expect(mockPush).toHaveBeenLastCalledWith("/learn");
+  await act(async () => mockListener(response("return", 31, "reengagement")));
+  expect(mockPush).toHaveBeenLastCalledWith("/pre");
+  await act(async () => mockListener(response("promo", 32, "promotion")));
+  expect(mockPush).toHaveBeenLastCalledWith({ pathname: "/pro", params: { source: "notification" } });
+  await act(async () => { controller.start(null); mockListener(response("education", 33, "education")); });
+  expect(mockPush).toHaveBeenLastCalledWith("/session");
   await view.unmount();
 });
