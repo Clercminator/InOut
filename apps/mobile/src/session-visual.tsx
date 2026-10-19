@@ -6,6 +6,7 @@ import { SighVisual } from "./sigh-visual";
 export const approvedRenderers = {
   pulse: { component: PulseSessionVisual, artwork: "assets/pulse-orb.png" },
   box: { component: PulseSessionVisual, artwork: null },
+  triangle: { component: PulseSessionVisual, artwork: null },
   sigh: { component: SighVisual, artwork: null },
   alternating: { component: SighVisual, artwork: null },
   ripple: { component: SighVisual, artwork: null },
@@ -14,6 +15,7 @@ export type RendererId = keyof typeof approvedRenderers;
 export function rendererFor(protocolId: string, phases: Phase[], animationType?: Protocol["animationType"]): RendererId {
   const box = phases.length === 4 && phases.map(p => p.type).join(",") === "inhale,hold,exhale,hold";
   if (box && (["box", "box-2"].includes(protocolId) || animationType === "box")) return "box";
+  if (protocolId === "box-2" && phases.map(p => p.type).join(",") === "inhale,exhale,hold") return "triangle";
   if (protocolId === "physiological-sigh") return "sigh";
   if (protocolId === "nadi-shodhana") return "alternating";
   if (protocolId === "bhramari") return "ripple";
@@ -23,6 +25,6 @@ export function SessionVisual({ protocolId, animationType, ...props }: Component
   protocolId: string; animationType?: Protocol["animationType"];
 }) {
   const renderer = rendererFor(protocolId, props.phases, animationType);
-  if (renderer === "pulse" || renderer === "box") return <PulseSessionVisual {...props} geometry={renderer} />;
+  if (renderer === "pulse" || renderer === "box" || renderer === "triangle") return <PulseSessionVisual {...props} geometry={renderer} />;
   return <SighVisual {...props} animationType={renderer} />;
 }

@@ -34,6 +34,18 @@ test("Pause and Resume are immediate and preserve the exact phase without counti
   expect(c.current?.engine.status).toBe("running");
   expect(c.view()?.phaseElapsedMs).toBe(2200);
 });
+
+test("50ms timing checks only publish display changes and Pause still captures the exact clock", async () => {
+  const updated = jest.fn();
+  c.subscribe(updated);
+  await render(<Harness />);
+  for (now = 50; now <= 950; now += 50) await act(() => c.tick());
+  expect(updated).toHaveBeenCalledTimes(1);
+  now = 987;
+  await fireEvent.press(screen.getByRole("button", { name: "Pause" }));
+  expect(c.view()?.phaseElapsedMs).toBe(987);
+  expect(c.current?.engine.status).toBe("paused");
+});
 test("End opens immediately, Continue resumes, and confirmation never earns completion", async () => {
   await render(<Harness />); now = 3000;
   await fireEvent.press(screen.getByRole("button", { name: "End session" }));

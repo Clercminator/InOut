@@ -37,7 +37,7 @@ test("Pulse uses the approved untinted artwork on Home and in every pacer theme"
     }
   }
 });
-test("approved specialized geometry is retained; unregistered/custom/triangle stays Pulse", () => {
+test("approved specialized geometry is retained; unregistered/custom stays Pulse", () => {
   for (const [id, renderer] of [["physiological-sigh", "sigh"], ["nadi-shodhana", "alternating"], ["bhramari", "ripple"]]) {
     const p = protocols.find(p => p.id === id)!;
     expect(rendererFor(id, p.phases, p.animationType)).toBe(renderer);
@@ -46,5 +46,5 @@ test("approved specialized geometry is retained; unregistered/custom/triangle st
   expect(rendererFor("custom", phases)).toBe("pulse");
   expect(rendererFor("triangle", phases)).toBe("pulse");
   const triangle = protocols.find(p => p.id === "box-2")!;
-  expect(rendererFor(triangle.id, triangle.phases, triangle.animationType)).toBe("pulse");
+  expect(rendererFor(triangle.id, triangle.phases, triangle.animationType)).toBe("triangle");
 });

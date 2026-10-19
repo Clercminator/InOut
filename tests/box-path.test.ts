@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { boxPoint, boxSamples } from "../apps/mobile/src/box-path";
+import { boxPoint, boxSamples, trianglePoint, triangleSamples } from "../apps/mobile/src/box-path";
 
 test("box guide follows a closed, rounded path without corner jumps", () => {
   const start = boxPoint(0), end = boxPoint(4);
@@ -15,4 +15,13 @@ test("box guide follows a closed, rounded path without corner jumps", () => {
   assert.equal(boxPoint(1.5).x, 1);
   assert.equal(boxPoint(2.5).y, 1);
   assert.equal(boxPoint(3.5).x, 0);
+});
+
+test("triangle guide closes at the inhale vertex with uniform progress along three sides", () => {
+  assert.deepEqual(trianglePoint(0), trianglePoint(3));
+  for (let i = 1; i < triangleSamples.length; i++) {
+    const a = triangleSamples[i - 1], b = triangleSamples[i];
+    assert.ok(b.x >= 0 && b.x <= 1 && b.y >= 0 && b.y <= Math.sqrt(3) / 2);
+    assert.ok(Math.abs(Math.hypot(b.x - a.x, b.y - a.y) - .025) < 1e-10);
+  }
 });

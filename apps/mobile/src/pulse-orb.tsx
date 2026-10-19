@@ -13,8 +13,8 @@ export function PulseArtwork({ size = 180, theme = "default" }: { size?: number;
 }
 
 /** Approved artwork; native scale follows the existing phase clock. Themes color only the outer glow. */
-export function PulseOrb({ view, phases, running, motionEnabled = true, size = 260, theme = "default" }: {
-  view: ReturnType<typeof snapshot>; phases: Phase[]; running: boolean; motionEnabled?: boolean; size?: number; theme?: PacerThemeId;
+export function PulseOrb({ view, phases, running, motionEnabled = true, size = 260, theme = "default", minimumScale = .7 }: {
+  view: ReturnType<typeof snapshot>; phases: Phase[]; running: boolean; motionEnabled?: boolean; size?: number; theme?: PacerThemeId; minimumScale?: number;
 }) {
   const [reduced, setReduced] = useState(true);
   const guidance = breathingGuidance(phases, view.phaseIndex, view.phaseElapsedMs);
@@ -22,7 +22,7 @@ export function PulseOrb({ view, phases, running, motionEnabled = true, size = 2
   const resolved = useMemo(() => resolvePacerTheme(theme), [theme]);
   const base = resolved.preview;
 
-  const scale = useMemo(() => volume.interpolate({ inputRange: [0, 1], outputRange: [0.70, 1] }), [volume]);
+  const scale = useMemo(() => volume.interpolate({ inputRange: [0, 1], outputRange: [minimumScale, 1] }), [volume, minimumScale]);
   useEffect(() => {
     let mounted = true;
     void AccessibilityInfo.isReduceMotionEnabled().then(value => { if (mounted) setReduced(value); }).catch(() => {});
@@ -51,8 +51,8 @@ export function PulseOrb({ view, phases, running, motionEnabled = true, size = 2
   }, [view.cueKey, phases, running, reduced, motionEnabled, volume]);
   return <View pointerEvents="none" testID="pulse-orb" accessible={false} importantForAccessibility="no-hide-descendants"
     style={{ width: size, height: size, maxWidth: "100%", alignSelf: "center", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-    <View style={[StyleSheet.absoluteFill, { borderRadius: size / 2, backgroundColor: `${base.glow}14` }]} />
     <Animated.View style={{ width: "100%", height: "100%", alignItems: "center", justifyContent: "center", transform: [{ scale: reduced || !motionEnabled ? .9 : scale }] }}>
+      <View style={[StyleSheet.absoluteFill, { borderRadius: size / 2, backgroundColor: `${base.glow}14` }]} />
       <Image testID="pulse-branded-art" source={artwork} resizeMode="contain" style={{ width: "100%", height: "100%" }} />
     </Animated.View>
   </View>;

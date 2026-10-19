@@ -437,11 +437,15 @@ export class SessionController {
       ? engine.snapshot(this.current.engine, this.now())
       : null;
   }
+  private displayKey = "";
   tick() {
     const c = this.current;
     if (!c || c.stage !== "active" || c.engine.status !== "running") return;
     const now = this.now(),
       view = engine.snapshot(c.engine, now);
+    const displayKey = `${c.id}:${view.cueKey}:${Math.ceil(view.phaseRemainingMs / 1000)}:${Math.ceil(view.sessionRemainingMs / 1000)}`;
+    const displayChanged = displayKey !== this.displayKey;
+    this.displayKey = displayKey;
     if (view.completed) {
       this.current = {
         ...c,
@@ -462,7 +466,7 @@ export class SessionController {
     } else if (now - c.engine.checkpointAt >= 1000) {
       this.current = { ...c, engine: engine.checkpoint(c.engine, now) };
       this.save();
-    } else this.emit();
+    } else if (displayChanged) this.emit();
   }
   pause(reason: EngineState["pauseReason"] = "manual") {
     if (!this.current || this.current.stage !== "active") return;

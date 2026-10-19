@@ -2,11 +2,11 @@ import { memo, useCallback, useRef, useState } from "react";
 import { AppState, BackHandler, Modal, ScrollView, View } from "react-native";
 import { useFocusEffect } from "expo-router";
 import type { SessionController } from "./session-controller";
-import { ActionFooter, Button, Copy, Title } from "./ui";
+import { Button, Copy, Title } from "./ui";
 import { useTheme } from "./theme";
 
 type Dialog = "end";
-/** Controls do not re-render at the 20 Hz engine checkpoint/display cadence. */
+/** Keep native touch targets independent of the breathing display updates. */
 export const SessionControls = memo(function SessionControls({ controller, running, disabled, compact, release }: {
   controller: SessionController; running: boolean; disabled: boolean; compact: boolean;
   release?: "Breathe in now" | "Release now";
@@ -36,7 +36,7 @@ export const SessionControls = memo(function SessionControls({ controller, runni
     dismiss(); controller.end("ended");
   };
   return <>
-    <ActionFooter><View testID="session-controls" pointerEvents="auto" style={{ gap: 8 }}>
+    <View style={{ zIndex: 10, backgroundColor: colors.background, borderTopWidth: 1, borderTopColor: colors.border, paddingHorizontal: 20, paddingVertical: 12 }}><View testID="session-controls" pointerEvents="auto" style={{ gap: 8 }}>
       {release && running && <Button title={release} onPress={() => controller.releaseHold()} />}
       <Button title={running ? "Pause" : "Resume"} disabled={disabled}
         onPress={() => running ? controller.pause() : controller.resume()} />
@@ -44,8 +44,8 @@ export const SessionControls = memo(function SessionControls({ controller, runni
         <View style={{ flex: compact ? undefined : 1 }}><Button title="End session" secondary onPress={() => show("end")} /></View>
         <View style={{ flex: compact ? undefined : 1 }}><Button title="I feel unwell" danger onPress={() => { dismiss(); controller.end("unwell"); }} /></View>
       </View>
-    </View></ActionFooter>
-    <Modal visible={dialog !== null} transparent animationType="none" onRequestClose={dismiss} statusBarTranslucent>
+    </View></View>
+    {dialog !== null && <Modal visible transparent animationType="none" onRequestClose={dismiss} statusBarTranslucent>
       <View style={{ flex: 1, backgroundColor: "#090616B8", justifyContent: "center", padding: 24 }}>
         <View accessibilityViewIsModal style={{ maxHeight: "90%", borderRadius: 24, borderWidth: 1,
           borderColor: colors.accent, backgroundColor: colors.card, overflow: "hidden" }}>
@@ -58,6 +58,6 @@ export const SessionControls = memo(function SessionControls({ controller, runni
           </ScrollView>
         </View>
       </View>
-    </Modal>
+    </Modal>}
   </>;
 });
