@@ -9,13 +9,14 @@ import { pacerThemes } from "../src/pacer-theme";
 
 afterEach(() => jest.restoreAllMocks());
 test("Box geometry survives every theme and customized four-phase timings", async () => {
+  jest.spyOn(Animated, "loop").mockReturnValue({ start: jest.fn(), stop: jest.fn(), reset: jest.fn() });
   const original = protocols.find(p => p.id === "box")!;
   const p = { ...original, phases: original.phases.map((phase, i) => ({ ...phase, durationMs: [3000, 6000, 5000, 2000][i] })) };
   const state = start(planFor(p), 0);
   const timing = jest.spyOn(Animated, "timing").mockReturnValue({ start: jest.fn(), stop: jest.fn(), reset: jest.fn() });
   jest.spyOn(AccessibilityInfo, "isReduceMotionEnabled").mockResolvedValue(false);
   const r = await render(<SessionVisual protocolId="box" view={snapshot(state, 1000)} phases={p.phases} running />);
-  expect(timing).toHaveBeenLastCalledWith(expect.anything(), expect.objectContaining({ duration: 2000, toValue: 1, isInteraction: false }));
+  expect(timing).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ duration: 16000, toValue: 16000, isInteraction: false }));
   for (const theme of pacerThemes) {
     await r.rerender(<SessionVisual protocolId="box" view={snapshot(state, 4000)} phases={p.phases} running pacerTheme={theme.id} />);
     expect(screen.getByTestId("box-session-geometry", { includeHiddenElements: true })).toBeTruthy();

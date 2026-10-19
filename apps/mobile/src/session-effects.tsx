@@ -74,16 +74,18 @@ export function NativeSessionEffects() {
   }, [running, controller]);
 
   useEffect(() => {
-    // Respect the silent switch. Exclusive focus lets native interruptions pause playback.
+    // A paused/idle session must never disable the app-wide audio engine: settings previews use it too.
+    if (audio === "silent" || (!running && session?.stage !== "post")) { setReadyAudioKey(audioKey); return; }
+    // Exclusive focus lets native interruptions pause playback.
     let mounted = true;
     setReadyAudioKey(null);
     activationQueue.current = activationQueue.current.catch(() => {}).then(async () => {
       if (!mounted) return;
-      await setAudioModeAsync({ playsInSilentMode: false, shouldPlayInBackground: false, interruptionMode: "doNotMix" });
+      await setAudioModeAsync({ playsInSilentMode: true, shouldPlayInBackground: false, interruptionMode: "doNotMix" });
       if (!mounted) return;
-      await setIsAudioActiveAsync(audio !== "silent" && (running || session?.stage === "post"));
+      await setIsAudioActiveAsync(true);
       if (mounted) setReadyAudioKey(audioKey);
-    }).catch(() => { if (mounted && audio !== "silent") audioFailed(); });
+    }).catch(() => { if (mounted) audioFailed(); });
     return () => {
       mounted = false;
     };

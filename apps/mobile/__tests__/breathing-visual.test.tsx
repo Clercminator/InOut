@@ -8,6 +8,7 @@ import { planFor, protocols } from "@inout/protocols";
 afterEach(() => jest.restoreAllMocks());
 
 test("bubble retains one absolute size mapping through inhale, holds, exhale and next cycle", async () => {
+  jest.spyOn(Animated, "loop").mockReturnValue({ start: jest.fn(), stop: jest.fn(), reset: jest.fn() });
   jest.spyOn(AccessibilityInfo, "isReduceMotionEnabled").mockResolvedValue(false);
   const interpolate = jest.spyOn(Animated.Value.prototype, "interpolate");
   jest.spyOn(Animated, "timing").mockImplementation((value, config) => ({

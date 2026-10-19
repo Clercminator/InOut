@@ -12,6 +12,7 @@ const mockHaptic = jest.fn((..._args: unknown[]) => Promise.resolve());
 const mockAwake = jest.fn(() => Promise.resolve());
 const mockSleep = jest.fn(() => Promise.resolve());
 const mockActivate = jest.fn((_active: boolean) => Promise.resolve());
+const mockAudioMode = jest.fn((_mode: object) => Promise.resolve());
 const mockPlayers: {
   volume: number;
   loop: boolean;
@@ -48,7 +49,7 @@ jest.mock("expo-keep-awake", () => ({
   deactivateKeepAwake: () => mockSleep(),
 }));
 jest.mock("expo-audio", () => ({
-  setAudioModeAsync: () => Promise.resolve(),
+  setAudioModeAsync: (mode: object) => mockAudioMode(mode),
   setIsAudioActiveAsync: (active: boolean) => mockActivate(active),
   createAudioPlayer: (_source: number, options: { updateInterval?: number } = {}) => {
     const player = {
@@ -80,6 +81,7 @@ beforeEach(() => {
   mockAwake.mockClear();
   mockSleep.mockClear();
   mockActivate.mockReset().mockResolvedValue(undefined);
+  mockAudioMode.mockClear();
   Object.defineProperty(AppState, "currentState", {
     configurable: true,
     value: "active",
@@ -124,6 +126,7 @@ test("native cue delivery, pause cleanup, and no stale phase backlog", async () 
     await Promise.resolve();
   });
   expect(mockAwake).toHaveBeenCalled();
+  expect(mockAudioMode).toHaveBeenCalledWith({ playsInSilentMode: true, shouldPlayInBackground: false, interruptionMode: "doNotMix" });
   expect(mockHaptic).toHaveBeenCalled();
   expect(mockPlayers[0].play).toHaveBeenCalled();
   const priorHaptics = mockHaptic.mock.calls.length;
@@ -434,4 +437,14 @@ test("decoder errors pause once and explicit Resume recreates music players", as
   expect(fresh[0].play).not.toHaveBeenCalled();
   await act(async () => { mockController.resume(); });
   expect(fresh[0].play).toHaveBeenCalled();
+});
+
+
+test("idle and paused sessions never disable the global engine used by audio previews", async () => {
+  await render(<NativeSessionEffects />);
+  expect(mockActivate).not.toHaveBeenCalled();
+  await act(async () => { mockController.start(null); });
+  expect(mockActivate).toHaveBeenCalledWith(true);
+  await act(async () => { mockController.pause(); mockController.setPreferences({ ...mockController.preferences, audio: "silent", guidance: { voice: false, nature: false, music: false } }); });
+  expect(mockActivate).not.toHaveBeenCalledWith(false);
 });

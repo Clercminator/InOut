@@ -686,3 +686,20 @@ test.each(["en", "es", "pt"] as const)("result image includes a localized invita
   expect(screen.getByTestId("result-share-invitation")).toHaveTextContent(t("Try a breathing practice with IN/OUT."));
   expect(screen.getByText("inout.imrtech.xyz")).toBeTruthy();
 });
+
+
+test("audio previews remain available while a practice is paused and stop when it resumes", async () => {
+  mockController.setPreferences({ ...mockController.preferences, audio: "voice", guidance: { voice: true, music: true } });
+  mockController.start(null);
+  mockController.pause();
+  const rendered = await render(wrap(<SoundControls compact />));
+  await fireEvent.press(screen.getByRole("button", { name: "Preview voice" }));
+  expect(screen.getByText("Loading sample…")).toBeTruthy();
+  expect(mockPlayers.length).toBeGreaterThan(0);
+  const voices = [...mockPlayers];
+  await act(async () => { mockController.resume(); });
+  await rendered.rerender(wrap(<SoundControls compact />));
+  expect(voices.every(player => player.remove.mock.calls.length === 1)).toBe(true);
+  expect(screen.queryByRole("button", { name: "Stop preview" })).toBeNull();
+  expect(screen.getByRole("button", { name: "Preview voice" })).toBeDisabled();
+});

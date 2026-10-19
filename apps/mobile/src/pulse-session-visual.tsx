@@ -36,7 +36,7 @@ export function PulseSessionVisual({ view, phases, running, cycleLabel, pacerThe
         <View style={geometry === "triangle" ? { transform: [{ translateY: size * (.1 + .8 / Math.sqrt(3) - .5) }] } : undefined}>
           <PulseOrb view={view} phases={phases} running={running} size={size * (geometry === "triangle" ? .43 : .76)} minimumScale={.45} theme={pacerTheme ?? "default"} />
         </View>
-        <BoxVisual geometry={geometry} view={view} running={running} reduced={reduced} pacerTheme={pacerTheme ?? "default"} />
+        <BoxVisual phases={phases} geometry={geometry} view={view} running={running} reduced={reduced} pacerTheme={pacerTheme ?? "default"} />
       </View> : <PulseOrb view={view} phases={phases} running={running} size={size} minimumScale={.45} theme={pacerTheme ?? "default"} />}
       {!separate && <View style={{ position: "absolute", backgroundColor: `${theme.preview.surface}E8`, borderColor: `${theme.preview.ring}88`, borderWidth: 1, borderRadius: 28, maxWidth: "90%" }}>{readout}</View>}
     </View>

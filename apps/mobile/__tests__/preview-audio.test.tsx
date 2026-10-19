@@ -2,8 +2,9 @@ import { AppState } from "react-native";
 import { createAudioPreview } from "../src/preview-audio";
 
 const mockPlayers: any[] = [];
+let mockMediaAllowed = false;
 jest.mock("expo-audio", () => ({
-  setAudioModeAsync: async () => {}, setIsAudioActiveAsync: async () => {},
+  setAudioModeAsync: async (mode: { playsInSilentMode: boolean }) => { mockMediaAllowed = mode.playsInSilentMode; }, setIsAudioActiveAsync: async () => {},
   createAudioPlayer: (source: number) => {
     const p = { source, isLoaded: false, play: jest.fn(), pause: jest.fn(), remove: jest.fn(), unsubscribe: jest.fn(),
       addListener: (_: string, fn: (status: object) => void) => { p.status = fn; return { remove: p.unsubscribe }; }, status: (_: object) => {} };
@@ -13,6 +14,23 @@ jest.mock("expo-audio", () => ({
 const flush = async () => { for (let i = 0; i < 8; i++) await Promise.resolve(); };
 beforeEach(() => { jest.useFakeTimers(); mockPlayers.length = 0; Object.defineProperty(AppState, "currentState", { configurable: true, value: "active" }); });
 afterEach(() => jest.useRealTimers());
+
+test("explicit previews can start independently of the Android ringtone mode", async () => {
+  mockMediaAllowed = false;
+  const fail = jest.fn(), state = jest.fn();
+  const preview = createAudioPreview(fail, jest.fn(), state);
+  void preview.start([{ source: 1, volume: .7, at: 0 }], 6200); await flush();
+  const player = mockPlayers[0];
+  // Mirrors Expo Android's play() gate when the ringer is not NORMAL.
+  player.play.mockImplementation(() => {
+    if (mockMediaAllowed) player.status({ isLoaded: true, playing: true });
+  });
+  player.status({ isLoaded: true, playing: false }); await flush();
+  jest.advanceTimersByTime(2000);
+  expect(state).toHaveBeenCalledWith("playing");
+  expect(fail).not.toHaveBeenCalled();
+  preview.stop();
+});
 
 test.each([1, 2, 3])("style %s waits for native loading and releases all resources", async source => {
   const fail = jest.fn(), done = jest.fn();

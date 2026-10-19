@@ -6,6 +6,11 @@ Voice cues now sample the breathing engine directly every 50 ms and on controlle
 
 Automated tests cover multiple delayed cycles, brief focus-status gaps, confirmed focus loss, decoder failure/recovery, music position across Pause/Resume, replacement/cleanup and native loop boundaries. These tests use native API doubles and do not establish speaker output, device vibration or smoothness. The owner checklist contains the required multi-cycle phone checks. No bundled audio assets were replaced in this update.
 
+Owner follow-up: the popup design was accepted, but Voice/Music preview buttons did nothing while the session was paused. The controls incorrectly gated on session stage instead of running state. Previews now allow paused sessions and show loading/play/error feedback next to the selected button; resuming stops the preview. Idle/paused session effects no longer disable the shared audio engine, and preview players retain the native audio session between voice clips. Retesting is pending; the first queued candidate was canceled.
+
+
+Latest phone evidence: Box/Triangle corner motion and themed popups are accepted. Audio previews reached `start-timeout`: files load, but native playback does not start. Expo Android gates `play()` on the separate ringtone mode when `playsInSilentMode` is false. Previews, sessions and saved-result chimes now enable explicit media playback independently of that switch; media volume, IN/OUT mute controls, foreground-only playback and interruption handling remain active. A regression models the native ringtone gate; 105 focused audio/experience tests passed. The owner reloaded Preview and confirmed "it works" after this fix on October 19. The full headphone/interruption/long-loop acceptance matrix below remains separate. All 322 mobile tests and TypeScript checks pass.
+
 ## Scope and inventory method
 
 The requested `release-assets/audio/` folder is not present in this checkout. The supplied release recordings are in `release/assets/current/audio/`. They remain owner-supplied, unmodified, and untracked. The mobile app's bundled audio is under `apps/mobile/assets/audio/`.

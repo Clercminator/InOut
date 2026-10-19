@@ -120,7 +120,7 @@ export function SighVisual({
   return (
     <View testID={`specialized-${animationType}`} pointerEvents="none" style={{ gap: 16, backgroundColor: theme?.background, borderRadius: 24, padding: theme ? 12 : 0 }}>
     <View style={[styles.area, separateReadout && { maxWidth: 240 }]}>
-      {animationType === "box" && <BoxVisual view={view} running={running} reduced={reduced} />}
+      {animationType === "box" && <BoxVisual phases={phases} view={view} running={running} reduced={reduced} />}
       {animationType !== "alternating" && animationType !== "ripple" && <Animated.View
         testID="breathing-bubble"
         accessible={false}

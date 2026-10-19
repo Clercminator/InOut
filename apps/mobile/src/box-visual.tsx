@@ -5,6 +5,7 @@ import { useLanguage } from "./use-language";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Easing, StyleSheet, View } from "react-native";
 
+import type { Phase } from "@inout/shared-types";
 import type { snapshot } from "@inout/breathing-engine";
 import { boxPoint as boxPointForTrail, boxSamples, trianglePoint, triangleSamples, triangleVertices } from "./box-path";
 import { useExperience } from "./experience-context";
@@ -12,12 +13,13 @@ import { useExperience } from "./experience-context";
 
 type Snapshot = ReturnType<typeof snapshot>;
 
-export function BoxVisual({ view, running, reduced, pacerTheme, geometry = "box" }: {
+export function BoxVisual({ view, running, reduced, pacerTheme, geometry = "box", phases }: {
   view: Snapshot;
   running: boolean;
   reduced: boolean;
   pacerTheme?: PacerThemeId;
   geometry?: "box" | "triangle";
+  phases?: readonly Phase[];
 }) {
   const { colors, palettes } = useTheme();
   const styles = useLocalStyles();
@@ -26,28 +28,35 @@ export function BoxVisual({ view, running, reduced, pacerTheme, geometry = "box"
   const theme = pacerTheme ? resolvePacerTheme(pacerTheme).preview : null;
   const phaseColors = theme ? [theme.ring, theme.glow, theme.ring, theme.secondaryText] : [palette.accent, palette.hold, palette.exhale, colors.rest];
   const [size, setSize] = useState(0);
-  const progress = useRef(new Animated.Value(0)).current;
+  const clock = useRef(new Animated.Value(0)).current;
+  const offset = useRef(new Animated.Value(0)).current;
   const sides = geometry === "triangle" ? 3 : 4;
   const samples = geometry === "triangle" ? triangleSamples : boxSamples;
   const pointFor = geometry === "triangle" ? trianglePoint : boxPointForTrail;
   const phase = view.phaseIndex % sides;
   const color = phaseColors[geometry === "triangle" ? [0, 2, 3][phase] : phase];
-  // Resample from the authoritative engine on phase changes and pause/resume.
-  // Native transforms interpolate between those boundaries without JS frame updates.
+  const durations = Array.from({ length: sides }, (_, i) => phases?.[i]?.durationMs ?? view.phase.durationMs);
+  const durationsKey = durations.join(",");
+  const boundaries = useMemo(() => durations.reduce((times, ms) => [...times, times[times.length - 1] + ms], [0]), [durationsKey]);
+  const cycleMs = boundaries[sides];
+  const progress = useMemo(() => Animated.modulo(Animated.add(clock, offset), cycleMs).interpolate({
+    inputRange: boundaries, outputRange: boundaries.map((_, index) => index),
+  }), [clock, offset, boundaries, cycleMs]);
+  const staticCue = reduced ? view.cueKey : undefined;
+  // Run the entire closed path on the native clock, including corners and cycle wrap.
+  // Phase changes only recolor the track; they never stop/restart the moving guide.
   useEffect(() => {
-    progress.stopAnimation();
-    progress.setValue(phase + (reduced ? 0.5 : view.phaseElapsedMs / Math.max(1, view.phase.durationMs)));
+    clock.stopAnimation();
+    clock.setValue(0);
+    offset.setValue(boundaries[phase] + (reduced ? durations[phase] / 2 : view.phaseElapsedMs));
     if (!running || reduced) return;
-    const animation = Animated.timing(progress, {
-      toValue: phase + 1,
-      duration: view.phaseRemainingMs,
-      easing: Easing.linear,
-      useNativeDriver: true,
-      isInteraction: false,
-    });
+    const animation = Animated.loop(Animated.timing(clock, {
+      toValue: cycleMs, duration: cycleMs, easing: Easing.linear,
+      useNativeDriver: true, isInteraction: false,
+    }));
     animation.start();
     return () => animation.stop();
-  }, [view.cueKey, running, reduced, progress, geometry]);
+  }, [running, reduced, clock, offset, geometry, view.blockIndex, view.sessionStartedAt, boundaries, staticCue]);
 
   const points = useMemo(() => [0.055, 0.028, 0].map((lag) => {
     const trail = samples.map((sample) => {

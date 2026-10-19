@@ -51,7 +51,7 @@ export function Celebration({ title, message, variant = "complete", awards = [] 
       if (AppState.currentState !== "active") return;
       if (haptics) void (awards.length ? Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success) : Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft)).catch(() => {});
       if (audio !== "silent" && experience.chime !== "off") void (async () => {
-        await setAudioModeAsync({ playsInSilentMode: false, shouldPlayInBackground: false, interruptionMode: "doNotMix" });
+        await setAudioModeAsync({ playsInSilentMode: true, shouldPlayInBackground: false, interruptionMode: "doNotMix" });
         if (disposed) return;
         await setIsAudioActiveAsync(true);
         if (disposed || AppState.currentState !== "active") return;
