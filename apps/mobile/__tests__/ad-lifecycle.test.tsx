@@ -61,11 +61,10 @@ test("consent denial and unresolved billing prevent every ad request", async () 
   f.ads.setContext(context); f.tick(); for (const id of ["a", "b", "c"]) f.ads.prepareCompletion(id);
   expect(mockInitialize).not.toHaveBeenCalled(); expect(mockFactory).not.toHaveBeenCalled();
 });
-test("completion ads require consent, app age, third unique completion, Done, interval and daily caps", async () => {
+test("completion ads require consent, app age, unique completion, dismissal, interval and daily caps", async () => {
   const f = fixture(); await f.ads.prepare(); f.ads.setContext(context);
   f.ads.prepareCompletion("early"); expect(f.load).not.toHaveBeenCalled(); f.tick(180001);
-  f.ads.prepareCompletion("second"); f.ads.prepareCompletion("second"); expect(f.load).not.toHaveBeenCalled();
-  f.ads.prepareCompletion("third"); expect(f.load).toHaveBeenCalledTimes(1); expect(f.show).not.toHaveBeenCalled();
+  f.ads.prepareCompletion("third"); f.ads.prepareCompletion("third"); expect(f.load).toHaveBeenCalledTimes(1); expect(f.show).not.toHaveBeenCalled();
   expect(f.track).toHaveBeenCalledWith("ad_requested");
   expect(mockFactory).toHaveBeenCalledWith("test-interstitial", { requestNonPersonalizedAdsOnly: true });
   f.events.get("loaded")!(); const done = f.ads.showCompletion("third"); expect(f.show).toHaveBeenCalledTimes(1);
@@ -109,7 +108,7 @@ test("paywall dismissal prevents preload, and unavailable ads never delay Done",
 test("malformed persisted caps and clock rollback fail closed", async () => {
   const f = fixture({ seen: "wrong" }); await f.ads.prepare(); f.tick(); f.ads.setContext(context);
   for (const id of ["a", "b", "c"]) f.ads.prepareCompletion(id); expect(mockFactory).not.toHaveBeenCalled();
-  const valid = fixture(); await valid.ads.prepare(); valid.tick(); valid.ads.setContext(context); valid.ads.prepareCompletion("a"); valid.tick(-100);
+  const valid = fixture(); await valid.ads.prepare(); valid.tick(); valid.ads.setContext(context); valid.tick(-1000000);
   valid.ads.prepareCompletion("b"); valid.ads.prepareCompletion("c"); expect(mockFactory).not.toHaveBeenCalled();
 });
 test("secure billing cache is device-bound, namespaced, and refuses a future timestamp", () => {
@@ -125,5 +124,50 @@ test("native load/show exceptions are contained and never prevent leaving a resu
   for (const id of ["a", "b", "c"]) expect(() => f.ads.prepareCompletion(id)).not.toThrow();
   await f.ads.showCompletion("c");
   f.ads.prepareCompletion("d"); f.events.get("loaded")!(); f.show.mockImplementationOnce(() => { throw Error("no fill"); });
-  await expect(f.ads.showCompletion("d")).resolves.toBeUndefined(); expect(f.events.size).toBe(0);
+  await expect(f.ads.showCompletion("d")).resolves.toBe(false); expect(f.events.size).toBe(0);
+});
+
+test("a saved completion presents automatically and reports thanks only after an impression", async () => {
+  const f = fixture(); f.tick(); f.ads.setContext(context);
+  const shown = f.ads.presentCompletion("saved");
+  for (let i = 0; i < 10; i++) await Promise.resolve();
+  expect(f.load).toHaveBeenCalledTimes(1);
+  f.events.get("loaded")!();
+  for (let i = 0; i < 5; i++) await Promise.resolve();
+  expect(f.show).toHaveBeenCalledTimes(1);
+  f.events.get("opened")!(); f.events.get("closed")!();
+  await expect(shown).resolves.toBe(true);
+  await expect(f.ads.presentCompletion("saved")).resolves.toBe(false);
+  expect(f.show).toHaveBeenCalledTimes(1);
+});
+
+test("automatic completion loading expires and cannot show a late ad", async () => {
+  jest.useFakeTimers();
+  try {
+    const f = fixture(); f.tick(); f.ads.setContext(context);
+    const shown = f.ads.presentCompletion("saved");
+    for (let i = 0; i < 10; i++) await Promise.resolve();
+    const lateLoad = f.events.get("loaded")!;
+    await jest.advanceTimersByTimeAsync(3001);
+    await expect(shown).resolves.toBe(false);
+    lateLoad();
+    expect(f.show).not.toHaveBeenCalled(); expect(f.events.size).toBe(0);
+  } finally { jest.useRealTimers(); }
+});
+
+test("leaving the result during consent or loading cancels automatic presentation", async () => {
+  const f = fixture(); f.tick(); f.ads.setContext(context);
+  let consent!: (value: { canRequestAds: boolean }) => void;
+  mockConsent.mockReturnValueOnce(new Promise(resolve => { consent = resolve; }));
+  let focused = true;
+  const beforeLoad = f.ads.presentCompletion("saved", () => focused);
+  focused = false; consent({ canRequestAds: true });
+  await expect(beforeLoad).resolves.toBe(false);
+  expect(f.load).not.toHaveBeenCalled();
+  focused = true;
+  const loading = f.ads.presentCompletion("saved", () => focused);
+  for (let i = 0; i < 10; i++) await Promise.resolve();
+  focused = false; f.ads.cancelCompletion();
+  await expect(loading).resolves.toBe(false);
+  expect(f.show).not.toHaveBeenCalled();
 });

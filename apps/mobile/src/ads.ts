@@ -23,7 +23,7 @@ export class AdService {
   private blocked = false;
   private startedAt: number;
   private frequency: Frequency;
-  private candidate: { id: string; loaded: boolean; show(): Promise<void>; dispose(): void } | null = null;
+  private candidate: { id: string; loaded: boolean; opened: boolean; loadResult: Promise<boolean>; show(): Promise<void>; dispose(): void } | null = null;
   private showing = false;
   private finishShowing?: () => void;
   constructor(private entitlements: EntitlementService, readonly mode: "test" | "live" | "preview", private storage?: AdFrequencyStorage, private now = Date.now,
@@ -126,13 +126,17 @@ export class AdService {
     const sdk = require("react-native-google-mobile-ads") as typeof import("react-native-google-mobile-ads");
     const ad = sdk.InterstitialAd.createForAdRequest(adUnit("interstitial", this.mode), { requestNonPersonalizedAdsOnly: true });
     const cleanup: (() => void)[] = [];
-    const candidate = { id, loaded: false, show: () => ad.show(), dispose: () => cleanup.splice(0).forEach(fn => fn()) };
+    let settleLoad!: (loaded: boolean) => void;
+    const loadResult = new Promise<boolean>(resolve => { settleLoad = resolve; });
+    const candidate = { id, loaded: false, opened: false, loadResult, show: () => ad.show(), dispose: () => {
+      settleLoad(false); cleanup.splice(0).forEach(fn => fn());
+    } };
     this.candidate = candidate;
     cleanup.push(ad.addAdEventListener(sdk.AdEventType.LOADED, () => {
-      if (this.candidate === candidate && this.completionAllowed()) { candidate.loaded = true; this.track("ad_loaded"); }
+      if (this.candidate === candidate && this.completionAllowed()) { candidate.loaded = true; settleLoad(true); this.track("ad_loaded"); }
       else this.cancelCompletion();
     }));
-    cleanup.push(ad.addAdEventListener(sdk.AdEventType.OPENED, () => this.track("ad_impression")));
+    cleanup.push(ad.addAdEventListener(sdk.AdEventType.OPENED, () => { candidate.opened = true; this.track("ad_impression"); }));
     cleanup.push(ad.addAdEventListener(sdk.AdEventType.ERROR, () => {
       this.track("ad_failed", { outcome: "failed" });
       this.finishShowing?.(); this.cancelCompletion();
@@ -144,23 +148,43 @@ export class AdService {
     if (this.completionAllowed()) { this.track("ad_requested"); ad.load(); } else this.cancelCompletion();
     } catch { this.track("ad_failed", { outcome: "failed" }); this.cancelCompletion(); }
   }
+  /** Present only at the saved-result transition; loading never blocks result controls. */
+  async presentCompletion(id: string, isEligible: () => boolean = () => true): Promise<boolean> {
+    try { await this.prepare(isEligible); } catch { return false; }
+    if (!isEligible()) return false;
+    this.prepareCompletion(id);
+    const candidate = this.candidate;
+    if (!candidate || candidate.id !== id) return false;
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    try {
+      const loaded = await Promise.race([candidate.loadResult, new Promise<false>(resolve => {
+        timeout = setTimeout(() => resolve(false), 3000);
+      })]);
+      if (!loaded || !isEligible() || this.candidate !== candidate) {
+        if (this.candidate === candidate) this.cancelCompletion();
+        return false;
+      }
+      return await this.showCompletion(id);
+    } finally { if (timeout) clearTimeout(timeout); }
+  }
   async showCompletion(id: string) {
     const candidate = this.candidate;
-    if (!candidate || candidate.id !== id) { this.cancelCompletion(); return; }
+    if (!candidate || candidate.id !== id) { this.cancelCompletion(); return false; }
     if (!candidate.loaded) {
       if (this.completionAllowed()) this.track("ad_unavailable", { outcome: "unavailable" });
       this.cancelCompletion();
-      return;
+      return false;
     }
-    if (!this.completionAllowed() || !this.withinCaps()) { this.cancelCompletion(); return; }
+    if (!this.completionAllowed() || !this.withinCaps()) { this.cancelCompletion(); return false; }
     this.frequency.lastAd = this.now(); this.frequency.shown++; this.frequency.count = 0; this.persist();
-    if (this.blocked) { this.cancelCompletion(); return; }
+    if (this.blocked) { this.cancelCompletion(); return false; }
     this.showing = true;
     await new Promise<void>(resolve => {
       this.finishShowing = () => { this.showing = false; this.finishShowing = undefined; resolve(); };
       try { void candidate.show().catch(() => { this.finishShowing?.(); this.cancelCompletion(); }); }
       catch { this.finishShowing?.(); this.cancelCompletion(); }
     });
+    return candidate.opened;
   }
   cancelCompletion() { if (this.showing) return; this.candidate?.dispose(); this.candidate = null; }
 }

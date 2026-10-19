@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { publicError } from "./public-error";
-import { Share } from "react-native";
+import { Share, View } from "react-native";
+import { Alert } from "./localized-native";
 import { router } from "expo-router";
 import type { Protocol } from "@inout/shared-types";
 import { includesHighIntensity } from "@inout/protocols";
 import { shareSnapshot } from "@inout/sharing";
-import { Button, Copy } from "./ui";
+import { Button, Copy, IconButton } from "./ui";
 import { useSession } from "./provider";
 import { t, getLanguage } from "./i18n";
 import info from "../../../release/public-info.json";
@@ -21,6 +22,7 @@ export function ShareExercise({ protocol, title = "Share this exercise" }: { pro
   const [error, setError] = useState("");
   if (includesHighIntensity(protocol)) return null;
   return <>
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}><View style={{ flex: 1 }}>
     <Button title={title} secondary disabled={busy || links?.busy} onPress={() => {
       setBusy(true); setError("");
       let deliveryAttempted = false;
@@ -47,8 +49,9 @@ export function ShareExercise({ protocol, title = "Share this exercise" }: { pro
         setError(publicError(error, "Sharing is temporarily unavailable. Please try again online."));
       }).finally(() => setBusy(false));
     }} />
-    <Copy>Only the breathing cadence is uploaded. Names, ratings and notes stay private. Links expire after 30 days and can be revoked from Shared links.</Copy>
-    <Button title="Manage shared links" secondary onPress={() => router.push("/shared-links")} />
+    </View><IconButton title="About exercise sharing" icon="info-outline" onPress={() => Alert.alert("About exercise sharing",
+      "Only the breathing cadence is uploaded. Names, ratings and notes stay private. Links expire after 30 days and can be revoked from Shared links.",
+      [{ text: "Close" }, { text: "Manage shared links", onPress: () => router.push("/shared-links") }])} /></View>
     {!!error && <Copy accessibilityRole="alert">{error}</Copy>}
   </>;
 }

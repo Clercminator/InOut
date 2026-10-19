@@ -2,7 +2,7 @@ import PracticeSafety from "../app/practice-safety";
 import React from "react";
 import { Alert, Share } from "react-native";
 import { render, fireEvent, screen, waitFor, act } from "@testing-library/react-native";
-import Reminders from "../app/reminders";
+import { NotificationSettings } from "../src/notification-settings";
 import Insights from "../app/insights";
 import { ReminderContext } from "../src/reminder-context";
 import { ReminderService } from "../src/reminders";
@@ -25,8 +25,14 @@ import { SessionController } from "../src/session-controller";
 import type { LocalStore } from "../src/storage";
 import type { SessionRecord, SavedRoutine } from "@inout/shared-types";
 import { catalogProtocols, protocols } from "@inout/protocols";
+import { CommercialContext, type CommercialServices } from "../src/commercial-context";
 
 let mockController: SessionController;
+const mockNotificationPermission = jest.fn(async (..._args: unknown[]) => true);
+jest.mock("../src/reminder-native", () => ({
+  nativeReminderAdapter: () => ({ permission: (...args: unknown[]) => mockNotificationPermission(...args) }),
+  configureEngagementNotifications: jest.fn(async () => {}),
+}));
 const mockReplace = jest.fn();
 const mockPush = jest.fn();
 let mockParams: { id?: string; date?: string; saved?: string } = {};
@@ -332,6 +338,37 @@ test("fresh saved improvement celebrates, history and failed saves do not", asyn
   expect(screen.queryByText("A little lighter.")).toBeNull();
   expect(screen.queryByText("Session saved!")).toBeNull();
 });
+
+test("successful saved results present the completion ad automatically and show its thank-you", async () => {
+  mockController.setPreferences({ ...mockController.preferences, freeAdsNoticeSeen: true });
+  mockController.start(7); now = 48000; mockController.tick(); mockController.answer(3, null);
+  mockParams = { id: "test-session", saved: "1" };
+  const idle = { subscribe: () => () => {}, getRevision: () => 0 };
+  const presentCompletion = jest.fn(async () => true), cancelCompletion = jest.fn();
+  const commercial = {
+    entitlements: { ...idle, has: () => false, accessReady: true, billingReady: true, state: { pro: false } },
+    subscriptions: idle,
+    ads: { ...idle, mode: "test", setContext: jest.fn(), presentCompletion, cancelCompletion },
+    analytics: mockController.analytics,
+  } as unknown as CommercialServices;
+  await render(<CommercialContext.Provider value={commercial}><Result /></CommercialContext.Provider>);
+  await waitFor(() => expect(presentCompletion).toHaveBeenCalledWith("test-session", expect.any(Function)));
+  expect(screen.getByText("Thank you for helping us make the app better by watching this ad.")).toBeTruthy();
+  await fireEvent.press(screen.getByRole("button", { name: "Return to Home" }));
+  expect(cancelCompletion).toHaveBeenCalled();
+  expect(mockReplace).toHaveBeenCalledWith("/(tabs)");
+});
+
+test("sharing privacy details appear only from the adjacent info button", async () => {
+  mockController.start(7); now = 48000; mockController.tick(); mockController.answer(3, null);
+  mockParams = { id: "test-session" };
+  const alert = jest.spyOn(Alert, "alert").mockImplementation(() => {});
+  await render(<Result />);
+  expect(screen.queryByText(/Only the breathing cadence is uploaded/)).toBeNull();
+  await fireEvent.press(screen.getByRole("button", { name: "About exercise sharing" }));
+  expect(alert).toHaveBeenCalledWith("About exercise sharing", expect.stringContaining("Names, ratings and notes stay private"), expect.any(Array));
+  alert.mockRestore();
+});
 test("result presents raw scores and honest negative shift", async () => {
   mockParams = { id: "test-session" };
   mockController.start(3);
@@ -579,22 +616,14 @@ test("leaving the active route pauses without discarding the session", async () 
 });
 
 
-test("reminder form retains an unsaved draft after permission denial and can retry", async () => {
-  let allowed = false;
-  const service = new ReminderService({ read: () => [], write: () => {} }, {
-    permission: async () => allowed, list: async () => [], cancel: async () => {}, schedule: async () => {},
-  }, () => false, () => []);
-  await render(<ReminderContext.Provider value={service}><Reminders /></ReminderContext.Provider>);
-  await fireEvent.press(screen.getByText("Add reminder"));
-  await fireEvent.changeText(screen.getByLabelText("Reminder name"), "My quiet moment");
-  await fireEvent.press(screen.getByText("Save reminder"));
+test("notification settings preserve preferences after permission denial and can retry", async () => {
+  mockNotificationPermission.mockResolvedValueOnce(false).mockResolvedValue(true);
+  await render(<NotificationSettings />);
+  await fireEvent(screen.getByLabelText("Daily Reset"), "valueChange", true);
   await waitFor(() => expect(screen.getByText("Notifications are off. Enable them in phone settings, then try again.")).toBeTruthy());
-  expect(screen.getByDisplayValue("My quiet moment")).toBeTruthy();
-  allowed = true;
-  await fireEvent.press(screen.getByText("Save reminder"));
-  await waitFor(() => expect(screen.getByText("My quiet moment")).toBeTruthy());
-  expect(screen.queryByLabelText("Reminder name")).toBeNull();
-  expect(service.items[0].label).toBe("My quiet moment");
+  expect(mockController.preferences.notifications?.dailyReset).not.toBe(true);
+  await fireEvent(screen.getByLabelText("Daily Reset"), "valueChange", true);
+  await waitFor(() => expect(mockController.preferences.notifications?.dailyReset).toBe(true));
 });
 
 test("insight entry explains the Pro feature without blocking basic progress", async () => {

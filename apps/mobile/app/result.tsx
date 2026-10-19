@@ -29,7 +29,7 @@ export default function Result() {
   const { id, saved } = useLocalSearchParams<{ id: string; saved?: string }>();
   const controller = useSession();
   const commercial = useCommercial();
-  const [leaving, setLeaving] = useState(false);
+  const [adThanks, setAdThanks] = useState(false);
   const disclosureShown = useRef("");
   const completion = controller.challenges().find(s => s.status === "completed" && !s.celebrationSeen && s.completedSteps.some(step => step.sessionId === id));
   const completionId = completion?.challengeId;
@@ -52,11 +52,16 @@ export default function Result() {
     }]);
   }, [id, adEligible, commercial, controller, controller.preferences]);
   useFocusEffect(useCallback(() => {
-    if (!commercial || !adEligible) return;
+    if (!commercial || !adEligible || !commercial.entitlements.accessReady || !commercial.entitlements.billingReady ||
+      commercial.entitlements.has("adFree") || !controller.preferences.freeAdsNoticeSeen) return;
+    let focused = true;
     commercial.ads.setContext({ path: "/result", foreground: AppState.currentState === "active", sessionStage: "result", challengeActive: controller.hasActiveChallenge?.() ?? !!controller.pendingTest?.() });
-    commercial.ads.prepareCompletion(id);
-    return () => commercial.ads.cancelCompletion();
-  }, [commercial, adEligible, id, controller, commercial?.ads.ready]));
+    void commercial.ads.presentCompletion(id, () => focused && AppState.currentState === "active").then(shown => {
+      if (focused && shown) setAdThanks(true);
+    });
+    return () => { focused = false; commercial.ads.cancelCompletion(); };
+  }, [commercial, adEligible, id, controller, controller.preferences.freeAdsNoticeSeen,
+    commercial?.entitlements.accessReady, commercial?.entitlements.billingReady, commercial?.entitlements.state.pro]));
   if (!record || record.stage !== "result")
     return (
       <Screen>
@@ -73,6 +78,7 @@ export default function Result() {
   const program = enrollment && programFor(enrollment.programId);
   return (
     <Screen title={record.dailyReset ? "Daily Reset" : "STATE SHIFT"}>
+      {adThanks && <Copy accessibilityRole="alert">Thank you for helping us make the app better by watching this ad.</Copy>}
       {record.endReason === "unwell" && <Card style={{ borderColor: colors.danger }}>
         <Title>Stop and breathe naturally</Title>
         <Copy accessibilityRole="alert">Let go of the pacing. Sit or lie somewhere safe. Do not push through discomfort.</Copy>
@@ -150,12 +156,10 @@ export default function Result() {
       <View style={{ gap: 8 }}>
         <Button
           title="Return to Home"
-          disabled={!!controller.error || leaving}
+          disabled={!!controller.error}
           onPress={() => {
-            if (leaving) return;
-            setLeaving(true);
-            void (adEligible ? commercial?.ads.showCompletion(id) : Promise.resolve())?.finally(() => { setLeaving(false); router.replace("/(tabs)"); });
-            if (!commercial) { setLeaving(false); router.replace("/(tabs)"); }
+            commercial?.ads.cancelCompletion();
+            router.replace("/(tabs)");
           }}
         />
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
