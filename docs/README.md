@@ -27,7 +27,7 @@ This section supersedes dated release notes below. Implementation and automated 
 | Session reliability and dialogs | Box/Triangle improvements were accepted on the owner's phone. All 14 protocols now share tested Pause/Resume/End/Unwell behavior. Remaining visuals use non-interactive motion and separate readouts. Voice delivery follows engine boundaries, haptics tolerate modest scheduling jitter, audio activation is serialized, and failed decoders are replaced before explicit Resume. App dialogs use the active theme; OS permission/store/consent sheets remain native. Multi-cycle sound, vibration and smoothness still require phone acceptance. |
 | Testing release | Preparing Android 1.2.1 (7) for the authorized internal testing release. Live Play bundle history showed codes 3–5, and EAS history already contains code 6. Public production gates remain open. |
 
-Verification for this change: TypeScript, locale consistency, release-policy checks, Android/iOS Hermes exports and all 321 mobile tests (25 suites) passed. The domain run passed 222 of 223 tests; its sole stale version-code assertion was updated for code 7 and the entire three-test release-hardening suite then passed. Physical native acceptance remains pending.
+Verification for this change: TypeScript, locale consistency, release-policy checks, Android/iOS Hermes exports and all 321 mobile tests (25 suites) passed. All 223 domain tests passed. Physical native acceptance remains pending.
 
 ## Earlier release status
 

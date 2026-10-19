@@ -2,7 +2,13 @@
 
 Status is based on the checked-in configuration and workspace evidence, including the corrected Android build 6 R8 verification. A successful JavaScript export is not a native build, device, provider, or store-approval test.
 
-## Evidence matrix
+## October 19 internal testing candidate
+
+Android 1.2.1 (7), source `2507f2f1c1ee118f7cabb672903b2a82b10faefb`, is building in the existing EAS project as [462efc4f](https://expo.dev/accounts/imr-tech/projects/inout/builds/462efc4f-a05e-498a-896d-274673372391), profile `store-test` (remote upload signing, store billing, test ads). Live Play history showed codes 3–5; code 6 exists in EAS history. The internal track was paused and a new internal release draft was prepared with EN/ES/PT notes. Bundle verification and rollout are pending build completion; the earlier evidence matrix below is historical.
+
+TypeScript, 223 domain tests, 321 mobile tests in 25 suites, locale/release checks and both Android/iOS Hermes exports passed. The owner previously accepted Box/Triangle behavior; all-protocol multi-cycle audio, vibration and the new dialogs still need physical acceptance. No iOS signed build or public production approval is implied.
+
+## Earlier evidence matrix
 
 | Area | Android | iOS |
 | --- | --- | --- |

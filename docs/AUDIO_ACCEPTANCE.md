@@ -1,5 +1,11 @@
 # IN/OUT audio acceptance
 
+## October 19 session reliability update
+
+Voice cues now sample the breathing engine directly every 50 ms and on controller changes, independently of display refresh. Short decoder/scheduling delays are tolerated only while a cue can finish in the current phase; missed cues are never replayed as a backlog. Haptics likewise tolerate modest jitter without bursting delayed pulses. All session players retain the native audio session so finishing one voice recording cannot deactivate concurrent music. Audio activation changes are serialized; confirmed interruptions pause practice, and decoder failures replace players for an explicit Resume.
+
+Automated tests cover multiple delayed cycles, brief focus-status gaps, confirmed focus loss, decoder failure/recovery, music position across Pause/Resume, replacement/cleanup and native loop boundaries. These tests use native API doubles and do not establish speaker output, device vibration or smoothness. The owner checklist contains the required multi-cycle phone checks. No bundled audio assets were replaced in this update.
+
 ## Scope and inventory method
 
 The requested `release-assets/audio/` folder is not present in this checkout. The supplied release recordings are in `release/assets/current/audio/`. They remain owner-supplied, unmodified, and untracked. The mobile app's bundled audio is under `apps/mobile/assets/audio/`.
@@ -10,7 +16,7 @@ Durations, sample rates, channels, and average MP3 bitrates below were read from
 
 ## Recovery preview verification
 
-Previews now display Loading before native playback and Playing only after `playbackStatusUpdate.playing`. A loaded player that never starts fails after two seconds; load failures time out after five seconds. Buffering, completion and interruption update the status. Selecting another preview stops and releases the previous players, including across screen instances. Muted preview volume produces explicit feedback. Existing session loops and phase-driven voice playback remain unchanged.
+Previews now display Loading before native playback and Playing only after `playbackStatusUpdate.playing`. A loaded player that never starts fails after two seconds; load failures time out after five seconds. Buffering, completion and interruption update the status. Selecting another preview stops and releases the previous players, including across screen instances. Muted preview volume produces explicit feedback. Preview playback is separate from the session reliability changes recorded above.
 
 Automated coverage exercises native status sequences, stalled playback, replacement, volume, cleanup and session loop boundaries. This does not prove audible output. On the development build, audition every available voice and track through speaker and headphones, switch samples while loading/playing, stop and navigate away, then verify voice-only, music-only, combined and silent sessions; pause/resume, a full track loop, headphone interruption and background/foreground. Check persisted selections after force-close. Physical listening acceptance remains pending.
 
