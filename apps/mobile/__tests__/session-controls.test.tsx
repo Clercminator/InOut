@@ -88,3 +88,22 @@ test.each([["es", "¿Terminar la sesión?", "Continuar respirando"], ["pt", "Enc
   expect(screen.getByText(title)).toBeTruthy();
   expect(screen.getByRole("button", { name: keep })).toBeTruthy();
 });
+
+
+test.each(protocols)("$id shares immediate Pause, Resume, End and discomfort controls", async protocol => {
+  c.end("ended"); c.start(null, 2, protocol, true);
+  await render(<Harness />);
+  now = 650;
+  await fireEvent.press(screen.getByRole("button", { name: "Pause" }));
+  expect(c.current?.engine.status).toBe("paused");
+  const elapsed = c.view()?.sessionElapsedMs;
+  now += 10000;
+  await fireEvent.press(screen.getByRole("button", { name: "Resume" }));
+  expect(c.current?.engine.status).toBe("running"); expect(c.view()?.sessionElapsedMs).toBe(elapsed);
+  await fireEvent.press(screen.getByRole("button", { name: "End session" }));
+  await fireEvent.press(screen.getByTestId("confirm-end-session"));
+  expect(c.current?.endReason).toBe("ended");
+  await act(() => c.start(null, 2, protocol, true));
+  await fireEvent.press(screen.getByRole("button", { name: "I feel unwell" }));
+  expect(c.current?.endReason).toBe("unwell"); expect(c.current?.stage).toBe("result");
+});

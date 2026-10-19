@@ -17,13 +17,13 @@ test("bubble retains one absolute size mapping through inhale, holds, exhale and
   const protocol = protocols.find(p => p.id === "box")!;
   const state = start(planFor(protocol), 0);
   const rendered = await render(<SighVisual view={snapshot(state, 0)} running animationType="box" phases={protocol.phases} />);
-  const mappingIndex = interpolate.mock.calls.findIndex(([config]) => config.outputRange[0] === 0.6 && config.outputRange[1] === 1);
+  const mappingIndex = interpolate.mock.calls.findIndex(([config]) => config.outputRange[0] === 0.45 && config.outputRange[1] === 1);
   expect(mappingIndex).toBeGreaterThanOrEqual(0);
   const mapping = interpolate.mock.results[mappingIndex].value;
   expect(mapping.__getValue()).toBe(1);
-  for (const [time, expected] of [[4000, 1], [8000, 0.6], [12000, 0.6], [16000, 1]]) {
+  for (const [time, expected] of [[4000, 1], [8000, 0.45], [12000, 0.45], [16000, 1]]) {
     await rendered.rerender(<SighVisual view={snapshot(state, time)} running animationType="box" phases={protocol.phases} />);
-    expect(interpolate.mock.calls.filter(([config]) => config.outputRange[0] === 0.6 && config.outputRange[1] === 1)).toHaveLength(1);
+    expect(interpolate.mock.calls.filter(([config]) => config.outputRange[0] === 0.45 && config.outputRange[1] === 1)).toHaveLength(1);
     expect(mapping.__getValue()).toBeCloseTo(expected);
   }
 });

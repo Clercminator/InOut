@@ -72,3 +72,14 @@ test("pause/resume cannot duplicate a just-delivered beat, and inactive frames c
   expect(emit).toHaveBeenCalledTimes(1); expect(jest.getTimerCount()).toBe(0);
   resumed();
 });
+
+
+test("transition vibration survives modest scheduling jitter across successive cycles", () => {
+  let phase = 0;
+  const emit = jest.fn();
+  const stop = startHapticPacer(() => ({ key: `cycle:${phase}`, elapsedMs: 180, remainingMs: 3820, intervalMs: 1000,
+    style: "light", offsetsMs: [0, 140] }), emit);
+  for (phase = 1; phase < 5; phase++) jest.advanceTimersByTime(3820);
+  expect(emit).toHaveBeenCalledTimes(5);
+  stop();
+});

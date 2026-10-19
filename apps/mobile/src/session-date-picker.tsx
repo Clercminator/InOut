@@ -1,10 +1,10 @@
+import { AppDialog } from "./app-dialog";
 import { useTheme } from "./theme";
 import { locale } from "./i18n";
 import { useLanguage } from "./use-language";
 import { useState } from "react";
-import { Modal, Platform, ScrollView, View } from "react-native";
+import { Platform, View } from "react-native";
 import DateTimePicker, { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Button, Copy, Label } from "./ui";
 
@@ -29,17 +29,12 @@ export function SessionDatePicker({ value, onChange, disabled = false, timeOnly 
       {!timeOnly && <Button title="Choose date" secondary disabled={disabled} onPress={() => open("date")} />}
       <Button title="Choose time" secondary disabled={disabled} onPress={() => open("time")} />
     </View>
-    {mode !== null && <Modal visible animationType="slide" onRequestClose={() => setMode(null)}>
-      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-        <ScrollView contentContainerStyle={{ padding: 20, gap: 16 }}>
-          <Label>{mode === "date" ? "CHOOSE DATE" : "CHOOSE TIME"}</Label>
+    {mode !== null && <AppDialog title={mode === "date" ? "CHOOSE DATE" : "CHOOSE TIME"} onRequestClose={() => setMode(null)}>
           <DateTimePicker locale={locale()} value={draft} mode={mode} display="spinner" themeVariant={themeMode} style={{ alignSelf: "stretch" }}
             minimumDate={mode === "date" ? new Date(1970, 0, 1) : undefined} maximumDate={mode === "date" ? new Date() : undefined}
             onValueChange={(_event, selected) => setDraft(selected)} />
           <Button title="Done" onPress={() => { onChange(merge(draft, mode)); setMode(null); }} />
           <Button title="Cancel picker" secondary onPress={() => setMode(null)} />
-        </ScrollView>
-      </SafeAreaView>
-    </Modal>}
+    </AppDialog>}
   </View>;
 }

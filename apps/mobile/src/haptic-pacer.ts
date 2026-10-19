@@ -18,7 +18,7 @@ export function startHapticPacer(read: () => HapticFrame | null, emit: (style: N
     const beat = frame.offsetsMs ? frame.offsetsMs.findLastIndex(offset => offset <= frame.elapsedMs) : Math.floor(frame.elapsedMs / frame.intervalMs);
     const offset = frame.offsetsMs ? frame.elapsedMs - (frame.offsetsMs[beat] ?? 0) : frame.elapsedMs % frame.intervalMs;
     const key = `${frame.key}:${beat}`;
-    if (frame.style && beat >= 0 && offset < 100 && delivered.lastKey !== key) {
+    if (frame.style && beat >= 0 && offset < Math.min(250, frame.intervalMs / 2) && delivered.lastKey !== key) {
       delivered.lastKey = key;
       emit(frame.style);
     }

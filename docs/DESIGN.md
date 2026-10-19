@@ -1,10 +1,10 @@
 # IN/OUT — Design reference
 
-Updated October 7, 2026. This file accompanies the original Stitch exports and records the current native visual direction. It is not another roadmap or launch checklist. [PROJECT_CONTEXT.md](../../PROJECT_CONTEXT.md) owns product intent, [README.md](../../README.md) implementation/evidence, and [OWNER_SETUP_CHECKLIST.md](../../OWNER_SETUP_CHECKLIST.md) all manual acceptance work. Original exported screens remain references, not proof that an account, biometric sensor or cloud feature exists.
+Updated October 7, 2026. This file accompanies the original Stitch exports and records the current native visual direction. It is not another roadmap or launch checklist. [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md) owns product intent, [README.md](README.md) implementation/evidence, and [OWNER_SETUP_CHECKLIST.md](OWNER_SETUP_CHECKLIST.md) all manual acceptance work. Original exported screens remain references, not proof that an account, biometric sensor or cloud feature exists.
 
 ## Source of truth
 
-The canonical product is the React Native/Expo mobile app. Use the selected Stitch compositions as visual references and [shared design tokens](../../packages/design-tokens/src/index.ts) for current colors, fonts, spacing and radii. Native components and theme behavior live in [ui.tsx](../../apps/mobile/src/ui.tsx) and [theme.tsx](../../apps/mobile/src/theme.tsx). This supersedes the export's earlier gray-only palette and biometric/physiological claims; do not duplicate a stale token catalog here.
+The canonical product is the React Native/Expo mobile app. Use the selected Stitch compositions as visual references and [shared design tokens](../packages/design-tokens/src/index.ts) for current colors, fonts, spacing and radii. Native components and theme behavior live in [ui.tsx](../apps/mobile/src/ui.tsx) and [theme.tsx](../apps/mobile/src/theme.tsx). This supersedes the export's earlier gray-only palette and biometric/physiological claims; do not duplicate a stale token catalog here.
 
 ## Visual language
 

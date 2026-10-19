@@ -1,5 +1,6 @@
+import { AppDialog } from "./app-dialog";
 import { useEffect, useState } from "react";
-import { Modal, View, useWindowDimensions } from "react-native";
+import { View, useWindowDimensions } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { darkColors, lightColors, type ThemePreference } from "@inout/design-tokens";
 import { Pressable } from "./localized-native";
@@ -119,10 +120,7 @@ export function PacerThemePicker({ value, progress, noticeThemeIds, pro, onApply
       </View>;
     })}
     </View>
-    <Modal visible={!!preview} transparent animationType="fade" onRequestClose={() => setPreviewId(null)}>
-      {preview && previewColors && <View style={{ flex: 1, justifyContent: "center", padding: 24, backgroundColor: "#00000099" }}>
-        <Card>
-          <Label>{t("Pacer theme preview")}</Label>
+    {preview && previewColors && <AppDialog title="Pacer theme preview" onRequestClose={() => setPreviewId(null)}>
           <View accessibilityLabel={t(preview.name)} style={{ minHeight: 220, borderRadius: 18, alignItems: "center", justifyContent: "center", gap: 12, backgroundColor: previewColors.background }}>
             <View style={{ width: 120, height: 120, borderRadius: 999, borderWidth: 8, borderColor: previewColors.ring, backgroundColor: previewColors.surface, shadowColor: previewColors.glow, shadowOpacity: 0.9, shadowRadius: 24, shadowOffset: { width: 0, height: 0 }, elevation: 8, alignItems: "center", justifyContent: "center" }}>
               <Copy translate={false} style={{ color: previewColors.text, fontSize: 36, fontWeight: "700" }}>4</Copy>
@@ -132,19 +130,12 @@ export function PacerThemePicker({ value, progress, noticeThemeIds, pro, onApply
           </View>
           <Copy style={{ color: colors.secondaryText }}>{t(preview.name)}</Copy>
           <Button title="Close preview" secondary onPress={() => setPreviewId(null)} />
-        </Card>
-      </View>}
-    </Modal>
-    <Modal visible={!!locked} transparent animationType="fade" onRequestClose={() => setLockedId(null)}>
-      {locked && <View style={{ flex: 1, justifyContent: "center", padding: 24, backgroundColor: "#00000099" }}>
-        <Card>
-          <Label>{t(locked.name)}</Label>
+    </AppDialog>}
+    {locked && <AppDialog title={locked.name} onRequestClose={() => setLockedId(null)}>
           <Copy>{message("{0} of {1} practice days", [progress.practiceDays, locked.unlockDays])}</Copy>
           <Button title="Continue practicing to unlock" onPress={() => setLockedId(null)} />
           <Button title="Unlock all themes instantly with IN/OUT Pro" variant="premium" onPress={() => { setLockedId(null); onUpgrade(); }} />
           <Button title="Not now" secondary onPress={() => setLockedId(null)} />
-        </Card>
-      </View>}
-    </Modal>
+    </AppDialog>}
   </>;
 }

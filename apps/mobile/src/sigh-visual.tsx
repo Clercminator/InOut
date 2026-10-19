@@ -10,7 +10,6 @@ import {
   Easing,
   StyleSheet,
   View,
-  useWindowDimensions,
 } from "react-native";
 import { typography as f } from "@inout/design-tokens";
 import type { snapshot } from "@inout/breathing-engine";
@@ -44,14 +43,13 @@ export function SighVisual({
   const { experience } = useExperience();
   const palette = theme ? { accent: theme.ring, exhale: theme.ring, hold: theme.glow } : palettes[experience.palette];
   const [reduced, setReduced] = useState(true);
-  const { fontScale, width } = useWindowDimensions();
-  const separateReadout = fontScale > 1.3 || width < 350;
+  const separateReadout = true;
   const guidance = breathingGuidance(phases.length ? phases : [view.phase], phases.length ? view.phaseIndex : 0, view.phaseElapsedMs);
   // Animate absolute volume: changing phases must never remap the previous
   // phase's final progress through the next phase's reversed size curve.
   const progress = useRef(new Animated.Value(guidance.volume)).current;
   const scale = useMemo(() => progress.interpolate({
-    inputRange: [0, 1], outputRange: [0.60, 1],
+    inputRange: [0, 1], outputRange: [0.45, 1],
   }), [progress]);
   const ripple = useRef(new Animated.Value(0)).current;
   const phaseProgress = Math.min(
@@ -78,7 +76,7 @@ export function SighVisual({
     if (!running || reduced || animationType !== "ripple" || view.phase.type !== "hum") return;
     ripple.setValue(0);
     const animation = Animated.loop(Animated.timing(ripple, {
-      toValue: 1, duration: 2200, easing: Easing.linear, useNativeDriver: true,
+      toValue: 1, duration: 2200, easing: Easing.linear, useNativeDriver: true, isInteraction: false,
     }));
     animation.start();
     return () => animation.stop();
@@ -94,7 +92,7 @@ export function SighVisual({
         const start = smoothBreath(phaseProgress);
         return start >= 1 ? 1 : (smoothBreath(phaseProgress + (1 - phaseProgress) * t) - start) / (1 - start);
       },
-      useNativeDriver: true,
+      useNativeDriver: true, isInteraction: false,
     });
     animation.start();
     return () => animation.stop();
@@ -120,8 +118,8 @@ export function SighVisual({
     {cycleLabel ? <Copy style={[styles.cycle, { color: c.secondaryText }]}>{cycleLabel}</Copy> : <Copy style={[styles.cycle, { color: c.secondaryText }]}>CYCLE {view.currentCycle}/{view.totalCycles}</Copy>}
   </View>;
   return (
-    <View testID={`specialized-${animationType}`} style={{ gap: 16, backgroundColor: theme?.background, borderRadius: 24, padding: theme ? 12 : 0 }}>
-    <View style={[styles.area, separateReadout && { maxWidth: 180 }]}>
+    <View testID={`specialized-${animationType}`} pointerEvents="none" style={{ gap: 16, backgroundColor: theme?.background, borderRadius: 24, padding: theme ? 12 : 0 }}>
+    <View style={[styles.area, separateReadout && { maxWidth: 240 }]}>
       {animationType === "box" && <BoxVisual view={view} running={running} reduced={reduced} />}
       {animationType !== "alternating" && animationType !== "ripple" && <Animated.View
         testID="breathing-bubble"

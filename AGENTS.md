@@ -14,7 +14,7 @@ Keep work focused. Do not add instructions or documentation unless requested.
 
 From `apps/mobile`, `npx expo export --platform android` checks bundling. `npx eas-cli build --platform android --profile store-test` produces the internal candidate using existing remote upload signing and real store billing with **test ads**. Use the existing `imr-tech/inout` EAS project and `com.imrtech.inout`. Check EAS/Play version history before incrementing. Submit only with the explicit `internal` profile; public Production requires owner authorization and all gates in `release/readiness.json`.
 
-RevenueCat, ads/consent and reviewer grants all pass through centralized services. Never invent prices, trial eligibility, purchases or biometric claims. External store/payment/provider configuration belongs to the owner. See `OWNER_SETUP_CHECKLIST.md` for the maintained acceptance checklist and `README.md` for implementation details.
+RevenueCat, ads/consent and reviewer grants all pass through centralized services. Never invent prices, trial eligibility, purchases or biometric claims. External store/payment/provider configuration belongs to the owner. See `docs/OWNER_SETUP_CHECKLIST.md` for the maintained acceptance checklist and `docs/README.md` for implementation details.
 
 ## Preserve
 

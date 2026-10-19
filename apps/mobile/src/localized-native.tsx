@@ -3,6 +3,7 @@ import { useTheme } from './theme';
 import * as Native from 'react-native';
 import { t } from './i18n';
 import { useLanguage } from './use-language';
+import { appAlerts } from './app-alert';
 
 function accessibility<T extends { accessibilityLabel?: string; accessibilityHint?: string }>(props: T): T {
   return { ...props,
@@ -33,6 +34,6 @@ export const Alert = {
     args[0] = t(args[0]);
     if (args[1]) args[1] = t(args[1]);
     if (args[2]) args[2] = args[2].map(button => ({ ...button, text: button.text ? t(button.text) : button.text }));
-    Native.Alert.alert(...args);
+    appAlerts.show(...args);
   },
 };

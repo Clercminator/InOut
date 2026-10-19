@@ -158,6 +158,7 @@ test("native audio-focus loss requires explicit resume", async () => {
     guard.listener?.({ playing: true });
     now = 2500;
     guard.listener?.({ playing: false, isBuffering: false });
+    jest.advanceTimersByTime(250);
   });
   expect(mockController.current?.engine.status).toBe("paused");
   expect(mockController.current?.engine.pauseReason).toBe("interruption");
@@ -385,4 +386,52 @@ test("music pause and resume keep position and session termination releases both
   await act(async () => { now = 999999; jest.advanceTimersByTime(5000); });
   expect(musicPlayers.reduce((sum, player) => sum + player.play.mock.calls.length, 0)).toBe(playCount);
   await screen.unmount();
+});
+
+
+test("brief focus-probe gaps do not stop breathing, music or vibration", async () => {
+  mockController.start(null);
+  await render(<NativeSessionEffects />);
+  const guard = mockPlayers.find(p => p.loop && p.updateInterval === 100)!;
+  await act(async () => {
+    guard.listener?.({ playing: true });
+    guard.listener?.({ playing: false, isBuffering: false });
+    jest.advanceTimersByTime(150);
+    guard.listener?.({ playing: true });
+    jest.advanceTimersByTime(300);
+  });
+  expect(mockController.current?.engine.status).toBe("running");
+});
+
+test("voice continues across cycles even when display updates and decoder readiness are delayed", async () => {
+  mockController.preferences.guidance = { voice: true, nature: false };
+  mockController.start(null, 4, protocols.find(p => p.id === "box")!);
+  await render(<NativeSessionEffects />);
+  for (let cycle = 0; cycle < 4; cycle++) {
+    for (const [offset, index] of [[0, 0], [4000, 4], [8000, 2], [12000, 6]]) {
+      const before = mockPlayers[index].play.mock.calls.length;
+      if (cycle === 0 && offset === 0) continue;
+      await act(async () => {
+        now = cycle * 16000 + offset + 450;
+        jest.advanceTimersByTime(50);
+      });
+      expect(mockPlayers[index].play).toHaveBeenCalledTimes(before + 1);
+    }
+  }
+  expect(mockController.current?.engine.status).toBe("running");
+});
+
+test("decoder errors pause once and explicit Resume recreates music players", async () => {
+  mockController.preferences.guidance = { voice: false, nature: false, music: true };
+  mockController.start(null);
+  await render(<NativeSessionEffects />);
+  const old = mockPlayers.filter(p => p.loop && p.updateInterval === 50);
+  await act(async () => { old[0].listener?.({ error: "decoder reset" }); });
+  expect(mockController.current?.engine.status).toBe("paused");
+  expect(old[0].remove).toHaveBeenCalled();
+  const fresh = mockPlayers.filter(p => p.loop && p.updateInterval === 50 && !p.remove.mock.calls.length);
+  expect(fresh).toHaveLength(2);
+  expect(fresh[0].play).not.toHaveBeenCalled();
+  await act(async () => { mockController.resume(); });
+  expect(fresh[0].play).toHaveBeenCalled();
 });

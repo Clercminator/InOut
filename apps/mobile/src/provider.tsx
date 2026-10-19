@@ -19,6 +19,7 @@ import { randomUUID, digestStringAsync, CryptoDigestAlgorithm } from "expo-crypt
 import { createClock } from "@inout/breathing-engine";
 import { SessionController } from "./session-controller";
 import { LocalStore } from "./storage";
+import { AppAlertHost } from "./app-dialog";
 import { NativeSessionEffects } from "./session-effects";
 import { SessionContext, useSession } from "./session-context";
 import { Screen, Title, Copy, Button } from "./ui";
@@ -139,6 +140,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
       <NativeSessionEffects />
       <AdContextEffects controller={controller} commercial={commercial} />
       {children}
+      <AppAlertHost />
       </ReminderContext.Provider>
       </ShareLinksContext.Provider>
       </CommercialContext.Provider>

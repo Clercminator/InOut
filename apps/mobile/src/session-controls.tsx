@@ -1,8 +1,9 @@
+import { AppDialog } from "./app-dialog";
 import { memo, useCallback, useRef, useState } from "react";
-import { AppState, BackHandler, Modal, ScrollView, View } from "react-native";
+import { AppState, BackHandler, View } from "react-native";
 import { useFocusEffect } from "expo-router";
 import type { SessionController } from "./session-controller";
-import { Button, Copy, Title } from "./ui";
+import { Button, Copy } from "./ui";
 import { useTheme } from "./theme";
 
 type Dialog = "end";
@@ -45,19 +46,10 @@ export const SessionControls = memo(function SessionControls({ controller, runni
         <View style={{ flex: compact ? undefined : 1 }}><Button title="I feel unwell" danger onPress={() => { dismiss(); controller.end("unwell"); }} /></View>
       </View>
     </View></View>
-    {dialog !== null && <Modal visible transparent animationType="none" onRequestClose={dismiss} statusBarTranslucent>
-      <View style={{ flex: 1, backgroundColor: "#090616B8", justifyContent: "center", padding: 24 }}>
-        <View accessibilityViewIsModal style={{ maxHeight: "90%", borderRadius: 24, borderWidth: 1,
-          borderColor: colors.accent, backgroundColor: colors.card, overflow: "hidden" }}>
-          <ScrollView keyboardShouldPersistTaps="always" contentContainerStyle={{ padding: 24, gap: 18 }}>
-            <Copy translate={false} style={{ color: colors.accent, fontWeight: "700" }}>IN/OUT</Copy>
-            <Title>End your session?</Title>
-            <Copy>You can keep breathing or end this practice.</Copy>
-            <Button title="Continue breathing" disabled={disabled} onPress={() => { dismiss(); controller.resume(); }} />
-            <Button title="End session" danger testID="confirm-end-session" onPress={finish} />
-          </ScrollView>
-        </View>
-      </View>
-    </Modal>}
+    {dialog !== null && <AppDialog title="End your session?" onRequestClose={dismiss}>
+      <Copy>You can keep breathing or end this practice.</Copy>
+      <Button title="Continue breathing" disabled={disabled} onPress={() => { dismiss(); controller.resume(); }} />
+      <Button title="End session" danger testID="confirm-end-session" onPress={finish} />
+    </AppDialog>}
   </>;
 });

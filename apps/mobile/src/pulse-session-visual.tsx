@@ -19,10 +19,10 @@ export function PulseSessionVisual({ view, phases, running, cycleLabel, pacerThe
     const sub = AccessibilityInfo.addEventListener("reduceMotionChanged", setReduced);
     return () => { active = false; sub.remove(); };
   }, []);
-  const { width, height, fontScale } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const guidance = breathingGuidance(phases, view.phaseIndex, view.phaseElapsedMs);
   const size = Math.max(96, Math.min(260, width - 104, height * .32));
-  const separate = geometry !== "pulse" || fontScale > 1.3 || width < 350;
+  const separate = true;
   const theme = resolvePacerTheme(pacerTheme);
   const readout = <View accessible accessibilityLabel={`${t(running ? guidance.label : "Paused")}. ${Math.ceil(view.phaseRemainingMs / 1000)}. ${view.phase.nostril ? t(view.phase.nostril + " nostril") : ""}`}
     style={{ alignItems: "center", flexDirection: separate ? "row" : "column", flexWrap: "wrap", justifyContent: "center", gap: separate ? 12 : 4, padding: 8 }}>
@@ -37,7 +37,7 @@ export function PulseSessionVisual({ view, phases, running, cycleLabel, pacerThe
           <PulseOrb view={view} phases={phases} running={running} size={size * (geometry === "triangle" ? .43 : .76)} minimumScale={.45} theme={pacerTheme ?? "default"} />
         </View>
         <BoxVisual geometry={geometry} view={view} running={running} reduced={reduced} pacerTheme={pacerTheme ?? "default"} />
-      </View> : <PulseOrb view={view} phases={phases} running={running} size={size} theme={pacerTheme ?? "default"} />}
+      </View> : <PulseOrb view={view} phases={phases} running={running} size={size} minimumScale={.45} theme={pacerTheme ?? "default"} />}
       {!separate && <View style={{ position: "absolute", backgroundColor: `${theme.preview.surface}E8`, borderColor: `${theme.preview.ring}88`, borderWidth: 1, borderRadius: 28, maxWidth: "90%" }}>{readout}</View>}
     </View>
     {separate && <View style={{ backgroundColor: theme.preview.surface, borderColor: `${theme.preview.ring}88`, borderWidth: 1, borderRadius: 20 }}>{readout}</View>}
