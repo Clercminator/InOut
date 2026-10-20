@@ -12,8 +12,8 @@ jest.mock("react-native-google-mobile-ads", () => ({
   InterstitialAd: { createForAdRequest: (...args: unknown[]) => mockFactory(...args) }, AdEventType: { LOADED: "loaded", OPENED: "opened", CLOSED: "closed", ERROR: "error" },
 }));
 const context = { path: "/result", foreground: true, sessionStage: "result" };
-function fixture(saved: unknown = null) {
-  let now = 1000000, persisted = saved;
+function fixture(saved: unknown = null, priorCompletions = 2) {
+  let now = 1000000, persisted = saved ?? { seen: [], count: priorCompletions, day: "", shown: 0, lastAd: 0, lastPaywall: 0, highWater: 1000000 };
   const events = new Map<string, () => void>();
   const load = jest.fn(), show = jest.fn(async () => {});
   const track = jest.fn();
@@ -62,8 +62,9 @@ test("consent denial and unresolved billing prevent every ad request", async () 
   expect(mockInitialize).not.toHaveBeenCalled(); expect(mockFactory).not.toHaveBeenCalled();
 });
 test("completion ads require consent, app age, unique completion, dismissal, interval and daily caps", async () => {
-  const f = fixture(); await f.ads.prepare(); f.ads.setContext(context);
+  const f = fixture(null, 0); await f.ads.prepare(); f.ads.setContext(context);
   f.ads.prepareCompletion("early"); expect(f.load).not.toHaveBeenCalled(); f.tick(180001);
+  f.ads.prepareCompletion("second"); expect(f.load).not.toHaveBeenCalled();
   f.ads.prepareCompletion("third"); f.ads.prepareCompletion("third"); expect(f.load).toHaveBeenCalledTimes(1); expect(f.show).not.toHaveBeenCalled();
   expect(f.track).toHaveBeenCalledWith("ad_requested");
   expect(mockFactory).toHaveBeenCalledWith("test-interstitial", { requestNonPersonalizedAdsOnly: true });

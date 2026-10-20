@@ -4,7 +4,7 @@ import { addDays, dayKey } from "./progress";
 import { experienceFor } from "./experience";
 import { goalForDay, recommendPractice, selectedGoals } from "./personalization";
 
-export const coachProtocolIds = ["diaphragmatic", "coherent", "extended-exhale", "equal", "box"] as const;
+export const coachProtocolIds = ["diaphragmatic", "coherent", "extended-exhale", "equal", "box", "sleep-wind-down", "post-workout-reset"] as const;
 export type CoachProtocolId = typeof coachProtocolIds[number];
 export type ProgramId = "find-your-rhythm" | "evening-wind-down" | "focus-on-demand" | "build-your-practice";
 export type CoachSession = { enrollmentId: string; step: number } | { week: string; date: string };

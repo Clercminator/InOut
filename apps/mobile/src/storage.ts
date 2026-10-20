@@ -333,6 +333,22 @@ export class LocalStore {
     });
     return claimed;
   }
+  purchaseUncertain() {
+    return this.db.getFirstSync<{ payload: string }>("SELECT payload FROM settings WHERE key='purchase-uncertain-v1'")?.payload === "true";
+  }
+  savePurchaseUncertainty(value: boolean) {
+    this.db.runSync("INSERT OR REPLACE INTO settings(key,payload) VALUES('purchase-uncertain-v1',?)", JSON.stringify(value));
+  }
+  claimSessionMilestone(kind: "started" | "completed"): boolean {
+    let claimed = false;
+    const key = `analytics-first-session-${kind}-v1`;
+    this.db.withTransactionSync(() => {
+      if (this.db.getFirstSync("SELECT key FROM settings WHERE key=?", key)) return;
+      this.db.runSync("INSERT INTO settings(key,payload) VALUES(?,'true')", key);
+      claimed = true;
+    });
+    return claimed;
+  }
   readShareLinks(): ManagedShare[] {
     const row = this.db.getFirstSync<{ payload: string }>("SELECT payload FROM settings WHERE key='share-links-v1'");
     const items: unknown = row ? JSON.parse(row.payload) : []; validateManagedShares(items); return items;

@@ -124,8 +124,8 @@ test("arbitrary phases, zero holds and multiple mix blocks", () => {
   assert.equal(v.currentCycle, 2);
   assert.equal(v.completedCycles, 2);
 });
-test("the 14-protocol catalog and retained definitions validate with reconciled durations", () => {
-  assert.equal(catalogProtocols.length, 14);
+test("the 17-protocol catalog and retained definitions validate with reconciled durations", () => {
+  assert.equal(catalogProtocols.length, 17);
   assert.equal(new Set(protocols.map((p) => p.id)).size, protocols.length);
   for (const p of protocols) {
     e.validatePlan(planFor(p));

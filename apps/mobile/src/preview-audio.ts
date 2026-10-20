@@ -38,7 +38,7 @@ export function createAudioPreview(onError: (detail?: string) => void, onDone: (
     if (AppState.currentState !== "active") { stop(); onDone(); return; }
     try { fn(); } catch (error) { fail("native-call", error); }
   }, ms));
-  const start = async (clips: { source: number; volume: number; at: number }[], duration: number) => {
+  const start = async (clips: { source: number; volume: number; at: number; loop?: boolean }[], duration: number) => {
     try {
       if (!clips.length) { fail("empty-clips"); return; }
       onState("loading");
@@ -51,7 +51,7 @@ export function createAudioPreview(onError: (detail?: string) => void, onDone: (
       // Android player can be lost, and scheduling voice from a button tap causes drift.
       const loaded = clips.map(clip => {
         const player = createAudioPlayer(clip.source, { updateInterval: 100, keepAudioSessionActive: true });
-        players.push(player); player.volume = clip.volume;
+        players.push(player); player.volume = clip.volume; player.loop = clip.loop ?? false;
         return new Promise<void>(resolve => {
           let hasPlayed = false;
           const sub = player.addListener("playbackStatusUpdate", status => {

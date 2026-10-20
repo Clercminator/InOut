@@ -689,7 +689,7 @@ test("measurement emits event names once after durable results and never include
     controller.answer(4, "private report");
     assert.equal(events.includes("session_completed"), false);
     env.store.save = save; controller.retry(); controller.retry();
-    assert.deepEqual(events, ["onboarding_completed", "session_started", "state_before_logged", "badge_earned", "streak_extended", "session_completed", "state_after_logged"]);
+    assert.deepEqual(events, ["onboarding_completed", "protocol_selected", "session_started", "state_before_logged", "badge_earned", "streak_extended", "session_completed", "state_after_logged"]);
     assert.equal(JSON.stringify(events).includes("private"), false);
   } finally { env.db.close(); }
 });

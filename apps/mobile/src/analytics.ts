@@ -1,4 +1,7 @@
 export const productEvents = [
+  "notification_preferences_saved", "session_reveal_viewed", "second_session_within_seven_days",
+  "protocol_search_used", "protocol_search_empty", "session_interrupted",
+  "first_session_started", "first_session_completed", "protocol_selected",
   "daily_reset_opened", "daily_reset_started", "daily_reset_completed", "daily_reset_repeat", "daily_reset_returned", "daily_reset_awarded", "guided_program_returned",
   "challenge_attempt_completed", "challenge_abandoned", "challenge_personal_best", "challenge_badge_earned", "challenge_share_opened", "challenge_shared", "challenge_program_joined", "challenge_program_progress", "challenge_retried",
   "challenge_list_viewed", "challenge_viewed", "challenge_started", "challenge_progressed", "challenge_completed", "challenge_share_tapped", "challenge_share_completed", "challenge_locked_tapped",

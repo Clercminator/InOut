@@ -1,6 +1,9 @@
 import config from "../../../release/monetization.json";
 
 export const monetization = config;
+export function advertisingMode(native: boolean, development: boolean, requested?: string, buildEnvironment?: string) {
+  return !native ? "preview" : !development && requested === "live" && buildEnvironment === "production" ? "live" : "test";
+}
 export function adUnit(format: "banner" | "interstitial", mode: "test" | "live") {
   const { Platform } = require("react-native") as typeof import("react-native");
   if (mode === "test") {

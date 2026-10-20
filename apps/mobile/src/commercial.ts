@@ -8,7 +8,7 @@ import { AdService } from "./ads";
 import { SubscriptionService, unavailableSubscriptions } from "./subscriptions";
 import type { LocalStore } from "./storage";
 import type { CommercialServices } from "./commercial-context";
-import { subscriptionConfiguration } from "./monetization";
+import { subscriptionConfiguration, advertisingMode } from "./monetization";
 import { secureEntitlementCache } from "./entitlement-cache";
 
 export function createCommercialServices(store: LocalStore): CommercialServices {
@@ -33,8 +33,8 @@ export function createCommercialServices(store: LocalStore): CommercialServices 
     try { adapter = revenueCatAdapter(configuration.key, configuration.testStore); } catch { /* A missing native SDK must not prevent breathing. */ }
   } else if (development && process.env.EXPO_PUBLIC_REVENUECAT_MODE === "mock") adapter = new (require("./subscription-providers/test").DevelopmentSubscriptionProvider)();
   entitlements.billingReady = entitlements.billingEvidenceReady;
-  const subscriptions = new SubscriptionService(adapter, entitlements, analytics);
-  const ads = new AdService(entitlements, native ? !development && process.env.EXPO_PUBLIC_ADS_MODE === "live" ? "live" : "test" : "preview", { read: () => store.readAdFrequency(), write: value => store.writeAdFrequency(value) }, Date.now, (event, properties) => analytics.track(event, properties));
+  const subscriptions = new SubscriptionService(adapter, entitlements, analytics, { read: () => store.purchaseUncertain(), write: value => store.savePurchaseUncertainty(value) });
+  const ads = new AdService(entitlements, advertisingMode(native, development, process.env.EXPO_PUBLIC_ADS_MODE, Constants.expoConfig?.extra?.adEnvironment), { read: () => store.readAdFrequency(), write: value => store.writeAdFrequency(value) }, Date.now, (event, properties) => analytics.track(event, properties));
   const reviewer = createReviewerService(entitlements);
   return { entitlements, subscriptions, ads, analytics, reviewer };
 }

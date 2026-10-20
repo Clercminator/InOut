@@ -1,4 +1,5 @@
-import { useRef, useState } from "react";
+import { ActionFeedback, useActionFeedback } from "./action-feedback";
+import { useState } from "react";
 import { Linking, View } from "react-native";
 import { Switch, Alert } from "./localized-native";
 import { t, locale } from "./i18n";
@@ -19,12 +20,14 @@ export function NotificationSettings() {
   const reminders = useReminders();
   const [notificationError, setNotificationError] = useState("");
   const [savingNotificationSettings, setSavingNotificationSettings] = useState(false);
-  const notificationSaveLock = useRef(false);
+  const feedback = useActionFeedback();
+  const [draft, setDraft] = useState<LocalNotificationPreferences | null>(null);
   const preferences = controller.preferences;
-  const notificationSettings = notificationPreferences(preferences);
+  const notificationSettings = draft ?? notificationPreferences(preferences);
   const saveNotificationSettings = async (next: LocalNotificationPreferences) => {
-    if (notificationSaveLock.current) return;
-    notificationSaveLock.current = true;
+    if (savingNotificationSettings) return;
+    setDraft(next);
+    await feedback.run(async () => {
     setSavingNotificationSettings(true);
     setNotificationError("");
     try {
@@ -37,12 +40,12 @@ export function NotificationSettings() {
       await configureEngagementNotifications({ ...controller.preferences, notifications: next }, false,
         notificationContext(controller.history(), controller.entitlements.state.pro, controller.entitlements.billingReady,
           !!reminders?.items.some(item => item.enabled) || next.dailyReset));
-    } catch (error) {
-      setNotificationError(error instanceof Error ? error.message : "Notification settings could not be saved. Try again.");
+      controller.analytics.track("notification_preferences_saved");
+      setDraft(null);
     } finally {
-      notificationSaveLock.current = false;
       setSavingNotificationSettings(false);
     }
+    }, "Notification settings could not be saved. Try again.");
   };
   return (
       <View style={{ gap: 16 }}>
@@ -94,6 +97,7 @@ export function NotificationSettings() {
         <SessionDatePicker timeOnly disabled={savingNotificationSettings} label="QUIET HOURS END" value={new Date(2026, 0, 1, notificationSettings.quietEndHour, 0)}
           onChange={date => { void saveNotificationSettings({ ...notificationSettings, quietEndHour: date.getHours() }); }} />
         {notificationError ? <Copy accessibilityRole="alert" style={{ color: colors.danger }}>{notificationError}</Copy> : null}
+        <ActionFeedback {...feedback} retry={() => { void saveNotificationSettings(notificationSettings); }} />
         <Button title="Reset notification settings" secondary disabled={savingNotificationSettings} onPress={() => { void saveNotificationSettings({ ...notificationDefaults, achievementNoticeLog: notificationSettings.achievementNoticeLog, weekdays: [...notificationDefaults.weekdays] }); }} />
         {!!reminders?.items.length && <Disclosure title="Saved reminders" icon="notifications-none">
           {reminders.items.map(reminder => <Card key={reminder.id}>

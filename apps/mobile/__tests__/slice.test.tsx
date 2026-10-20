@@ -339,22 +339,42 @@ test("fresh saved improvement celebrates, history and failed saves do not", asyn
   expect(screen.queryByText("Session saved!")).toBeNull();
 });
 
-test("successful saved results present the completion ad automatically and show its thank-you", async () => {
+test("disabled general safety goes directly to practice, while high-risk checks remain mandatory", async () => {
+  mockController.setPreferences({ ...mockController.preferences, showSafetyReminders: false });
+  const gentle = protocols.find(p => p.id === "sleep-wind-down")!;
+  mockController.requestSafety(() => mockController.start(null, 1, gentle), gentle);
+  const first = await render(<PracticeSafety />);
+  expect(mockController.current?.stage).toBe("active");
+  expect(mockReplace).toHaveBeenCalledWith("/session");
+  await first.unmount();
+  const intense = protocols.find(p => p.id === "high-intensity-cyclic")!;
+  const begin = jest.fn();
+  mockController.requestSafety(begin, intense);
+  await render(<PracticeSafety />);
+  await fireEvent.press(screen.getByRole("button", { name: "Start practice" }));
+  expect(begin).not.toHaveBeenCalled();
+  await fireEvent.press(screen.getByRole("button", { name: "I have read the precautions and I am in a safe place" }));
+  await fireEvent.press(screen.getByRole("button", { name: "Start practice" }));
+  expect(begin).toHaveBeenCalledTimes(1);
+});
+
+test("results are readable before an already loaded completion ad can show on Return to Home", async () => {
   mockController.setPreferences({ ...mockController.preferences, freeAdsNoticeSeen: true });
   mockController.start(7); now = 48000; mockController.tick(); mockController.answer(3, null);
   mockParams = { id: "test-session", saved: "1" };
   const idle = { subscribe: () => () => {}, getRevision: () => 0 };
-  const presentCompletion = jest.fn(async () => true), cancelCompletion = jest.fn();
+  const prepare = jest.fn(async () => {}), prepareCompletion = jest.fn(), showCompletion = jest.fn(async () => true), cancelCompletion = jest.fn();
   const commercial = {
     entitlements: { ...idle, has: () => false, accessReady: true, billingReady: true, state: { pro: false } },
     subscriptions: idle,
-    ads: { ...idle, mode: "test", setContext: jest.fn(), presentCompletion, cancelCompletion },
+    ads: { ...idle, mode: "test", setContext: jest.fn(), prepare, prepareCompletion, showCompletion, cancelCompletion },
     analytics: mockController.analytics,
   } as unknown as CommercialServices;
   await render(<CommercialContext.Provider value={commercial}><Result /></CommercialContext.Provider>);
-  await waitFor(() => expect(presentCompletion).toHaveBeenCalledWith("test-session", expect.any(Function)));
-  expect(screen.getByText("Thank you for helping us make the app better by watching this ad.")).toBeTruthy();
+  await waitFor(() => expect(prepareCompletion).toHaveBeenCalledWith("test-session"));
+  expect(showCompletion).not.toHaveBeenCalled();
   await fireEvent.press(screen.getByRole("button", { name: "Return to Home" }));
+  expect(showCompletion).toHaveBeenCalledWith("test-session");
   expect(cancelCompletion).toHaveBeenCalled();
   expect(mockReplace).toHaveBeenCalledWith("/(tabs)");
 });
@@ -451,7 +471,7 @@ test("library filters saved routines and goals without losing navigation", async
   expect(mockPush).toHaveBeenCalledWith({ pathname: "/protocol", params: { id: "4-7-8" } });
 });
 
-test("actual 14 preset catalog is visible, searchable and launches working sessions", async () => {
+test("actual 17 preset catalog is visible, searchable and launches working sessions", async () => {
   const required = [
     { id: "coherent", name: "Coherent Breathing", phases: [5, 5] },
     { id: "box", name: "Box Breathing", phases: [4, 4, 4, 4] },
@@ -470,7 +490,7 @@ test("actual 14 preset catalog is visible, searchable and launches working sessi
   ] as const;
 
   const visible = catalogProtocols.filter((protocol) => protocol.availability === "enabled");
-  expect(visible).toHaveLength(14);
+  expect(visible).toHaveLength(17);
 
   const rendered = await render(<ProtocolLibrary />);
   for (const preset of required) {

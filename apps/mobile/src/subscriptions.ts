@@ -52,12 +52,20 @@ export class SubscriptionService {
     this.purchaseConfirmation = key;
   }
   offers: SubscriptionOffer[] = [];
+  private uncertain = false;
+  get purchaseUncertain() { return this.uncertain; }
+  set purchaseUncertain(value: boolean) {
+    this.uncertain = value;
+    this.uncertaintyStore?.write(value);
+  }
   busy = false;
   message = "";
   private listeners = new Set<() => void>();
   private revision = 0;
   private identifying = false;
-  constructor(readonly adapter: SubscriptionProvider, private entitlements: EntitlementService, private analytics: AnalyticsService) {}
+  constructor(readonly adapter: SubscriptionProvider, private entitlements: EntitlementService, private analytics: AnalyticsService, private uncertaintyStore?: { read(): boolean; write(value: boolean): void }) {
+    try { this.uncertain = uncertaintyStore?.read() ?? false; } catch { this.uncertain = true; }
+  }
   subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; };
   getRevision = () => this.revision;
   private emit() { this.revision++; this.listeners.forEach((fn) => fn()); }
@@ -69,11 +77,13 @@ export class SubscriptionService {
     } else this.entitlements.acceptStoreGrant(grant);
     this.entitlements.billingReady = this.entitlements.billingEvidenceReady;
     this.entitlements.refresh();
+    if (this.entitlements.state.subscriptionPro) this.purchaseUncertain = false;
     const isPro = this.entitlements.state.subscriptionPro;
     if (grant.source === "store" && !wasPro && isPro) this.analytics.track("pro_entitlement_activated");
     if (grant.source === "store" && wasPro && !isPro) this.analytics.track("pro_entitlement_expired");
   }
   remoteStarted(operation: "purchase" | "restore") {
+    if (operation === "purchase") this.purchaseUncertain = true;
     this.busy = true; this.message = "";
     this.analytics.track(operation === "purchase" ? "purchase_started" : "restore_started");
     this.emit();
@@ -94,14 +104,16 @@ export class SubscriptionService {
       }
     } catch {
       if (operation === "purchase") this.analytics.track("purchase_failed", { outcome: "failed" });
-      this.message = "The store response could not be verified. Try restoring purchases.";
+      this.purchaseUncertain = operation === "purchase";
+      this.message = "Purchase status is uncertain. Do not pay again. Refresh status, restore purchases or contact Help & feedback.";
     }
     finally { this.busy = false; this.emit(); }
     return unlocked;
   }
   remoteFailed(cancelled = false) {
     this.busy = false;
-    this.message = cancelled ? "Purchase cancelled. Nothing changed." : "The store could not complete this request. Try again.";
+    this.purchaseUncertain = !cancelled;
+    this.message = cancelled ? "Purchase cancelled. Nothing changed." : "Purchase status is uncertain. Do not pay again. Refresh status, restore purchases or contact Help & feedback.";
     if (cancelled) this.analytics.track("purchase_cancelled");
     else this.analytics.track("purchase_failed", { outcome: "failed" });
     this.emit();
@@ -135,12 +147,22 @@ export class SubscriptionService {
     });
   }
   async purchase(id: PlanId) { await this.operation(async () => {
+    if (this.purchaseUncertain) { await this.refreshUncertainPurchase(); return; }
     if (this.entitlements.state.subscriptionPro) { this.message = "Pro is active."; return; }
     if (!this.offers.some((o) => o.id === id)) throw new Error("Choose an available plan.");
     if (this.adapter.mode === "store") this.analytics.track("purchase_started");
     let grant: EntitlementGrant;
+    // Persist before opening the store sheet; killing the app must not invite another payment.
+    if (this.adapter.mode === "store") this.purchaseUncertain = true;
     try { grant = await this.adapter.purchase(id); }
     catch (error) {
+      if (this.adapter.mode === "store" && !(error instanceof SubscriptionError && ["cancelled", "unavailable"].includes(error.reason))) {
+        this.purchaseUncertain = true;
+        this.analytics.track("purchase_failed", { outcome: "failed" });
+        await this.refreshUncertainPurchase();
+        return;
+      }
+      this.purchaseUncertain = false;
       if (this.adapter.mode === "store" && error instanceof SubscriptionError && error.reason === "cancelled") this.analytics.track("purchase_cancelled");
       else if (this.adapter.mode === "store") this.analytics.track("purchase_failed", { outcome: "failed" });
       throw error;
@@ -148,13 +170,18 @@ export class SubscriptionService {
     this.apply(grant);
     if (!this.entitlements.state.subscriptionPro) {
       if (grant.source === "store") this.analytics.track("purchase_failed", { outcome: "failed" });
-      this.message = "The store has not activated Pro. Try restoring after the purchase finishes."; return;
+      this.purchaseUncertain = true;
+      await this.refreshUncertainPurchase(); return;
     }
     this.message = this.adapter.mode === "development" ? "Demo Pro activated. No purchase or charge occurred." : "Pro is active.";
     this.confirmPurchase(grant);
     if (grant.source === "store") this.analytics.track("purchase_success");
     if (grant.source === "store") this.analytics.track(grant.status === "trial" ? "trial_started" : "subscription_started");
   }); }
+  private async refreshUncertainPurchase() {
+    try { this.apply(await this.adapter.refresh()); } catch { /* Keep the purchase lock until verified. */ }
+    this.message = this.entitlements.state.subscriptionPro ? "Pro is active." : "Purchase status is uncertain. Do not pay again. Refresh status, restore purchases or contact Help & feedback.";
+  }
   async restore() { await this.operation(async () => {
     if (this.adapter.mode === "store") this.analytics.track("restore_started");
     const grant = await this.adapter.restore(); this.apply(grant);

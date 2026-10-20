@@ -309,10 +309,39 @@ export const protocols: Protocol[] = [
       { protocolId: "high-intensity-cyclic-alt", protocolVersion: 2, cycles: 1, phases: [phase("inhale", 3), phase("hold", 15), phase("exhale", 3), phase("freeBreathing", 15)] },
     ] },
   },
+  {
+    ...protocol("sleep-wind-down", "Sleep Wind Down", ["Sleep", "Calm"],
+      [phase("inhale", 4), phase("exhale", 6)], 36, "wave", "general",
+      "A gentle, slower rhythm with a longer exhale to help you settle before bedtime."),
+    purpose: "Settle before bedtime",
+    instructions: "Sit or lie comfortably. Inhale gently for 4 seconds, then exhale for 6 seconds without holding. Return to natural breathing whenever you need to.",
+    durationPresets: [180000, 240000, 300000, 360000, 420000, 480000, 540000, 600000],
+  },
+  {
+    ...protocol("post-workout-reset", "Post-Workout Reset", ["Recover"],
+      [phase("inhale", 4), phase("exhale", 6)], 30, "wave", "general",
+      "A comfortable breathing practice for the transition from exercise toward rest."),
+    purpose: "Settle after exercise",
+    instructions: "After your cool-down, wait until breathing is comfortable. Inhale gently for 4 seconds and exhale for 6 seconds, without holds or forcing.",
+    precaution: "Wait until breathlessness has settled. This practice does not replace cool-down, hydration or medical assessment for concerning symptoms.",
+    durationPresets: [180000, 240000, 300000, 360000, 420000, 480000, 540000, 600000],
+  },
+  {
+    ...protocol("intimacy-calm", "Intimacy Calm", ["Calm"],
+      [phase("inhale", 4), phase("exhale", 6)], 24, "wave", "general",
+      "A discreet practice to ease situational tension and notice your breathing and arousal before intimate moments."),
+    purpose: "Calm & confidence",
+    instructions: "Before an intimate moment, sit comfortably. Inhale gently for 4 seconds and exhale for 6 seconds. Do not hold or suppress natural breathing during sexual activity.",
+    precaution: "Breathing alone has insufficient evidence as a treatment for premature ejaculation. Seek professional advice for persistent or distressing sexual difficulties.",
+    durationPresets: [120000, 180000, 240000, 300000, 360000, 420000, 480000],
+  },
 ];
 export const cyclic = protocols.find((protocol) => protocol.id === "high-intensity-cyclic")!;
 export const altCyclic = protocols.find((protocol) => protocol.id === "high-intensity-cyclic-alt")!;
 export const catalogProtocolIds = [
+  "sleep-wind-down",
+  "post-workout-reset",
+  "intimacy-calm",
   "coherent",
   "box",
   "meditation-breathing",
@@ -335,7 +364,7 @@ export const isGuidedHighIntensity = (p: Pick<Protocol, "id" | "version">) =>
   (p.id === altCyclic.id && p.version === altCyclic.version);
 export const includesHighIntensity = (p: Protocol) => p.safetyCategory === "highIntensity" || p.id === cyclic.id || p.id === altCyclic.id || !!p.plan?.blocks.some(b => b.protocolId === cyclic.id || b.protocolId === altCyclic.id);
 export const availableForPractice = (p: Protocol) => p.availability === "enabled" && (!includesHighIntensity(p) || isGuidedHighIntensity(p));
-export const sigh = protocols[0];
+export const sigh = protocols.find(protocol => protocol.id === "physiological-sigh")!;
 export function planFor(
   protocol: Protocol,
   cycles = protocol.defaultCycles,

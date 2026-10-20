@@ -78,7 +78,7 @@ function NativePaywall({ entry = "profile", onClose, completionError }: PaywallP
   const chosen = subscriptions.offers.find(o => o.id === selected) ?? defaultPlan(subscriptions.offers, productConfig.defaultPlan);
   return <Screen title="InOut Pro" avoidKeyboard headerAction={<IconButton icon="close" title="Close subscription offer" onPress={close} />} footer={chosen || onClose ? <ActionFooter>
     {chosen && !state.pro && <><Copy style={{ textAlign: "center", fontWeight: "600" }}>{message("{0} / {1}", [chosen.price, t(chosen.period)])}</Copy>
-    <Button title={`${demo ? "Simulate" : "Continue with"} ${chosen.title}`} disabled={subscriptions.busy} onPress={() => { void subscriptions.purchase(chosen.id); }} /></>}
+    <Button title={`${demo ? "Simulate" : "Continue with"} ${chosen.title}`} disabled={subscriptions.busy || subscriptions.purchaseUncertain} onPress={() => { void subscriptions.purchase(chosen.id); }} /></>}
     {state.pro && <Copy accessibilityRole="alert">Your Pro access is ready.</Copy>}
     {onClose && <Button title={state.pro ? "Continue to Home" : "Continue for free"} variant="quiet" onPress={close} />}
   </ActionFooter> : undefined}>
@@ -103,6 +103,10 @@ function NativePaywall({ entry = "profile", onClose, completionError }: PaywallP
     {!demo && subscriptions.offers.length > 0 && <Copy>Subscriptions renew automatically unless cancelled through your store. Review the store confirmation for final price, any eligible introductory offer, and renewal terms.</Copy>}
     {subscriptions.busy && <Copy accessibilityRole="alert">Contacting the store…</Copy>}
     {!!subscriptions.message && <Copy accessibilityRole="alert">{subscriptions.message}</Copy>}
+    {subscriptions.purchaseUncertain && <Card><Copy accessibilityRole="alert">Purchase status is uncertain. Do not pay again. Refresh status, restore purchases or contact Help & feedback.</Copy>
+      <Button title="Refresh plans & status" secondary disabled={subscriptions.busy} onPress={() => { void subscriptions.load(); }} />
+      <Button title="Help & feedback" secondary onPress={() => router.push("/support")} />
+    </Card>}
     <Button title="Restore purchases" secondary disabled={subscriptions.busy} onPress={() => { void subscriptions.restore(); }} />
     <Disclosure title="Subscription details" icon="manage-accounts" initiallyOpen={state.pro}>
     <View style={{ gap: 8 }}><Label>YOUR ACCESS</Label><Copy>{state.pro ? "InOut Pro" : "Free"}</Copy>{state.productId && <Copy translate={false}>{state.productId}{state.planId ? ` · ${state.planId}` : ""}</Copy>}

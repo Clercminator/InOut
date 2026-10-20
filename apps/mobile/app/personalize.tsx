@@ -54,6 +54,6 @@ export default function Personalize() {
       {cosmetics.map(item => <View key={item.id} style={{ gap: 3 }}><Copy style={s.subtitle}>{unlocked(ledger, item.kind, item.id) ? "✓ " : "○ "}{item.label}</Copy><Copy style={s.small}>{item.requirement}</Copy></View>)}
       <Copy style={s.small}>Unlocks are earned through practice and stay yours. Your tension rating never changes your rewards.</Copy>
     </Disclosure>
-    <SaveError />
+    <SaveError feedback />
   </BackScreen>;
 }

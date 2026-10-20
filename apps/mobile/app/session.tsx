@@ -58,6 +58,11 @@ export default function Session() {
         {intense ? message("Up to {0} remaining", [practiceDuration(view.sessionRemainingMs)]) : `${record.goal.toUpperCase()} · ${practiceDuration(view.sessionRemainingMs)} REMAINING`}
       </Label>
       <SaveError />
+      {controller.audioFailure && <View style={{ gap: 8 }}>
+        <Copy accessibilityRole="alert">Sound could not play. Retry audio or continue with the visual guide.</Copy>
+        <Button title="Retry audio" onPress={() => controller.recoverAudio()} />
+        <Button title="Continue without sound" secondary onPress={() => controller.recoverAudio(true)} />
+      </View>}
       {unavailable && <Copy>This older routine is not available in this release. End this session to choose another practice.</Copy>}
       {intense && <><Label>{message("Round {0} of {1}", [round, record.protocol!.defaultCycles])}</Label><Copy>{!running || view.phase.type === "freeBreathing" ? "Breathe naturally" : holding ? "Breathe as soon as you need to. The timer is a limit, not a target." : "Deep, unforced inhale. Let the exhale go without pushing."}</Copy></>}
       {!intense && record.engine.plan.blocks.length > 1 && <Copy>

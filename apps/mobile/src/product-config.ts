@@ -10,7 +10,7 @@ export const productConfig = {
   emphasizeAnnual: true,
   defaultPlan: "monthly" as "monthly" | "annual",
   planOrder: ["weekly", "monthly", "annual"] as const,
-  interstitial: { everyCompletions: 1, minAppAgeMs: 180000, cooldownMs: 600000, paywallCooldownMs: 300000, maxPerDay: 2 },
+  interstitial: { everyCompletions: 3, minAppAgeMs: 180000, cooldownMs: 600000, paywallCooldownMs: 300000, maxPerDay: 2 },
   proProtocolIds: [] as string[],
   proFeatures: ["adFree", "unlimitedCustomPatterns", "unlimitedMixes", "unlimitedSavedRoutines", "advancedInsights", "advancedReminders", "guidedPrograms", "continuingPlans", "aiCoach"] as Capability[],
   guidedSessionsPerMonth: null as number | null,

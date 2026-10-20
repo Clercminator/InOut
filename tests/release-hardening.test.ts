@@ -6,6 +6,17 @@ import { associations } from "../scripts/build-link-associations.mjs";
 import { SubscriptionService, SubscriptionError, type SubscriptionProvider } from "../apps/mobile/src/subscriptions";
 import { EntitlementService } from "../apps/mobile/src/entitlements";
 import { AnalyticsService } from "../apps/mobile/src/analytics";
+import { advertisingMode } from "../apps/mobile/src/monetization";
+
+test("live ads require both a production build marker and a non-development runtime", () => {
+  for (const profile of ["development", "preview", "store-test", "simulator"])
+    assert.ok(buildPolicy({ EAS_BUILD_PROFILE: profile, EXPO_PUBLIC_ADS_MODE: "live" }).length);
+  assert.equal(advertisingMode(true, true, "live", "production"), "test");
+  assert.equal(advertisingMode(true, false, "live", "test"), "test");
+  assert.equal(advertisingMode(true, false, "live"), "test");
+  assert.equal(advertisingMode(true, false, "live", "production"), "live");
+  assert.equal(advertisingMode(false, false, "live", "production"), "preview");
+});
 
 test("release fails closed for test providers, mocks, demo ads and open gates; acceptance remains distinct", () => {
   assert.ok(buildPolicy({ EXPO_PUBLIC_SUBSCRIPTION_PROVIDER: "test" }).length);

@@ -456,3 +456,41 @@ test("idle and paused sessions never disable the global engine used by audio pre
   await act(async () => { mockController.pause(); mockController.setPreferences({ ...mockController.preferences, audio: "silent", guidance: { voice: false, nature: false, music: false } }); });
   expect(mockActivate).not.toHaveBeenCalledWith(false);
 });
+
+test.each(["en", "es", "pt"] as const)("supplied %s voices guide ten minutes with music and release every player on End", async language => {
+  mockController.preferences.guidance = { voice: true, nature: false, music: true, language, voiceId: "female" };
+  mockController.start(null, 60, protocols.find(p => p.id === "sleep-wind-down")!);
+  const screen = await render(<NativeSessionEffects />);
+  const inhale = mockPlayers[0], exhale = mockPlayers[1]; // Missing slots do not create players.
+  for (let cycle = 0; cycle < 60; cycle++) {
+    for (const [offset, player] of [[0, inhale], [4000, exhale]] as const) {
+      if (!(cycle === 0 && offset === 0)) await act(async () => {
+        now = cycle * 10000 + offset; mockController.tick();
+      });
+      player.isLoaded = false;
+      player.listener?.({ didJustFinish: true, isLoaded: true });
+    }
+  }
+  expect(inhale.play).toHaveBeenCalledTimes(60);
+  expect(exhale.play).toHaveBeenCalledTimes(60);
+  await act(async () => { now = 600000; mockController.tick(); });
+  // Sleep ends without a completion chime or reward vibration.
+  expect(mockPlayers[2].play).not.toHaveBeenCalled();
+  await screen.unmount();
+  mockPlayers.forEach(player => expect(player.remove).toHaveBeenCalledTimes(1));
+});
+
+
+test("audio recovery can continue silently without changing the saved audio selection", async () => {
+  mockController.preferences.guidance = { voice: true, nature: false, music: true };
+  mockController.start(null);
+  await render(<NativeSessionEffects />);
+  await act(async () => { mockPlayers[0].listener?.({ error: "decoder" }); });
+  expect(mockController.audioFailure).toBe(true);
+  await act(async () => { mockController.recoverAudio(true); });
+  expect(mockController.current?.engine.status).toBe("running");
+  expect(mockController.sessionSilent).toBe(true);
+  expect(mockController.audioFailure).toBe(false);
+  expect(mockController.preferences.guidance.voice).toBe(true);
+  expect(mockPlayers.every(p => p.remove.mock.calls.length > 0)).toBe(true);
+});

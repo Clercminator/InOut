@@ -28,7 +28,7 @@ export default function Settings() {
   const preferences = controller.preferences;
   const historyCount = controller.history().length;
   const savedCount = controller.routines().length;
-  if (section === "notifications") return <BackScreen title="Practice notifications"><NotificationSettings /><SaveError /></BackScreen>;
+  if (section === "notifications") return <BackScreen title="Practice notifications"><NotificationSettings /><SaveError feedback /></BackScreen>;
   return (
     <BackScreen title="SETTINGS">
       <Label>ACCOUNT</Label>
@@ -175,7 +175,7 @@ export default function Settings() {
       <View>
         <Copy style={s.small}>Version {Constants.expoConfig?.version} · Offline-first breathing practice</Copy>
       </View>
-      <SaveError />
+      <SaveError feedback />
     </BackScreen>
   );
 }

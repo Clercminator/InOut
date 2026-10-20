@@ -122,6 +122,7 @@ export default function Pre() {
         })}
         </View>
         <Copy>Breathe comfortably in a safe place. Never practice while driving or in water. Stop if dizzy or unwell.</Copy>
+        {protocol.precaution && <Copy>{protocol.precaution}</Copy>}
         {protocol.safetyCategory === "retention" && <Copy>Keep holds comfortable. Return to natural breathing whenever you need to.</Copy>}
       </Card>
       <ActionRow title="Audio & haptics" icon="tune" onPress={() => router.push("/practice-audio")} />

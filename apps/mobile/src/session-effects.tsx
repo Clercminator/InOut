@@ -11,7 +11,6 @@ import {
   setIsAudioActiveAsync,
   type AudioPlayer,
 } from "expo-audio";
-import * as Haptics from "expo-haptics";
 import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
 import { useSession } from "./session-context";
 import { breathingGuidance } from "./breathing-guidance";
@@ -28,11 +27,12 @@ export function NativeSessionEffects() {
   const { haptics, hapticMode = "transitions", keepAwake } = controller.preferences;
   const settings = audioSettings(controller.preferences);
   const voiceBank = selectedVoice(controller.preferences);
-  const voiceEnabled = settings.voice && session?.voiceAllowed !== false && !!voiceBank;
-  const natureEnabled = settings.nature;
-  const track = settings.music ? selectedMusicTrack(settings.musicId) : undefined;
+  const voiceEnabled = !controller.sessionSilent && settings.voice && session?.voiceAllowed !== false && !!voiceBank;
+  const natureEnabled = !controller.sessionSilent && settings.nature;
+  const track = !controller.sessionSilent && settings.music ? selectedMusicTrack(settings.musicId) : undefined;
   const audio = voiceEnabled ? "voice" : natureEnabled || track ? "tones" : "silent";
   const { breathSound, chime, celebration, celebrationVolume } = experienceFor(controller.preferences);
+  const quietEnding = session?.protocolId === "sleep-wind-down";
   const players = useRef<Array<AudioPlayer | undefined>>([]);
   const loadedVoicePlayers = useRef(new Set<AudioPlayer>());
   const focus = useRef<AudioPlayer | null>(null);
@@ -44,13 +44,11 @@ export function NativeSessionEffects() {
   const activeTexture = useRef<"in" | "out" | "hum" | null>(null);
   const textureGain = useRef(0);
   const musicLoop = useRef<ReturnType<typeof loopedAudio> | null>(null);
-  const completedId = useRef("");
   const [appActive, setAppActive] = useState(AppState.currentState === "active");
   const [audioRecovery, setAudioRecovery] = useState(0);
   const audioFailed = useCallback(() => {
     if (controller.current?.engine.status !== "running") return;
-    controller.analytics.track("audio_playback_failed", { outcome: "failed", errorCategory: "playback" });
-    controller.pause("interruption");
+    controller.reportAudioFailure();
     setAudioRecovery(value => value + 1);
   }, [controller]);
   const audioKey = `${audio}:${voiceBank?.language}:${voiceBank?.id}:${running}:${session?.stage}:${audioRecovery}`;
@@ -337,30 +335,5 @@ export function NativeSessionEffects() {
     }
   }, [running, appActive, view?.phaseElapsedMs, natureEnabled, settings.natureVolume]);
 
-  useEffect(() => {
-    if (
-      !session ||
-      session.stage !== "post" ||
-      completedId.current === session.id ||
-      !audioReady
-    )
-      return;
-    completedId.current = session.id;
-    if (haptics && celebration !== "quiet")
-      void Haptics.notificationAsync(
-        Haptics.NotificationFeedbackType.Success,
-      ).catch(() => {});
-    const player = players.current[3];
-    if (audio !== "silent" && chime !== "off" && celebration !== "quiet" && player && AppState.currentState === "active") {
-      const gen = ++generation.current;
-      void player
-        .seekTo(0)
-        .then(() => {
-          if (gen === generation.current && AppState.currentState === "active")
-            player.play();
-        })
-        .catch(() => {});
-    }
-  }, [session?.id, session?.stage, haptics, audio, audioReady, chime, celebration]);
   return null;
 }

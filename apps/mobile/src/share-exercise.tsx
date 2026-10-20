@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { publicError } from "./public-error";
 import { Share, View } from "react-native";
 import { Alert } from "./localized-native";
@@ -19,11 +19,14 @@ export function ShareExercise({ protocol, title = "Share this exercise" }: { pro
   const controller = useSession();
   const links = useShareLinks();
   const [busy, setBusy] = useState(false);
+  const lock = useRef(false);
   const [error, setError] = useState("");
   if (includesHighIntensity(protocol)) return null;
   return <>
     <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}><View style={{ flex: 1 }}>
-    <Button title={title} secondary disabled={busy || links?.busy} onPress={() => {
+    <Button title={error ? "Retry sharing" : title} secondary disabled={busy || links?.busy} onPress={() => {
+      if (lock.current) return;
+      lock.current = true;
       setBusy(true); setError("");
       let deliveryAttempted = false;
       void (async () => {
@@ -47,7 +50,7 @@ export function ShareExercise({ protocol, title = "Share this exercise" }: { pro
           outcome: "failed", errorCategory: deliveryAttempted ? "delivery" : "link",
         });
         setError(publicError(error, "Sharing is temporarily unavailable. Please try again online."));
-      }).finally(() => setBusy(false));
+      }).finally(() => { lock.current = false; setBusy(false); });
     }} />
     </View><IconButton title="About exercise sharing" icon="info-outline" onPress={() => Alert.alert("About exercise sharing",
       "Only the breathing cadence is uploaded. Names, ratings and notes stay private. Links expire after 30 days and can be revoked from Shared links.",

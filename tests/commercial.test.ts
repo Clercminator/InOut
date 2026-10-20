@@ -159,3 +159,24 @@ test("failed billing refresh distinguishes unknown and stale access from recentl
   e.acceptStoreGrant({ ...free, status: "active", active: true, verifiedAt: now, expiresAt: now + 10 });
   now += 11; e.checkExpiry(); assert.equal(e.billingReady, false);
 });
+
+
+test("an uncertain store purchase persists across restart and blocks a second payment", async () => {
+  let purchases = 0, uncertain = false, active = false;
+  const e = new EntitlementService(false, () => 1000);
+  const provider: SubscriptionProvider = {
+    mode: "store", offers: async () => [{ id: "monthly", title: "Monthly", price: "$1", period: "month" }],
+    refresh: async () => grant({ active, status: active ? "active" : "free" }),
+    purchase: async () => { purchases++; throw Error("response lost after payment"); },
+    restore: async () => grant(), managementUrl: async () => null,
+  };
+  const storage = { read: () => uncertain, write: (value: boolean) => { uncertain = value; } };
+  const service = new SubscriptionService(provider, e, new AnalyticsService(), storage);
+  await service.load(); await service.purchase("monthly");
+  assert.equal(uncertain, true); assert.match(service.message, /Do not pay again/);
+  const restarted = new SubscriptionService(provider, e, new AnalyticsService(), storage);
+  await restarted.load(); await restarted.purchase("monthly");
+  assert.equal(purchases, 1);
+  active = true; await restarted.restore();
+  assert.equal(restarted.purchaseUncertain, false); assert.equal(uncertain, false);
+});

@@ -14,8 +14,9 @@ import { Button, Chip, Copy, Label, useStyles } from "./ui";
 import { startHapticPacer } from "./haptic-pacer";
 import { emitBreathHaptic, hapticOffsets } from "./breath-haptics";
 import { protocols } from "@inout/protocols";
+import { selectedAudioSample } from "./audio-sample";
 
-type PreviewKind = "breath" | "chime" | "voice" | "music" | "vibration";
+type PreviewKind = "breath" | "chime" | "voice" | "music" | "vibration" | "mix";
 
 export function SoundControls({ compact = false }: { compact?: boolean }) {
   const s = useStyles();
@@ -53,7 +54,7 @@ export function SoundControls({ compact = false }: { compact?: boolean }) {
   useEffect(() => { const sub = AppState.addEventListener("change", state => { if (state !== "active") stop(); }); return () => sub.remove(); }, [stop]);
   useEffect(() => stop, [language, stop]);
   useEffect(() => { if (sessionRunning) stop(); }, [sessionRunning, stop]);
-  const preview = async (kind: "breath" | "chime" | "voice" | "music") => {
+  const preview = async (kind: Exclude<PreviewKind, "vibration">) => {
     stop(); setError(""); setPreviewKind(kind);
     if (controller.current?.engine.status === "running") return;
     const token = generation.current;
@@ -67,7 +68,7 @@ export function SoundControls({ compact = false }: { compact?: boolean }) {
     }, () => { if (token === generation.current) stop(); }, state => { if (token === generation.current) setPreviewState(state); });
     audioPreview.current = preview;
     const track = selectedMusicTrack(settings.musicId);
-    const clips: { source: number; volume: number; at: number }[] = [];
+    const clips = kind === "mix" ? selectedAudioSample(controller.preferences) : [];
     if (kind === "breath") clips.push({ source: breathPreviews[e.breathSound], volume: settings.natureVolume, at: 0 });
     if (kind === "chime") clips.push({ source: chimes[e.chime === "off" ? "bell" : e.chime], volume: e.celebrationVolume, at: 0 });
     if (kind === "music" && track) clips.push({ source: track.source, volume: settings.musicVolume, at: 0 });
@@ -75,9 +76,9 @@ export function SoundControls({ compact = false }: { compact?: boolean }) {
       const source = bank.cues[index];
       if (source !== undefined) clips.push({ source, volume: settings.voiceVolume, at: i * 3000 });
     });
-    if (!clips.length) { stop(); setError("This sample is unavailable."); return; }
+    if (!clips.length) { stop(); setError(kind === "mix" ? "Silence selected. Enable voice, nature or music to hear a sample." : "This sample is unavailable."); return; }
     if (clips.every(clip => clip.volume === 0)) { stop(); setError("Raise the preview volume to hear this sample."); return; }
-    await preview.start(clips, kind === "chime" ? chimeDurationMs[e.chime === "off" ? "bell" : e.chime] + 300 : kind === "music" ? 15000 : 6200);
+    await preview.start(clips, kind === "mix" ? 10000 : kind === "chime" ? chimeDurationMs[e.chime === "off" ? "bell" : e.chime] + 300 : kind === "music" ? 15000 : 6200);
   };
   const previewTouch = () => {
     stop(); setError(""); setPreviewKind("vibration");
@@ -111,6 +112,7 @@ export function SoundControls({ compact = false }: { compact?: boolean }) {
     </>}
   </View>;
   return <View style={{ gap: 12 }}>
+    {previewControl("mix", "Listen to sample", () => void preview("mix"))}
     <Label>GUIDED VOICE</Label>
     {toggle("Guided voice", settings.voice, voice => update({ voice }))}
     {settings.voice && <>

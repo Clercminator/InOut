@@ -57,7 +57,7 @@ test("existing preferences and completed onboarding are not reset by new journey
 });
 test("every goal has a safe first recommendation and repeated compatible sessions can inform it", () => {
   for (const goal of practiceGoals) assert.notEqual(recommendPractice(goal).intensity,"high");
-  assert.equal(recommendPractice("sleep").id,"coherent"); assert.equal(recommendPractice("focus").id,"box");
+  assert.equal(recommendPractice("sleep").id,"sleep-wind-down"); assert.equal(recommendPractice("focus").id,"box");
   assert.notEqual(recommendPractice("focus", [], id => id !== "box").id,"box");
 });
 test("streaks require completion; badges are dated, idempotent and retained after history deletion", () => {

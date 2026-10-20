@@ -29,7 +29,7 @@ export default function Result() {
   const { id, saved } = useLocalSearchParams<{ id: string; saved?: string }>();
   const controller = useSession();
   const commercial = useCommercial();
-  const [adThanks, setAdThanks] = useState(false);
+  const leaving = useRef(false);
   const disclosureShown = useRef("");
   const completion = controller.challenges().find(s => s.status === "completed" && !s.celebrationSeen && s.completedSteps.some(step => step.sessionId === id));
   const completionId = completion?.challengeId;
@@ -56,9 +56,9 @@ export default function Result() {
       commercial.entitlements.has("adFree") || !controller.preferences.freeAdsNoticeSeen) return;
     let focused = true;
     commercial.ads.setContext({ path: "/result", foreground: AppState.currentState === "active", sessionStage: "result", challengeActive: controller.hasActiveChallenge?.() ?? !!controller.pendingTest?.() });
-    void commercial.ads.presentCompletion(id, () => focused && AppState.currentState === "active").then(shown => {
-      if (focused && shown) setAdThanks(true);
-    });
+    void commercial.ads.prepare(() => focused && AppState.currentState === "active").then(() => {
+      if (focused) commercial.ads.prepareCompletion(id);
+    }).catch(() => {});
     return () => { focused = false; commercial.ads.cancelCompletion(); };
   }, [commercial, adEligible, id, controller, controller.preferences.freeAdsNoticeSeen,
     commercial?.entitlements.accessReady, commercial?.entitlements.billingReady, commercial?.entitlements.state.pro]));
@@ -78,7 +78,6 @@ export default function Result() {
   const program = enrollment && programFor(enrollment.programId);
   return (
     <Screen title={record.dailyReset ? "Daily Reset" : "STATE SHIFT"}>
-      {adThanks && <Copy accessibilityRole="alert">Thank you for helping us make the app better by watching this ad.</Copy>}
       {record.endReason === "unwell" && <Card style={{ borderColor: colors.danger }}>
         <Title>Stop and breathe naturally</Title>
         <Copy accessibilityRole="alert">Let go of the pacing. Sit or lie somewhere safe. Do not push through discomfort.</Copy>
@@ -158,8 +157,13 @@ export default function Result() {
           title="Return to Home"
           disabled={!!controller.error}
           onPress={() => {
-            commercial?.ads.cancelCompletion();
-            router.replace("/(tabs)");
+            if (leaving.current) return;
+            leaving.current = true;
+            // Results remain immediately readable. Only an already-loaded, capped ad
+            // can show when the user chooses to leave; never wait for inventory.
+            const exit = () => { commercial?.ads.cancelCompletion(); router.replace("/(tabs)"); };
+            if (!commercial || !adEligible) { exit(); return; }
+            void commercial.ads.showCompletion(id).catch(() => false).finally(exit);
           }}
         />
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>

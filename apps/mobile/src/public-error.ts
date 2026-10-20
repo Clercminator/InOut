@@ -1,6 +1,8 @@
 // Native/provider exceptions may contain paths, SQL or request details. Only app-owned
 // recovery copy may cross the UI boundary.
 const messages = new Set([
+  "Notifications are off. Enable them in phone settings, then try again.",
+  "Choose no more than three notification days each week.",
   "Please choose a JPG, PNG or WebP photo.", "Choose a photo smaller than 12 MB.",
   "Exercise sharing is not available online yet. Please try again later.",
   "Too many links were created recently. Please try again later.",

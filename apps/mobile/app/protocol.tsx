@@ -12,6 +12,7 @@ import { useState, useEffect } from "react";
 import { View } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { ShareExercise } from "../src/share-exercise";
+import { ProtocolEvidenceCard } from "../src/protocol-evidence-card";
 
 export default function ProtocolDetail() {
   const { colors } = useTheme();
@@ -21,7 +22,7 @@ export default function ProtocolDetail() {
   const [showSafety, setShowSafety] = useState(false);
   const { id } = useLocalSearchParams<{ id?: string }>();
   const protocol = protocols.find((item) => item.id === id) ?? sigh;
-  useEffect(() => { if (!id || protocols.some(p => p.id === id)) controller.analytics.track("protocol_viewed"); }, [controller, id]);
+  useEffect(() => { if (id !== "intimacy-calm" && (!id || protocols.some(p => p.id === id))) controller.analytics.track("protocol_viewed"); }, [controller, id]);
   const available = protocol.availability === "enabled";
   if (id && !protocols.some(item => item.id === id)) return <BackScreen title="PROTOCOL"><Title>Session unavailable</Title><Button title="Browse protocols" onPress={() => router.replace("/protocols")} /></BackScreen>;
   if (!available) return <BackScreen title="PROTOCOL"><Title>Not in this release.</Title><Button title="Browse protocols" onPress={() => router.replace("/protocols")} /></BackScreen>;
@@ -31,6 +32,8 @@ export default function ProtocolDetail() {
       <Label>{protocol.goalTags.join(" · ").toUpperCase()}</Label>
       <Title>{protocol.name}</Title>
       {protocol.description && <Copy>{protocol.description}</Copy>}
+      {protocol.instructions && <Copy>{protocol.instructions}</Copy>}
+      {protocol.precaution && <Copy>{protocol.precaution}</Copy>}
       <Copy>{protocol.phases.map((phase) => phase.label).join(" · ")}</Copy>
       </View>
       {isCyclic(protocol) ? <><CyclicOverview /><Card><CyclicSafety /></Card></> : <Card>
@@ -79,6 +82,7 @@ export default function ProtocolDetail() {
           </Copy>
         </View>}
       </Card>}
+      <ProtocolEvidenceCard protocol={protocol} />
       <Card style={{ paddingVertical: 8 }}>
         <ActionRow title={controller.isFavorite(protocol.id) ? "Remove from saved" : "Save protocol"}
           icon={controller.isFavorite(protocol.id) ? "bookmark" : "bookmark-border"}

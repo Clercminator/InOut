@@ -110,6 +110,19 @@ export class SessionController {
   private pendingManualId: string | null = null;
   routineNotice: string | null = null;
   latestAwards: Badge[] = [];
+  audioFailure = false;
+  sessionSilent = false;
+  reportAudioFailure() {
+    if (this.current?.engine.status !== "running") return;
+    this.audioFailure = true;
+    this.analytics.track("audio_playback_failed", { outcome: "failed", errorCategory: "playback" });
+    this.pause("interruption");
+  }
+  recoverAudio(silent = false) {
+    this.sessionSilent = silent;
+    this.audioFailure = false;
+    this.resume();
+  }
   pacerThemeNotice: PacerThemeId[] = [];
   challenges() { return this.store.challenges?.() ?? []; }
   enrollChallenge(id: string) {
@@ -255,9 +268,15 @@ export class SessionController {
   canResetLocalData?: () => boolean;
   onLocalDataReset?: () => void;
   private measured = new Set<string>();
+  private firstSession(kind: "started" | "completed") {
+    if (!this.analytics.remoteReady || this.preferences.telemetryEnabled !== true) return;
+    try {
+      if (this.store.claimSessionMilestone?.(kind)) this.analytics.track(kind === "started" ? "first_session_started" : "first_session_completed");
+    } catch { /* Measurement must not affect saved practice. */ }
+  }
   private measureSession() {
     const c = this.current;
-    if (!c || this.sessionError) return;
+    if (!c || this.sessionError || c.protocolId === "intimacy-calm" || c.engine.plan.blocks.some(b => b.protocolId === "intimacy-calm")) return;
     const once = (event: import("./analytics").ProductEvent) => {
       const key = `${c.id}:${event}`;
       if (this.measured.has(key)) return;
@@ -265,7 +284,7 @@ export class SessionController {
     };
     // Recovery does not synthesize starts; completion follows a persisted terminal result.
     if (c.stage === "result") {
-      if (c.endReason === "completed") { once("session_completed"); if (c.protocol?.plan && c.protocolId !== "shared-practice") once("mix_completed"); }
+      if (c.endReason === "completed") { once("session_completed"); this.firstSession("completed"); if (c.protocol?.plan && c.protocolId !== "shared-practice") once("mix_completed"); }
       else once("session_abandoned");
       if (c.dailyReset && c.endReason === "completed") once("daily_reset_completed");
       if (c.post !== null) once("state_after_logged");
@@ -403,6 +422,8 @@ export class SessionController {
     if (audioSettings(this.preferences).voice && !this.guidedAccess().allowed) this.analytics.track("free_quota_exhausted");
     this.measured.clear();
     this.latestAwards = [];
+    this.audioFailure = false;
+    this.sessionSilent = false;
     const plan = planFor(protocol, selectedCycles);
     this.current = {
       id: this.id(),
@@ -426,7 +447,10 @@ export class SessionController {
       endReason: null,
     };
     this.save();
+    if (this.error || protocol.id === "intimacy-calm" || this.current.engine.plan.blocks.some(b => b.protocolId === "intimacy-calm")) return;
+    this.analytics.track("protocol_selected");
     this.analytics.track("session_started");
+    this.firstSession("started");
     if (!this.error && coaching && "enrollmentId" in coaching.tag && this.coachState().enrollments.some(e => e.id === (coaching.tag as { enrollmentId: string }).enrollmentId && e.completed.length > 0)) this.analytics.track("guided_program_returned");
     if (pre !== null) this.analytics.track("state_before_logged");
     if (protocol.plan && protocol.id !== "shared-practice") this.analytics.track("mix_started");
@@ -488,6 +512,7 @@ export class SessionController {
         endReason: "completed",
       };
     this.save();
+    if (reason !== "manual" && this.current.protocolId !== "intimacy-calm") this.analytics.track("session_interrupted");
   }
   resume() {
     if (!this.current || this.error || this.current.stage !== "active" || this.current.engine.status !== "paused") return;
@@ -643,7 +668,9 @@ export class SessionController {
       if (this.current?.stage === "result") this.current = null;
     });
   }
+  preferencesSaved = false;
   setPreferences(preferences: Preferences) {
+    this.preferencesSaved = false;
     preferences = { ...preferences, ...languagePreference(preferences) };
     try {
       const onboardingCompleted = !this.preferences.onboardingComplete && preferences.onboardingComplete;
@@ -661,6 +688,7 @@ export class SessionController {
       setLanguage(isLanguage(preferences.language) ? preferences.language : "en");
       this.pendingPreferences = null;
       this.preferencesError = null;
+      this.preferencesSaved = true;
     } catch {
       this.pendingPreferences = { ...preferences };
       this.preferencesError = "Settings could not be saved. Please retry.";

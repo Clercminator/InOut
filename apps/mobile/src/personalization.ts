@@ -3,7 +3,7 @@ import { protocols, sigh } from "@inout/protocols";
 
 export const goalContent: Record<PracticeGoal, { title: string; icon: "spa" | "bedtime" | "center-focus-strong" | "fitness-center" | "wb-sunny" | "mic" | "air"; situation: Goal; protocolId: string; heading: string; body: string; reminder: string }> = {
   stress: { title: "Reduce stress & anxiety", icon: "spa", situation: "Calm", protocolId: "extended-exhale", heading: "Make room for a calmer moment.", body: "Try an easy inhale and a longer, comfortable exhale. Follow the guide without forcing your breath, then notice how you feel. There is no score to beat.", reminder: "A few quiet breaths, when it suits you." },
-  sleep: { title: "Sleep better", icon: "bedtime", situation: "Sleep", protocolId: "coherent", heading: "Ease into your evening.", body: "A gentle, repeatable rhythm can be part of your wind-down routine. Keep the breath comfortable and let the guide do the counting.", reminder: "Ready for your evening wind-down?" },
+  sleep: { title: "Sleep better", icon: "bedtime", situation: "Sleep", protocolId: "sleep-wind-down", heading: "Ease into your evening.", body: "A gentle, repeatable rhythm can be part of your wind-down routine. Keep the breath comfortable and let the guide do the counting.", reminder: "Ready for your evening wind-down?" },
   focus: { title: "Improve focus", icon: "center-focus-strong", situation: "Focus", protocolId: "box", heading: "One rhythm. One thing at a time.", body: "Give your attention a simple pattern to follow before your next task. Keep holds easy; return to natural breathing whenever you need to.", reminder: "A breathing pause before your next task." },
   performance: { title: "Performance & recovery", icon: "fitness-center", situation: "Recover", protocolId: "diaphragmatic", heading: "Reset between efforts.", body: "Settle into an unforced rhythm before or after your activity. Start with foundational breathing and explore other protocols at your own pace.", reminder: "Make time for an easy breathing reset." },
   energy: { title: "Increase energy", icon: "wb-sunny", situation: "Energize", protocolId: "equal", heading: "Begin with intention.", body: "Take a short, attentive pause before moving into your day. Follow an even rhythm and notice what feels comfortable for you.", reminder: "A fresh moment for your breathing practice." },
@@ -46,6 +46,6 @@ export function recommendPractice(goal: PracticeGoal = "stress", records: Sessio
   const content = goalContent[goal];
   const recent = [...records].filter(r => r.endReason === "completed" && r.source !== "manual").sort((a, b) => b.engine.startedAt - a.engine.startedAt);
   // A familiar gentle practice takes priority after at least two completions. Never recommend high intensity by default.
-  const familiar = protocols.find(p => p.intensity === "gentle" && p.goalTags.includes(content.situation) && allowed(p.id) && recent.slice(0, 10).filter(r => r.protocolId === p.id).length >= 2);
+  const familiar = protocols.find(p => p.id !== "intimacy-calm" && p.intensity === "gentle" && p.goalTags.includes(content.situation) && allowed(p.id) && recent.slice(0, 10).filter(r => r.protocolId === p.id).length >= 2);
   return familiar ?? protocols.find(p => p.id === content.protocolId && allowed(p.id)) ?? protocols.find(p => p.intensity === "gentle" && allowed(p.id)) ?? sigh;
 }

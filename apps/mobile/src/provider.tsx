@@ -1,3 +1,4 @@
+import { ActionFeedback } from "./action-feedback";
 import { refreshDeviceLanguage } from "./device-language";
 import { getDeviceLanguage } from "./language-preference";
 import { goalContent, goalForDay } from "./personalization";
@@ -162,7 +163,7 @@ function AdContextEffects({ controller, commercial }: { controller: SessionContr
   return null;
 }
 export { useSession } from "./session-context";
-export function SaveError() {
+export function SaveError({ feedback = false }: { feedback?: boolean }) {
   useLanguage();
   const controller = useSession();
   return controller.error ? (
@@ -170,7 +171,7 @@ export function SaveError() {
       <Copy accessibilityRole="alert">{controller.error}</Copy>
       <Button title="Retry saving" onPress={() => controller.retry()} />
     </>
-  ) : null;
+  ) : <ActionFeedback state={feedback && controller.preferencesSaved ? "success" : "idle"} />;
 }
 
 function SavedTheme({ children }: PropsWithChildren) {

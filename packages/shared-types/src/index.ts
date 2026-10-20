@@ -29,6 +29,9 @@ export interface Protocol {
   version: number;
   name: string;
   description?: string;
+  purpose?: string;
+  instructions?: string;
+  precaution?: string;
   searchTerms?: string[];
   goalTags: Goal[];
   phases: Phase[];

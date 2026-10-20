@@ -14,7 +14,7 @@ export default ({ config }: ConfigContext) => {
   return ({
   ...config,
   ...(preview ? { name: "IN/OUT Preview", scheme: "inout-preview" } : {}),
-  extra: { ...config.extra, firebasePlatforms: { android: !!androidGoogleServicesFile, ios: !!iosGoogleServicesFile }, ...(process.env.EXPO_PUBLIC_EAS_PROJECT_ID ? { eas: { projectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID } } : {}) },
+  extra: { ...config.extra, adEnvironment: process.env.INOUT_RELEASE === "1" || process.env.EAS_BUILD_PROFILE === "production" ? "production" : "test", firebasePlatforms: { android: !!androidGoogleServicesFile, ios: !!iosGoogleServicesFile }, ...(process.env.EXPO_PUBLIC_EAS_PROJECT_ID ? { eas: { projectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID } } : {}) },
   ios: { ...config.ios, ...(preview ? { bundleIdentifier: "com.imrtech.inout.preview" } : {}), ...(iosGoogleServicesFile ? { googleServicesFile: iosGoogleServicesFile } : {}), ...(!preview && links.origin && links.appleTeamId ? { appleTeamId: links.appleTeamId, associatedDomains: [`applinks:${new URL(links.origin).host}`] } : {}) },
   android: { ...config.android, ...(preview ? { package: "com.imrtech.inout.preview" } : {}), ...(androidGoogleServicesFile ? { googleServicesFile: androidGoogleServicesFile } : {}), ...(!preview && links.origin && links.androidSha256.length ? { intentFilters: [{ action: "VIEW", autoVerify: true, category: ["BROWSABLE", "DEFAULT"], data: [{ scheme: "https", host: new URL(links.origin).host, path: links.path }] }] } : {}) },
   plugins: [...(config.plugins ?? []),

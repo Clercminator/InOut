@@ -4,6 +4,8 @@ function buildPolicy(env, gates = {}, listingStatus = '') {
   const production = env.INOUT_RELEASE === '1' || env.EAS_BUILD_PROFILE === 'production';
   const store = production || env.INOUT_STORE_TEST === '1' || env.EAS_BUILD_PROFILE === 'store-test';
   const errors = [];
+  if (!production && env.EXPO_PUBLIC_ADS_MODE === 'live') errors.push('Live ad units are restricted to gated production builds.');
+  if (production && ['preview', 'development', 'store-test', 'simulator'].includes(env.EAS_BUILD_PROFILE)) errors.push('A preview or test profile cannot be a production release.');
   const platforms = ['android', 'ios'].includes(env.EAS_BUILD_PLATFORM) ? [env.EAS_BUILD_PLATFORM] : ['android', 'ios'];
   for (const [platform, ids] of Object.entries(admob)) {
     const names = { app: `ADMOB_${platform.toUpperCase()}_APP_ID`, banner: `EXPO_PUBLIC_ADMOB_${platform.toUpperCase()}_BANNER_ID`, interstitial: `EXPO_PUBLIC_ADMOB_${platform.toUpperCase()}_INTERSTITIAL_ID` };
