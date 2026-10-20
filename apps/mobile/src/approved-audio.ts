@@ -12,50 +12,60 @@ export interface VoiceBank {
   durations: readonly number[];
 }
 // Missing phrases remain quiet; never silently switch voice or language.
+function suppliedBank(cues: readonly number[], ms: readonly number[]): Pick<VoiceBank, "cues" | "durations"> {
+  return {
+    cues: [cues[0], undefined, cues[1], undefined, cues[2], undefined, cues[2], undefined, cues[3]],
+    durations: [ms[0], Infinity, ms[1], Infinity, ms[2], Infinity, ms[2], Infinity, ms[3]],
+  };
+}
 const supplied = {
-  enMaleIn: require("../assets/audio/supplied/voice-en-male-in.mp3"),
-  enMaleOut: require("../assets/audio/supplied/voice-en-male-out.mp3"),
-  enMaleHold: require("../assets/audio/supplied/voice-en-male-hold.mp3"),
-  enMaleFlow: require("../assets/audio/supplied/voice-en-male-flow.mp3"),
-  enFemaleIn: require("../assets/audio/supplied/voice-en-female-in.mp3"),
-  enFemaleOut: require("../assets/audio/supplied/voice-en-female-out.mp3"),
-  enFemaleHold: require("../assets/audio/supplied/voice-en-female-hold.mp3"),
-  enFemaleFlow: require("../assets/audio/supplied/voice-en-female-flow.mp3"),
-  esFemaleIn: require("../assets/audio/supplied/voice-es-female-in.mp3"),
-  esFemaleOut: require("../assets/audio/supplied/voice-es-female-out.mp3"),
-  esFemaleHold: require("../assets/audio/supplied/voice-es-female-hold.mp3"),
+  en: {
+    male: suppliedBank([
+      require("../assets/audio/supplied/voice-en-male-in.mp3"),
+      require("../assets/audio/supplied/voice-en-male-out.mp3"),
+      require("../assets/audio/supplied/voice-en-male-hold.mp3"),
+      require("../assets/audio/supplied/voice-en-male-flow.mp3"),
+    ], [2038, 2038, 2090, 2038]),
+    female: suppliedBank([
+      require("../assets/audio/supplied/voice-en-female-in.mp3"),
+      require("../assets/audio/supplied/voice-en-female-out.mp3"),
+      require("../assets/audio/supplied/voice-en-female-hold.mp3"),
+      require("../assets/audio/supplied/voice-en-female-flow.mp3"),
+    ], [2038, 2038, 2090, 2038]),
+  },
+  es: {
+    male: suppliedBank([
+      require("../assets/audio/supplied/voice-es-male-in.mp3"),
+      require("../assets/audio/supplied/voice-es-male-out.mp3"),
+      require("../assets/audio/supplied/voice-es-male-hold.mp3"),
+      require("../assets/audio/supplied/voice-es-male-flow.mp3"),
+    ], [1071, 1228, 993, 1959]),
+    female: suppliedBank([
+      require("../assets/audio/supplied/voice-es-female-in.mp3"),
+      require("../assets/audio/supplied/voice-es-female-out.mp3"),
+      require("../assets/audio/supplied/voice-es-female-hold.mp3"),
+      require("../assets/audio/supplied/voice-es-female-flow.mp3"),
+    ], [1567, 1724, 1489, 2508]),
+  },
+  pt: {
+    male: suppliedBank([
+      require("../assets/audio/supplied/voice-pt-male-in.mp3"),
+      require("../assets/audio/supplied/voice-pt-male-out.mp3"),
+      require("../assets/audio/supplied/voice-pt-male-hold.mp3"),
+      require("../assets/audio/supplied/voice-pt-male-flow.mp3"),
+    ], [1411, 1959, 1149, 1959]),
+    female: suppliedBank([
+      require("../assets/audio/supplied/voice-pt-female-in.mp3"),
+      require("../assets/audio/supplied/voice-pt-female-out.mp3"),
+      require("../assets/audio/supplied/voice-pt-female-hold.mp3"),
+      require("../assets/audio/supplied/voice-pt-female-flow.mp3"),
+    ], [1802, 2116, 1228, 1802]),
+  },
 };
-const suppliedVoiceDurations = {
-  english: { in: 2038, out: 2038, hold: 2090, flow: 2038 },
-  spanish: { in: 1567, out: 1724, hold: 1489 },
-};
-const englishDurations = suppliedVoiceDurations.english;
-const englishCueDurations = [
-  englishDurations.in, Infinity, englishDurations.out, Infinity,
-  englishDurations.hold, Infinity, englishDurations.hold, Infinity, englishDurations.flow,
-];
-const spanishCueDurations = [
-  suppliedVoiceDurations.spanish.in, Infinity, suppliedVoiceDurations.spanish.out, Infinity,
-  suppliedVoiceDurations.spanish.hold, Infinity, suppliedVoiceDurations.spanish.hold,
-];
 
 export const voiceBanks: VoiceBank[] = voiceOptions.map(({ id, language }) => {
   if (id === "existing") return { id, language, label: "Current voice", cues: voices[language], durations: durations[language] };
-  if (id === "male") return {
-    id, language, label: "Male",
-    cues: [supplied.enMaleIn, undefined, supplied.enMaleOut, undefined, supplied.enMaleHold, undefined, supplied.enMaleHold, undefined, supplied.enMaleFlow],
-    durations: englishCueDurations,
-  };
-  if (language === "es") return {
-    id, language, label: "Female",
-    cues: [supplied.esFemaleIn, undefined, supplied.esFemaleOut, undefined, supplied.esFemaleHold, undefined, supplied.esFemaleHold],
-    durations: spanishCueDurations,
-  };
-  return {
-    id, language, label: "Female",
-    cues: [supplied.enFemaleIn, undefined, supplied.enFemaleOut, undefined, supplied.enFemaleHold, undefined, supplied.enFemaleHold, undefined, supplied.enFemaleFlow],
-    durations: englishCueDurations,
-  };
+  return { id, language, label: id === "male" ? "Male" : "Female", ...supplied[language][id] };
 });
 export interface MusicTrack { id: string; title: string; source: number; durationMs: number; crossfadeMs: number }
 const tracksById: Record<typeof musicTrackIds[number], MusicTrack> = {

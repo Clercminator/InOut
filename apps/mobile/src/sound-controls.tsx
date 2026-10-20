@@ -9,7 +9,7 @@ import { useFocusEffect } from "expo-router";
 import { createAudioPreview, type PreviewPlaybackState } from "./preview-audio";
 import { useSession } from "./provider";
 import { experienceFor } from "./experience";
-import { breathPreviews, chimes } from "./audio-library";
+import { breathPreviews, chimes, chimeDurationMs } from "./audio-library";
 import { Button, Chip, Copy, Label, useStyles } from "./ui";
 import { startHapticPacer } from "./haptic-pacer";
 import { emitBreathHaptic, hapticOffsets } from "./breath-haptics";
@@ -77,7 +77,7 @@ export function SoundControls({ compact = false }: { compact?: boolean }) {
     });
     if (!clips.length) { stop(); setError("This sample is unavailable."); return; }
     if (clips.every(clip => clip.volume === 0)) { stop(); setError("Raise the preview volume to hear this sample."); return; }
-    await preview.start(clips, kind === "chime" ? 2200 : kind === "music" ? 15000 : 6200);
+    await preview.start(clips, kind === "chime" ? chimeDurationMs[e.chime === "off" ? "bell" : e.chime] + 300 : kind === "music" ? 15000 : 6200);
   };
   const previewTouch = () => {
     stop(); setError(""); setPreviewKind("vibration");
@@ -150,12 +150,12 @@ export function SoundControls({ compact = false }: { compact?: boolean }) {
     {controller.preferences.haptics && previewControl("vibration", "Preview vibration · 6 sec", previewTouch)}
     {!compact && <>
       <Label>COMPLETION CHIME</Label>
-      <View style={s.row}>{(["bell", "bloom", "off"] as const).map(chime => <Chip key={chime} title={chime} selected={e.chime === chime} onPress={() => { stop(); controller.updateExperience({ chime }); }} />)}</View>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>{(["bell", "bloom", "completion-1", "completion-2", "off"] as const).map(chime => <Chip key={chime} title={chime === "completion-1" ? "Chime 1" : chime === "completion-2" ? "Chime 2" : chime} selected={e.chime === chime} onPress={() => { stop(); controller.updateExperience({ chime }); }} />)}</View>
       <Label>CELEBRATION VOLUME</Label>
       <View style={s.row}>{[0.2, 0.45, 0.7, 1].map(celebrationVolume => <Chip key={celebrationVolume} title={`${Math.round(celebrationVolume * 100)}%`} selected={e.celebrationVolume === celebrationVolume}
         onPress={() => { stop(); controller.updateExperience({ celebrationVolume }); }} />)}</View>
       {e.chime !== "off" && controller.preferences.audio !== "silent" && previewControl("chime", "Preview chime", () => void preview("chime"))}
-      <Copy style={s.small}>Silent mode mutes all sounds. Quiet celebrations mute reward sounds and touch. Previews play only when requested. Audio respects your phone volume and silent switch.</Copy>
+      <Copy style={s.small}>Audio uses your phone’s media volume. Turn off voice, music and nature sounds to practice quietly. Quiet celebrations mute reward sounds and vibration. Previews play only when requested.</Copy>
     </>}
     {controller.preferences.haptics && <Copy style={s.small}>No vibration? Your phone may suppress touch feedback in system or battery settings. Some hardware does not support these effects.</Copy>}
   </View>;

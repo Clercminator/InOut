@@ -7,6 +7,9 @@ export const voiceOptions = [
   { id: "male", language: "en" },
   { id: "female", language: "en" },
   { id: "female", language: "es" },
+  { id: "male", language: "es" },
+  { id: "female", language: "pt" },
+  { id: "male", language: "pt" },
 ] as const;
 
 export const musicTrackIds = [

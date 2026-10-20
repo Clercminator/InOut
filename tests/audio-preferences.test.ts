@@ -16,7 +16,7 @@ test("legacy sound preferences migrate without changing existing playback choice
     }
   }
   assert.throws(() => validateGuidance({ guidance: { voiceVolume: 1.1 } } as Preferences));
-  assert.throws(() => validateGuidance({ guidance: { voiceId: "male", language: "es" } } as Preferences));
+  assert.throws(() => validateGuidance({ guidance: { voiceId: "missing" as "male", language: "es" } } as Preferences));
   assert.throws(() => validateGuidance({ guidance: { music: true, musicId: "missing-track" } } as Preferences));
   for (const option of voiceOptions) {
     validateGuidance({ guidance: { voiceId: option.id, language: option.language } });

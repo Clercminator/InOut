@@ -2,6 +2,8 @@
 
 ## October 19 reliability and internal testing follow-up
 
+Current source: `ef125ad`. The owner confirmed audio now works and accepted continuous Box/Triangle corner motion and themed popups. Corrected Android 1.2.1 (7) build [0de2dc10](https://expo.dev/accounts/imr-tech/projects/inout/builds/0de2dc10-3061-4931-a519-65a136811eda) completed, but is superseded by the library-inclusive candidate requested afterward; the Play internal release draft is prepared. The previous build `462efc4f` was canceled. October 18 entries below are historical and superseded by this status.
+
 - [ ] On the new Android candidate, run several cycles of every protocol with music, voice and vibration enabled. Check Pause/Resume, End/Cancel and I feel unwell; confirm no skipped cycles, unexpected stops, motion outside the frame or blocked taps. Also test silent mode, headphones, background/foreground and real interruptions. Box/Triangle were previously accepted; this broader native acceptance is pending.
 - [ ] Check help, sharing, restart, delete, theme-preview and ad-information dialogs in Light/Dark, EN/ES/PT and enlarged text. App-owned popups now share themed scrollable cards and full-width actions.
 - [ ] Confirm eligible completed Free sessions automatically show a **test** interstitial and the thank-you message, with no ad for early stops, unwell, Pro/reviewer, consent refusal or unavailable inventory.

@@ -11,12 +11,17 @@ test("selected supplied voice and music recordings are present in the native ass
     "music-the-initiation.mp3", "music-westerpark.mp3",
     "voice-en-male-in.mp3", "voice-en-male-out.mp3", "voice-en-male-hold.mp3", "voice-en-male-flow.mp3",
     "voice-en-female-in.mp3", "voice-en-female-out.mp3", "voice-en-female-hold.mp3", "voice-en-female-flow.mp3",
-    "voice-es-female-in.mp3", "voice-es-female-out.mp3", "voice-es-female-hold.mp3",
+    "voice-es-female-in.mp3", "voice-es-female-out.mp3", "voice-es-female-hold.mp3", "voice-es-female-flow.mp3",
+    ...["es-male", "pt-male", "pt-female"].flatMap(bank => ["in", "out", "hold", "flow"].map(cue => `voice-${bank}-${cue}.mp3`)),
   ];
   for (const name of names) assert.equal(existsSync(join(root, name)), true, name);
   const manifest = readFileSync("apps/mobile/src/approved-audio.ts", "utf8");
   for (const name of names) assert.ok(manifest.includes(name), name);
-  assert.equal(names.length, 16);
+  assert.equal(names.length, 29);
+  for (const name of ["completion-1.mp3", "completion-2.mp3"]) {
+    assert.ok(existsSync(join(root, name)));
+    assert.ok(readFileSync("apps/mobile/src/audio-library.ts", "utf8").includes(name));
+  }
 });
 
 test("every static audio asset reference resolves to a Metro-bundled file", () => {
@@ -50,6 +55,9 @@ test("supported voice banks and music choices have an explicit manifest mapping"
     { id: "male", language: "en" },
     { id: "female", language: "en" },
     { id: "female", language: "es" },
+    { id: "male", language: "es" },
+    { id: "female", language: "pt" },
+    { id: "male", language: "pt" },
   ]);
   assert.deepEqual(musicTrackIds, [
     "bliss-breath", "sweet-and-spicy", "the-awakening", "the-initiation", "westerpark",

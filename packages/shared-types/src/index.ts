@@ -154,7 +154,7 @@ export interface Experience {
   frame: "simple" | "glow" | "laurel";
   celebration: "quiet" | "gentle" | "playful";
   celebrationStyle: "sparks" | "confetti";
-  chime: "bell" | "bloom" | "off";
+  chime: "bell" | "bloom" | "completion-1" | "completion-2" | "off";
   breathSound: "air" | "ocean" | "warm";
   guidanceVolume: number;
   celebrationVolume: number;

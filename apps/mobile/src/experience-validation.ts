@@ -10,7 +10,7 @@ export function validateExperience(value: Experience) {
   const choices = {
     avatar: ["spa", "air", "nightlight", "wb-sunny"], palette: ["sky", "mint", "dusk", "sunrise"],
     texture: ["glass", "halo", "orbit"], background: ["midnight", "deep-sea", "plum"], frame: ["simple", "glow", "laurel"],
-    celebration: ["quiet", "gentle", "playful"], celebrationStyle: ["sparks", "confetti"], chime: ["bell", "bloom", "off"], breathSound: ["air", "ocean", "warm"],
+    celebration: ["quiet", "gentle", "playful"], celebrationStyle: ["sparks", "confetti"], chime: ["bell", "bloom", "completion-1", "completion-2", "off"], breathSound: ["air", "ocean", "warm"],
   };
   for (const [key, options] of Object.entries(choices)) if (!options.includes(value[key as keyof Experience] as string)) fail();
   if (!Number.isInteger(value.weeklyGoal) || value.weeklyGoal < 2 || value.weeklyGoal > 7) fail();

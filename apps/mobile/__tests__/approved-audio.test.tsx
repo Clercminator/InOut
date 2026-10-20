@@ -23,8 +23,20 @@ test("each supported language and voice combination resolves only to its own rec
     haptics: false,
     keepAwake: false,
     language: "es",
-    guidance: { voice: true, language: "es", voiceId: "male" },
+    guidance: { voice: true, language: "es", voiceId: "missing" as "male" },
   })).toBeUndefined();
+});
+
+test("all six supplied voices provide inhale, exhale, hold and flow without language substitution", () => {
+  expect(voiceBanks.filter(bank => bank.id !== "existing")).toHaveLength(6);
+  for (const bank of voiceBanks.filter(bank => bank.id !== "existing")) {
+    for (const slot of [0, 2, 4, 6, 8]) {
+      expect(bank.cues[slot]).toBeDefined();
+      expect(bank.durations[slot]).toBeGreaterThan(0);
+      expect(bank.durations[slot]).toBeLessThan(3000);
+    }
+    for (const slot of [1, 3, 5, 7]) expect(bank.cues[slot]).toBeUndefined();
+  }
 });
 
 test("all bundled music choices resolve explicitly and unsupported IDs have no fallback", () => {

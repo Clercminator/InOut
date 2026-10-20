@@ -181,6 +181,8 @@ test("saved celebration plays once at the chosen volume and releases its player"
   await view.rerender(wrap(<Celebration variant="saved" title="Saved" message="Nice work." />));
   await act(async () => { jest.advanceTimersByTime(2000); });
   expect(mockPlayers).toHaveLength(1);
+  expect(mockPlayers[0].remove).not.toHaveBeenCalled();
+  await act(async () => { jest.advanceTimersByTime(300); });
   expect(mockPlayers[0].remove).toHaveBeenCalledTimes(1);
 });
 
@@ -277,6 +279,21 @@ test("Settings saves the selected appearance preference", async () => {
     expect(mockController.preferences.theme).toBe(theme);
     expect(screen.getByRole("radio", { name: label, selected: true })).toBeTruthy();
   }
+});
+
+test("new completion chimes persist and their previews are not cut off at the old duration", async () => {
+  await render(wrap(<SoundControls />));
+  await fireEvent.press(screen.getByRole("button", { name: "Chime 1" }));
+  expect(mockController.preferences.experience?.chime).toBe("completion-1");
+  await fireEvent.press(screen.getByRole("button", { name: "Preview chime" }));
+  const player = mockPlayers[mockPlayers.length - 1];
+  await act(async () => { player.addListener.mock.calls[0][1]({ isLoaded: true, playing: true }); });
+  await act(async () => { jest.advanceTimersByTime(3000); });
+  expect(player.remove).not.toHaveBeenCalled();
+  await act(async () => { jest.advanceTimersByTime(2200); });
+  expect(player.remove).toHaveBeenCalledTimes(1);
+  await fireEvent.press(screen.getByRole("button", { name: "Chime 2" }));
+  expect(mockController.preferences.experience?.chime).toBe("completion-2");
 });
 
 test("home recommendation starts the selected goal and displays the user's own intention", async () => {

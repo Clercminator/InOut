@@ -7,7 +7,7 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 
 import { Copy, Title } from "./ui";
 import { useExperience } from "./experience-context";
-import { chimes } from "./audio-library";
+import { chimes, chimeDurationMs } from "./audio-library";
 import { cosmetics, type Badge } from "./experience";
 import { createAudioPlayer, setAudioModeAsync, setIsAudioActiveAsync, type AudioPlayer } from "expo-audio";
 import * as Haptics from "expo-haptics";
@@ -58,7 +58,7 @@ export function Celebration({ title, message, variant = "complete", awards = [] 
         player = createAudioPlayer(chimes[experience.chime === "off" ? "bell" : experience.chime], { keepAudioSessionActive: false });
         player.volume = experience.celebrationVolume;
         player.play();
-        releaseTimer = setTimeout(() => { player?.pause(); player?.remove(); player = undefined; }, awards.length ? 2200 : 900);
+        releaseTimer = setTimeout(() => { player?.pause(); player?.remove(); player = undefined; }, chimeDurationMs[experience.chime === "off" ? "bell" : experience.chime] + 300);
       })().catch(() => {});
     }, 300);
     const sub = AppState.addEventListener("change", state => { if (state !== "active") { disposed = true; player?.pause(); } });
