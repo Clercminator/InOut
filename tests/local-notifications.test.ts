@@ -71,3 +71,14 @@ test("promotions occur no more than once in four weeks and never with Pro or unr
   assert.ok(sorted.length >= 3);
   for (let i = 1; i < sorted.length; i++) assert.ok(sorted[i] - sorted[i - 1] >= 27 * 86400000);
 });
+
+
+test("optional weekly progress stays neutral and no engagement prompt follows today's practice", () => {
+  const now = new Date(2026, 9, 19, 10);
+  const settings = { ...notificationDefaults, weeklyProgress: true, weekdays: [2, 4, 6], hour: 13 };
+  const context = { pro: false, billingReady: true, remindersEnabled: true, lastPracticeAt: now.getTime() - 60000 };
+  const schedule = buildEngagementSchedule(settings, now, context);
+  assert.ok(schedule.length > 0);
+  assert.ok(schedule.every(item => item.date.getDate() !== 19 && item.type === "weekly-progress"));
+  assert.ok(schedule.every(item => item.body === "Your weekly practice progress is ready to view."));
+});

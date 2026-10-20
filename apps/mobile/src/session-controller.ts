@@ -110,6 +110,16 @@ export class SessionController {
   private pendingManualId: string | null = null;
   routineNotice: string | null = null;
   latestAwards: Badge[] = [];
+  private revealed = new Set<string>();
+  claimSessionReveal(id: string) {
+    if (this.error || this.revealed.has(id) || this.current?.id !== id || this.current.stage !== "result" || this.current.endReason !== "completed" || this.current.source === "manual") return false;
+    try {
+      if (this.store.claimSessionReveal && !this.store.claimSessionReveal(id)) return false;
+      this.revealed.add(id);
+      this.analytics.track("session_reveal_viewed");
+      return true;
+    } catch { return false; }
+  }
   audioFailure = false;
   sessionSilent = false;
   reportAudioFailure() {
@@ -271,12 +281,20 @@ export class SessionController {
   private firstSession(kind: "started" | "completed") {
     if (!this.analytics.remoteReady || this.preferences.telemetryEnabled !== true) return;
     try {
+      if (kind === "completed") {
+        const completed = this.history().filter(r => r.endReason === "completed" && r.source !== "manual")
+          .sort((a, b) => (a.finishedAt ?? a.engine.startedAt) - (b.finishedAt ?? b.engine.startedAt));
+        if (completed[1]?.id === this.current?.id && completed[0].finishedAt !== null && completed[1].finishedAt !== null &&
+            completed[1].finishedAt - completed[0].finishedAt >= 0 && completed[1].finishedAt - completed[0].finishedAt <= 7 * 86400000 &&
+            this.store.claimSecondSessionMilestone?.()) this.analytics.track("second_session_within_seven_days");
+        if (completed[0]?.id !== this.current?.id) return;
+      }
       if (this.store.claimSessionMilestone?.(kind)) this.analytics.track(kind === "started" ? "first_session_started" : "first_session_completed");
     } catch { /* Measurement must not affect saved practice. */ }
   }
   private measureSession() {
     const c = this.current;
-    if (!c || this.sessionError || c.protocolId === "intimacy-calm" || c.engine.plan.blocks.some(b => b.protocolId === "intimacy-calm")) return;
+    if (!c || this.sessionError) return;
     const once = (event: import("./analytics").ProductEvent) => {
       const key = `${c.id}:${event}`;
       if (this.measured.has(key)) return;
@@ -447,7 +465,7 @@ export class SessionController {
       endReason: null,
     };
     this.save();
-    if (this.error || protocol.id === "intimacy-calm" || this.current.engine.plan.blocks.some(b => b.protocolId === "intimacy-calm")) return;
+    if (this.error) return;
     this.analytics.track("protocol_selected");
     this.analytics.track("session_started");
     this.firstSession("started");
@@ -512,7 +530,7 @@ export class SessionController {
         endReason: "completed",
       };
     this.save();
-    if (reason !== "manual" && this.current.protocolId !== "intimacy-calm") this.analytics.track("session_interrupted");
+    if (reason !== "manual") this.analytics.track("session_interrupted");
   }
   resume() {
     if (!this.current || this.error || this.current.stage !== "active" || this.current.engine.status !== "paused") return;
@@ -679,7 +697,7 @@ export class SessionController {
       this.preferences = preferences;
       void this.analytics.setConsent(preferences.telemetryEnabled === true).then(() => {
         if (preferences.telemetryEnabled === true && this.analytics.remoteReady && this.store.claimFirstOpen()) this.analytics.track("app_first_open");
-      });
+      }).catch(() => { /* Consent transport never blocks local preference saves. */ });
       const journey = preferences.journey;
       if (journey?.primaryGoal && journey.primaryGoal !== previous?.primaryGoal) this.analytics.track("onboarding_goal_selected");
       if (journey?.step === "value" && previous?.step !== "value") this.analytics.track("onboarding_value_viewed");

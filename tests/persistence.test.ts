@@ -728,3 +728,50 @@ test("first-open credit survives unavailable transport and failed consent initia
     assert.equal(events.filter(event => event === "app_first_open").length, 1);
   } finally { env.db.close(); }
 });
+
+
+test("saved session reveal is claimed once across restart; abandoned sessions never claim", () => {
+  const env = setup();
+  try {
+    const c = env.controller(); c.start(null); env.now(49000); c.tick(); c.answer(null, null);
+    const id = c.current!.id;
+    assert.equal(c.claimSessionReveal(id), true);
+    assert.equal(c.claimSessionReveal(id), false);
+    assert.equal(new LocalStore(env.adapter).claimSessionReveal(id), false);
+    c.start(null); env.now(50000); c.end("ended"); c.answer(null, null);
+    assert.equal(c.claimSessionReveal(c.current!.id), false);
+  } finally { env.db.close(); }
+});
+
+test("weekly ring and theme ownership use the frozen completion day across a week boundary", () => {
+  const env = setup();
+  try {
+    const sunday = new Date(2026, 9, 18, 23, 59, 50).getTime(); env.now(sunday);
+    const c = env.controller(); c.start(null); env.now(sunday + 48000); c.tick(); c.answer(null, null);
+    const record = c.history()[0];
+    assert.equal(record.completionLocalDay, "2026-10-19");
+    const weekly = weeklyPractice(c.history(), c.rewards(), 3, new Date(sunday + 60000));
+    assert.equal(weekly.count, 1); assert.ok(weekly.days.has("2026-10-19"));
+    // A changed device zone cannot move already recorded practice into Sunday.
+    record.finishedAt = new Date(2026, 9, 18, 20).getTime();
+    assert.equal(weeklyPractice([record], c.rewards(), 3, new Date(sunday + 60000)).count, 1);
+    assert.equal(c.pacerThemeProgress().practiceDays, 1);
+  } finally { env.db.close(); }
+});
+
+test("consented first and second completion metrics are once-only and bounded to seven days", async () => {
+  const env = setup();
+  try {
+    let now = 1000, id = 0;
+    const events: ProductEvent[] = [];
+    const c = new SessionController(env.store, () => now, () => String(++id), undefined,
+      new AnalyticsService({ collectionReady: true, record: event => events.push(event) }));
+    c.setPreferences({ ...c.preferences, telemetryEnabled: true });
+    c.start(null); now += 48000; c.tick(); c.answer(null, null);
+    now += 86400000; c.start(null); now += 48000; c.tick(); c.answer(null, null); c.retry();
+    assert.equal(events.filter(e => e === "first_session_completed").length, 1);
+    assert.equal(events.filter(e => e === "second_session_within_seven_days").length, 1);
+    assert.equal(new LocalStore(env.adapter).claimSecondSessionMilestone(), false);
+    await Promise.resolve();
+  } finally { env.db.close(); }
+});

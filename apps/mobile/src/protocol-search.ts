@@ -2,12 +2,12 @@ import type { Protocol } from "@inout/shared-types";
 import { t, type Language, getLanguage } from "./i18n";
 
 export const intentTags = {
-  sleep: { label: "Sleep", terms: "sleep bedtime insomnia dormir sueño sueno sono noite noche" },
-  stress: { label: "Stress", terms: "stress anxiety calm estrés ansiedad estresse ansiedade tension tensión" },
+  sleep: { label: "Sleep", terms: "sleep sleeping bedtime insomnia insomnio insônia dormindo dormir sueño sueno sono noite noche" },
+  stress: { label: "Stress", terms: "stress anxiety calm relaxation nervousness nervios nervosismo relajacion relaxamento estrés ansiedad estresse ansiedade tension tensión" },
   fitness: { label: "Fitness", terms: "gym workout running runners gimnasio correr treino corrida academia deporte exercício" },
   recovery: { label: "Recovery", terms: "recovery rest cooldown cool down recuperación descanso recuperação post workout" },
-  focus: { label: "Focus", terms: "focus concentration study trabajo concentración foco concentração estudiar estudar" },
-  energy: { label: "Energy", terms: "energy morning fatigue energía mañana manhã energia cansancio" },
+  focus: { label: "Focus", terms: "focus concentration studying meditation mindfulness meditación meditação atención atenção study trabajo concentración foco concentração estudiar estudar" },
+  energy: { label: "Energy", terms: "energy concentration studying energía morning fatigue energía mañana manhã energia cansancio" },
   intimacy: { label: "Intimacy", terms: "sex intimacy confidence performance anxiety sexo sexual intimidad intimidade confianza confiança ansiedade desempenho ansiedad rendimiento" },
   wellness: { label: "General wellness", terms: "breathing relax wellness breathing basics respiración respiração bienestar bem estar" },
 } as const;

@@ -38,6 +38,11 @@ export default function Result() {
     controller.current?.id === id
       ? controller.current
       : controller.history().find((r) => r.id === id);
+  const [reveal, setReveal] = useState(false);
+  useEffect(() => {
+    if (saved === "1" && record?.endReason === "completed" && !controller.error)
+      setReveal(controller.claimSessionReveal(id));
+  }, [controller, id, saved, record?.endReason, controller.error]);
   const adEligible = saved === "1" && controller.current?.id === id && record?.stage === "result" && record.endReason === "completed" && record.source !== "manual" && !completionId && !controller.error;
   useEffect(() => {
     if (!id || !adEligible || !commercial || !shouldShowFreeAdsDisclosure(
@@ -83,6 +88,10 @@ export default function Result() {
         <Copy accessibilityRole="alert">Let go of the pacing. Sit or lie somewhere safe. Do not push through discomfort.</Copy>
       </Card>}
       {saved === "1" && controller.current?.id === id && !controller.error && record.endReason === "completed" && <Celebration
+        enabled={reveal}
+        quietPractice={record.protocolId === "sleep-wind-down"}
+        duration={duration(view.sessionElapsedMs)}
+        milestone={!!controller.pacerThemeNotice.length || enrollment?.status === "completed"}
         variant="saved"
         awards={controller.latestAwards}
         title={record.dailyReset ? "The 60-Second Reset" : shift !== null && shift > 0 ? "A little lighter." : "Session saved!"}
@@ -100,7 +109,7 @@ export default function Result() {
         <Copy>{message("{0} completed days · Best streak: {1}", [dailyStats.total, dailyStats.best])}</Copy>
         <Copy>Today is complete. Repeat whenever you like; one daily award is saved.</Copy>
       </Card>}
-      {saved === "1" && !controller.error && <WeeklyGoal compact />}
+      {saved === "1" && !controller.error && record.endReason === "completed" && <WeeklyGoal compact />}
       {record.coach && !controller.error && <Card>
         {program && enrollment && <><Label>PROGRAM PROGRESS</Label><Title>{program.title}</Title>
           <Copy>{message("{0} of {1} practice days complete", [enrollment.completed.length, program.days])}</Copy>
@@ -119,7 +128,7 @@ export default function Result() {
           {recordTitle(record)} · {duration(view.sessionElapsedMs)} · {record.source === "manual" ? t("Manually logged") : countLabel(view.completedCycles, "cycle")}
         </Copy>
       </View>
-      <Card style={{ ...s.resultHero, borderColor: resultColor + "50", padding: 24 }}>
+      {shift !== null && <Card style={{ ...s.resultHero, borderColor: resultColor + "50", padding: 24 }}>
         <View style={s.row}>
           <View>
             <Label>BEFORE</Label>
@@ -135,7 +144,7 @@ export default function Result() {
         </View>
         <Title>{shiftText(record)}</Title>
         <Copy style={s.small}>Self-reported tension · 1–10</Copy>
-      </Card>
+      </Card>}
       {record.source !== "manual" && <Card>
         <Label>CADENCE</Label>
         <Copy>
@@ -148,9 +157,10 @@ export default function Result() {
           <Copy>Stopped for discomfort. Breathe naturally and rest.</Copy>
         )}
       </Card>}
-      {saved === "1" && !controller.error && controller.latestAwards.length > 0 && <Card style={{ backgroundColor: colors.accentSurface }}><AchievementMark /><Label>NEW ACHIEVEMENT</Label><Title>{controller.latestAwards[0].label}</Title><Copy>Your earned badges stay with you. Take a moment to enjoy your progress.</Copy><Button title="Share achievement" onPress={() => router.push(controller.latestAwards[0].id.startsWith("daily-reset-") ? { pathname: "/challenge-share", params: { daily: record.id } } : { pathname: "/milestone", params: { badge: controller.latestAwards[0].id } })} /><Button title="Close celebration" secondary onPress={() => controller.dismissAwards()} /></Card>}
+      {saved === "1" && !controller.error && controller.latestAwards.length > 0 && <Card style={{ backgroundColor: colors.accentSurface }}><Button title="Share achievement" onPress={() => router.push(controller.latestAwards[0].id.startsWith("daily-reset-") ? { pathname: "/challenge-share", params: { daily: record.id } } : { pathname: "/milestone", params: { badge: controller.latestAwards[0].id } })} /><Button title="Close celebration" secondary onPress={() => controller.dismissAwards()} /></Card>}
       {!!record.note && <Card><Label>NOTE</Label><Copy translate={false}>{record.note}</Copy></Card>}
       <SaveError />
+      {record.endReason === "completed" && !record.coach && <Copy>Come back tomorrow for another comfortable practice.</Copy>}
       {record.source !== "manual" && record.protocol && <ShareExercise protocol={record.protocol} title={record.dailyReset ? "Invite a friend" : "Share this exercise"} />}
       <View style={{ gap: 8 }}>
         <Button

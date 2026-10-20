@@ -99,11 +99,12 @@ export function ReminderEffects() {
         router.push("/daily-reset");
         return;
       }
-      if (["check-in", "motivation", "education", "reengagement", "promotion", "achievement"].includes(String(notificationType))) {
+      if (["weekly-progress", "check-in", "motivation", "education", "reengagement", "promotion", "achievement"].includes(String(notificationType))) {
         if (controller.current?.stage === "active") { router.push("/session"); return; }
         if (controller.current?.stage === "post") { router.push("/post"); return; }
         if (!controller.preferences.onboardingComplete) { router.push("/onboarding"); return; }
       }
+      if (notificationType === "weekly-progress") { controller.analytics.track("reminder_opened"); router.push("/(tabs)/progress"); return; }
       if (notificationType === "education") { router.push("/learn"); return; }
       if (notificationType === "reengagement") { router.push("/pre"); return; }
       if (notificationType === "promotion") {

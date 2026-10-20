@@ -333,11 +333,36 @@ export class LocalStore {
     });
     return claimed;
   }
+  claimSessionReveal(id: string) {
+    let claimed = false;
+    this.db.withTransactionSync(() => {
+      const row = this.db.getFirstSync<{ payload: string }>("SELECT payload FROM sessions WHERE id=? AND stage='result'", id);
+      if (!row) return;
+      const record = JSON.parse(row.payload) as SessionRecord;
+      if (record.endReason !== "completed" || record.source === "manual") return;
+      const key = `session-reveal:${id}`;
+      if (this.db.getFirstSync("SELECT key FROM settings WHERE key=?", key)) return;
+      this.db.runSync("INSERT INTO settings(key,payload) VALUES(?,'true')", key);
+      claimed = true;
+    });
+    return claimed;
+  }
   purchaseUncertain() {
     return this.db.getFirstSync<{ payload: string }>("SELECT payload FROM settings WHERE key='purchase-uncertain-v1'")?.payload === "true";
   }
   savePurchaseUncertainty(value: boolean) {
     this.db.runSync("INSERT OR REPLACE INTO settings(key,payload) VALUES('purchase-uncertain-v1',?)", JSON.stringify(value));
+  }
+  claimSecondSessionMilestone() {
+    let claimed = false;
+    this.db.withTransactionSync(() => {
+      if (!this.db.getFirstSync("SELECT key FROM settings WHERE key='analytics-first-session-completed-v1'")) return;
+      const key = "analytics-second-session-week-v1";
+      if (this.db.getFirstSync("SELECT key FROM settings WHERE key=?", key)) return;
+      this.db.runSync("INSERT INTO settings(key,payload) VALUES(?,'true')", key);
+      claimed = true;
+    });
+    return claimed;
   }
   claimSessionMilestone(kind: "started" | "completed"): boolean {
     let claimed = false;

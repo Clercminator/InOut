@@ -1,5 +1,5 @@
 import { useTheme } from "./theme";
-import { t } from "./i18n";
+import { t, message } from "./i18n";
 import { useLanguage } from "./use-language";
 import { useEffect, useRef } from "react";
 import { AccessibilityInfo, Animated, View, useWindowDimensions } from "react-native";
@@ -46,9 +46,10 @@ export function WeeklyGoal({ compact = false }: { compact?: boolean }) {
     <View accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: weekly.goal, now: Math.min(weekly.count, weekly.goal), text: t(`${weekly.count} of ${weekly.goal} practice days`) }} style={{ height: 8, borderRadius: 4, overflow: "hidden", backgroundColor: colors.border }}>
       <Animated.View style={{ height: 8, borderRadius: 4, backgroundColor: colors.exhale, width: fill.interpolate({ inputRange: [0, 1], outputRange: ["0%", "100%"] }) }} />
     </View>
+    <Copy style={s.small}>{message("{0} practice days remaining this week", [weekly.remaining])}</Copy>
     <Copy style={s.small}>A short practice counts. Your earned badges stay with you.</Copy>
+    {next && <Copy>{message("Next unlock: {0} · {1}.", [t(next.label), t(next.requirement)])}</Copy>}
     {!compact && <>
-      {next && <Copy>Next unlock: {next.label} · {next.requirement}.</Copy>}
       <Button title="My goals & rewards" secondary onPress={() => router.push("/personalize")} />
     </>}
   </Card>;

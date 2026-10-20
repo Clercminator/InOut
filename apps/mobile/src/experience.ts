@@ -1,6 +1,6 @@
 import { attemptComparison, challengeBadgeDefinitions, testCatalog, type ChallengeAttempt } from "./challenge-tests";
 import type { Experience, Preferences, SessionRecord } from "@inout/shared-types";
-import { addDays, dayKey, practiceStats } from "./progress";
+import { addDays, dayKey, practiceStats, practiceDay } from "./progress";
 import { achievementProgress, qualifyingRecords } from "./achievements";
 import { challengeCatalog, definitionForState, type UserChallenge } from "./challenges";
 
@@ -18,8 +18,8 @@ export function weekKey(date: Date) { return dayKey(addDays(date, -((date.getDay
 export function weeklyPractice(records: SessionRecord[], ledger: RewardLedger, goal: number, now = new Date()) {
   const week = weekKey(now);
   const days = new Set(qualifyingRecords(records, now)
-    .filter(r => weekKey(new Date(r.engine.startedAt)) === week).map(r => dayKey(new Date(r.engine.startedAt))));
-  return { days, count: days.size, goal: ledger.weekGoals[week] ?? goal, week };
+    .filter(r => weekKey(new Date(practiceDay(r) + "T12:00:00")) === week && practiceDay(r) <= dayKey(now)).map(practiceDay));
+  return { days, count: days.size, goal: ledger.weekGoals[week] ?? goal, remaining: Math.max(0, (ledger.weekGoals[week] ?? goal) - days.size), week };
 }
 export function reconcileRewards(records: SessionRecord[], previous: RewardLedger, goal: number, now = new Date(), challenges: UserChallenge[] = [], attempts: ChallengeAttempt[] = []): RewardLedger {
   const stats = practiceStats(qualifyingRecords(records, now), now);
@@ -40,7 +40,7 @@ export function reconcileRewards(records: SessionRecord[], previous: RewardLedge
   for (const badge of achievementProgress(records, now)) if (badge.earnedAt) award(badge.id, badge.title, badge.earnedAt);
   const ordered = [...stats.records].sort((a, b) => a.engine.startedAt - b.engine.startedAt);
   for (const n of [1, 10, 25, 50, 100, 250, 500, 1000]) {
-    if (ordered.length >= n) award(`sessions-${n}`, n === 1 ? "First practice" : `${n} sessions`, dayKey(new Date(ordered[n - 1].engine.startedAt)));
+    if (ordered.length >= n) award(`sessions-${n}`, n === 1 ? "First practice" : `${n} sessions`, practiceDay(ordered[n - 1]));
   }
   for (const n of [3, 10, 25, 50, 100, 250, 500, 1000]) {
     if (stats.activeDates.length >= n) award(`days-${n}`, `${n} practice days`, stats.activeDates[n - 1]);

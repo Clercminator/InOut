@@ -32,7 +32,7 @@ export function NotificationSettings() {
     setNotificationError("");
     try {
       validateNotificationPreferences(next);
-      const wantsNotifications = next.dailyReset || next.motivation || next.checkIn || next.achievements || next.education || next.reengagement || next.promotions;
+      const wantsNotifications = next.weeklyProgress || next.dailyReset || next.motivation || next.checkIn || next.achievements || next.education || next.reengagement || next.promotions;
       if (wantsNotifications && !await nativeReminderAdapter().permission(true))
         throw new Error("Notifications are off. Enable them in phone settings, then try again.");
       controller.setPreferences({ ...controller.preferences, notifications: next });
@@ -52,6 +52,7 @@ export function NotificationSettings() {
         <Copy style={s.small}>Optional local notifications stay on this phone. They are off until you enable a category. Scheduled prompts are limited to three days each week; achievement alerts are limited to one each week.</Copy>
         {([
           ["dailyReset", "Daily Reset"],
+          ["weeklyProgress", "Weekly-goal progress"],
           ["motivation", "Motivational reminders"],
           ["checkIn", "Practice check-in with log action"],
           ["achievements", "Achievement alerts"],
@@ -98,6 +99,16 @@ export function NotificationSettings() {
           onChange={date => { void saveNotificationSettings({ ...notificationSettings, quietEndHour: date.getHours() }); }} />
         {notificationError ? <Copy accessibilityRole="alert" style={{ color: colors.danger }}>{notificationError}</Copy> : null}
         <ActionFeedback {...feedback} retry={() => { void saveNotificationSettings(notificationSettings); }} />
+        <Button title="Disable all notifications" secondary disabled={savingNotificationSettings || reminders?.busy} onPress={() => {
+          void feedback.run(async () => {
+            const next = { ...notificationDefaults, achievementNoticeLog: notificationSettings.achievementNoticeLog, weekdays: [...notificationSettings.weekdays] };
+            controller.setPreferences({ ...controller.preferences, notifications: next });
+            if (controller.error) throw Error();
+            setDraft(null);
+            await configureEngagementNotifications(controller.preferences, false);
+            for (const reminder of reminders?.items ?? []) if (reminder.enabled && !await reminders!.save({ ...reminder, enabled: false })) throw Error();
+          }, "Notification settings could not be saved. Try again.");
+        }} />
         <Button title="Reset notification settings" secondary disabled={savingNotificationSettings} onPress={() => { void saveNotificationSettings({ ...notificationDefaults, achievementNoticeLog: notificationSettings.achievementNoticeLog, weekdays: [...notificationDefaults.weekdays] }); }} />
         {!!reminders?.items.length && <Disclosure title="Saved reminders" icon="notifications-none">
           {reminders.items.map(reminder => <Card key={reminder.id}>

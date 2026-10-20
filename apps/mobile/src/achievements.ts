@@ -1,5 +1,5 @@
 import type { SessionRecord } from "@inout/shared-types";
-import { dayKey, addDays, practiceRecords } from "./progress";
+import { dayKey, addDays, practiceRecords, practiceDay } from "./progress";
 import { productConfig } from "./product-config";
 
 export type AchievementMetric = "sessions" | "minutes" | "protocols" | "calm" | "sleep" | "morning" | "weeks" | "streak";
@@ -26,14 +26,14 @@ export function achievementProgress(records: SessionRecord[], now = new Date()) 
   const protocolIds = new Set<string>(), weeks = new Set<string>();
   const earnedAt = new Map<string, string>();
   let lastDay = "", run = 0;
-  for (const r of qualifyingRecords(records, now).sort((a, b) => a.engine.startedAt - b.engine.startedAt || a.id.localeCompare(b.id))) {
-    const date = new Date(r.engine.startedAt), day = dayKey(date);
+  for (const r of qualifyingRecords(records, now).sort((a, b) => practiceDay(a).localeCompare(practiceDay(b)) || a.engine.startedAt - b.engine.startedAt || a.id.localeCompare(b.id))) {
+    const day = practiceDay(r), date = new Date(day + "T12:00:00");
     totals.sessions++; totals.minutes += r.engine.elapsedAtAnchor / 60000;
     if (r.source !== "manual") protocolIds.add(r.protocolId);
     totals.protocols = protocolIds.size;
     const goals = r.protocol?.goalTags ?? [r.goal];
     totals.calm += Number(goals.includes("Calm")); totals.sleep += Number(goals.includes("Sleep"));
-    totals.morning += Number(date.getHours() >= 5 && date.getHours() < 12);
+    totals.morning += Number(new Date(r.engine.startedAt).getHours() >= 5 && new Date(r.engine.startedAt).getHours() < 12);
     weeks.add(dayKey(addDays(date, -((date.getDay() + 6) % 7)))); totals.weeks = weeks.size;
     if (day !== lastDay) { run = dayKey(addDays(date, -1)) === lastDay ? run + 1 : 1; lastDay = day; }
     totals.streak = Math.max(totals.streak, run);

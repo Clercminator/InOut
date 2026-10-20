@@ -90,7 +90,7 @@ export function configureEngagementNotifications(preferences: Preferences, reque
   const settings = notificationPreferences(preferences);
   validateNotificationPreferences(settings);
   const today = new Date();
-  const key = JSON.stringify([settings.dailyReset, settings.motivation, settings.checkIn, settings.achievements,
+  const key = JSON.stringify([settings.weeklyProgress, settings.dailyReset, settings.motivation, settings.checkIn, settings.achievements,
     settings.hour, settings.minute, settings.weekdays, settings.quietStartHour, settings.quietEndHour,
     settings.quietHoursEnabled, settings.education, settings.reengagement, settings.promotions, preferences.language, context,
     today.getFullYear(), today.getMonth(), today.getDate(), today.getTimezoneOffset()]);
@@ -105,7 +105,7 @@ export function configureEngagementNotifications(preferences: Preferences, reque
 }
 
 async function applyEngagementNotifications(settings: LocalNotificationPreferences, requestPermission: boolean, context?: NotificationContext): Promise<void> {
-  const active = settings.dailyReset || settings.motivation || settings.checkIn || settings.achievements || settings.education || settings.reengagement || settings.promotions;
+  const active = settings.weeklyProgress || settings.dailyReset || settings.motivation || settings.checkIn || settings.achievements || settings.education || settings.reengagement || settings.promotions;
   const sdk = notifications();
   if (!sdk && !active) return;
   if (!sdk) throw new Error("Notifications need an installed native build. They are unavailable in Expo Go.");

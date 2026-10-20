@@ -100,6 +100,7 @@ export interface Preferences {
     motivation: boolean;
     checkIn: boolean;
     achievements: boolean;
+    weeklyProgress?: boolean;
     education?: boolean;
     reengagement?: boolean;
     promotions?: boolean;

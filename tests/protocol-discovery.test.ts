@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { protocols, catalogProtocols, planFor } from "../packages/protocols/src/index";
 import { totalDuration } from "../packages/breathing-engine/src/index";
 import { protocolTags, searchProtocols } from "../apps/mobile/src/protocol-search";
-import { evidenceFor, evidenceReferences } from "../apps/mobile/src/protocol-evidence";
+import { evidenceFor, evidenceReferences, presentationFor } from "../apps/mobile/src/protocol-evidence";
 import { t } from "../apps/mobile/src/i18n";
 import { EntitlementService } from "../apps/mobile/src/entitlements";
 
@@ -46,4 +46,14 @@ test("evidence has stable references, valid protocol mappings, localized limitat
   const recovery = evidenceFor(protocols.find(p => p.id === "post-workout-reset")!).references;
   assert.deepEqual(recovery.map(r => r.id), ["zaccaro-2018", "sugimoto-2025", "raidl-2026"]);
   assert.equal(evidenceFor(protocols.find(p => p.id === "high-intensity-cyclic")!).references.length, 0);
+});
+
+
+test("wellness protocols stay free of research panels and unsupported endorsements", () => {
+  for (const id of ["intimacy-calm", "post-workout-reset", "high-intensity-cyclic"])
+    assert.equal(presentationFor(protocols.find(p => p.id === id)!).category, "General wellness");
+  assert.equal(presentationFor(protocols.find(p => p.id === "coherent")!).category, "Research-supported");
+  assert.equal(protocols.some(p => presentationFor(p).category === "Expert-recommended"), false);
+  for (const query of ["sleeping", "insomnio", "insônia", "studying", "meditation", "mindfulness", "nervousness", "nervosismo"])
+    assert.ok(searchProtocols(catalogProtocols, query).length > 0, query);
 });

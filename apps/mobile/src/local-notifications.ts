@@ -1,7 +1,7 @@
 import type { Preferences, SessionRecord } from "@inout/shared-types";
 import { practiceDateForPacerTheme } from "./pacer-theme";
 
-export type EngagementNotificationType = "daily-reset" | "motivation" | "check-in" | "education" | "reengagement" | "promotion";
+export type EngagementNotificationType = "weekly-progress" | "daily-reset" | "motivation" | "check-in" | "education" | "reengagement" | "promotion";
 export interface NotificationContext {
   lastPracticeAt: number | null;
   remindersEnabled: boolean;
@@ -18,6 +18,7 @@ export interface LocalNotificationPreferences {
   motivation: boolean;
   checkIn: boolean;
   achievements: boolean;
+  weeklyProgress?: boolean;
   education?: boolean;
   reengagement?: boolean;
   promotions?: boolean;
@@ -42,6 +43,7 @@ export const notificationDefaults: LocalNotificationPreferences = {
   motivation: false,
   checkIn: false,
   achievements: false,
+  weeklyProgress: false,
   education: false,
   reengagement: false,
   promotions: false,
@@ -72,7 +74,7 @@ export function validateNotificationPreferences(value: LocalNotificationPreferen
   const hour = (n: number) => Number.isInteger(n) && n >= 0 && n <= 23;
   if (!value || typeof value.dailyReset !== "boolean" || typeof value.motivation !== "boolean" ||
     typeof value.checkIn !== "boolean" || typeof value.achievements !== "boolean" ||
-    [value.education, value.reengagement, value.promotions].some(flag => flag !== undefined && typeof flag !== "boolean") ||
+    [value.weeklyProgress, value.education, value.reengagement, value.promotions].some(flag => flag !== undefined && typeof flag !== "boolean") ||
     !hour(value.hour) || !Number.isInteger(value.minute) || value.minute < 0 || value.minute > 59 ||
     typeof value.quietHoursEnabled !== "boolean" || !hour(value.quietStartHour) || !hour(value.quietEndHour) || value.quietStartHour === value.quietEndHour ||
     !Array.isArray(value.weekdays) || value.weekdays.length > 3 ||
@@ -112,6 +114,7 @@ export function notificationTime(
   return result;
 }
 function messageFor(type: EngagementNotificationType, date: Date, weekIndex: number) {
+  if (type === "weekly-progress") return "Your weekly practice progress is ready to view.";
   if (type === "daily-reset") return "A Daily Reset is ready when you are.";
   if (type === "check-in") return "Did you practice mindful breathing today?";
   if (type === "education") return "Gentle, paced breathing may help you relax. Keep each breath comfortable.";
@@ -124,6 +127,7 @@ function messageFor(type: EngagementNotificationType, date: Date, weekIndex: num
 export function buildEngagementSchedule(value: LocalNotificationPreferences, now = new Date(), context: NotificationContext = unknownContext): EngagementNotification[] {
   validateNotificationPreferences(value);
   const active: EngagementNotificationType[] = [
+    ...(value.weeklyProgress ? ["weekly-progress" as const] : []),
     ...(value.dailyReset ? ["daily-reset" as const] : []),
     ...(value.motivation ? ["motivation" as const] : []),
     ...(value.checkIn ? ["check-in" as const] : []),
@@ -138,6 +142,7 @@ export function buildEngagementSchedule(value: LocalNotificationPreferences, now
     const weekday = day.getDay() + 1;
     if (!value.weekdays.includes(weekday)) continue;
     const at = notificationTime(day, value.hour, value.minute, value);
+    if (context.lastPracticeAt !== null && notificationDayKey(at) === notificationDayKey(new Date(context.lastPracticeAt))) continue;
     if (at.getTime() > now.getTime() + 60_000) candidates.push(at);
   }
   const uniqueDays = new Map<string, Date>();

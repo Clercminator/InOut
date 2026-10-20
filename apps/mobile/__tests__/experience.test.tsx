@@ -177,6 +177,7 @@ test("saved celebration plays once at the chosen volume and releases its player"
   await act(async () => { jest.advanceTimersByTime(300); });
   expect(mockPlayers).toHaveLength(1);
   expect(mockPlayers[0].volume).toBe(0.2);
+  await act(async () => { mockPlayers[0].addListener.mock.calls[0][1]({ isLoaded: true, playing: true }); });
   expect(mockPlayers[0].play).toHaveBeenCalledTimes(1);
   await view.rerender(wrap(<Celebration variant="saved" title="Saved" message="Nice work." />));
   await act(async () => { jest.advanceTimersByTime(2000); });
@@ -719,4 +720,21 @@ test("audio previews remain available while a practice is paused and stop when i
   expect(voices.every(player => player.remove.mock.calls.length === 1)).toBe(true);
   expect(screen.queryByRole("button", { name: "Stop preview" })).toBeNull();
   expect(screen.getByRole("button", { name: "Preview voice" })).toBeDisabled();
+});
+
+
+test("reopened saved results display encouragement without replaying feedback", async () => {
+  await render(wrap(<Celebration enabled={false} variant="saved" title="Session saved!" message="Nice work." duration="2:00" />));
+  await act(async () => { jest.advanceTimersByTime(5000); });
+  expect(screen.getByText("2:00")).toBeTruthy();
+  expect(mockPlayers).toHaveLength(0);
+  expect(screen.queryByRole("button", { name: "Skip animation" })).toBeNull();
+});
+
+test("session reveal can skip animation while retaining the result", async () => {
+  jest.spyOn(AccessibilityInfo, "isReduceMotionEnabled").mockResolvedValue(false);
+  await render(wrap(<Celebration variant="saved" title="Session saved!" message="Nice work." duration="2:00" />));
+  await fireEvent.press(screen.getByRole("button", { name: "Skip animation" }));
+  expect(screen.getByText("2:00")).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Skip animation" })).toBeNull();
 });

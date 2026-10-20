@@ -1,3 +1,4 @@
+import { PulseArtwork } from "./pulse-orb";
 import { AppDialog } from "./app-dialog";
 import { useEffect, useState } from "react";
 import { View, useWindowDimensions } from "react-native";
@@ -99,8 +100,7 @@ export function PacerThemePicker({ value, progress, noticeThemeIds, pro, onApply
           style={({ pressed }) => ({ flexGrow: 1, opacity: pressed ? 0.8 : 1 })}>
           <View style={{ height: 112, borderRadius: 12, backgroundColor: preview.background, justifyContent: "center", alignItems: "center", marginBottom: 10, overflow: "hidden" }}>
             <View style={{ width: 78, height: 78, borderRadius: 999, borderWidth: 6, borderColor: preview.ring, backgroundColor: preview.surface, shadowColor: preview.glow, shadowOpacity: 0.9, shadowRadius: 18, shadowOffset: { width: 0, height: 0 }, elevation: 6, alignItems: "center", justifyContent: "center" }}>
-              <Copy translate={false} style={{ color: preview.text, fontWeight: "700", fontSize: 17 }}>4</Copy>
-              <Copy style={{ color: preview.secondaryText, fontSize: 10 }}>{t("Inhale")}</Copy>
+              <PulseArtwork size={64} />
             </View>
           </View>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
@@ -123,7 +123,7 @@ export function PacerThemePicker({ value, progress, noticeThemeIds, pro, onApply
     {preview && previewColors && <AppDialog title="Pacer theme preview" onRequestClose={() => setPreviewId(null)}>
           <View accessibilityLabel={t(preview.name)} style={{ minHeight: 220, borderRadius: 18, alignItems: "center", justifyContent: "center", gap: 12, backgroundColor: previewColors.background }}>
             <View style={{ width: 120, height: 120, borderRadius: 999, borderWidth: 8, borderColor: previewColors.ring, backgroundColor: previewColors.surface, shadowColor: previewColors.glow, shadowOpacity: 0.9, shadowRadius: 24, shadowOffset: { width: 0, height: 0 }, elevation: 8, alignItems: "center", justifyContent: "center" }}>
-              <Copy translate={false} style={{ color: previewColors.text, fontSize: 36, fontWeight: "700" }}>4</Copy>
+              <PulseArtwork size={104} />
             </View>
             <Copy style={{ color: previewColors.text, fontWeight: "700" }}>{t("Inhale")}</Copy>
             <Copy style={{ color: previewColors.secondaryText }}>{t("CYCLE")} 1/8</Copy>

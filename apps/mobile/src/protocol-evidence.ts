@@ -69,3 +69,22 @@ export function evidenceFor(protocol: Protocol) {
     references,
   };
 }
+
+
+export type ProtocolPresentation =
+  | { category: "Research-supported"; purpose: string; rationale: string; source: EvidenceReference }
+  | { category: "Expert-recommended"; purpose: string; recommendation: string; attribution: string; url: string }
+  | { category: "General wellness"; purpose: string; instructions: string; feeling: string };
+// No verified expert attribution has been supplied for the current catalog.
+const verifiedRecommendations: Readonly<Record<string, { recommendation: string; attribution: string; url: string }>> = {};
+export function presentationFor(protocol: Protocol): ProtocolPresentation {
+  const purpose = protocol.purpose ?? protocol.description ?? protocol.name;
+  const expert = verifiedRecommendations[protocol.id];
+  if (expert) return { category: "Expert-recommended", purpose, ...expert };
+  const source = evidenceFor(protocol).references.find(ref => ref.id === "zaccaro-2018");
+  if (source && !["intimacy-calm", "post-workout-reset"].includes(protocol.id) &&
+      protocol.phases.every(phase => ["inhale", "exhale"].includes(phase.type)))
+    return { category: "Research-supported", purpose: "Slow, comfortable breathing may help you settle and relax.", rationale: evidenceFor(protocol).explanation, source };
+  return { category: "General wellness", purpose, instructions: protocol.instructions ?? "Follow the guide without forcing your breath.",
+    feeling: "Aim for a comfortable rhythm and an unhurried moment of attention." };
+}

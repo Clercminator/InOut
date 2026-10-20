@@ -14,6 +14,12 @@ export type StatsPeriod = "Days" | "Weeks" | "Months" | "All time";
 export function dayKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
+/** Freeze completed practice to its saved local day, including across timezone changes. */
+export function practiceDay(record: SessionRecord) {
+  const key = record.completionLocalDay;
+  if (key && /^\d{4}-\d{2}-\d{2}$/.test(key) && dayKey(new Date(key + "T12:00:00")) === key) return key;
+  return dayKey(new Date(record.source === "manual" ? record.engine.startedAt : record.finishedAt ?? record.engine.startedAt));
+}
 export function dayStart(date: Date) { return new Date(date.getFullYear(), date.getMonth(), date.getDate()); }
 export function addDays(date: Date, days: number) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
@@ -26,7 +32,7 @@ export function practiceRecords(records: SessionRecord[], now: Date) {
 export function summarize(records: SessionRecord[]) {
   const totalMs = records.reduce((sum, r) => sum + r.engine.elapsedAtAnchor, 0);
   const shifts = records.filter(r => r.endReason === "completed").map(r => stateShift(r.pre, r.post)).filter((n): n is number => n !== null);
-  return { count: records.length, totalMs, activeDays: new Set(records.map(r => dayKey(new Date(r.engine.startedAt)))).size,
+  return { count: records.length, totalMs, activeDays: new Set(records.map(r => practiceDay(r))).size,
     averageSession: records.length ? totalMs / records.length : 0,
     longestSession: records.reduce((max, r) => Math.max(max, r.engine.elapsedAtAnchor), 0),
     shifts: shifts.length, averageShift: shifts.length ? shifts.reduce((a, b) => a + b, 0) / shifts.length : null };
@@ -43,7 +49,7 @@ export function breakdown(records: SessionRecord[], by: "goal" | "protocolName" 
 export interface Milestone { id: string; label: string; date: string }
 export function practiceStats(records: SessionRecord[], now = new Date()) {
   const valid = practiceRecords(records, now);
-  const activeDates = [...new Set(valid.filter(r => r.endReason === "completed").map(r => dayKey(new Date(r.engine.startedAt))))].sort();
+  const activeDates = [...new Set(valid.filter(r => r.endReason === "completed").map(r => practiceDay(r)))].sort();
   const activeDays = new Set(activeDates);
   let best = 0, run = 0, previous = -Infinity;
   const milestones: Milestone[] = [];
