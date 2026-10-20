@@ -25,6 +25,10 @@ export function createAudioPreview(onError: (detail?: string) => void, onDone: (
   };
   const replace = () => { stop(); onDone(); };
   stopCurrent = replace;
+  const appState = AppState.addEventListener("change", state => {
+    if (state !== "active" && !stopped) { stop(); onDone(); }
+  });
+  cleanup.push(() => appState.remove());
   const fail = (reason = "unknown", error?: unknown) => { if (!stopped) {
     const detail = error instanceof Error ? error.message : typeof error === "string" ? error : "";
     stop(); onError(__DEV__ ? `${reason}${detail ? ": " + detail.slice(0, 240) : ""}` : undefined);

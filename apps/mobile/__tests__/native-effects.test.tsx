@@ -406,18 +406,26 @@ test("brief focus-probe gaps do not stop breathing, music or vibration", async (
   expect(mockController.current?.engine.status).toBe("running");
 });
 
-test("voice continues across cycles even when display updates and decoder readiness are delayed", async () => {
+test("Android finished voice players repeat over ten cycles despite isLoaded becoming false", async () => {
   mockController.preferences.guidance = { voice: true, nature: false };
-  mockController.start(null, 4, protocols.find(p => p.id === "box")!);
+  mockController.start(null, 12, protocols.find(p => p.id === "box")!);
   await render(<NativeSessionEffects />);
-  for (let cycle = 0; cycle < 4; cycle++) {
+  for (let cycle = 0; cycle < 10; cycle++) {
     for (const [offset, index] of [[0, 0], [4000, 4], [8000, 2], [12000, 6]]) {
       const before = mockPlayers[index].play.mock.calls.length;
-      if (cycle === 0 && offset === 0) continue;
+      if (cycle === 0 && offset === 0) {
+        mockPlayers[index].isLoaded = false;
+        mockPlayers[index].listener?.({ didJustFinish: true, isLoaded: true });
+        continue;
+      }
       await act(async () => {
         now = cycle * 16000 + offset + 450;
         jest.advanceTimersByTime(50);
       });
+      expect(mockPlayers[index].play).toHaveBeenCalledTimes(before + 1);
+      mockPlayers[index].isLoaded = false;
+      mockPlayers[index].listener?.({ didJustFinish: true, isLoaded: true });
+      await act(async () => { jest.advanceTimersByTime(100); });
       expect(mockPlayers[index].play).toHaveBeenCalledTimes(before + 1);
     }
   }

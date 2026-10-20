@@ -34,6 +34,7 @@ export function NativeSessionEffects() {
   const audio = voiceEnabled ? "voice" : natureEnabled || track ? "tones" : "silent";
   const { breathSound, chime, celebration, celebrationVolume } = experienceFor(controller.preferences);
   const players = useRef<Array<AudioPlayer | undefined>>([]);
+  const loadedVoicePlayers = useRef(new Set<AudioPlayer>());
   const focus = useRef<AudioPlayer | null>(null);
   const generation = useRef(0);
   const cue = useRef("");
@@ -94,6 +95,7 @@ export function NativeSessionEffects() {
   useEffect(() => {
     const gen = ++generation.current;
     cue.current = "";
+    loadedVoicePlayers.current.clear();
 
     if (audio === "silent") return;
     const bank = Array.from({ length: audio === "voice" ? 13 : 4 }, (_, index) => {
@@ -104,8 +106,13 @@ export function NativeSessionEffects() {
       });
     });
     players.current = bank;
+    const subscriptions = bank.map(player => player?.addListener("playbackStatusUpdate", status => {
+      if (status.isLoaded || status.didJustFinish) loadedVoicePlayers.current.add(player);
+      if (status.error || status.mediaServicesDidReset) audioFailed();
+    }));
     return () => {
       generation.current++;
+      subscriptions.forEach(subscription => subscription?.remove());
       bank.forEach((p) => {
         p?.pause();
         p?.remove();
@@ -196,7 +203,10 @@ export function NativeSessionEffects() {
       const requiredMs = (voiceBank?.durations[index] ?? Infinity) + 100;
       // Allow modest JS/decoder delays, but never play a backlog or a phrase that cannot finish.
       const windowMs = Math.min(750, current.phase.durationMs / 4);
-      if (!player?.isLoaded || current.phaseElapsedMs > windowMs || current.phaseRemainingMs < requiredMs) return;
+      // Android's isLoaded getter is false in STATE_ENDED, even though the decoded
+      // clip is reusable. Remember readiness so later cycles can seek it back to zero.
+      if (player?.isLoaded) loadedVoicePlayers.current.add(player);
+      if (!player || !loadedVoicePlayers.current.has(player) || current.phaseElapsedMs > windowMs || current.phaseRemainingMs < requiredMs) return;
       cue.current = key;
       const gen = generation.current;
       void player.seekTo(0).then(() => {
