@@ -91,6 +91,7 @@ export interface SessionRecord {
   endReason: "completed" | "ended" | "unwell" | null;
 }
 export interface Preferences {
+  showSafetyReminders?: boolean;
   notifications?: {
     dailyReset: boolean;
     motivation: boolean;

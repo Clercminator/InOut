@@ -271,6 +271,7 @@ export class LocalStore {
       typeof p.haptics !== "boolean" ||
       (p.hapticMode !== undefined && !["transitions", "rhythm"].includes(p.hapticMode)) ||
       typeof p.keepAwake !== "boolean" ||
+      (p.showSafetyReminders !== undefined && typeof p.showSafetyReminders !== "boolean") ||
       (p.favoriteProtocolIds !== undefined &&
         (!Array.isArray(p.favoriteProtocolIds) ||
           p.favoriteProtocolIds.some((id: unknown) => typeof id !== "string"))) ||
@@ -282,6 +283,7 @@ export class LocalStore {
       throw new Error("Saved settings could not be read.");
     return {
       ...p,
+      showSafetyReminders: p.showSafetyReminders !== false,
       telemetryEnabled: p.telemetryEnabled === true,
       theme: ["system", "light", "dark"].includes(p.theme) ? p.theme : "system",
       pacerTheme: ["default", "dark-muted", "sky", "neon", "mono", "mustard", "light", "ember", "aurora", "matcha"].includes(p.pacerTheme) ? p.pacerTheme : "default",
@@ -293,6 +295,7 @@ export class LocalStore {
     };
   }
   savePreferences(p: Preferences) {
+    if (p.showSafetyReminders !== undefined && typeof p.showSafetyReminders !== "boolean") throw Error("Saved settings could not be read.");
     this.validateWelcomeEmail(p);
     validateGuidance(p);
     if (p.journey !== undefined) validateJourney(p.journey);

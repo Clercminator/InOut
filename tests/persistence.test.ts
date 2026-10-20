@@ -12,6 +12,7 @@ import { makeMixProtocol } from "../apps/mobile/src/custom-protocol";
 import { protocols, planFor } from "../packages/protocols/src/index";
 import { EntitlementService } from "../apps/mobile/src/entitlements";
 import { experienceFor, weeklyPractice } from "../apps/mobile/src/experience";
+import { showSessionSafety } from "../apps/mobile/src/safety-policy";
 function setup() {
   const db = new DatabaseSync(":memory:");
   const adapter: Database = {
@@ -51,6 +52,24 @@ function setup() {
       ),
   };
 }
+
+test("general reminders default on and persist off without bypassing protocol precautions or losing history", () => {
+  const env = setup();
+  try {
+    const c = env.controller();
+    assert.equal(showSessionSafety(c.preferences, protocols[0]), true);
+    c.start(null); env.now(49000); c.tick(); c.answer(null, null);
+    const count = c.history().length;
+    c.setPreferences({ ...c.preferences, showSafetyReminders: false });
+    const reopened = env.controller();
+    assert.equal(reopened.preferences.showSafetyReminders, false);
+    assert.equal(reopened.history().length, count);
+    assert.equal(showSessionSafety(reopened.preferences, protocols[0]), false);
+    for (const id of ["box", "traditional-yogic", "high-intensity-cyclic", "high-intensity-cyclic-alt"])
+      assert.equal(showSessionSafety(reopened.preferences, protocols.find(p => p.id === id)), true);
+    assert.equal(showSessionSafety(reopened.preferences, undefined, "Stop if unwell"), true);
+  } finally { env.db.close(); }
+});
 
 test("first-open measurement is claimed once across local store instances", () => {
   const env = setup();

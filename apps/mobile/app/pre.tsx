@@ -25,6 +25,7 @@ import { totalDuration } from "@inout/breathing-engine";
 
 import { coachProtocol, comfortableCycles, type CoachSession } from "../src/coach";
 import { GuidanceAllowance } from "../src/guidance-allowance";
+import { showSessionSafety } from "../src/safety-policy";
 export default function Pre() {
   const { colors } = useTheme();
   useLanguage();
@@ -84,7 +85,7 @@ export default function Pre() {
   return (
     <BackScreen title="STATE SHIFT · PRE" footer={<ActionFooter>
       <SaveError />
-      <Button title="Continue to safety" disabled={rating === null || !!controller.error} onPress={() => start(rating)} />
+      <Button title={showSessionSafety(controller.preferences, protocol) ? "Continue to safety" : "Start practice"} disabled={rating === null || !!controller.error} onPress={() => start(rating)} />
       <Button title="Skip rating & continue" secondary disabled={!!controller.error} onPress={() => start(null)} />
     </ActionFooter>}>
       {coachChoice && <Copy>{coachChoice.explanation}</Copy>}

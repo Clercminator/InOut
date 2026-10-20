@@ -1326,6 +1326,8 @@
   "Some apps share the image without its link. Use Share invitation link to send the link separately.": "Algunas apps comparten la imagen sin el enlace. Usa Compartir enlace de invitación para enviarlo por separado.",
   "Share invitation link": "Compartir enlace de invitación",
   "PROGRAM PROGRESS": "PROGRESO DEL PROGRAMA",
+  "Show safety reminders before sessions": "Mostrar recordatorios de seguridad antes de las sesiones",
+  "Turn off repeated general reminders. Protocol-specific precautions still appear. You can always read the full safety instructions here.": "Desactiva los recordatorios generales repetidos. Las precauciones específicas de cada protocolo seguirán apareciendo. Siempre puedes leer aquí las instrucciones completas de seguridad.",
   "ANIMATION LAB": "LABORATORIO VISUAL",
   "EXPERIMENTAL": "EXPERIMENTAL",
   "Testing · Pulse": "Prueba · Pulse",
