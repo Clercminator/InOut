@@ -13,6 +13,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.imrtech.inout",
+      "appleTeamId": "D46TY55474",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       },
