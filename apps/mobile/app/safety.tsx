@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { useFocusEffect } from "expo-router";
 import { useLanguage } from "../src/use-language";
-import { useSession } from "../src/provider";
+import { SaveError, useSession } from "../src/provider";
 import { BackScreen, Title, Copy, Card, Label, Button } from "../src/ui";
 import { Linking, Switch } from "react-native";
 import { t } from "../src/i18n";
@@ -17,7 +17,14 @@ export default function Safety() {
     <Card><Label>Show safety reminders before sessions</Label>
       <Copy>Turn off repeated general reminders. Protocol-specific precautions still appear. You can always read the full safety instructions here.</Copy>
       <Switch accessibilityLabel={t("Show safety reminders before sessions")} value={controller.preferences.showSafetyReminders !== false}
-        onValueChange={showSafetyReminders => controller.setPreferences({ ...controller.preferences, showSafetyReminders })} />
+        onValueChange={showSafetyReminders => {
+          if (showSafetyReminders) controller.setPreferences({ ...controller.preferences, showSafetyReminders: true });
+          else Alert.alert("Breathing safety", "Turn off repeated general reminders. Protocol-specific precautions still appear. You can always read the full safety instructions here.", [
+            { text: "Cancel", style: "cancel" },
+            { text: "I understand", onPress: () => controller.setPreferences({ ...controller.preferences, showSafetyReminders: false }) },
+          ]);
+        }} />
+      <SaveError feedback />
     </Card>
     {content.safety.map((section) => <Card key={section.title}><Label>{section.title}</Label><Copy>{section.body}</Copy></Card>)}<Card><CyclicSafety /></Card><Button title="Online safety information" secondary onPress={() => { void Linking.openURL(info.safetyUrl).catch(() => Alert.alert("Website unavailable", `Contact ${info.supportEmail}.`)); }} /></BackScreen>;
 }

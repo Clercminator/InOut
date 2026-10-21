@@ -8,7 +8,6 @@ import { Redirect, router } from "expo-router";
 import { Screen, Title, Label, Copy, Button, StateScale, ActionFooter, useStyles } from "../src/ui";
 import { useSession, SaveError } from "../src/provider";
 
-import { Celebration } from "../src/celebration";
 export default function Post() {
   const { colors } = useTheme();
   const s = useStyles();
@@ -38,7 +37,6 @@ export default function Post() {
       <Button title="SEE MY STATE SHIFT  →" disabled={rating === null || !!controller.error} onPress={() => finish(rating)} />
       <Button title="Skip & save session" secondary disabled={!!controller.error} onPress={() => finish(null)} />
     </ActionFooter>}>
-      {record.endReason === "completed" && <Celebration title="Congratulations!" message="You made time for yourself. Take a moment to feel proud." />}
       <View style={s.flowHeader}>
         <Label>{record.endReason === "completed" ? "SESSION COMPLETE" : "SESSION ENDED"}</Label>
         <Title translate={false}>{recordTitle(record)}</Title>

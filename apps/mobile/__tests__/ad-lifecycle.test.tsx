@@ -172,3 +172,17 @@ test("leaving the result during consent or loading cancels automatic presentatio
   await expect(loading).resolves.toBe(false);
   expect(f.show).not.toHaveBeenCalled();
 });
+
+
+test("a loaded ad whose native show never opens cannot trap result navigation", async () => {
+  jest.useFakeTimers();
+  try {
+    const f = fixture(); f.tick(); f.ads.setContext(context);
+    await f.ads.prepare(); f.ads.prepareCompletion("saved");
+    f.events.get("loaded")!();
+    const shown = f.ads.showCompletion("saved");
+    await jest.advanceTimersByTimeAsync(2000);
+    await expect(shown).resolves.toBe(false);
+    expect(f.events.size).toBe(0);
+  } finally { jest.useRealTimers(); }
+});

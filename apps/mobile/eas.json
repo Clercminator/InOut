@@ -15,7 +15,7 @@
       }
     },
     "production": {
-      "autoIncrement": true,
+      "autoIncrement": false,
       "ios": {
         "image": "macos-tahoe-26.5-xcode-26.6",
         "credentialsSource": "remote"

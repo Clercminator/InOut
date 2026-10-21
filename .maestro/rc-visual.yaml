@@ -88,9 +88,13 @@ appId: com.imrtech.inout
 - openLink: "inout://pre?id=physiological-sigh"
 - tapOn: { text: "Open", optional: true }
 - scrollUntilVisible:
-    element: { text: "Skip rating & start" }
+    element: { text: "Skip rating & continue" }
     direction: DOWN
-- tapOn: "Skip rating & start"
+- tapOn: "Skip rating & continue"
+- scrollUntilVisible:
+    element: { text: "Start practice" }
+    direction: DOWN
+- tapOn: "Start practice"
 - takeScreenshot: 18-session
 - tapOn: "Pause"
 - takeScreenshot: 19-paused
@@ -118,3 +122,54 @@ appId: com.imrtech.inout
 - openLink: "inout://custom-pattern"
 - tapOn: { text: "Open", optional: true }
 - takeScreenshot: 24-create-rhythm
+- openLink: "inout://settings"
+- tapOn: { text: "Open", optional: true }
+- tapOn: "Appearance & language"
+- scrollUntilVisible:
+    element: { text: "Preview Pulse Default" }
+    direction: DOWN
+- takeScreenshot: 25-theme-gallery
+- tapOn: "Preview Pulse Default"
+- takeScreenshot: 26-theme-preview
+- tapOn: "Close preview"
+- openLink: "inout://pre?id=box"
+- tapOn: { text: "Open", optional: true }
+- scrollUntilVisible:
+    element: { text: "Skip rating & continue" }
+    direction: DOWN
+- tapOn: "Skip rating & continue"
+- scrollUntilVisible:
+    element: { text: "I have read the precautions and I am in a safe place" }
+    direction: DOWN
+- tapOn: "I have read the precautions and I am in a safe place"
+- tapOn: "Start practice"
+- takeScreenshot: 27-box-active
+- tapOn: "Pause"
+- takeScreenshot: 28-box-paused
+- tapOn: "Resume"
+- tapOn: "End session"
+- takeScreenshot: 29-end-confirmation
+- tapOn: { id: "confirm-end-session" }
+- scrollUntilVisible:
+    element: { text: "Skip & save session" }
+    direction: DOWN
+- tapOn: "Skip & save session"
+- openLink: "inout://pre?id=coherent"
+- tapOn: { text: "Open", optional: true }
+- scrollUntilVisible:
+    element: { text: "Skip rating & continue" }
+    direction: DOWN
+- tapOn: "Skip rating & continue"
+- scrollUntilVisible:
+    element: { text: "Start practice" }
+    direction: DOWN
+- tapOn: "Start practice"
+- takeScreenshot: 30-pulse-active
+- tapOn: "Pause"
+- takeScreenshot: 31-pulse-paused
+- tapOn: "End session"
+- tapOn: { id: "confirm-end-session" }
+- scrollUntilVisible:
+    element: { text: "Skip & save session" }
+    direction: DOWN
+- tapOn: "Skip & save session"

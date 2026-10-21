@@ -1,9 +1,11 @@
-import { createAudioPlayer } from "expo-audio";
+import { createAudioPlayer, type AudioPlayer } from "expo-audio";
 
 /** Two reusable decoders overlap the MP3 boundary; neither drives the breathing clock. */
 export type AudioLoop = (() => void) & { pause: () => void; resume: () => void };
 export function loopedAudio(source: number, gain: () => number, onError: () => void, crossfadeMs = 180, startImmediately = true): AudioLoop {
-  const players = [0, 1].map(() => createAudioPlayer(source, { updateInterval: 50, keepAudioSessionActive: true }));
+  const players: AudioPlayer[] = [];
+  try { for (let i = 0; i < 2; i++) players.push(createAudioPlayer(source, { updateInterval: 50, keepAudioSessionActive: true })); }
+  catch (error) { players.forEach(player => { try { player.remove(); } catch {} }); throw error; }
   players.forEach(p => { p.volume = 0; p.loop = true; });
   let disposed = false, failed = false, paused = !startImmediately, active = 0, preparing = false, fading = false, played = false, seekGeneration = 0;
   let loadingStartedAt: number | undefined;

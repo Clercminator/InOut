@@ -31,8 +31,7 @@ export function NativeSessionEffects() {
   const natureEnabled = !controller.sessionSilent && settings.nature;
   const track = !controller.sessionSilent && settings.music ? selectedMusicTrack(settings.musicId) : undefined;
   const audio = voiceEnabled ? "voice" : natureEnabled || track ? "tones" : "silent";
-  const { breathSound, chime, celebration, celebrationVolume } = experienceFor(controller.preferences);
-  const quietEnding = session?.protocolId === "sleep-wind-down";
+  const { breathSound, chime, celebrationVolume } = experienceFor(controller.preferences);
   const players = useRef<Array<AudioPlayer | undefined>>([]);
   const loadedVoicePlayers = useRef(new Set<AudioPlayer>());
   const focus = useRef<AudioPlayer | null>(null);
@@ -99,9 +98,9 @@ export function NativeSessionEffects() {
     const bank = Array.from({ length: audio === "voice" ? 13 : 4 }, (_, index) => {
       const source = index === 3 ? chime === "off" ? undefined : chimes[chime]
         : audio === "voice" ? voiceBank?.cues[index] : undefined;
-      return source === undefined ? undefined : createAudioPlayer(source, {
-        updateInterval: 100, keepAudioSessionActive: true,
-      });
+      try {
+        return source === undefined ? undefined : createAudioPlayer(source, { updateInterval: 100, keepAudioSessionActive: true });
+      } catch { audioFailed(); return undefined; }
     });
     players.current = bank;
     const subscriptions = bank.map(player => player?.addListener("playbackStatusUpdate", status => {
@@ -112,12 +111,24 @@ export function NativeSessionEffects() {
       generation.current++;
       subscriptions.forEach(subscription => subscription?.remove());
       bank.forEach((p) => {
-        p?.pause();
-        p?.remove();
+        try { p?.pause(); } catch {}
+        try { p?.remove(); } catch {}
       });
       if (generation.current > gen) players.current = [];
     };
   }, [audio, chime, voiceBank, audioRecovery]);
+
+  useEffect(() => {
+    if (!running || audio !== "voice") return;
+    // Loading may have begun while idle. Start the timeout with the practice too.
+    const timeout = setTimeout(() => {
+      if (voiceBank?.cues.some((source, index) => {
+        const player = players.current[index];
+        return index !== 3 && source !== undefined && (!player || !player.isLoaded && !loadedVoicePlayers.current.has(player));
+      })) audioFailed();
+    }, 5000);
+    return () => clearTimeout(timeout);
+  }, [running, audio, voiceBank, audioRecovery, audioFailed]);
 
   useEffect(() => {
     players.current.forEach((player, index) => { if (player) player.volume = index === 3 ? celebrationVolume : settings.voiceVolume; });
@@ -127,10 +138,9 @@ export function NativeSessionEffects() {
     if (!running || audio === "silent" || !audioReady) return;
     // A local silent loop keeps native audio-focus observation alive BETWEEN short cues.
     // Losing focus/headphones or a media reset pauses the engine, never auto-resumes it.
-    const guard = createAudioPlayer(require("../assets/audio/focus.wav"), {
-      updateInterval: 100,
-      keepAudioSessionActive: true,
-    });
+    let guard: AudioPlayer;
+    try { guard = createAudioPlayer(require("../assets/audio/focus.wav"), { updateInterval: 100, keepAudioSessionActive: true }); }
+    catch { audioFailed(); return; }
     focus.current = guard;
     guard.loop = true;
     let hasPlayed = false;
@@ -149,12 +159,12 @@ export function NativeSessionEffects() {
         }, 250);
       }
     });
-    guard.play();
+    try { guard.play(); } catch { audioFailed(); }
     return () => {
       clearTimeout(interruption);
       subscription.remove();
-      guard.pause();
-      guard.remove();
+      try { guard.pause(); } catch {}
+      try { guard.remove(); } catch {}
       focus.current = null;
     };
   }, [running, audio, audioReady, controller]);
@@ -178,7 +188,7 @@ export function NativeSessionEffects() {
   useEffect(() => {
     generation.current++;
     cue.current = "";
-    players.current.forEach(p => p?.pause());
+    players.current.forEach(p => { try { p?.pause(); } catch { audioFailed(); } });
     if (!running || audio !== "voice" || !audioReady) return;
     let disposed = false;
     let phaseKey = "";
@@ -190,7 +200,7 @@ export function NativeSessionEffects() {
       if (phaseKey !== key) {
         phaseKey = key;
         generation.current++;
-        players.current.forEach(p => p?.pause());
+        players.current.forEach(p => { try { p?.pause(); } catch { audioFailed(); } });
       }
       if (cue.current === key) return;
       const guidance = breathingGuidance(record.engine.plan.blocks[current.blockIndex].phases, current.phaseIndex, current.phaseElapsedMs);
@@ -221,15 +231,16 @@ export function NativeSessionEffects() {
     deliver();
     const timer = setInterval(deliver, 50);
     const unsubscribe = controller.subscribe(deliver);
-    return () => { disposed = true; generation.current++; unsubscribe(); clearInterval(timer); players.current.forEach(p => p?.pause()); };
+    return () => { disposed = true; generation.current++; unsubscribe(); clearInterval(timer); players.current.forEach(p => { try { p?.pause(); } catch { audioFailed(); } }); };
   }, [running, session?.id, session?.engine.startedAt, audio, audioReady, voiceBank,
     settings.breathingVoice, settings.restingVoice, controller]);
 
   useEffect(() => {
     if (session?.stage !== "active" || !track) return;
-    const loop = loopedAudio(track.source, () => audioSettings(controller.preferences).musicVolume, () => {
+    let loop: AudioLoop;
+    try { loop = loopedAudio(track.source, () => audioSettings(controller.preferences).musicVolume, () => {
       audioFailed();
-    }, track.crossfadeMs, false);
+    }, track.crossfadeMs, false); } catch { audioFailed(); return; }
     musicLoop.current = loop;
     return () => {
       loop();
@@ -273,12 +284,10 @@ export function NativeSessionEffects() {
   useEffect(() => {
     if (!natureEnabled || session?.stage !== "active") return;
     const sources = { ...breathTextures[breathSound], hum: humTexture };
-    const loops = Object.fromEntries(Object.entries(sources).map(([key, source]) => [
-      key,
-      loopedAudio(source, () => activeTexture.current === key ? textureGain.current : 0, () => {
-        audioFailed();
-      }, 120, false),
-    ])) as Record<"in" | "out" | "hum", AudioLoop>;
+    const loops: Partial<Record<"in" | "out" | "hum", AudioLoop>> = {};
+    try {
+      for (const key of ["in", "out", "hum"] as const) loops[key] = loopedAudio(sources[key], () => activeTexture.current === key ? textureGain.current : 0, audioFailed, 120, false);
+    } catch { Object.values(loops).forEach(loop => loop()); audioFailed(); return; }
     textureLoops.current = loops;
     return () => {
       activeTexture.current = null;

@@ -33,7 +33,10 @@ test("release fails closed for test providers, mocks, demo ads and open gates; a
   assert.ok(buildPolicy({ ...candidate, ADMOB_ANDROID_APP_ID: "ca-app-pub-3940256099942544~3347511713" }).length);
   const eas = JSON.parse(readFileSync("apps/mobile/eas.json", "utf8"));
   assert.equal(eas.build["store-test"].distribution, "store"); assert.equal(eas.build["store-test"].android.buildType, "app-bundle");
-  assert.equal(JSON.parse(readFileSync("apps/mobile/app.json", "utf8")).expo.android.versionCode, 7);
+  const app = JSON.parse(readFileSync("apps/mobile/app.json", "utf8")).expo;
+  assert.equal(app.version, "1.2.2");
+  assert.equal(app.android.versionCode, 8);
+  assert.equal(eas.build.production.autoIncrement, false);
   assert.match(readFileSync("apps/mobile/app.config.ts", "utf8"), /enableMinifyInReleaseBuilds:\s*true/);
   assert.equal(eas.build["store-test"].android.buildArtifactPaths[0], "android/app/build/outputs/mapping/release/**");
   assert.deepEqual(eas.build["store-test"].android.buildArtifactPaths, [
@@ -54,8 +57,12 @@ test("RevenueCat runtime billing calls stay inside its adapter and generic servi
   const grant = { source: "store" as const, active: true, status: "active" as const, verifiedAt: 1000, expiresAt: 9000, graceUntil: null };
   const provider: SubscriptionProvider = { mode: "store", offers: async () => [{ id: "monthly", title: "Monthly", price: "$1", period: "month" }], refresh: async () => ({ ...grant, active: false }), purchase: async () => { throw new SubscriptionError("pending", "Pending approval"); }, restore: async () => grant, managementUrl: async () => null };
   const service = new SubscriptionService(provider, e, new AnalyticsService());
-  await service.load(); await service.purchase("monthly"); assert.equal(e.state.pro, false); assert.equal(service.message, "Pending approval");
+  await service.load(); await service.purchase("monthly");
+  assert.equal(e.state.pro, false);
+  assert.equal(service.purchaseUncertain, true);
+  assert.match(service.message ?? "", /Do not pay again/);
   await service.restore(); assert.equal(e.state.pro, true);
+  assert.equal(service.purchaseUncertain, false);
 });
 test("association generation rejects missing values and binds both native identities to the supplied HTTPS path", () => {
   assert.throws(() => associations({ origin: "" }));

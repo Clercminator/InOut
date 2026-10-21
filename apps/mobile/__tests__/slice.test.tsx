@@ -1,4 +1,5 @@
 import PracticeSafety from "../app/practice-safety";
+import Safety from "../app/safety";
 import React from "react";
 import { Alert, Share } from "react-native";
 import { render, fireEvent, screen, waitFor, act } from "@testing-library/react-native";
@@ -305,7 +306,8 @@ test("post hides the prior score/comparison until an explicit answer", async () 
   now = 48000;
   mockController.tick();
   await render(<Post />);
-  expect(screen.getByText("Congratulations!")).toBeTruthy();
+  expect(screen.getByText("SESSION COMPLETE")).toBeTruthy();
+  expect(screen.queryByText("Congratulations!")).toBeNull();
   expect(screen.queryByText(/Tension down/)).toBeNull();
   expect(
     screen.getByRole("button", { name: "SEE MY STATE SHIFT  →" }),
@@ -682,4 +684,19 @@ test("dedicated safety is required for a new gentle session and cannot replay it
   expect(mockReplace).toHaveBeenCalledWith("/session");
   mockController.confirmSafety();
   expect(mockController.current).toBe(record);
+});
+
+test("turning off safety reminders needs acknowledgement and persists only after confirmation", async () => {
+  const alert = jest.spyOn(Alert, "alert").mockImplementation(() => {});
+  try {
+    await render(<Safety />);
+    await fireEvent(screen.getByLabelText("Show safety reminders before sessions"), "valueChange", false);
+    expect(mockController.preferences.showSafetyReminders).not.toBe(false);
+    const buttons = alert.mock.calls.at(-1)?.[2];
+    expect(buttons?.find(button => button.style === "cancel")).toBeTruthy();
+    await act(() => { buttons?.find(button => button.text === "I understand")?.onPress?.(); });
+    expect(mockController.preferences.showSafetyReminders).toBe(false);
+    await fireEvent(screen.getByLabelText("Show safety reminders before sessions"), "valueChange", true);
+    expect(mockController.preferences.showSafetyReminders).toBe(true);
+  } finally { alert.mockRestore(); }
 });

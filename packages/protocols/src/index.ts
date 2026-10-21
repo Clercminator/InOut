@@ -332,7 +332,6 @@ export const protocols: Protocol[] = [
       "A discreet practice to ease situational tension and notice your breathing and arousal before intimate moments."),
     purpose: "Calm & confidence",
     instructions: "Before an intimate moment, sit comfortably. Inhale gently for 4 seconds and exhale for 6 seconds. Do not hold or suppress natural breathing during sexual activity.",
-    precaution: "Breathing alone has insufficient evidence as a treatment for premature ejaculation. Seek professional advice for persistent or distressing sexual difficulties.",
     durationPresets: [120000, 180000, 240000, 300000, 360000, 420000, 480000],
   },
 ];

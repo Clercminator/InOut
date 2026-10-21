@@ -1,9 +1,9 @@
 <en-US>
-A new welcome journey with a gentle Pulse breathing demo, personalized goals and automatic device language. Explore the offline Coach, guided programs and daily plans. Refined Pulse visuals, achievements, sharing, navigation and audio/haptic previews. Your saved practice and preferences stay with you. Internal test: ads use test inventory; purchases require configured store products.
+Smoother session controls and guided audio, with clear recovery options. A refreshed completion reveal, weekly goals and earned themes help you build a steady practice. Find exercises by intent, including sleep preparation, post-workout calm and intimacy. Refined reminders, sharing and subscription feedback. Available in English, Spanish and Portuguese.
 </en-US>
 <es-419>
-Nueva bienvenida con una demostración suave de Pulse, objetivos personales e idioma automático. Explora la guía sin conexión, los programas guiados y los planes diarios. Mejoras en Pulse, logros, contenido para compartir, navegación y vistas previas de sonido y vibración. Conservas tu práctica y preferencias. Prueba interna: anuncios de prueba; las compras requieren productos configurados en la tienda.
+Controles y audio guiado más fluidos, con opciones claras de recuperación. Un cierre renovado, metas semanales y temas ganados te ayudan a practicar con constancia. Encuentra ejercicios según tu intención, como prepararte para dormir, calmarte después del ejercicio o antes de la intimidad. Mejoras en recordatorios, contenido compartido y mensajes de suscripción.
 </es-419>
 <pt-BR>
-Novas boas-vindas com uma demonstração suave do Pulse, objetivos pessoais e idioma automático. Explore o guia offline, programas guiados e planos diários. Melhorias no Pulse, conquistas, compartilhamento, navegação e prévias de áudio e vibração. Suas práticas e preferências são preservadas. Teste interno: anúncios de teste; compras exigem produtos configurados na loja.
+Controles e áudio guiado mais fluidos, com opções claras de recuperação. Uma conclusão renovada, metas semanais e temas conquistados ajudam a manter a prática. Encontre exercícios por intenção, como se preparar para dormir, relaxar após o treino ou antes da intimidade. Melhorias nos lembretes, compartilhamento e mensagens de assinatura.
 </pt-BR>

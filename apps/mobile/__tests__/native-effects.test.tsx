@@ -494,3 +494,18 @@ test("audio recovery can continue silently without changing the saved audio sele
   expect(mockController.preferences.guidance.voice).toBe(true);
   expect(mockPlayers.every(p => p.remove.mock.calls.length > 0)).toBe(true);
 });
+
+test("voice loading that stalls while idle still offers recovery after starting", async () => {
+  mockController.preferences.haptics = false;
+  // This case exercises decoder loading, with engine time controlled explicitly.
+  // Suppress periodic ticks so React cleanup cannot race Sinon at the timeout boundary.
+  jest.spyOn(global, "setInterval").mockImplementation(() => 0 as unknown as ReturnType<typeof setInterval>);
+  await render(<NativeSessionEffects />);
+  mockPlayers.forEach(player => { player.isLoaded = false; });
+  await act(async () => { jest.advanceTimersByTime(6000); });
+  expect(mockController.audioFailure).toBe(false);
+  await act(async () => { mockController.start(null, 6, protocols.find(p => p.id === "coherent")!); });
+  await act(async () => { await jest.advanceTimersByTimeAsync(5000); });
+  expect(mockController.audioFailure).toBe(true);
+  expect(mockController.current?.engine.status).toBe("paused");
+});

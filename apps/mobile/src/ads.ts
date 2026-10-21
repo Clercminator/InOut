@@ -180,7 +180,10 @@ export class AdService {
     if (this.blocked) { this.cancelCompletion(); return false; }
     this.showing = true;
     await new Promise<void>(resolve => {
-      this.finishShowing = () => { this.showing = false; this.finishShowing = undefined; resolve(); };
+      const openingTimeout = setTimeout(() => {
+        if (!candidate.opened) { this.track("ad_failed", { outcome: "failed", errorCategory: "timeout" }); this.finishShowing?.(); this.cancelCompletion(); }
+      }, 2000);
+      this.finishShowing = () => { clearTimeout(openingTimeout); this.showing = false; this.finishShowing = undefined; resolve(); };
       try { void candidate.show().catch(() => { this.finishShowing?.(); this.cancelCompletion(); }); }
       catch { this.finishShowing?.(); this.cancelCompletion(); }
     });

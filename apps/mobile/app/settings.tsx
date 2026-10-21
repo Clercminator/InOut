@@ -33,7 +33,7 @@ export default function Settings() {
     <BackScreen title="SETTINGS">
       <Label>ACCOUNT</Label>
       <Disclosure title="Plan & privacy" icon="credit-card">
-        <Copy>{commercial?.entitlements.state.pro ? "Pro" : "Free"} · All 14 breathing protocols included</Copy>
+        <Copy>{commercial?.entitlements.state.pro ? "Pro" : "Free"} · {t("All breathing protocols included")}</Copy>
         <ActionRow title="Pro & subscriptions" icon="credit-card" onPress={() => router.push("/pro")} />
         {commercial?.analytics.remoteAvailable && <>
           <View style={s.row}>
@@ -116,6 +116,7 @@ export default function Settings() {
         </Copy>
       </Disclosure>
       <Disclosure title="Safety" icon="health-and-safety">
+        <ActionRow title="Show safety reminders before sessions" icon="health-and-safety" onPress={() => router.push("/safety")} />
         <Copy>
           Breathe comfortably. Stop if dizzy, faint, or unwell. Never practice while driving, operating machinery, swimming, bathing, or near water.
         </Copy>
