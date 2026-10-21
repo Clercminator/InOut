@@ -1,5 +1,68 @@
 # InOut — owner acceptance and submission
 
+## October 21 final production candidate — implementation verified, acceptance open
+
+This section supersedes earlier candidate status below. Source is **1.2.2 (Android versionCode 8)**, package/bundle ID `com.imrtech.inout`; iOS build number remains `1`. **No new signed production AAB, iOS binary, store upload or public submission was made.** `release/readiness.json` still has all seven gates false and store metadata remains a draft. The production profile retains live AdMob configuration, real RevenueCat billing and the gate checks; test profiles retain test ads. Production auto-increment is disabled so the reviewed code is built explicitly. Recheck Play/EAS availability immediately before the next build/upload.
+
+Read-only Play verification on October 21 showed **1.2.1 (7), Open testing, In review**; the full bundle inventory contains codes **7, 5, 4, 3**, with no code 8. A fresh EAS Android history check also showed latest finished build **1.2.1 (7)**; evidence is `artifacts/final-candidate-eas-history-latest.json`. The existing signed code-7 build [14bf3516](https://expo.dev/accounts/imr-tech/projects/inout/builds/14bf3516-87a7-4bc0-9a13-a80f4a466c21) and its Play submission remain untouched. Existing development and rollback artifacts, owner artwork changes and unrelated working-tree edits were preserved.
+
+### Implemented and committed
+
+| Commit | Change |
+| --- | --- |
+| `7cf0c02` | Session/audio recovery and silent continuation; reusable action feedback, save/share recovery, persistent uncertain-purchase protection; canonical targeted protocol discovery and conservative evidence presentation. |
+| `171fdf5` | One saved-session reveal with persistent deduplication, quiet/reduced-motion behavior, weekly progress and earned-theme previews; localized intent matching, weekly reminders and consented retention events. |
+| `e30ffb7` | Decoder initialization/load failure recovery, ad-opening timeout, explicit safety-preference acknowledgement, removal of the pre-save celebration, version 1.2.2 (8), current visual-capture flow and EN/ES/PT release notes. |
+
+The canonical public catalog contains the existing 14 choices plus Sleep Wind Down, Post-Workout Reset and Intimacy Calm, with stable historical IDs preserved. No additional protocol expansion, price change, dependency upgrade, new tracking permission, second engine or second paywall was introduced. Generic discovery events contain no search query or protocol identifier. Research-supported / Expert-recommended / General wellness are the only presentation categories; no expert endorsement is invented. General wellness has no research disclaimer in the ordinary detail flow.
+
+### Verification and artifacts
+
+All paths below are relative to the repository root and were checked on disk.
+
+| Check | Actual result / evidence |
+| --- | --- |
+| `npm run verify` | PASS: localization **1,725 messages per translated locale**, generated public pages, web lint, mobile/web/functions TypeScript, **237/237 shared tests**, **347/347 mobile tests in 25 suites**. `artifacts/final-candidate-verify.log`. React animation test `act` warnings remain in the log; no failed or skipped tests. |
+| Release policy | `npm run release:check` and store-test preflight PASS. Production preflight FAILS as intended on the seven open gates and draft metadata, not missing Android SDK keys. `artifacts/final-candidate-release.log`, `final-candidate-store-test-preflight.log`, `final-candidate-production-preflight.log`. This does not verify remote provider acceptance. |
+| Android JavaScript/Hermes export | PASS with `EXPO_NO_DOTENV=1`, `npx expo export --platform android --source-maps --output-dir ../../artifacts/final-candidate-android` from `apps/mobile`. Bundle and map under `artifacts/final-candidate-android/_expo/static/js/android/`, stem `entry-30d583dd539634a1fd2430bb62b81a9b.hbc`; map is **10,689,580 bytes**. Log: `artifacts/final-candidate-android.log`. |
+| iOS JavaScript/Hermes export | PASS with the equivalent `--platform ios --output-dir ../../artifacts/final-candidate-ios`. Bundle and map under `artifacts/final-candidate-ios/_expo/static/js/ios/`, stem `entry-6fc88353fdc18292950718b1339aa094.hbc`; map is **10,162,916 bytes**. Log: `artifacts/final-candidate-ios.log`. This is not an IPA/native SDK test. |
+| R8 / native symbols | **None for code 8: no native code-8 build exists.** Both EAS store profiles retain `android/app/build/outputs/mapping/release/**`, native debug-symbol/symbol-table paths and `android/app/build/generated/sourcemaps/react/release/**`. Download and match those to the exact signed AAB after building. Local export maps above are not EAS build maps. Do not reuse historical code-6/code-7 mappings for code 8. |
+| Visual protection | Structural mobile tests cover Box geometry, original Pulse artwork/readout separation, theme layout, result flow and canonical paywall. `.maestro/rc-visual.yaml` now includes current safety navigation plus Box, Pulse and theme-gallery/preview captures; YAML parses. **The updated Maestro flow and actual native visual review were not run.** No new screenshot baseline or physical smoothness acceptance is claimed. |
+| Store copy | `release/play-store/release-notes.txt` contains ready-to-review EN/ES/PT notes, each below 500 characters. Listing remains draft; its obsolete protocol count was removed. Nothing was posted to Play. |
+
+### Shortest supported phone review
+
+The existing isolated **IN/OUT Preview** development APK is available at `artifacts/INOUT-preview.apk` (**78,975,429 bytes**), [EAS c388094b](https://expo.dev/accounts/imr-tech/projects/inout/builds/c388094b-94f6-4866-981c-ad5c7da9cd68). It uses `com.imrtech.inout.preview` and separate storage, preserving the Play installation/history. It is an older native development shell that loads the current JavaScript, not a code-8 signed release.
+
+On October 21, the running Metro manifest reported version **1.2.2**, package **`com.imrtech.inout.preview`**, scheme **`inout-preview`**, host **`192.168.1.51:8081`**. Install/open Preview on the same Wi-Fi and enter `http://192.168.1.51:8081`; keep the computer awake. If the server stops or the address changes, run **`npm run start:preview`** from the repository root and use its displayed URL. Tunnel fallback: `npm run start:preview -- --tunnel`. Existing Metro was preserved. Neither Expo Go nor the Play app can load this development session. Preview is for UI/audio review with test ads; real billing acceptance uses the Play-installed production package.
+
+Record device/OS, language/theme, source/build, date and pass/fail for these checks:
+
+1. Fresh Preview storage: onboarding → first session; inspect Home, Box square and coherent Pulse on small/large layouts, light/dark, EN/ES/PT, enlarged text, screen reader and reduced motion. Review theme preview/apply/restart and locked/earned ownership. Save approved screenshots of Home, Box, Pulse, themes, saved result and the paywall.
+2. Several full voice/music cycles in EN/ES/PT, including a loop boundary and each selected preview; Pause/Resume, both End choices, hardware Back and I feel unwell. Test headphones, interruptions, backgrounding, offline practice and kill/restart. Audio failure must pause and offer Retry / Continue without sound. General safety can be disabled only after acknowledgement; retention/high-intensity precautions remain mandatory.
+3. Complete → save → one short/skippable reveal → real progress/reward → share/image-only fallback → Repeat/Home. Reopen/restart without replaying rewards; early end/unwell/save failure must not celebrate. Repeat sessions on one day count once; fitness records remain separate. Check Daily Reset and existing challenge history.
+4. Reminder time/days/frequency/categories → save → edit/reschedule → disable all; test permission denial/settings recovery, quiet hours, localized private lockscreen copy and notification cold starts. Confirm no immediate engagement reminder after practice.
+5. On a signed Play testing candidate with real store billing and **test ads**, verify actual plan prices, purchase/cancel/pending, restart, restore/expiry and reviewer grant/removal. Uncertain purchases must never suggest paying again. Free eligible ads appear only when leaving saved results after sharing was available; no-fill/errors allow navigation, Pro/reviewer/safety/active practice never request ads.
+6. Confirm native share sheets and deployed shared links in all three languages, opt-in telemetry/crash receipt and opt-out, local erasure and the existing hosted privacy/support workflow. Do not erase the owner's production history for testing.
+
+### Remaining release gates and Apple work
+
+| Open gate | Evidence still needed |
+| --- | --- |
+| `billingVerified` | Real Play purchase lifecycle/restore/expiry and clean reviewer acceptance on the selected signed candidate. |
+| `adsAndConsentVerified` | Native UMP/privacy-options, consent refusal, caps, no-fill and paid/reviewer suppression; production live-unit configuration approval. Development testing stays on test inventory. |
+| `sharingVerified` | Native sheet/cancel/image-only behavior, real deployed EN/ES/PT links/metadata, expiry/revocation and platform link handling. This task generated web files locally; it did not deploy them. |
+| `analyticsDecisionVerified` | Owner approves opt-in Firebase usage/crash collection and verifies receipt/opt-out on the actual native build. No sensitive event fields or new collection categories were added. Review store disclosures against actual enabled SDK behavior. |
+| `nativeDeviceAcceptance` | The visual/audio/interaction checklist above, including small/large screens, accessibility and restart behavior. Automated checks are insufficient. |
+| `metadataAndLegalApproved` | Owner approves final listings, localized notes, screenshots, privacy/Data safety declarations and legal copy; then updates the draft listing status. |
+| `accountsAndDeletionVerified` | Accept local guest-data deletion, support and any enabled hosted verification/deletion fulfillment; private reviewer credentials remain outside Git. Existing cloud/provider state was not changed by this task. |
+
+Primary metric: unique consented app instances completing a second in-app breathing session within **7 × 24 hours of their first completion**, divided by newly activated consented app instances with a first completion and a full seven-day observation window. Use `first_session_completed` and `second_session_within_seven_days`, joined by the existing Firebase app-instance identity. Exclude manual entries; the completion markers persist locally and deduplicate restart/revisit. This is a consented-install cohort, not all users or cross-device people. No historical dashboard or measured retention uplift is claimed.
+
+**iOS:** JavaScript compatibility passes, but no signed iOS build/TestFlight upload or physical iPhone SDK acceptance was performed here. Verify current Apple membership/agreements, existing `com.imrtech.inout` app record, real Team ID/distribution signing, available build number, App Store subscriptions mapped to RevenueCat `default` / `in_out_pro`, Apple credentials/notifications, privacy disclosures, real link associations and sandbox purchase/restore/consent/share behavior. Do not infer missing accounts from older notes below or invent identifiers. Build with the existing EAS profile only after its platform gates and credentials are accepted.
+
+After phone review, resolve only the documented owner/provider gates and retain dated evidence. Once all seven gates and commercial metadata are accepted, run the production preflight with the intended private environment, recheck version availability, then from `apps/mobile` use `npx eas-cli build --platform android --profile production`. This command has **not** been run. Production submission remains a separate explicit owner authorization; no approval was inferred from “proceed.”
+
 ## October 19 reliability and internal testing follow-up
 
 Current source: `ef125ad`. The owner confirmed audio now works and accepted continuous Box/Triangle corner motion and themed popups. Corrected Android 1.2.1 (7) build [0de2dc10](https://expo.dev/accounts/imr-tech/projects/inout/builds/0de2dc10-3061-4931-a519-65a136811eda) completed, but is superseded by the library-inclusive candidate requested afterward; the Play internal release draft is prepared. The previous build `462efc4f` was canceled. October 18 entries below are historical and superseded by this status.
