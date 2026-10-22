@@ -84,6 +84,20 @@ test("Firebase configuration from Android cannot activate the unconfigured iOS p
   }
 });
 
+test("unconfigured iOS Firebase modules stay out of native linking without changing Android", () => {
+  for (const configured of [false, true]) {
+    const env = { ...process.env };
+    delete env.INOUT_PREVIEW;
+    if (configured) env.GOOGLE_SERVICES_PLIST = "/private/GoogleService-Info.plist";
+    else delete env.GOOGLE_SERVICES_PLIST;
+    const result = spawnSync(process.execPath, ["-e", "console.log(JSON.stringify(require('./apps/mobile/react-native.config.js')))"], { env, encoding: "utf8" });
+    assert.equal(result.status, 0, result.stderr);
+    const { dependencies } = JSON.parse(result.stdout);
+    if (configured) assert.deepEqual(dependencies, {});
+    else for (const name of ["app", "analytics", "crashlytics"]) assert.deepEqual(dependencies[`@react-native-firebase/${name}`], { platforms: { ios: null } });
+  }
+});
+
 test("RevenueCat runtime billing calls stay inside its adapter and generic service handles pending and restore", async () => {
   for (const root of ["apps/mobile/src", "apps/mobile/app"]) for (const name of readdirSync(root, { recursive: true }) as string[]) {
     if (!/\.tsx?$/.test(name) || name.replaceAll("\\", "/") === "subscription-providers/revenuecat.ts") continue;
