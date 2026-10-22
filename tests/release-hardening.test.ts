@@ -1,12 +1,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
+import { spawnSync } from "node:child_process";
 import { buildPolicy } from "../scripts/build-policy.cjs";
 import { associations } from "../scripts/build-link-associations.mjs";
 import { SubscriptionService, SubscriptionError, type SubscriptionProvider } from "../apps/mobile/src/subscriptions";
 import { EntitlementService } from "../apps/mobile/src/entitlements";
 import { AnalyticsService } from "../apps/mobile/src/analytics";
 import { advertisingMode } from "../apps/mobile/src/monetization";
+import mobileConfig from "../apps/mobile/app.config";
 
 test("live ads require both a production build marker and a non-development runtime", () => {
   for (const profile of ["development", "preview", "store-test", "simulator"])
@@ -47,6 +49,41 @@ test("release fails closed for test providers, mocks, demo ads and open gates; a
   assert.deepEqual(eas.build.production.android.buildArtifactPaths, eas.build["store-test"].android.buildArtifactPaths);
   assert.equal(eas.build.production.env.INOUT_RELEASE, "1");
 });
+test("artifact generation preserves production configuration checks and does not approve release", () => {
+  const env = { EAS_BUILD_PROFILE: "production", INOUT_RELEASE: "1", INOUT_ARTIFACT_ONLY: "1", EXPO_PUBLIC_EAS_PROJECT_ID: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", EXPO_PUBLIC_REVENUECAT_IOS_KEY: "appl_testfixture", EXPO_PUBLIC_REVENUECAT_ANDROID_KEY: "goog_testfixture", EXPO_PUBLIC_ADS_MODE: "live" };
+  assert.deepEqual(buildPolicy(env, {}, "draft-commercial-v1", { artifactOnly: true }), []);
+  assert.ok(buildPolicy(env, {}, "draft-commercial-v1").some((error: string) => error.includes("Commercial launch gate")));
+  for (const invalid of [{ EXPO_PUBLIC_ADS_MODE: "test" }, { EXPO_PUBLIC_REVENUECAT_TEST_KEY: "test_fixture" }, { EXPO_PUBLIC_REVENUECAT_IOS_KEY: "" }, { EXPO_PUBLIC_DEV_PRO: "true" }]) {
+    assert.ok(buildPolicy({ ...env, ...invalid }, {}, "draft-commercial-v1", { artifactOnly: true }).length);
+  }
+  const childEnv = { ...process.env, ...env, EXPO_NO_DOTENV: "1" };
+  const artifact = spawnSync(process.execPath, ["scripts/eas-release-check.mjs"], { env: childEnv, encoding: "utf8" });
+  assert.equal(artifact.status, 0, artifact.stderr);
+  const release = spawnSync(process.execPath, ["scripts/check-release.mjs"], { env: childEnv, encoding: "utf8" });
+  assert.equal(release.status, 1);
+  assert.match(release.stderr, /Commercial launch gate is open/);
+});
+
+test("Firebase configuration from Android cannot activate the unconfigured iOS plugin", () => {
+  const previous = { ...process.env };
+  try {
+    delete process.env.INOUT_RELEASE; delete process.env.EAS_BUILD_PROFILE; delete process.env.INOUT_PREVIEW;
+    delete process.env.EXPO_PUBLIC_ADS_MODE; delete process.env.GOOGLE_SERVICES_PLIST;
+    process.env.GOOGLE_SERVICES_JSON = "/private/android-google-services.json";
+    process.env.EAS_BUILD_PLATFORM = "ios";
+    const context = { config: { name: "IN/OUT", slug: "inout" }, projectRoot: process.cwd(), staticConfigPath: null, packageJsonPath: null };
+    assert.equal(mobileConfig(context).plugins.includes("@react-native-firebase/app"), false);
+    process.env.EAS_BUILD_PLATFORM = "android";
+    assert.equal(mobileConfig(context).plugins.includes("@react-native-firebase/app"), true);
+    process.env.EAS_BUILD_PLATFORM = "ios";
+    process.env.GOOGLE_SERVICES_PLIST = "/private/GoogleService-Info.plist";
+    assert.equal(mobileConfig(context).plugins.includes("@react-native-firebase/app"), true);
+  } finally {
+    for (const key of Object.keys(process.env)) if (!(key in previous)) delete process.env[key];
+    Object.assign(process.env, previous);
+  }
+});
+
 test("RevenueCat runtime billing calls stay inside its adapter and generic service handles pending and restore", async () => {
   for (const root of ["apps/mobile/src", "apps/mobile/app"]) for (const name of readdirSync(root, { recursive: true }) as string[]) {
     if (!/\.tsx?$/.test(name) || name.replaceAll("\\", "/") === "subscription-providers/revenuecat.ts") continue;

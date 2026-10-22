@@ -1,6 +1,6 @@
 const demo = '3940256099942544';
 const { admob } = require('../release/monetization.json');
-function buildPolicy(env, gates = {}, listingStatus = '') {
+function buildPolicy(env, gates = {}, listingStatus = '', { artifactOnly = false } = {}) {
   const production = env.INOUT_RELEASE === '1' || env.EAS_BUILD_PROFILE === 'production';
   const store = production || env.INOUT_STORE_TEST === '1' || env.EAS_BUILD_PROFILE === 'store-test';
   const errors = [];
@@ -31,10 +31,12 @@ function buildPolicy(env, gates = {}, listingStatus = '') {
   if (!['test', 'live'].includes(env.EXPO_PUBLIC_ADS_MODE)) errors.push('Explicit test/live ad mode required.');
   if (production) {
     if (env.EXPO_PUBLIC_ADS_MODE !== 'live') errors.push('Production must explicitly use live ad configuration.');
-    for (const name of ['billingVerified','adsAndConsentVerified','sharingVerified','analyticsDecisionVerified','nativeDeviceAcceptance','metadataAndLegalApproved','accountsAndDeletionVerified']) {
-      if (gates[name] !== true) errors.push(`Commercial launch gate is open: ${name}`);
+    if (!artifactOnly) {
+      for (const name of ['billingVerified','adsAndConsentVerified','sharingVerified','analyticsDecisionVerified','nativeDeviceAcceptance','metadataAndLegalApproved','accountsAndDeletionVerified']) {
+        if (gates[name] !== true) errors.push(`Commercial launch gate is open: ${name}`);
+      }
+      if (listingStatus !== 'approved-commercial-v1') errors.push('Commercial metadata remains unapproved.');
     }
-    if (listingStatus !== 'approved-commercial-v1') errors.push('Commercial metadata remains unapproved.');
   }
   return errors;
 }

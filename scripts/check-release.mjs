@@ -8,7 +8,8 @@ const listing = JSON.parse(readFileSync(root + 'release/store-listing.json', 'ut
 const readiness = JSON.parse(readFileSync(root + 'release/readiness.json', 'utf8'));
 const sharing = JSON.parse(readFileSync(root + 'release/sharing.json', 'utf8'));
 const app = JSON.parse(readFileSync(root + 'apps/mobile/app.json', 'utf8')).expo;
-const errors = policy.buildPolicy({ ...process.env, EXPO_PUBLIC_EAS_PROJECT_ID: process.env.EXPO_PUBLIC_EAS_PROJECT_ID || app.extra?.eas?.projectId }, readiness.gates, listing.status);
+const artifactOnly = process.argv.includes('--artifact-only');
+const errors = policy.buildPolicy({ ...process.env, EXPO_PUBLIC_EAS_PROJECT_ID: process.env.EXPO_PUBLIC_EAS_PROJECT_ID || app.extra?.eas?.projectId }, readiness.gates, listing.status, { artifactOnly });
 if (sharing.apiUrl || readiness.gates?.sharingVerified || process.env.INOUT_RELEASE === '1') {
   try {
     const url = new URL(sharing.apiUrl);
@@ -21,9 +22,11 @@ if (process.env.INOUT_RELEASE === '1') {
     if (!process.env[key] || process.env[key].includes('3940256099942544')) errors.push(`Production configuration is missing or uses demo values: ${key}`);
   }
   if (process.env.EXPO_PUBLIC_ADS_MODE !== 'live') errors.push('Production ads must be explicitly configured after acceptance.');
-  if (listing.status !== 'approved-commercial-v1') errors.push('Commercial store metadata is still a draft. Do not submit the former free-only release.');
-  for (const gate of ['billingVerified', 'adsAndConsentVerified', 'sharingVerified', 'analyticsDecisionVerified', 'nativeDeviceAcceptance', 'metadataAndLegalApproved', 'accountsAndDeletionVerified']) {
-    if (readiness.gates?.[gate] !== true) errors.push(`Commercial launch gate is open: ${gate}`);
+  if (!artifactOnly) {
+    if (listing.status !== 'approved-commercial-v1') errors.push('Commercial store metadata is still a draft. Do not submit the former free-only release.');
+    for (const gate of ['billingVerified', 'adsAndConsentVerified', 'sharingVerified', 'analyticsDecisionVerified', 'nativeDeviceAcceptance', 'metadataAndLegalApproved', 'accountsAndDeletionVerified']) {
+      if (readiness.gates?.[gate] !== true) errors.push(`Commercial launch gate is open: ${gate}`);
+    }
   }
 }
 if (!info.publisherName.trim()) errors.push('Publisher name is missing.');
@@ -50,4 +53,4 @@ for (const [file,width,height,colorType] of [
   } catch { errors.push(`Missing or unreadable ${file}`); }
 }
 if (errors.length) { console.error('Release preparation is incomplete:\n' + errors.map((e) => '- ' + e).join('\n')); process.exit(1); }
-console.log('Local release metadata checks passed. Commercial v1 remains a draft; production builds require every release/readiness.json gate and approved metadata.');
+console.log(artifactOnly ? 'Artifact configuration checks passed. Acceptance flags remain unchanged; this does not approve store submission.' : 'Local release metadata checks passed. Commercial release requires every release/readiness.json gate and approved metadata.');

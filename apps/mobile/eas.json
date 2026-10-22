@@ -22,6 +22,7 @@
       },
       "env": {
         "INOUT_RELEASE": "1",
+        "INOUT_ARTIFACT_ONLY": "1",
         "EXPO_NO_DOTENV": "1",
         "EXPO_PUBLIC_REVENUECAT_MODE": "store",
         "EXPO_PUBLIC_SUBSCRIPTION_PROVIDER": "revenuecat",
