@@ -39,15 +39,12 @@ export function breathingGuidance(phases: Phase[], index: number, elapsedMs = 0)
   const volume = from + (to - from) * smoothBreath(progress);
   const label = holding ? "Hold"
     : phase.type === "inhaleTopUp" ? "Sip in a little more" : phase.label;
-  const texture: "in" | "out" | "hum" | null = inward ? "in" : phase.type === "hum" ? "hum" : outward ? "out" : null;
-  // Fade airflow at both boundaries; holds never play an airflow texture.
-  const envelope = texture ? 0.5 * Math.sin(Math.PI * progress) ** 0.65 : 0;
   const pulseEveryMs = holding ? 2000 : 1000;
   const beat = Math.floor(elapsedMs / pulseEveryMs);
   const offset = elapsedMs % pulseEveryMs;
   const pulseStyle: "medium" | "light" | "soft" | null = inward ? "light" : outward ? "soft" : null;
   return {
-    label, from, to, volume, progress, inward, outward, holding, full, texture, envelope,
+    label, from, to, volume, progress, inward, outward, holding, full,
     pulseEveryMs, pulseStyle,
     pulseKey: pulseStyle && offset < 150 ? String(beat) : null,
     touch: inward ? "Gentle taps: breathe in" : outward ? "A soft tap: breathe out"

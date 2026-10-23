@@ -21,7 +21,7 @@ export default ({ config }: ConfigContext) => {
   ios: { ...config.ios, ...(preview ? { bundleIdentifier: "com.imrtech.inout.preview" } : {}), ...(iosGoogleServicesFile ? { googleServicesFile: iosGoogleServicesFile } : {}), ...(!preview && links.origin && links.appleTeamId ? { appleTeamId: links.appleTeamId, associatedDomains: [`applinks:${new URL(links.origin).host}`] } : {}) },
   android: { ...config.android, ...(preview ? { package: "com.imrtech.inout.preview" } : {}), ...(androidGoogleServicesFile ? { googleServicesFile: androidGoogleServicesFile } : {}), ...(!preview && links.origin && links.androidSha256.length ? { intentFilters: [{ action: "VIEW", autoVerify: true, category: ["BROWSABLE", "DEFAULT"], data: [{ scheme: "https", host: new URL(links.origin).host, path: links.path }] }] } : {}) },
   plugins: [...(config.plugins ?? []),
-    ...(firebaseConfigured ? ["@react-native-firebase/app", "@react-native-firebase/crashlytics"] : []),
+    ...(firebaseConfigured ? ["@react-native-firebase/app", "@react-native-firebase/analytics", "@react-native-firebase/crashlytics"] : []),
     "expo-secure-store",
     ["expo-localization", { supportedLocales: ["en", "es", "pt"], allowDynamicLocaleChangesAndroid: true }],
     "expo-sharing",

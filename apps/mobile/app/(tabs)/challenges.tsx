@@ -59,6 +59,7 @@ export default function Challenges() {
     <DailyResetCard />
     {(todayTest || todayProgram) && <Card style={{ backgroundColor: colors.accentSurface }}><Label>TODAY’S CHALLENGE</Label><ChallengeArt art={todayTest?.art ?? todayProgram!.artKey} height={155} /><Title>{todayTest?.title ?? todayProgram!.title}</Title><Copy>{todayTest?.description ?? todayProgram!.description}</Copy><Copy>{todayTest?.duration ?? todayProgram!.time}</Copy><Button title={practiced ? "Today is complete · View" : "Start"} onPress={() => open(daily!)} /></Card>}
 
+    <Card><Label>TOOLS</Label><ActionRow title="Breath Hold Timer" icon="timer" onPress={() => router.push("/breath-hold-timer")} /><Copy>A simple timer for a comfortable breath hold. Save attempts privately on this phone.</Copy></Card>
     {c.testState().pending && <ActionRow title="Resume unfinished challenge" icon="timer" onPress={() => open(c.testState().pending!.challengeId)} />}
 
     {!!active.length && <Label>CONTINUE YOUR PRACTICE</Label>}

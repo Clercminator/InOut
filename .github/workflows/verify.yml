@@ -24,6 +24,7 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - run: npm run parity:check
       - run: npm run verify
       - run: npm run release:check
       - run: npm run release:pages
@@ -48,6 +49,7 @@ jobs:
           java-version: "21"
       - uses: gradle/actions/setup-gradle@v4
       - run: npm ci
+      - run: npm run parity:check
       - run: npx expo prebuild --platform android --no-install
         working-directory: apps/mobile
       # Expo's generated development key signs this internal preview, not a store release.
@@ -96,6 +98,7 @@ jobs:
         with:
           xcode-version: "26.6"
       - run: npm ci
+      - run: npm run parity:check
       - run: npx expo prebuild --platform ios --no-install
         working-directory: apps/mobile
       - run: pod install

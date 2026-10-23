@@ -6,12 +6,11 @@ test("legacy sound preferences migrate without changing existing playback choice
   for (const audio of ["voice", "tones", "silent"] as const) {
     const p: Preferences = { audio, haptics: true, keepAwake: true };
     assert.equal(audioSettings(p).voice, audio === "voice");
-    assert.equal(audioSettings(p).nature, audio !== "silent");
-    for (const voice of [true, false]) for (const nature of [true, false]) {
-      const persisted = JSON.parse(JSON.stringify({ ...p, guidance: { voice, nature, voiceVolume: .25, natureVolume: .7 } }));
+    for (const voice of [true, false]) for (const music of [true, false]) {
+      const persisted = JSON.parse(JSON.stringify({ ...p, guidance: { voice, music, voiceVolume: .25, musicVolume: .7 } }));
       validateGuidance(persisted);
       assert.equal(audioSettings(persisted).voice, voice);
-      assert.equal(audioSettings(persisted).nature, nature);
+      assert.equal(audioSettings(persisted).music, music);
       assert.equal(audioSettings(persisted).voiceVolume, .25);
     }
   }

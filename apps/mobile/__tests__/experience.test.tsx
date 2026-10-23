@@ -1,3 +1,7 @@
+import BreathHoldTimerScreen from "../app/breath-hold-timer";
+import { StateScale } from "../src/ui";
+import { selectedGoals } from "../src/personalization";
+import type { BreathHoldAttempt } from "../src/breath-hold-timer";
 import ResultShare from "../app/result-share";
 import Result from "../app/result";
 import { emptyTestStore, appendAttempt, selectDaily, type TestStore, type PendingTest, type ChallengeAttempt, type TestId } from "../src/challenge-tests";
@@ -151,15 +155,20 @@ test("a lost custom draft cannot silently become a different ritual", async () =
   expect(screen.queryByRole("button", { name: "Save ritual" })).toBeNull();
 });
 
-test("breath preview respects selected volume, stops on mode change and stays absent in silent mode", async () => {
+test("music preview respects selected volume, stops on mode change and stays absent in silent mode", async () => {
+  mockController.preferences.guidance = { music: true };
   await render(wrap(<SoundControls />));
+  expect(screen.queryByText("NATURAL BREATHING SOUNDS")).toBeNull();
+  expect(screen.queryByText("Air")).toBeNull();
+  expect(screen.queryByText("Ocean")).toBeNull();
+  expect(screen.queryByText("Warm")).toBeNull();
   await fireEvent.press(screen.getByRole("button", { name: "25%" }));
-  await fireEvent.press(screen.getByRole("button", { name: "Preview breath sounds · 6 sec" }));
+  await fireEvent.press(screen.getByRole("button", { name: "Preview music" }));
   expect(mockPlayers[0].play).toHaveBeenCalled();
   expect(mockPlayers[0].volume).toBe(0.25);
-  await fireEvent(screen.getByLabelText("Natural breathing sounds"), "valueChange", false);
+  await fireEvent(screen.getByLabelText("Background music"), "valueChange", false);
   expect(mockPlayers[0].pause).toHaveBeenCalled(); expect(mockPlayers[0].remove).toHaveBeenCalled();
-  expect(screen.queryByRole("button", { name: "Preview breath sounds · 6 sec" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Preview music" })).toBeNull();
   expect(screen.queryByRole("button", { name: "Preview chime" })).toBeNull();
 });
 
@@ -255,11 +264,12 @@ test("Portuguese protocol safety expands and translated dialogs keep their actio
 
 test("settings disclosures hide secondary controls, retain language choice, and stop previews when closed", async () => {
   await render(wrap(<Settings />));
-  expect(screen.queryByRole("button", { name: "Preview breath sounds · 6 sec" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Preview music" })).toBeNull();
   expect(screen.queryByRole("button", { name: "Delete all local data" })).toBeNull();
   expect(screen.getByRole("button", { name: "Sound" }).props.accessibilityState.expanded).toBe(false);
   await fireEvent.press(screen.getByRole("button", { name: "Sound" }));
-  await fireEvent.press(screen.getByRole("button", { name: "Preview breath sounds · 6 sec" }));
+  await fireEvent(screen.getByLabelText("Background music"), "valueChange", true);
+  await fireEvent.press(screen.getByRole("button", { name: "Preview music" }));
   expect(mockPlayers.length).toBeGreaterThan(0);
   await fireEvent.press(screen.getByRole("button", { name: "Sound" }));
   expect(mockPlayers.every(player => player.remove.mock.calls.length === 1)).toBe(true);
@@ -267,7 +277,7 @@ test("settings disclosures hide secondary controls, retain language choice, and 
   await fireEvent.press(screen.getByRole("button", { name: "Appearance & language" }));
   await fireEvent.press(screen.getByRole("button", { name: "Português" }));
   await fireEvent.press(screen.getByRole("button", { name: "Som" }));
-  expect(screen.getByRole("button", { name: "Ouvir prévia · 6 s" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: t("Preview music") })).toBeTruthy();
   expect(screen.getByRole("button", { name: "Som" }).props.accessibilityState.expanded).toBe(true);
 });
 
@@ -598,19 +608,19 @@ test("Free coach opens its program through setup and retains the draft under aud
   expect(mockPush).toHaveBeenLastCalledWith({ pathname: "/pre", params: { id: "diaphragmatic", coachRun: run, coachStep: "0", coachRepeat: "0" } });
   mockParams = mockPush.mock.calls.at(-1)![0].params;
   await view.rerender(wrap(<Pre />));
-  await fireEvent.press(screen.getByRole("radio", { name: "6 of 10" }));
+  for (let i = 0; i < 6; i++) await fireEvent(screen.getByRole("adjustable"), "accessibilityAction", { nativeEvent: { actionName: "increment" } });
   await fireEvent.press(screen.getByRole("button", { name: "Audio & haptics" }));
   expect(mockPush).toHaveBeenLastCalledWith("/practice-audio");
   await view.rerender(wrap(<><Pre /><PracticeAudio /></>));
-  await fireEvent.press(screen.getByRole("button", { name: "Ocean" }));
+  await fireEvent(screen.getByRole("switch", { name: "Background music" }), "valueChange", true);
   await view.rerender(wrap(<Pre />));
-  expect(screen.getByRole("radio", { name: "6 of 10" }).props.accessibilityState.selected).toBe(true);
+  expect(screen.getByRole("adjustable").props.accessibilityValue.now).toBe(6);
   await fireEvent.press(screen.getByRole("button", { name: "Skip rating & continue" }));
   await act(async () => { mockController.confirmSafety(); });
   expect(mockPush).toHaveBeenLastCalledWith("/practice-safety");
   expect(mockController.current?.coach).toEqual({ enrollmentId: run, step: 0 });
   expect(mockController.current?.engine.plan.blocks[0].cycles).toBe(12);
-  expect(experienceFor(mockController.preferences).breathSound).toBe("ocean");
+  expect(mockController.preferences.guidance?.music).toBe(true);
   await act(async () => { jest.advanceTimersByTime(300000); mockController.tick(); mockController.answer(null, null); });
   mockParams = { id: mockController.current!.id };
   await view.rerender(wrap(<Result />));
@@ -737,4 +747,95 @@ test("session reveal can skip animation while retaining the result", async () =>
   await fireEvent.press(screen.getByRole("button", { name: "Skip animation" }));
   expect(screen.getByText("2:00")).toBeTruthy();
   expect(screen.queryByRole("button", { name: "Skip animation" })).toBeNull();
+});
+
+
+test.each(["en", "es", "pt"] as const)("onboarding collects multiple goals once and resumes the remaining journey in %s", async language => {
+  mockController.setPreferences({ ...mockController.preferences, onboardingComplete: false, language, languageSource: "manual" });
+  let view = await render(wrap(<Onboarding />));
+  await fireEvent.press(screen.getByRole("button", { name: t("Personalize InOut") }));
+  await fireEvent.press(screen.getByRole("checkbox", { name: t("Sleep better") }));
+  await fireEvent.press(screen.getByRole("checkbox", { name: t("Improve focus") }));
+  expect(screen.queryByText(t("PRIMARY GOAL · OPTIONAL"))).toBeNull();
+  expect(selectedGoals(mockController.preferences)).toEqual(["sleep", "focus"]);
+  await fireEvent.press(screen.getByRole("button", { name: t("Continue") }));
+  await view.unmount();
+  view = await render(wrap(<Onboarding />));
+  expect(screen.getByText(t("A little time, just for you."))).toBeTruthy();
+  expect(screen.queryAllByRole("checkbox")).toHaveLength(0);
+  await fireEvent.press(screen.getByRole("button", { name: t("5 min") }));
+  await fireEvent.press(screen.getByRole("button", { name: t("Continue") }));
+  await fireEvent.press(screen.getByRole("button", { name: t("I understand") }));
+  await fireEvent.press(screen.getByRole("button", { name: t("Continue") }));
+  expect(screen.getByText(t("Ease into your evening."))).toBeTruthy();
+  await fireEvent.press(screen.getByRole("button", { name: t("Let's get started") }));
+  await fireEvent.press(screen.getByRole("button", { name: t("Continue for free") }));
+  expect(selectedGoals(mockController.preferences)).toEqual(["sleep", "focus"]);
+  expect(mockController.preferences.onboardingComplete).toBe(true);
+});
+
+test.each(["light", "dark"] as const)("compact rating is unanswered until touched and supports all integer values in %s", async mode => {
+  const values: number[] = [];
+  function Rating() { const [value, setValue] = React.useState<number | null>(null); return <StateScale value={value} onChange={n => { values.push(n); setValue(n); }} />; }
+  await render(wrap(<ThemeSurface mode={mode}><Rating /></ThemeSurface>));
+  expect(screen.getByRole("adjustable").props.accessibilityValue.now).toBeUndefined();
+  expect(values).toEqual([]);
+  expect(screen.queryAllByRole("radio")).toHaveLength(0);
+  for (let n = 1; n <= 10; n++) {
+    await fireEvent(screen.getByRole("adjustable"), "accessibilityAction", { nativeEvent: { actionName: "increment" } });
+    expect(screen.getByRole("adjustable").props.accessibilityValue.now).toBe(n);
+  }
+  await fireEvent.press(screen.getByRole("button", { name: "Higher tension rating" }));
+  expect(screen.getByRole("adjustable").props.accessibilityValue.now).toBe(10);
+  await fireEvent(screen.getByRole("adjustable"), "layout", { nativeEvent: { layout: { width: 120 } } });
+  await fireEvent(screen.getByRole("adjustable"), "responderGrant", { nativeEvent: { locationX: 0 } });
+  expect(screen.getByRole("adjustable").props.accessibilityValue.now).toBe(1);
+  await fireEvent(screen.getByRole("adjustable"), "responderMove", { nativeEvent: { locationX: 120 } });
+  expect(screen.getByRole("adjustable").props.accessibilityValue.now).toBe(10);
+  await fireEvent.press(screen.getByRole("button", { name: "Lower tension rating" }));
+  expect(screen.getByRole("adjustable").props.accessibilityValue.now).toBe(9);
+});
+
+test.each(["en", "es", "pt"] as const)("Free timer saves only on request, resets and returns to Challenges in %s", async language => {
+  mockController.setPreferences({ ...mockController.preferences, language, languageSource: "manual" });
+  const history: BreathHoldAttempt[] = [];
+  jest.spyOn(mockController, "breathHoldHistory").mockImplementation(() => history);
+  jest.spyOn(mockController, "saveBreathHold").mockImplementation(a => { history.push(a); return true; });
+  const track = jest.spyOn(mockController.analytics, "track");
+  await render(wrap(<BreathHoldTimerScreen />));
+  expect(screen.getByText("00:00.0")).toBeTruthy();
+  await fireEvent.press(screen.getByRole("button", { name: t("Start") }));
+  await act(async () => { jest.advanceTimersByTime(1234); });
+  await fireEvent.press(screen.getByRole("button", { name: t("Stop") }));
+  expect(screen.getByText("00:01.2")).toBeTruthy();
+  expect(history).toHaveLength(0);
+  await fireEvent.press(screen.getByRole("button", { name: t("Save attempt") }));
+  expect(history).toHaveLength(1);
+  expect(history[0].elapsedMs).toBe(1234);
+  expect(screen.queryByRole("button", { name: t("Save attempt") })).toBeNull();
+  expect(mockController.history()).toHaveLength(0);
+  expect(track).toHaveBeenCalledWith("breath_hold_saved");
+  await fireEvent.press(screen.getByRole("button", { name: t("Try again") }));
+  expect(screen.getByText("00:00.0")).toBeTruthy();
+  await fireEvent.press(screen.getByRole("button", { name: t("Return to Challenges") }));
+  expect(mockReplace).toHaveBeenLastCalledWith("/(tabs)/challenges");
+});
+
+test.each(["change", "blur", "unmount"])("timer abandons on %s and never saves background time", async event => {
+  jest.spyOn(mockController, "breathHoldHistory").mockReturnValue([]);
+  const save = jest.spyOn(mockController, "saveBreathHold");
+  const track = jest.spyOn(mockController.analytics, "track");
+  const subscribe = jest.spyOn(AppState, "addEventListener");
+  const view = await render(wrap(<BreathHoldTimerScreen />));
+  await fireEvent.press(screen.getByRole("button", { name: "Start" }));
+  await act(async () => { jest.advanceTimersByTime(300); });
+  if (event === "unmount") await view.unmount();
+  else {
+    await act(async () => { subscribe.mock.calls.filter(([name]) => name === event).forEach(([, callback]) => callback("background")); });
+    await act(async () => { jest.advanceTimersByTime(60000); });
+    expect(screen.queryByRole("button", { name: "Save attempt" })).toBeNull();
+    expect(screen.getByText("Attempt interrupted")).toBeTruthy();
+  }
+  expect(track.mock.calls.filter(([name]) => name === "breath_hold_abandoned")).toHaveLength(1);
+  expect(save).not.toHaveBeenCalled();
 });

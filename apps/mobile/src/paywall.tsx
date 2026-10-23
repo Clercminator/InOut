@@ -84,7 +84,7 @@ function NativePaywall({ entry = "profile", onClose, completionError }: PaywallP
   </ActionFooter> : undefined}>
     {completionError && <Copy accessibilityRole="alert">{completionError}</Copy>}
     {entry === "onboarding" ? <><View style={{ alignItems: "center" }}><PulseArtwork size={150} /></View><Label>WELCOME TO YOUR NEXT CHAPTER</Label><Title>Make this practice yours.</Title><Copy>A personal breathing coach. More ways to grow.</Copy></> : <><View style={{ alignItems: "center" }}><PulseArtwork size={96} /></View><Title>{state.pro ? "Your Pro access is ready." : "More room for your practice."}</Title></>}
-    {entry === "quota" && <Copy>Your guided allowance is used. Keep breathing with tones, or explore Pro.</Copy>}
+    {entry === "quota" && <Copy>Your guided allowance is used. Keep practicing without voice guidance, or explore Pro.</Copy>}
     {entry === "protocol" && <Copy>Unlock this protocol and make more room for your practice.</Copy>}
     {entry === "coach" && <Copy>Pro includes multiweek guided programs and continuing weekly plans. Find Your Rhythm and basic recommendations remain free.</Copy>}
     {productConfig.proChallengeIds.length > 0 && <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}><MaterialIcons accessible={false} name="emoji-events" size={26} color={colors.gold} /><Copy style={{ flex: 1 }}>More challenges for sleep, focus and consistent practice.</Copy></View>}

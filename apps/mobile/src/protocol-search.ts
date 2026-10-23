@@ -24,9 +24,13 @@ export function protocolTags(p: Protocol): IntentTag[] {
 export const normalizeSearch = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
 export function searchProtocols(protocols: readonly Protocol[], query: string, tags: readonly IntentTag[] = [], language: Language = getLanguage()) {
   const tokens = normalizeSearch(query).split(/\s+/).filter(Boolean);
-  return protocols.map((protocol, order) => {
+  const seen = new Set<string>();
+  return protocols.filter(protocol => {
+    if (seen.has(protocol.id)) return false;
+    seen.add(protocol.id); return true;
+  }).map((protocol, order) => {
     const assigned = protocolTags(protocol);
-    if (tags.length && !tags.every(tag => assigned.includes(tag))) return null;
+    if (tags.length && !tags.some(tag => assigned.includes(tag))) return null;
     const title = normalizeSearch(t(protocol.name, language));
     const purpose = normalizeSearch(t(protocol.purpose ?? "", language));
     const description = normalizeSearch(t(protocol.description ?? "", language));
@@ -46,4 +50,41 @@ export function searchProtocols(protocols: readonly Protocol[], query: string, t
     return { protocol, score, order };
   }).filter((entry): entry is NonNullable<typeof entry> => entry !== null)
     .sort((a, b) => b.score - a.score || a.order - b.order).map(entry => entry.protocol);
+}
+
+export const categories = ["Balance", "Calm & Unwind", "Energy & Focus", "Performance & Preparation", "Advanced"] as const;
+export const categoryFor = (id: string) => ({
+  "sleep-wind-down": "Calm & Unwind",
+  "post-workout-reset": "Performance & Preparation",
+  "intimacy-calm": "Calm & Unwind",
+  coherent: "Balance",
+  box: "Balance",
+  "meditation-breathing": "Calm & Unwind",
+  "traditional-yogic": "Calm & Unwind",
+  equal: "Balance",
+  "box-2": "Balance",
+  "extended-exhale": "Calm & Unwind",
+  "4-7-8": "Calm & Unwind",
+  "three-stage-breath": "Calm & Unwind",
+  "runner-rhythm": "Energy & Focus",
+  "high-intensity-cyclic": "Advanced",
+  athletic: "Performance & Preparation",
+  endurance: "Performance & Preparation",
+  swimmer: "Performance & Preparation",
+  measured: "Energy & Focus",
+  diaphragmatic: "Calm & Unwind",
+  "physiological-sigh": "Calm & Unwind",
+  "nadi-shodhana": "Energy & Focus",
+  bhramari: "Calm & Unwind",
+  "high-intensity-cyclic-alt": "Advanced",
+})[id] ?? "Balance";
+
+
+export function discoverProtocols(protocols: readonly Protocol[], options: {
+  query: string; category: string | null; tags: readonly IntentTag[]; saved: boolean;
+  isFavorite: (id: string) => boolean;
+}, language: Language = getLanguage()) {
+  return searchProtocols(protocols.filter(p => p.availability === "enabled" &&
+    (!options.saved || options.isFavorite(p.id)) && (!options.category || categoryFor(p.id) === options.category)),
+    options.query, options.tags, language);
 }

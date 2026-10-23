@@ -1,6 +1,7 @@
 import type { AnalyticsSink, ProductEvent, ProductEventProperties } from "./analytics";
 
 export interface TelemetryAdapter {
+  requestedConsent?(enabled: boolean): void;
   consent(enabled: boolean): Promise<void>;
   record(event: ProductEvent, properties?: ProductEventProperties): Promise<void>;
 }
@@ -10,11 +11,13 @@ export class TelemetrySink implements AnalyticsSink {
   private queue = Promise.resolve();
   private requested: boolean | undefined;
   private generation = 0;
+  private opened = false;
   constructor(private adapter: TelemetryAdapter) {}
   get collectionReady() { return this.ready && this.enabled; }
   setConsent(enabled: boolean) {
     if (this.requested === enabled) return this.queue;
     this.requested = enabled;
+    this.adapter.requestedConsent?.(enabled);
     const generation = ++this.generation;
     this.enabled = enabled;
     this.ready = false;
@@ -22,7 +25,7 @@ export class TelemetrySink implements AnalyticsSink {
     this.queue = this.queue.then(async () => {
       await this.adapter.consent(enabled);
       this.ready = enabled && this.enabled && generation === this.generation;
-      if (this.ready) await this.adapter.record("app_open");
+      if (this.ready && !this.opened) { await this.adapter.record("app_open"); this.opened = true; }
     }).catch(() => { this.ready = false; this.requested = undefined; });
     return this.queue;
   }

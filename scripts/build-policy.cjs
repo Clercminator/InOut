@@ -16,6 +16,8 @@ function buildPolicy(env, gates = {}, listingStatus = '', { artifactOnly = false
   }
   if (env.EXPO_PUBLIC_SUBSCRIPTION_PROVIDER && env.EXPO_PUBLIC_SUBSCRIPTION_PROVIDER !== 'revenuecat') errors.push('RevenueCat is the only implemented production subscription provider.');
   if (!store) return errors;
+  if (env.INOUT_PREVIEW === '1') errors.push('Store builds cannot use the isolated Preview identity.');
+  errors.push(...require('./firebase-policy.cjs').firebasePolicy(env));
   if (env.EXPO_PUBLIC_REVENUECAT_MODE && env.EXPO_PUBLIC_REVENUECAT_MODE !== 'store') errors.push('Store builds cannot use mock or RevenueCat Test Store mode.');
   if (env.EXPO_PUBLIC_REVENUECAT_TEST_KEY) errors.push('Remove the Test Store key from store build environments.');
   for (const [key, prefix] of [['EXPO_PUBLIC_REVENUECAT_IOS_KEY','appl_'], ['EXPO_PUBLIC_REVENUECAT_ANDROID_KEY','goog_']]) {

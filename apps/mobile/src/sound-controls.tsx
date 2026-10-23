@@ -9,14 +9,14 @@ import { useFocusEffect } from "expo-router";
 import { createAudioPreview, type PreviewPlaybackState } from "./preview-audio";
 import { useSession } from "./provider";
 import { experienceFor } from "./experience";
-import { breathPreviews, chimes, chimeDurationMs } from "./audio-library";
+import { chimes, chimeDurationMs } from "./audio-library";
 import { Button, Chip, Copy, Label, useStyles } from "./ui";
 import { startHapticPacer } from "./haptic-pacer";
 import { emitBreathHaptic, hapticOffsets } from "./breath-haptics";
 import { protocols } from "@inout/protocols";
 import { selectedAudioSample } from "./audio-sample";
 
-type PreviewKind = "breath" | "chime" | "voice" | "music" | "vibration" | "mix";
+type PreviewKind = "chime" | "voice" | "music" | "vibration" | "mix";
 
 export function SoundControls({ compact = false }: { compact?: boolean }) {
   const s = useStyles();
@@ -31,11 +31,11 @@ export function SoundControls({ compact = false }: { compact?: boolean }) {
     stop();
     const guidance = { ...settings, ...patch };
     controller.setPreferences({ ...controller.preferences, guidance,
-      audio: guidance.voice ? "voice" : guidance.nature || guidance.music ? "tones" : "silent" });
-    if (["voice", "nature", "music"].some(key => key in patch)) controller.analytics.track("audio_mode_selected");
+      audio: guidance.voice ? "voice" : guidance.music ? "tones" : "silent" });
+    if (["voice", "music"].some(key => key in patch)) controller.analytics.track("audio_mode_selected");
   };
   const toggle = (title: string, value: boolean, onValueChange: (value: boolean) => void) => <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}><Copy style={{ flex: 1 }}>{title}</Copy><Switch accessibilityLabel={title} value={value} onValueChange={onValueChange} /></View>;
-  const volume = (title: string, key: "voiceVolume" | "natureVolume" | "musicVolume") => <><Label>{title}</Label><View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>{[0, 0.25, 0.5, 0.7, 1].map(value => <Chip key={value} title={`${Math.round(value * 100)}%`} selected={settings[key] === value} onPress={() => update({ [key]: value })} />)}</View></>;
+  const volume = (title: string, key: "voiceVolume" | "musicVolume") => <><Label>{title}</Label><View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>{[0, 0.25, 0.5, 0.7, 1].map(value => <Chip key={value} title={`${Math.round(value * 100)}%`} selected={settings[key] === value} onPress={() => update({ [key]: value })} />)}</View></>;
   const [previewState, setPreviewState] = useState<PreviewPlaybackState | "vibration" | null>(null);
   const [previewKind, setPreviewKind] = useState<PreviewKind | null>(null);
   const [error, setError] = useState("");
@@ -69,14 +69,13 @@ export function SoundControls({ compact = false }: { compact?: boolean }) {
     audioPreview.current = preview;
     const track = selectedMusicTrack(settings.musicId);
     const clips = kind === "mix" ? selectedAudioSample(controller.preferences) : [];
-    if (kind === "breath") clips.push({ source: breathPreviews[e.breathSound], volume: settings.natureVolume, at: 0 });
     if (kind === "chime") clips.push({ source: chimes[e.chime === "off" ? "bell" : e.chime], volume: e.celebrationVolume, at: 0 });
     if (kind === "music" && track) clips.push({ source: track.source, volume: settings.musicVolume, at: 0 });
     if (kind === "voice" && bank) [0, 2].forEach((index, i) => {
       const source = bank.cues[index];
       if (source !== undefined) clips.push({ source, volume: settings.voiceVolume, at: i * 3000 });
     });
-    if (!clips.length) { stop(); setError(kind === "mix" ? "Silence selected. Enable voice, nature or music to hear a sample." : "This sample is unavailable."); return; }
+    if (!clips.length) { stop(); setError(kind === "mix" ? "Silence selected. Enable voice or music to hear a sample." : "This sample is unavailable."); return; }
     if (clips.every(clip => clip.volume === 0)) { stop(); setError("Raise the preview volume to hear this sample."); return; }
     await preview.start(clips, kind === "mix" ? 10000 : kind === "chime" ? chimeDurationMs[e.chime === "off" ? "bell" : e.chime] + 300 : kind === "music" ? 15000 : 6200);
   };
@@ -124,14 +123,6 @@ export function SoundControls({ compact = false }: { compact?: boolean }) {
       {volume("VOICE VOLUME", "voiceVolume")}
       {previewControl("voice", "Preview voice", () => void preview("voice"))}
     </>}
-    <Label>NATURAL BREATHING SOUNDS</Label>
-    {toggle("Natural breathing sounds", settings.nature, nature => update({ nature }))}
-    {settings.nature && <>
-      <View style={s.row}>{(["air", "ocean", "warm"] as const).map(breathSound => <Chip key={breathSound} title={breathSound === "air" ? "Air" : breathSound === "ocean" ? "Ocean" : "Warm"} selected={e.breathSound === breathSound} onPress={() => { stop(); controller.updateExperience({ breathSound }); }} />)}</View>
-      {volume("NATURE VOLUME", "natureVolume")}
-      {previewControl("breath", "Preview breath sounds · 6 sec", () => void preview("breath"))}
-      <Copy style={s.small}>Inhale, a quiet hold, exhale, then rest. Preview uses a short sample rhythm. During practice, sound follows your protocol.</Copy>
-    </>}
     {musicTracks.length > 0 && <>
       <Label>BACKGROUND MUSIC</Label>
       {toggle("Background music", settings.music, music => update({ music }))}
@@ -157,7 +148,7 @@ export function SoundControls({ compact = false }: { compact?: boolean }) {
       <View style={s.row}>{[0.2, 0.45, 0.7, 1].map(celebrationVolume => <Chip key={celebrationVolume} title={`${Math.round(celebrationVolume * 100)}%`} selected={e.celebrationVolume === celebrationVolume}
         onPress={() => { stop(); controller.updateExperience({ celebrationVolume }); }} />)}</View>
       {e.chime !== "off" && controller.preferences.audio !== "silent" && previewControl("chime", "Preview chime", () => void preview("chime"))}
-      <Copy style={s.small}>Audio uses your phone’s media volume. Turn off voice, music and nature sounds to practice quietly. Quiet celebrations mute reward sounds and vibration. Previews play only when requested.</Copy>
+      <Copy style={s.small}>Audio uses your phone’s media volume. Turn off voice and music to practice quietly. Quiet celebrations mute reward sounds and vibration. Previews play only when requested.</Copy>
     </>}
     {controller.preferences.haptics && <Copy style={s.small}>No vibration? Your phone may suppress touch feedback in system or battery settings. Some hardware does not support these effects.</Copy>}
   </View>;

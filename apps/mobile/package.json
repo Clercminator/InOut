@@ -46,7 +46,8 @@
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "~4.26.0",
     "react-native-view-shot": "5.1.0",
-    "react-native-worklets": "0.10.1"
+    "react-native-worklets": "0.10.1",
+    "promise": "8.3.0"
   },
   "devDependencies": {
     "@testing-library/react-native": "^14.0.1",
@@ -63,7 +64,8 @@
     "ios": "expo run:ios",
     "test": "jest --runInBand",
     "typecheck": "tsc --noEmit",
-    "eas-build-pre-install": "node ../../scripts/eas-release-check.mjs"
+    "eas-build-pre-install": "node ../../scripts/eas-release-check.mjs",
+    "eas-build-on-success": "node ../../scripts/eas-build-receipt.mjs"
   },
   "private": true
 }

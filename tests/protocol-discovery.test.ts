@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { protocols, catalogProtocols, planFor } from "../packages/protocols/src/index";
 import { totalDuration } from "../packages/breathing-engine/src/index";
-import { protocolTags, searchProtocols } from "../apps/mobile/src/protocol-search";
+import { protocolTags, searchProtocols, discoverProtocols } from "../apps/mobile/src/protocol-search";
 import { evidenceFor, evidenceReferences, presentationFor } from "../apps/mobile/src/protocol-evidence";
 import { t } from "../apps/mobile/src/i18n";
 import { EntitlementService } from "../apps/mobile/src/entitlements";
@@ -56,4 +56,17 @@ test("wellness protocols stay free of research panels and unsupported endorsemen
   assert.equal(protocols.some(p => presentationFor(p).category === "Expert-recommended"), false);
   for (const query of ["sleeping", "insomnio", "insônia", "studying", "meditation", "mindfulness", "nervousness", "nervosismo"])
     assert.ok(searchProtocols(catalogProtocols, query).length > 0, query);
+});
+
+
+test("purposes use OR, with category, text and Saved as independent AND restrictions", () => {
+  const options = { query: "", category: null, tags: ["sleep", "fitness"] as const, saved: false, isFavorite: (id: string) => id === "post-workout-reset" };
+  const results = discoverProtocols(catalogProtocols, options);
+  assert.ok(results.some(p => p.id === "sleep-wind-down"));
+  assert.ok(results.some(p => p.id === "post-workout-reset"));
+  assert.deepEqual(discoverProtocols(catalogProtocols, { ...options, saved: true }).map(p => p.id), ["post-workout-reset"]);
+  assert.equal(discoverProtocols(catalogProtocols, { ...options, saved: true, category: "Calm & Unwind" }).length, 0);
+  assert.equal(discoverProtocols(catalogProtocols, { ...options, query: "nonsense" }).length, 0);
+  assert.ok(discoverProtocols(catalogProtocols, { ...options, query: "sueño", category: "Calm & Unwind" }).some(p => p.id === "sleep-wind-down"));
+  assert.equal(discoverProtocols([...catalogProtocols, ...catalogProtocols], { ...options, tags: [] }).length, catalogProtocols.filter(p => p.availability === "enabled").length);
 });

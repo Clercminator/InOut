@@ -7,7 +7,7 @@ import { goalContent, journeyFor, practiceGoals, selectedGoals, toggleGoal } fro
 import { useTheme } from "./theme";
 import { GoalMark } from "./onboarding-art";
 import { t } from "./i18n";
-export function GoalPicker() {
+export function GoalPicker({ showPrimary = true }: { showPrimary?: boolean }) {
   const controller = useSession();
   const { colors } = useTheme();
   const journey = journeyFor(controller.preferences);
@@ -20,7 +20,7 @@ export function GoalPicker() {
       <GoalMark goal={goal} /><Copy style={{ flex: 1, fontWeight: "600" }}>{content.title}</Copy>
       <MaterialIcons accessible={false} name={selected ? "check-box" : "check-box-outline-blank"} size={22} color={colors.accent} />
     </Pressable>;
-  })}{goals.length > 0 && <><Label>PRIMARY GOAL · OPTIONAL</Label>
+  })}{showPrimary && goals.length > 0 && <><Label>PRIMARY GOAL · OPTIONAL</Label>
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
       {goals.map(goal => <Chip key={goal} title={goalContent[goal].title} selected={journey.primaryGoal === goal} onPress={() => {
         const primaryGoal = journey.primaryGoal === goal ? undefined : goal;

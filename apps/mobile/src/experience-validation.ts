@@ -10,7 +10,7 @@ export function validateExperience(value: Experience) {
   const choices = {
     avatar: ["spa", "air", "nightlight", "wb-sunny"], palette: ["sky", "mint", "dusk", "sunrise"],
     texture: ["glass", "halo", "orbit"], background: ["midnight", "deep-sea", "plum"], frame: ["simple", "glow", "laurel"],
-    celebration: ["quiet", "gentle", "playful"], celebrationStyle: ["sparks", "confetti"], chime: ["bell", "bloom", "completion-1", "completion-2", "off"], breathSound: ["air", "ocean", "warm"],
+    celebration: ["quiet", "gentle", "playful"], celebrationStyle: ["sparks", "confetti"], chime: ["bell", "bloom", "completion-1", "completion-2", "off"],
   };
   for (const [key, options] of Object.entries(choices)) if (!options.includes(value[key as keyof Experience] as string)) fail();
   if (!Number.isInteger(value.weeklyGoal) || value.weeklyGoal < 2 || value.weeklyGoal > 7) fail();
@@ -26,7 +26,7 @@ export function validateExperience(value: Experience) {
       !availableForPractice(ritual.protocol)) fail();
     ids.add(ritual.id);
     validatePlan(planFor(ritual.protocol, ritual.cycles));
-    for (const key of ["palette", "texture", "background", "breathSound"] as const) if (!choices[key].includes(ritual.appearance?.[key])) fail();
+    for (const key of ["palette", "texture", "background"] as const) if (!choices[key].includes(ritual.appearance?.[key])) fail();
     if (!Number.isFinite(ritual.appearance?.guidanceVolume) || ritual.appearance.guidanceVolume < 0 || ritual.appearance.guidanceVolume > 1) fail();
   }
   if (value.favoriteRitualId !== undefined && !ids.has(value.favoriteRitualId)) fail();

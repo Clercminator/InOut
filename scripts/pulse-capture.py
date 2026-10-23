@@ -1,4 +1,4 @@
-"""Capture unaltered Android screenshots and an isolated animation-lab recording."""
+"""Capture the isolated development app; frame metrics are not release performance evidence."""
 import json
 import re
 import subprocess
@@ -9,7 +9,8 @@ from pathlib import Path
 
 OUT = Path('artifacts/pulse-native')
 OUT.mkdir(parents=True, exist_ok=True)
-APP = 'com.imrtech.inout'
+APP = 'com.imrtech.inout.preview'
+SCHEME = 'inout-preview'
 
 def adb(*args):
     return subprocess.check_output(['adb', *args], timeout=40).decode(errors='replace')
@@ -46,7 +47,7 @@ def shot(name):
     (OUT / (name + '.png')).write_bytes(subprocess.check_output(['adb', 'exec-out', 'screencap', '-p']))
 
 def route(path):
-    adb('shell', 'am', 'start', '-W', '-a', 'android.intent.action.VIEW', '-d', 'inout://' + path, APP)
+    adb('shell', 'am', 'start', '-W', '-a', 'android.intent.action.VIEW', '-d', SCHEME + '://' + path, APP)
     time.sleep(2)
 
 try:
@@ -56,7 +57,8 @@ try:
     adb('shell', 'cmd', 'uimode', 'night', 'yes')
     adb('shell', 'am', 'force-stop', 'com.android.launcher3')
     adb('install', '-r', sys.argv[1])
-    adb('shell', 'am', 'start', '-n', APP + '/.MainActivity')
+    adb('reverse', 'tcp:8081', 'tcp:8081')
+    adb('shell', 'am', 'start', '-W', '-a', 'android.intent.action.VIEW', '-d', SCHEME + '://expo-development-client/?url=http%3A%2F%2F127.0.0.1%3A8081', APP)
     tap('Personalize InOut')
     tap('Reduce stress & anxiety')
     tap('Continue', True)

@@ -15,7 +15,7 @@ import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
 import { useSession } from "./session-context";
 import { breathingGuidance } from "./breathing-guidance";
 import { experienceFor } from "./experience";
-import { breathTextures, humTexture, chimes } from "./audio-library";
+import { chimes } from "./audio-library";
 import { startHapticPacer } from "./haptic-pacer";
 import { emitBreathHaptic, hapticOffsets } from "./breath-haptics";
 
@@ -28,10 +28,9 @@ export function NativeSessionEffects() {
   const settings = audioSettings(controller.preferences);
   const voiceBank = selectedVoice(controller.preferences);
   const voiceEnabled = !controller.sessionSilent && settings.voice && session?.voiceAllowed !== false && !!voiceBank;
-  const natureEnabled = !controller.sessionSilent && settings.nature;
   const track = !controller.sessionSilent && settings.music ? selectedMusicTrack(settings.musicId) : undefined;
-  const audio = voiceEnabled ? "voice" : natureEnabled || track ? "tones" : "silent";
-  const { breathSound, chime, celebrationVolume } = experienceFor(controller.preferences);
+  const audio = voiceEnabled ? "voice" : track ? "tones" : "silent";
+  const { chime, celebrationVolume } = experienceFor(controller.preferences);
   const players = useRef<Array<AudioPlayer | undefined>>([]);
   const loadedVoicePlayers = useRef(new Set<AudioPlayer>());
   const focus = useRef<AudioPlayer | null>(null);
@@ -39,9 +38,6 @@ export function NativeSessionEffects() {
   const cue = useRef("");
   const announced = useRef("");
   const deliveredHaptic = useRef({ lastKey: "" });
-  const textureLoops = useRef<Partial<Record<"in" | "out" | "hum", AudioLoop>>>({});
-  const activeTexture = useRef<"in" | "out" | "hum" | null>(null);
-  const textureGain = useRef(0);
   const musicLoop = useRef<ReturnType<typeof loopedAudio> | null>(null);
   const [appActive, setAppActive] = useState(AppState.currentState === "active");
   const [audioRecovery, setAudioRecovery] = useState(0);
@@ -279,70 +275,6 @@ export function NativeSessionEffects() {
       AccessibilityInfo.announceForAccessibility(t(`${guidance.label}${view.phase.nostril ? `, ${view.phase.nostril} nostril` : ""}`));
     }
   }, [running, session?.id, view?.cueKey]);
-
-  // Keep short nature recordings looping with a small overlap instead of restarting a decoder per breath.
-  useEffect(() => {
-    if (!natureEnabled || session?.stage !== "active") return;
-    const sources = { ...breathTextures[breathSound], hum: humTexture };
-    const loops: Partial<Record<"in" | "out" | "hum", AudioLoop>> = {};
-    try {
-      for (const key of ["in", "out", "hum"] as const) loops[key] = loopedAudio(sources[key], () => activeTexture.current === key ? textureGain.current : 0, audioFailed, 120, false);
-    } catch { Object.values(loops).forEach(loop => loop()); audioFailed(); return; }
-    textureLoops.current = loops;
-    return () => {
-      activeTexture.current = null;
-      textureGain.current = 0;
-      Object.values(loops).forEach(loop => loop());
-      textureLoops.current = {};
-    };
-  }, [natureEnabled, breathSound, session?.id, session?.stage, controller, audioRecovery]);
-
-  useEffect(() => {
-    if (!running || !natureEnabled || !audioReady || !view || !guidance?.texture || !appActive) return;
-    const loop = textureLoops.current[guidance.texture];
-    if (!loop) return;
-    let disposed = false;
-    const update = () => {
-      if (disposed) return false;
-      const current = controller.view();
-      if (!current || controller.current?.id !== session?.id ||
-        controller.current?.engine.status !== "running" || current.cueKey !== view.cueKey || AppState.currentState !== "active") {
-        activeTexture.current = null;
-        textureGain.current = 0;
-        loop.pause();
-        return false;
-      }
-      const currentGuidance = breathingGuidance(phases, current.phaseIndex, current.phaseElapsedMs);
-      const currentTexture = currentGuidance.texture;
-      const gain = currentGuidance.envelope * audioSettings(controller.preferences).natureVolume;
-      if (currentTexture !== activeTexture.current) {
-        Object.entries(textureLoops.current).forEach(([key, other]) => {
-          if (key !== currentTexture) other?.pause();
-        });
-        activeTexture.current = currentTexture;
-        textureGain.current = gain;
-        if (currentTexture) textureLoops.current[currentTexture]?.resume();
-      } else textureGain.current = gain;
-      return true;
-    };
-    update();
-    const fade = setInterval(update, 32);
-    return () => {
-      disposed = true;
-      clearInterval(fade);
-      if (activeTexture.current === guidance.texture) {
-        activeTexture.current = null;
-        textureGain.current = 0;
-      }
-      loop.pause();
-    };
-  }, [running, session?.id, view?.cueKey, natureEnabled, audioReady, appActive, controller, breathSound]);
-
-  useEffect(() => {
-    if (activeTexture.current && running && appActive) {
-      textureGain.current = (guidance?.envelope ?? 0) * settings.natureVolume;
-    }
-  }, [running, appActive, view?.phaseElapsedMs, natureEnabled, settings.natureVolume]);
 
   return null;
 }

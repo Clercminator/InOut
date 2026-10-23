@@ -1,6 +1,7 @@
 import { emptyFitness, validateFitness, type FitnessStore } from "./personal-challenges";
+import { validateBreathHoldHistory, type BreathHoldAttempt } from "./breath-hold-timer";
 import { emptyDailyReset, validateDailyReset, creditDailyReset, type DailyResetState } from "./daily-reset";
-import { validateGuidance } from "./audio-preferences";
+import { validateGuidance, migrateAudioPreferences } from "./audio-preferences";
 import { languagePreference } from "./language-preference";
 import { emptyTestStore, validateTestStore, appendAttempt, stateShiftAttempt, selectDaily, type TestStore, type ChallengeAttempt, type PendingTest, type TestId } from "./challenge-tests";
 import { validateManagedShares, type ManagedShare } from "./share-links";
@@ -39,6 +40,21 @@ export const defaultPreferences: Preferences = {
   pro: false,
 };
 export class LocalStore {
+  breathHoldHistory(): BreathHoldAttempt[] {
+    const row = this.db.getFirstSync<{ payload: string }>("SELECT payload FROM settings WHERE key='breath-hold-timer-v1'");
+    const value: unknown = row ? JSON.parse(row.payload) : [];
+    validateBreathHoldHistory(value);
+    return value;
+  }
+  saveBreathHold(attempt: BreathHoldAttempt) {
+    this.db.withTransactionSync(() => {
+      const history = this.breathHoldHistory();
+      if (history.some(a => a.id === attempt.id)) return;
+      const next = [attempt, ...history];
+      validateBreathHoldHistory(next);
+      this.db.runSync("INSERT INTO settings(key,payload) VALUES('breath-hold-timer-v1',?) ON CONFLICT(key) DO UPDATE SET payload=excluded.payload", JSON.stringify(next));
+    });
+  }
   constructor(private db: Database) {
     const version =
       db.getFirstSync<{ user_version: number }>("PRAGMA user_version")
@@ -261,7 +277,7 @@ export class LocalStore {
       "SELECT payload FROM settings WHERE key='preferences'",
     );
     if (!row) return { ...defaultPreferences, ...languagePreference(defaultPreferences), onboardingComplete: !!this.db.getFirstSync("SELECT id FROM sessions LIMIT 1") };
-    const p = JSON.parse(row.payload);
+    const p = migrateAudioPreferences(JSON.parse(row.payload));
     if (p.journey !== undefined) validateJourney(p.journey);
     this.validateWelcomeEmail(p);
     validateGuidance(p);
@@ -278,15 +294,15 @@ export class LocalStore {
       (p.onboardingComplete !== undefined && typeof p.onboardingComplete !== "boolean") ||
       (p.freeAdsNoticeSeen !== undefined && typeof p.freeAdsNoticeSeen !== "boolean") ||
       (p.pro !== undefined && typeof p.pro !== "boolean") ||
-      (p.pacerTheme !== undefined && !["default", "dark-muted", "sky", "neon", "mono", "mustard", "light", "ember", "aurora", "matcha"].includes(p.pacerTheme))
+      (p.pacerTheme !== undefined && !["default", "dark-muted", "sky", "neon", "mono", "mustard", "light", "ember", "aurora", "matcha"].includes(p.pacerTheme ?? ""))
     )
       throw new Error("Saved settings could not be read.");
     return {
       ...p,
       showSafetyReminders: p.showSafetyReminders !== false,
       telemetryEnabled: p.telemetryEnabled === true,
-      theme: ["system", "light", "dark"].includes(p.theme) ? p.theme : "system",
-      pacerTheme: ["default", "dark-muted", "sky", "neon", "mono", "mustard", "light", "ember", "aurora", "matcha"].includes(p.pacerTheme) ? p.pacerTheme : "default",
+      theme: ["system", "light", "dark"].includes(p.theme ?? "") ? p.theme : "system",
+      pacerTheme: ["default", "dark-muted", "sky", "neon", "mono", "mustard", "light", "ember", "aurora", "matcha"].includes(p.pacerTheme ?? "") ? p.pacerTheme : "default",
       ...languagePreference(p),
       favoriteProtocolIds: p.favoriteProtocolIds ?? [],
       // A pre-funnel installation with saved preferences is not forced through onboarding again.
@@ -295,6 +311,7 @@ export class LocalStore {
     };
   }
   savePreferences(p: Preferences) {
+    p = migrateAudioPreferences(p);
     if (p.showSafetyReminders !== undefined && typeof p.showSafetyReminders !== "boolean") throw Error("Saved settings could not be read.");
     this.validateWelcomeEmail(p);
     validateGuidance(p);

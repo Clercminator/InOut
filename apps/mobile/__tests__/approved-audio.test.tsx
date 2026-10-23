@@ -6,7 +6,7 @@ import { selectedAudioSample } from "../src/audio-sample";
 test.each([[true, true], [true, false], [false, true], [false, false]])("selected sample respects voice=%s music=%s in all locales", (voice, music) => {
   for (const language of ["en", "es", "pt"] as const) {
     const preferences: Preferences = { audio: "silent", haptics: false, keepAwake: false,
-      guidance: { voice, music, nature: false, language, voiceId: "female", voiceVolume: 0.25, musicVolume: 0.5 } };
+      guidance: { voice, music, language, voiceId: "female", voiceVolume: 0.25, musicVolume: 0.5 } };
     const clips = selectedAudioSample(preferences);
     expect(clips).toHaveLength((voice ? 2 : 0) + (music ? 1 : 0));
     if (voice) {

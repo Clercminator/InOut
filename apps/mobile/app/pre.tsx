@@ -99,7 +99,7 @@ export default function Pre() {
       {intense && <CyclicOverview compact />}
       <Copy accessibilityRole="header" style={{ fontSize: 24, lineHeight: 32, fontWeight: "700" }}>How tense are you right now?</Copy>
       <GuidanceAllowance />
-      {controller.preferences.audio === "voice" && !controller.guidedAccess().allowed && <Copy>Your guided allowance is used. This session will use tones. You can still breathe for free.</Copy>}
+      {controller.preferences.audio === "voice" && !controller.guidedAccess().allowed && <Copy>Your guided allowance is used. You can still practice without voice guidance for free.</Copy>}
       <Copy>Optional check-in. You can skip it and start breathing.</Copy>
       <StateScale value={rating} onChange={setRating} />
       <Card>

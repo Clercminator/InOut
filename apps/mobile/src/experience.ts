@@ -7,7 +7,7 @@ import { challengeCatalog, definitionForState, type UserChallenge } from "./chal
 export const defaultExperience: Experience = {
   name: "", bio: "", intention: "A moment for myself", avatar: "spa", pinnedBadges: [], weeklyGoal: 3,
   palette: "sky", texture: "glass", background: "midnight", frame: "simple",
-  celebration: "gentle", celebrationStyle: "sparks", chime: "bell", breathSound: "air",
+  celebration: "gentle", celebrationStyle: "sparks", chime: "bell",
   guidanceVolume: 0.7, celebrationVolume: 0.45, rituals: [],
 };
 export const experienceFor = (preferences: Preferences): Experience => ({ ...defaultExperience, ...preferences.experience });

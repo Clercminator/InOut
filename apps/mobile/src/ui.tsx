@@ -4,8 +4,8 @@ import { Pressable } from "./localized-native";
 import { t, protocolTitle, locale, message } from "./i18n";
 import { isCyclic } from "@inout/protocols";
 import { useLanguage } from "./use-language";
-import React, { useState, type PropsWithChildren } from "react";
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View, type TextProps, type ViewStyle } from "react-native";
+import React, { useEffect, useRef, useState, type PropsWithChildren } from "react";
+import { AccessibilityInfo, Animated, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View, type TextProps, type ViewStyle } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
@@ -280,42 +280,55 @@ export function StateScale({
   timing?: string;
 }) {
   const { colors: c } = useTheme();
-  const s = useStyles();
   useLanguage();
-  return (
-    <Card style={s.stateCard}>
-      <View style={s.row}>
-        <View>
-          <Label>CURRENT STATE</Label>
-          <Copy style={s.subtitle}>{timing}</Copy>
+  const [width, setWidth] = useState(1);
+  const [reduced, setReduced] = useState(true);
+  useEffect(() => {
+    let mounted = true;
+    void AccessibilityInfo.isReduceMotionEnabled().then(value => { if (mounted) setReduced(value); }).catch(() => {});
+    const listener = AccessibilityInfo.addEventListener("reduceMotionChanged", setReduced);
+    return () => { mounted = false; listener.remove(); };
+  }, []);
+  const progress = useRef(new Animated.Value(value === null ? 0 : (value - 1) / 9)).current;
+  useEffect(() => {
+    const target = value === null ? 0 : (value - 1) / 9;
+    if (reduced) { progress.setValue(target); return; }
+    const animation = Animated.timing(progress, { toValue: target, duration: 120, useNativeDriver: false });
+    animation.start();
+    return () => animation.stop();
+  }, [value, progress, reduced]);
+  const adjust = (direction: number) => onChange(value === null ? 1 : Math.max(1, Math.min(10, value + direction)));
+  const select = (x: number) => onChange(Math.max(1, Math.min(10, Math.round(Math.max(0, x - 12) / Math.max(1, width - 24) * 9) + 1)));
+  return <Card>
+    <View style={{ flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 12, justifyContent: "space-between" }}>
+      <View style={{ flexShrink: 1 }}><Label>CURRENT STATE</Label><Copy>{timing}</Copy></View>
+      <Copy translate={false} style={{ fontSize: 36, lineHeight: 46, fontWeight: "700", color: c.accent }}>{value === null ? "—" : value}<Copy translate={false}> / 10</Copy></Copy>
+    </View>
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+      <IconButton icon="remove" title="Lower tension rating" onPress={() => adjust(-1)} />
+      <View accessibilityRole="adjustable" accessible accessibilityLabel={t("Tension rating")}
+        accessibilityHint={t("Choose 1 for very relaxed or 10 for very tense.")}
+        accessibilityValue={{ min: 1, max: 10, ...(value === null ? { text: t("Not selected") } : { now: value, text: `${value} / 10` }) }}
+        accessibilityActions={[{ name: "increment", label: t("Higher tension rating") }, { name: "decrement", label: t("Lower tension rating") }]}
+        onAccessibilityAction={event => { if (event.nativeEvent.actionName === "increment") adjust(1); if (event.nativeEvent.actionName === "decrement") adjust(-1); }}
+        onLayout={event => setWidth(event.nativeEvent.layout.width)}
+        onStartShouldSetResponder={() => true} onMoveShouldSetResponder={() => true}
+        onResponderGrant={event => select(event.nativeEvent.locationX)} onResponderMove={event => select(event.nativeEvent.locationX)}
+        style={{ flex: 1, height: 52, justifyContent: "center", paddingHorizontal: 12 }}>
+        <View pointerEvents="none" style={{ height: 4, backgroundColor: c.border, borderRadius: 2 }}>
+          <Animated.View style={{ height: 4, backgroundColor: c.accent, width: progress.interpolate({ inputRange: [0, 1], outputRange: ["0%", "100%"] }) }} />
+          {value !== null && <Animated.View style={{ position: "absolute", left: progress.interpolate({ inputRange: [0, 1], outputRange: ["0%", "100%"] }), marginLeft: -11, top: -9, width: 22, height: 22, borderRadius: 11, backgroundColor: c.accent }} />}
         </View>
-        <Copy style={s.rating}>
-          {value === null ? "—" : String(value).padStart(2, "0")}
-          <Copy> / 10</Copy>
-        </Copy>
       </View>
-      <View style={s.scale}>
-        {Array.from({ length: 10 }, (_, index) => index + 1).map((n) => (
-          <Pressable
-            key={n}
-            accessibilityRole="radio"
-            accessibilityLabel={t(`${n} of 10${n === 1 ? ", very relaxed" : n === 10 ? ", very tense" : ""}`)}
-            accessibilityState={{ selected: value === n }}
-            onPress={() => onChange(n)}
-            style={[s.scaleCell, value === n && { backgroundColor: c.accent, borderColor: c.accent }]}
-          >
-            <Copy style={{ fontFamily: f.heading, color: value === n ? c.onAccent : c.text }}>{n}</Copy>
-          </Pressable>
-        ))}
-      </View>
-      <View style={s.row}>
-        <Copy style={s.small}>1 · Very relaxed</Copy>
-        <Copy style={s.small}>10 · Very tense</Copy>
-      </View>
-      <Copy style={s.stateHint}>A quick self-report. There is no right answer.</Copy>
-    </Card>
-  );
+      <IconButton icon="add" title="Higher tension rating" onPress={() => adjust(1)} />
+    </View>
+    <View style={{ flexDirection: "row", gap: 16, justifyContent: "space-between" }}>
+      <Copy style={{ flex: 1, fontSize: 13 }}>1 · Very relaxed</Copy><Copy style={{ flex: 1, fontSize: 13, textAlign: "right" }}>10 · Very tense</Copy>
+    </View>
+    <Copy style={{ fontSize: 13 }}>Optional. Choose a number or skip this check-in.</Copy>
+  </Card>;
 }
+
 export function ProtocolRow({
   protocol,
   purpose,
@@ -431,27 +444,6 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
     lineHeight: 76,
     fontVariant: ["tabular-nums"],
   },
-  scale: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  scaleCell: {
-    borderWidth: 1,
-    borderColor: c.border,
-    flexGrow: 1,
-    flexBasis: "16%",
-    minWidth: 48,
-    minHeight: 48,
-    backgroundColor: c.raised,
-    borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  stateCard: {
-    borderWidth: 1,
-    borderColor: c.accent + "2e",
-    shadowColor: c.blue,
-    shadowOpacity: 0.18,
-    shadowRadius: 18,
-    elevation: 4,
-  },
   onboardingTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   onboardingBody: { flex: 1, justifyContent: "center", gap: 14 },
   onboardingIcon: { width: 76, height: 76, borderRadius: 22, backgroundColor: c.raised, alignItems: "center", justifyContent: "center" },
@@ -473,7 +465,6 @@ const createStyles = (c: ThemeColors) => StyleSheet.create({
   mixOption: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: c.border },
   mixOptionActive: { backgroundColor: c.accent + "18" },
   mixNumber: { width: 28, height: 28, borderRadius: 8, backgroundColor: c.raised, alignItems: "center", justifyContent: "center" },
-  stateHint: { color: c.secondaryText, textAlign: "center", fontSize: 12 },
   flowHeader: {
     backgroundColor: c.lowest,
     borderLeftWidth: 3,

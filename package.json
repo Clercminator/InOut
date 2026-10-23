@@ -10,7 +10,7 @@
     "start": "npm run start -w @inout/mobile --",
     "typecheck": "tsc --noEmit -p apps/mobile/tsconfig.json && tsc -p apps/web/tsconfig.json && tsc -p supabase/tsconfig.json",
     "test": "tsx --test tests/*.test.ts",
-    "verify": "npm run locales:check && npm run release:pages && npm run lint:web && npm run typecheck && npm test && npm run test:mobile",
+    "verify": "npm run parity:check && npm run locales:check && npm run release:pages && npm run lint:web && npm run typecheck && npm test && npm run test:mobile",
     "lint:web": "eslint --config eslint.web.config.mjs apps/web/site-content.mjs apps/web/src/privacy-request.ts scripts/build-public-pages.mjs scripts/build-shared-web.mjs supabase/functions/inout-privacy",
     "test:mobile": "npm test -w @inout/mobile",
     "release:check": "node scripts/check-release.mjs",
@@ -19,7 +19,8 @@
     "start:go:tunnel": "npm run start:go -- --tunnel",
     "locales:build": "node scripts/build-locales.cjs",
     "locales:check": "node scripts/build-locales.cjs --check",
-    "start:preview": "node scripts/start-preview.cjs"
+    "start:preview": "node scripts/start-preview.cjs",
+    "parity:check": "node scripts/check-parity.mjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.5.8",

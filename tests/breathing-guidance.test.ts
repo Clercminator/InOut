@@ -12,15 +12,11 @@ test("all nine protocols keep the visual breath continuous across every phase an
       const end = breathingGuidance(phases, i, phases[i].durationMs);
       const next = breathingGuidance(phases, (i + 1) % phases.length, 0);
       assert.equal(end.volume, next.volume, `${protocol.id}: ${i} boundary`);
-      assert.equal(begin.envelope, 0);
-      assert.ok(end.envelope < 1e-9);
       for (let ms = 0; ms < phases[i].durationMs; ms += 100) {
         const g = breathingGuidance(phases, i, ms);
         assert.ok(g.volume >= 0 && g.volume <= 1);
         if (g.holding) {
           assert.equal(g.volume, begin.volume);
-          assert.equal(g.texture, null);
-          assert.equal(g.envelope, 0);
         }
       }
     }

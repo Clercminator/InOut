@@ -1,3 +1,4 @@
+import { firebaseEnv } from "./firebase-fixture";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
@@ -24,7 +25,7 @@ test("release fails closed for test providers, mocks, demo ads and open gates; a
   assert.ok(buildPolicy({ EXPO_PUBLIC_SUBSCRIPTION_PROVIDER: "test" }).length);
   assert.ok(buildPolicy({ EXPO_PUBLIC_DEV_PRO: "true" }).length);
   assert.ok(buildPolicy({ EAS_BUILD_PROFILE: "store-test" }).length);
-  const candidate = { EAS_BUILD_PROFILE: "store-test", EXPO_PUBLIC_EAS_PROJECT_ID: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", EXPO_PUBLIC_REVENUECAT_IOS_KEY: "appl_testfixture", EXPO_PUBLIC_REVENUECAT_ANDROID_KEY: "goog_testfixture", EXPO_PUBLIC_ADS_MODE: "test" };
+  const candidate = { ...firebaseEnv, EAS_BUILD_PROFILE: "store-test", EXPO_PUBLIC_EAS_PROJECT_ID: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", EXPO_PUBLIC_REVENUECAT_IOS_KEY: "appl_testfixture", EXPO_PUBLIC_REVENUECAT_ANDROID_KEY: "goog_testfixture", EXPO_PUBLIC_ADS_MODE: "test" };
   assert.deepEqual(buildPolicy(candidate), []);
   assert.deepEqual(buildPolicy({ ...candidate, EAS_BUILD_PLATFORM: "android", EXPO_PUBLIC_REVENUECAT_IOS_KEY: undefined }), []);
   assert.ok(buildPolicy({ ...candidate, EAS_BUILD_PLATFORM: "android", EXPO_PUBLIC_REVENUECAT_ANDROID_KEY: undefined }).length);
@@ -45,12 +46,13 @@ test("release fails closed for test providers, mocks, demo ads and open gates; a
     "android/app/build/outputs/mapping/release/**",
     "android/app/build/{outputs/native-debug-symbols,intermediates/native_symbol_tables}/release/**",
     "android/app/build/generated/sourcemaps/react/release/**",
+    "artifacts/release-receipt.json",
   ]);
   assert.deepEqual(eas.build.production.android.buildArtifactPaths, eas.build["store-test"].android.buildArtifactPaths);
   assert.equal(eas.build.production.env.INOUT_RELEASE, "1");
 });
 test("artifact generation preserves production configuration checks and does not approve release", () => {
-  const env = { EAS_BUILD_PROFILE: "production", INOUT_RELEASE: "1", INOUT_ARTIFACT_ONLY: "1", EXPO_PUBLIC_EAS_PROJECT_ID: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", EXPO_PUBLIC_REVENUECAT_IOS_KEY: "appl_testfixture", EXPO_PUBLIC_REVENUECAT_ANDROID_KEY: "goog_testfixture", EXPO_PUBLIC_ADS_MODE: "live" };
+  const env = { ...firebaseEnv, EAS_BUILD_PROFILE: "production", INOUT_RELEASE: "1", INOUT_ARTIFACT_ONLY: "1", EXPO_PUBLIC_EAS_PROJECT_ID: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", EXPO_PUBLIC_REVENUECAT_IOS_KEY: "appl_testfixture", EXPO_PUBLIC_REVENUECAT_ANDROID_KEY: "goog_testfixture", EXPO_PUBLIC_ADS_MODE: "live" };
   assert.deepEqual(buildPolicy(env, {}, "draft-commercial-v1", { artifactOnly: true }), []);
   assert.ok(buildPolicy(env, {}, "draft-commercial-v1").some((error: string) => error.includes("Commercial launch gate")));
   for (const invalid of [{ EXPO_PUBLIC_ADS_MODE: "test" }, { EXPO_PUBLIC_REVENUECAT_TEST_KEY: "test_fixture" }, { EXPO_PUBLIC_REVENUECAT_IOS_KEY: "" }, { EXPO_PUBLIC_DEV_PRO: "true" }]) {
@@ -58,7 +60,8 @@ test("artifact generation preserves production configuration checks and does not
   }
   const childEnv = { ...process.env, ...env, EXPO_NO_DOTENV: "1" };
   const artifact = spawnSync(process.execPath, ["scripts/eas-release-check.mjs"], { env: childEnv, encoding: "utf8" });
-  assert.equal(artifact.status, 0, artifact.stderr);
+  assert.equal(artifact.status, 1);
+  assert.match(artifact.stderr, /INOUT_RELEASE_MANIFEST/);
   const release = spawnSync(process.execPath, ["scripts/check-release.mjs"], { env: childEnv, encoding: "utf8" });
   assert.equal(release.status, 1);
   assert.match(release.stderr, /Commercial launch gate is open/);
@@ -88,6 +91,8 @@ test("unconfigured iOS Firebase modules stay out of native linking without chang
   for (const configured of [false, true]) {
     const env = { ...process.env };
     delete env.INOUT_PREVIEW;
+    delete env.INOUT_RELEASE; delete env.INOUT_STORE_TEST; delete env.EAS_BUILD_PROFILE;
+    env.GOOGLE_SERVICES_JSON = firebaseEnv.GOOGLE_SERVICES_JSON;
     if (configured) env.GOOGLE_SERVICES_PLIST = "/private/GoogleService-Info.plist";
     else delete env.GOOGLE_SERVICES_PLIST;
     const result = spawnSync(process.execPath, ["-e", "console.log(JSON.stringify(require('./apps/mobile/react-native.config.js')))"], { env, encoding: "utf8" });

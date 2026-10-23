@@ -1,0 +1,74 @@
+{
+  "platformDifferences": {
+    "apps/mobile/app/challenge-share.tsx": {
+      "sha256": "2851343a950a5f4e68d108358a95ed8c425f8e1f5c09031934e7dc1eb3f2a86e",
+      "reason": "Native share APIs differ; both share the same challenge result and count confirmed shares.",
+      "acceptance": "Both physical platforms required before nativeDeviceAcceptance."
+    },
+    "apps/mobile/app/milestone.tsx": {
+      "sha256": "7bd88c7248d2b9f2e39fc9bcd466964f94147016b61f1da3849402421bf1d5fe",
+      "reason": "Native share APIs differ; both share the same milestone image.",
+      "acceptance": "Both physical platforms required before nativeDeviceAcceptance."
+    },
+    "apps/mobile/app/result-share.tsx": {
+      "sha256": "f66b474be1487926203e759e61f177e17777b45561d2ffd31bea0f1e725c3d65",
+      "reason": "Native share APIs differ; both share the same session result.",
+      "acceptance": "Both physical platforms required before nativeDeviceAcceptance."
+    },
+    "apps/mobile/src/app-dialog.tsx": {
+      "sha256": "fa783ea56cb3c6782d73c759178c254653e78d00ed21d1aa17860fa89c35fd57",
+      "reason": "iOS waits for native Modal dismissal; Android uses a dismissal timer.",
+      "acceptance": "Both physical platforms required before nativeDeviceAcceptance."
+    },
+    "apps/mobile/src/breath-haptics.ts": {
+      "sha256": "6566411804c6aa8045eee6eba4e6262e842f9ad328a037c404e3ebac773396c5",
+      "reason": "Android uses its native haptic effects; iOS uses equivalent impact feedback.",
+      "acceptance": "Both physical platforms required before nativeDeviceAcceptance."
+    },
+    "apps/mobile/src/commercial.ts": {
+      "sha256": "be82e1f34a4f5d20da003375cf3003be0e3cb95c138ea25d5f1c4bf2c54d1d16",
+      "reason": "Native SDK availability and platform public billing keys; shared entitlement and consent services.",
+      "acceptance": "Both physical platforms required before nativeDeviceAcceptance."
+    },
+    "apps/mobile/src/monetization.ts": {
+      "sha256": "49a11b2e4ba730e7816f58d3da4a549919c61f01e5c6d076e47981aa04c39b7d",
+      "reason": "Platform AdMob IDs and billing key prefixes; identical product policy.",
+      "acceptance": "Both physical platforms required before nativeDeviceAcceptance."
+    },
+    "apps/mobile/src/onboarding-demo.tsx": {
+      "sha256": "b8bd48c06a8bd20f7ef99031680298248b98578dfdd6baaf6e1e0e1e8fe54bf7",
+      "reason": "Android blur pauses demo in addition to shared AppState handling.",
+      "acceptance": "Both physical platforms required before nativeDeviceAcceptance."
+    },
+    "apps/mobile/src/provider.tsx": {
+      "sha256": "cbb834546311e956cb561e04bbc40ed7d86fd0952916c71a372aa1d32db145c4",
+      "reason": "Android blur pauses sessions in addition to shared AppState handling.",
+      "acceptance": "Both physical platforms required before nativeDeviceAcceptance."
+    },
+    "apps/mobile/src/reminder-native.ts": {
+      "sha256": "8c2646e193da8f6b1b7cc051769b997d9651c72313fb532bf386c14c2fc299c4",
+      "reason": "Android requires notification channels; both schedule local reminders.",
+      "acceptance": "Both physical platforms required before nativeDeviceAcceptance."
+    },
+    "apps/mobile/src/session-date-picker.tsx": {
+      "sha256": "7f4f345ba9f9be2da8b983ef49c38911564a3ff69a153937ac14ef487f0b99e2",
+      "reason": "Native date-picker presentation differs; both select a local practice date.",
+      "acceptance": "Both physical platforms required before nativeDeviceAcceptance."
+    },
+    "apps/mobile/src/sound-controls.tsx": {
+      "sha256": "d6f7c996557ddb8006d7019d08b8ed4952df7e9791dd2bf116aac825b46efa33",
+      "reason": "Haptics supported on both mobile systems, unavailable on web.",
+      "acceptance": "Both physical platforms required before nativeDeviceAcceptance."
+    },
+    "apps/mobile/src/ui.tsx": {
+      "sha256": "78a8731f6c13ebb8e35b18b2e62a974ef4334cd6982ed0c3c244c77331876b4e",
+      "reason": "OS-specific keyboard avoidance preserving equivalent access to controls.",
+      "acceptance": "Both physical platforms required before nativeDeviceAcceptance."
+    },
+    "apps/mobile/src/subscription-providers/revenuecat.ts": {
+      "sha256": "b6e16836785b9435dd8dfac3774ccd370e982f55a4b8ca1f7c44603e34dd1203",
+      "reason": "StoreKit and Play offer eligibility, key prefixes and subscription management URLs differ; shared verified in_out_pro access.",
+      "acceptance": "Both physical platforms required before nativeDeviceAcceptance."
+    }
+  }
+}

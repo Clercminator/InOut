@@ -1,4 +1,5 @@
 export const productEvents = [
+  "breath_hold_timer_opened", "breath_hold_started", "breath_hold_stopped", "breath_hold_saved", "breath_hold_abandoned",
   "notification_preferences_saved", "session_reveal_viewed", "second_session_within_seven_days",
   "protocol_search_used", "protocol_search_empty", "session_interrupted",
   "first_session_started", "first_session_completed", "protocol_selected",

@@ -1,3 +1,5 @@
+import { migrateAudioPreferences } from "./audio-preferences";
+import type { BreathHoldAttempt } from "./breath-hold-timer";
 import { emptyFitness, fitnessDefinition, appendFitness, isFitnessBest, type FitnessId, type FitnessResult } from "./personal-challenges";
 import { dailyResetProtocol, dailyResetStats, emptyDailyReset } from "./daily-reset";
 import { audioSettings } from "./audio-preferences";
@@ -143,6 +145,11 @@ export class SessionController {
       this.store.enrollChallenge(id, this.entitlements.state.pro, this.now());
       if (!before || before.startedAt !== this.challenges().find(s => s.challengeId === id)?.startedAt) { this.analytics.track("challenge_started"); this.analytics.track("challenge_program_joined"); }
     });
+  }
+  breathHoldHistory() { return this.store.breathHoldHistory(); }
+  saveBreathHold(attempt: BreathHoldAttempt) {
+    // No session/reward/Coach mutation. Screen owns retry so analytics match successful saves.
+    try { this.store.saveBreathHold(attempt); return true; } catch { return false; }
   }
   private fitnessAnchor: number | null = null;
   private fitnessCache: ReturnType<typeof emptyFitness> | null = null;
@@ -689,7 +696,7 @@ export class SessionController {
   preferencesSaved = false;
   setPreferences(preferences: Preferences) {
     this.preferencesSaved = false;
-    preferences = { ...preferences, ...languagePreference(preferences) };
+    preferences = migrateAudioPreferences({ ...preferences, ...languagePreference(preferences) });
     try {
       const onboardingCompleted = !this.preferences.onboardingComplete && preferences.onboardingComplete;
       const previous = this.preferences.journey;
@@ -725,10 +732,10 @@ export class SessionController {
     const experience = experienceFor(this.preferences);
     if (this.error || !name.trim() || (!id && experience.rituals.length >= 20)) return false;
     if (!protocols.some(p => p.id === protocol.id) && !this.routines().some(r => r.protocol.id === protocol.id) && !experience.rituals.some(r => r.id === id)) return false;
-    const { palette, texture, background, breathSound, guidanceVolume } = experience;
+    const { palette, texture, background, guidanceVolume } = experience;
     const ritual: PersonalRitual = { id: id ?? this.id(), name: name.trim().slice(0, 40),
       protocol: JSON.parse(JSON.stringify(protocol)), cycles, audio: this.preferences.audio,
-      appearance: { palette, texture, background, breathSound, guidanceVolume } };
+      appearance: { palette, texture, background, guidanceVolume } };
     return this.updateExperience({ rituals: [...experience.rituals.filter(r => r.id !== ritual.id), ritual], favoriteRitualId: experience.favoriteRitualId ?? ritual.id });
   }
   removeRitual(id: string) {

@@ -1,5 +1,18 @@
 # InOut — owner acceptance and submission
 
+## October 23 development iteration: physical acceptance still open
+
+The audio cleanup, single onboarding goal collection, shared State Shift slider and Free **Challenges → Breath Hold Timer** are implemented and locally tested. Version remains 1.2.2; this iteration does not authorize a store build or submission. Detailed implementation/evidence is in `CROSS_PLATFORM_RELEASE_READINESS.md`.
+
+On **both physical Android and iOS**, check voice + music / voice only / music only / silence; voice language and track changes; pause/resume and call/headphone interruptions; chimes and haptics. Complete/resume onboarding in EN/ES/PT and confirm multiple goals survive. Check pre/post slider touch and screen-reader actions, skip, light/dark, small screens and large text. Run the Free timer, stop immediately, save/reopen history, try again, background/lock/navigate away and confirm interrupted attempts cannot save and guided statistics remain unchanged. Confirm the five timer events only after consent, no durations/IDs/ratings, withdrawal suppression, and sanitized Crashlytics delivery. Automated tests/exports do not close these checks or any release gate.
+
+
+## October 23 discovery and parity update
+
+The [cross-platform readiness report](CROSS_PLATFORM_RELEASE_READINESS.md#october-23-discovery-and-release-parity-implementation) is current for this work. Discovery and developer-route safeguards are implemented; no version was bumped, build triggered or store submission made. Both real Firebase files now exist in EAS preview/production; the matching ignored iOS plist was uploaded as a secret file variable and its presence rechecked. Both-platform configuration preflights and Expo introspection pass. DebugView, Crashlytics device delivery, final native archives and physical parity remain unverified.
+
+Before the next unified release: confirm both Firebase app records and authenticated event/crash receipt; approve the candidate; check Play and App Store build history; freeze the commit and source fingerprint; provide `INOUT_RELEASE_MANIFEST` to both EAS builds; retain and validate their artifact receipts; complete the existing seven acceptance gates and store privacy/ATT decisions. Use the exact commands and evidence matrix in the linked report. Do not interpret older references below to an absent iOS plist as current status.
+
 ## October 21 final production candidate — implementation verified, acceptance open
 
 This section supersedes earlier candidate status below. Source is **1.2.2 (Android versionCode 8)**, package/bundle ID `com.imrtech.inout`; iOS build number remains `1`. **No new signed production AAB, iOS binary, store upload or public submission was made.** `release/readiness.json` still has all seven gates false and store metadata remains a draft. The production profile retains live AdMob configuration, real RevenueCat billing and the gate checks; test profiles retain test ads. Production auto-increment is disabled so the reviewed code is built explicitly. Recheck Play/EAS availability immediately before the next build/upload.

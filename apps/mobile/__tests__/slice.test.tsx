@@ -263,7 +263,7 @@ test("history date filter and manual result preserve provenance without offering
 test("pre rating requires a deliberate selection and keeps skip available", async () => {
   await render(<Pre />);
   expect(screen.getByRole("button", { name: "Continue to safety" })).toBeDisabled();
-  await fireEvent.press(screen.getByRole("radio", { name: "7 of 10" }));
+  for (let i = 0; i < 7; i++) await fireEvent(screen.getByRole("adjustable"), "accessibilityAction", { nativeEvent: { actionName: "increment" } });
   await fireEvent.press(screen.getByRole("button", { name: "Continue to safety" }));
   await act(async () => { mockController.confirmSafety(); });
   expect(mockController.current?.pre).toBe(7);
@@ -312,7 +312,7 @@ test("post hides the prior score/comparison until an explicit answer", async () 
   expect(
     screen.getByRole("button", { name: "SEE MY STATE SHIFT  →" }),
   ).toBeDisabled();
-  await fireEvent.press(screen.getByRole("radio", { name: "3 of 10" }));
+  for (let i = 0; i < 3; i++) await fireEvent(screen.getByRole("adjustable"), "accessibilityAction", { nativeEvent: { actionName: "increment" } });
   await fireEvent.press(
     screen.getByRole("button", { name: "SEE MY STATE SHIFT  →" }),
   );
@@ -466,7 +466,10 @@ test("library filters saved routines and goals without losing navigation", async
   await fireEvent.press(screen.getByRole("button", { name: "Saved" }));
   expect(screen.getByText("Coherent Breathing")).toBeTruthy();
   expect(screen.queryByText("Box Breathing")).toBeNull();
+  await fireEvent.press(screen.getByRole("button", { name: "All" }));
+  await fireEvent.press(screen.getByLabelText("Filters, 0 active"));
   await fireEvent.press(screen.getByRole("button", { name: "Calm & Unwind" }));
+  await fireEvent.press(screen.getByText("Apply filters"));
   expect(screen.getByText("4-7-8 Breathing")).toBeTruthy();
   expect(screen.queryByText("Coherent Breathing")).toBeNull();
   await fireEvent.press(screen.getByRole("button", { name: /4-7-8 Breathing, Prepare for sleep/ }));
@@ -496,6 +499,7 @@ test("actual 17 preset catalog is visible, searchable and launches working sessi
 
   const rendered = await render(<ProtocolLibrary />);
   for (const preset of required) {
+    await fireEvent.changeText(screen.getByPlaceholderText("Search protocols"), preset.name);
     expect(screen.getByText(preset.name)).toBeTruthy();
     const protocol = visible.find((item) => item.id === preset.id)!;
     expect(protocol).toBeTruthy();

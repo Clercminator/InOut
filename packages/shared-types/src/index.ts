@@ -113,9 +113,9 @@ export interface Preferences {
     achievementNoticeLog?: Array<{ id: string; at: number }>;
   };
   guidance?: {
-    voice?: boolean; nature?: boolean; breathingVoice?: boolean; restingVoice?: boolean;
+    voice?: boolean; breathingVoice?: boolean; restingVoice?: boolean;
     voiceId?: "existing" | "female" | "male"; language?: "en" | "es" | "pt";
-    voiceVolume?: number; natureVolume?: number; musicVolume?: number;
+    voiceVolume?: number; musicVolume?: number;
     music?: boolean; musicId?: string;
   };
   telemetryEnabled?: boolean;
@@ -160,7 +160,6 @@ export interface Experience {
   celebration: "quiet" | "gentle" | "playful";
   celebrationStyle: "sparks" | "confetti";
   chime: "bell" | "bloom" | "completion-1" | "completion-2" | "off";
-  breathSound: "air" | "ocean" | "warm";
   guidanceVolume: number;
   celebrationVolume: number;
   favoriteRitualId?: string;
@@ -172,7 +171,7 @@ export interface PersonalRitual {
   protocol: Protocol;
   cycles: number;
   audio: Preferences["audio"];
-  appearance: Pick<Experience, "palette" | "texture" | "background" | "breathSound" | "guidanceVolume">;
+  appearance: Pick<Experience, "palette" | "texture" | "background" | "guidanceVolume">;
 }
 export interface SavedRoutine {
   id: string;

@@ -7,9 +7,6 @@ Breathing guidance	Guía de respiración	Orientação de respiração
 Hold and rest guidance	Guía de retención y descanso	Orientação de retenção e descanso
 VOICE VOLUME	VOLUMEN DE VOZ	VOLUME DA VOZ
 Preview voice	Escuchar voz	Ouvir voz
-NATURAL BREATHING SOUNDS	SONIDOS NATURALES DE RESPIRACIÓN	SONS NATURAIS DE RESPIRAÇÃO
-Natural breathing sounds	Sonidos naturales de respiración	Sons naturais de respiração
-NATURE VOLUME	VOLUMEN DE SONIDOS NATURALES	VOLUME DOS SONS NATURAIS
 BACKGROUND MUSIC	MÚSICA DE FONDO	MÚSICA DE FUNDO
 Background music	Música de fondo	Música de fundo
 MUSIC VOLUME	VOLUMEN DE MÚSICA	VOLUME DA MÚSICA
@@ -28,3 +25,43 @@ Could not load sharing artwork.	No se pudo cargar la imagen para compartir.	Não
 Some apps share the image without its link. Use Share invitation link to send the link separately.	Algunas apps comparten la imagen sin el enlace. Usa Compartir enlace de invitación para enviarlo por separado.	Alguns apps compartilham a imagem sem o link. Use Compartilhar link de convite para enviá-lo separadamente.
 Share invitation link	Compartir enlace de invitación	Compartilhar link de convite
 PROGRAM PROGRESS	PROGRESO DEL PROGRAMA	PROGRESSO DO PROGRAMA
+
+Clear search	Borrar búsqueda	Limpar busca
+Filters	Filtros	Filtros
+Filters, {0} active	Filtros, {0} activos	Filtros, {0} ativos
+Remove filter: {0}	Quitar filtro: {0}	Remover filtro: {0}
+Protocols found: {0}	Protocolos encontrados: {0}	Protocolos encontrados: {0}
+Choose one category and any purposes. Results match any selected purpose.	Elige una categoría y los propósitos que quieras. Los resultados coinciden con cualquiera de los propósitos seleccionados.	Escolha uma categoria e os objetivos que quiser. Os resultados correspondem a qualquer objetivo selecionado.
+Categories	Categorías	Categorias
+Purposes	Propósitos	Objetivos
+Apply filters	Aplicar filtros	Aplicar filtros
+Clear filters	Borrar filtros	Limpar filtros
+Breath Hold Timer	Cronómetro de apnea	Cronômetro de apneia
+TOOLS	HERRAMIENTAS	FERRAMENTAS
+A simple timer for a comfortable breath hold. Save attempts privately on this phone.	Un cronómetro para una apnea cómoda. Guarda tus intentos de forma privada en este teléfono.	Um cronômetro para uma apneia confortável. Salve suas tentativas de forma privada neste celular.
+A comfortable pause.	Una pausa cómoda.	Uma pausa confortável.
+Practice seated or lying down. Never in water or while driving. Do not hyperventilate beforehand. Stop immediately if uncomfortable or dizzy.	Practica sentado o recostado. Nunca en el agua ni mientras conduces. No hiperventiles antes. Detente de inmediato si sientes incomodidad o mareo.	Pratique sentado ou deitado. Nunca na água ou ao dirigir. Não hiperventile antes. Pare imediatamente se sentir desconforto ou tontura.
+This is a timer, not a medical assessment. There is no target to beat.	Esto es un cronómetro, no una evaluación médica. No hay una marca que superar.	Este é um cronômetro, não uma avaliação médica. Não há uma marca a superar.
+Running	En curso	Em andamento
+Attempt interrupted	Intento interrumpido	Tentativa interrompida
+Ready	Listo	Pronto
+Elapsed time	Tiempo transcurrido	Tempo decorrido
+The attempt was interrupted and was not saved. Rest and try again when ready.	El intento se interrumpió y no se guardó. Descansa y vuelve a intentarlo cuando estés listo.	A tentativa foi interrompida e não foi salva. Descanse e tente novamente quando estiver pronto.
+Finish your current practice before starting the timer.	Termina tu práctica actual antes de iniciar el cronómetro.	Termine sua prática atual antes de iniciar o cronômetro.
+Save attempt	Guardar intento	Salvar tentativa
+Attempt saved on this phone.	Intento guardado en este teléfono.	Tentativa salva neste celular.
+The attempt could not be saved. Free some storage and try saving again.	No se pudo guardar el intento. Libera espacio e intenta guardarlo de nuevo.	Não foi possível salvar a tentativa. Libere espaço e tente salvar novamente.
+Return to Challenges	Volver a Desafíos	Voltar aos Desafios
+SAVED ATTEMPTS	INTENTOS GUARDADOS	TENTATIVAS SALVAS
+Only attempts you choose to save appear here. They do not count toward guided practice or streaks.	Aquí solo aparecen los intentos que eliges guardar. No cuentan como prácticas guiadas ni para las rachas.	Aqui aparecem apenas as tentativas que você escolhe salvar. Elas não contam como práticas guiadas nem para as sequências.
+No saved attempts yet.	Aún no hay intentos guardados.	Ainda não há tentativas salvas.
+Saved timer history could not be read. Your data has been preserved.	No se pudo leer el historial del cronómetro. Tus datos se han conservado.	Não foi possível ler o histórico do cronômetro. Seus dados foram preservados.
+Lower tension rating	Disminuir nivel de tensión	Diminuir nível de tensão
+Higher tension rating	Aumentar nivel de tensión	Aumentar nível de tensão
+Tension rating	Nivel de tensión	Nível de tensão
+Choose 1 for very relaxed or 10 for very tense.	Elige 1 si estás muy relajado o 10 si estás muy tenso.	Escolha 1 se estiver muito relaxado ou 10 se estiver muito tenso.
+Not selected	Sin seleccionar	Não selecionado
+Optional. Choose a number or skip this check-in.	Opcional. Elige un número u omite este registro.	Opcional. Escolha um número ou pule este registro.
+Silence selected. Enable voice or music to hear a sample.	Seleccionaste silencio. Activa la voz o la música para escuchar una muestra.	Você selecionou silêncio. Ative a voz ou a música para ouvir uma prévia.
+Audio uses your phone’s media volume. Turn off voice and music to practice quietly. Quiet celebrations mute reward sounds and vibration. Previews play only when requested.	El audio usa el volumen multimedia del teléfono. Desactiva la voz y la música para practicar en silencio. Las celebraciones discretas desactivan los sonidos de recompensa y la vibración. Las muestras se reproducen solo cuando las solicitas.	O áudio usa o volume de mídia do celular. Desative a voz e a música para praticar em silêncio. As celebrações discretas desativam os sons de recompensa e a vibração. As prévias tocam apenas quando solicitadas.
+Voice + music	Voz y música	Voz e música

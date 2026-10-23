@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { spawnSync } from 'node:child_process';
 import policy from './build-policy.cjs';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const info = JSON.parse(readFileSync(root + 'release/public-info.json', 'utf8'));
@@ -51,6 +52,13 @@ for (const [file,width,height,colorType] of [
       png.readUInt32BE(16) !== width || png.readUInt32BE(20) !== height || png[24] !== 8 || png[25] !== colorType)
       errors.push(`${file} has the wrong PNG dimensions or color format.`);
   } catch { errors.push(`Missing or unreadable ${file}`); }
+}
+if ((process.env.INOUT_RELEASE === '1' || process.env.EAS_BUILD_PROFILE === 'production') && !artifactOnly) {
+  if (!process.env.INOUT_ANDROID_RECEIPT || !process.env.INOUT_IOS_RECEIPT) errors.push('Unified release requires INOUT_ANDROID_RECEIPT and INOUT_IOS_RECEIPT from successful builds of the frozen candidate.');
+  else {
+    const paired = spawnSync(process.execPath, [resolve(root, 'scripts/check-parity.mjs'), '--pair', process.env.INOUT_ANDROID_RECEIPT, process.env.INOUT_IOS_RECEIPT], { encoding: 'utf8' });
+    if (paired.status !== 0) errors.push(`Artifact parity is incomplete: ${paired.stderr || 'receipt validation failed'}`);
+  }
 }
 if (errors.length) { console.error('Release preparation is incomplete:\n' + errors.map((e) => '- ' + e).join('\n')); process.exit(1); }
 console.log(artifactOnly ? 'Artifact configuration checks passed. Acceptance flags remain unchanged; this does not approve store submission.' : 'Local release metadata checks passed. Commercial release requires every release/readiness.json gate and approved metadata.');

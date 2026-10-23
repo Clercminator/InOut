@@ -10,6 +10,6 @@ export function currentUsage(saved: GuidedUsage | null, now: number): GuidedUsag
 export function reserveGuidance(saved: GuidedUsage | null, id: string, now: number, limit: number): GuidedUsage {
   const usage = currentUsage(saved, now);
   if (usage.sessionIds.includes(id)) return usage;
-  if (!Number.isInteger(limit) || limit < 0 || usage.sessionIds.length >= limit) throw Error("Your guided allowance is used. Breathing with tones remains available.");
+  if (!Number.isInteger(limit) || limit < 0 || usage.sessionIds.length >= limit) throw Error("Your guided allowance is used. Breathing without voice guidance remains available.");
   return { ...usage, sessionIds: [...usage.sessionIds, id] };
 }

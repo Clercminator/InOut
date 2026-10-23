@@ -18,7 +18,10 @@
       "autoIncrement": false,
       "ios": {
         "image": "macos-tahoe-26.5-xcode-26.6",
-        "credentialsSource": "remote"
+        "credentialsSource": "remote",
+        "buildArtifactPaths": [
+          "artifacts/release-receipt.json"
+        ]
       },
       "env": {
         "INOUT_RELEASE": "1",
@@ -33,7 +36,8 @@
         "buildArtifactPaths": [
           "android/app/build/outputs/mapping/release/**",
           "android/app/build/{outputs/native-debug-symbols,intermediates/native_symbol_tables}/release/**",
-          "android/app/build/generated/sourcemaps/react/release/**"
+          "android/app/build/generated/sourcemaps/react/release/**",
+          "artifacts/release-receipt.json"
         ]
       },
       "environment": "production"
@@ -62,12 +66,16 @@
         "buildArtifactPaths": [
           "android/app/build/outputs/mapping/release/**",
           "android/app/build/{outputs/native-debug-symbols,intermediates/native_symbol_tables}/release/**",
-          "android/app/build/generated/sourcemaps/react/release/**"
+          "android/app/build/generated/sourcemaps/react/release/**",
+          "artifacts/release-receipt.json"
         ]
       },
       "ios": {
         "image": "macos-tahoe-26.5-xcode-26.6",
-        "credentialsSource": "remote"
+        "credentialsSource": "remote",
+        "buildArtifactPaths": [
+          "artifacts/release-receipt.json"
+        ]
       }
     },
     "development": {

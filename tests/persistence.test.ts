@@ -83,7 +83,7 @@ test("personal profiles, weekly goals, audio choices and one-tap rituals survive
   const env = setup();
   try {
     const c = env.controller();
-    assert.equal(c.updateExperience({ name: "Sam", bio: "Making time for myself", weeklyGoal: 4, breathSound: "warm", guidanceVolume: 0.25, celebration: "quiet" }), true);
+    assert.equal(c.updateExperience({ name: "Sam", bio: "Making time for myself", weeklyGoal: 4, guidanceVolume: 0.25, celebration: "quiet" }), true);
     const box = protocols.find(p => p.id === "box")!;
     assert.equal(c.saveRitual("Before sleep", box, 2), true);
     const reopened = env.controller();
@@ -92,7 +92,6 @@ test("personal profiles, weekly goals, audio choices and one-tap rituals survive
     assert.equal(reopened.startRitual(e.rituals[0].id), true);
     assert.equal(reopened.current?.pre, null); assert.equal(reopened.current?.protocolId, "box");
     assert.equal(reopened.current?.engine.plan.blocks[0].cycles, 2);
-    assert.equal(experienceFor(reopened.preferences).breathSound, "warm");
     assert.equal(reopened.startRitual(e.rituals[0].id), false);
   } finally { env.db.close(); }
 });

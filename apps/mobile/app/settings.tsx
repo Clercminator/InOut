@@ -1,3 +1,4 @@
+import { audioSettings } from "../src/audio-preferences";
 import { WelcomeEmailOptIn } from "../src/welcome-email-ui";
 import { useShareLinks } from "../src/share-links-context";
 import { useReminders } from "../src/reminder-context";
@@ -26,6 +27,7 @@ export default function Settings() {
   const commercial = useCommercial();
   const { section } = useLocalSearchParams<{ section?: string }>();
   const preferences = controller.preferences;
+  const audio = audioSettings(preferences);
   const historyCount = controller.history().length;
   const savedCount = controller.routines().length;
   if (section === "notifications") return <BackScreen title="Practice notifications"><NotificationSettings /><SaveError feedback /></BackScreen>;
@@ -81,7 +83,7 @@ export default function Settings() {
         </View>
       </Card>
       </Disclosure>
-      <Disclosure title="Sound" icon="volume-up" summary={preferences.audio === "silent" ? "Silent" : preferences.audio === "voice" ? "Voice + breath" : "Breath sounds"}>
+      <Disclosure title="Sound" icon="volume-up" summary={audio.voice && audio.music ? "Voice + music" : audio.voice ? "Guided voice" : audio.music ? "Background music" : "Silent"}>
         <SoundControls />
       </Disclosure>
       <Label>PRACTICE</Label>
