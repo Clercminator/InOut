@@ -11,7 +11,7 @@ const json = path => JSON.parse(read(path));
 const hash = value => createHash('sha256').update(value).digest('hex');
 const git = (...args) => execFileSync('git', args, { cwd: root, encoding: 'utf8' }).trim();
 const files = path => readdirSync(resolve(root, path), { withFileTypes: true }).flatMap(entry => entry.isDirectory() ? files(`${path}/${entry.name}`) : [`${path}/${entry.name}`]);
-export function sourceFingerprint() {
+export function sourceFingerprint(entries) {
   const walk = path => readdirSync(resolve(root, path), { withFileTypes: true }).flatMap(entry => {
     if (['node_modules', 'dist', 'build', '.expo', '__pycache__'].includes(entry.name)) return [];
     return entry.isDirectory() ? walk(`${path}/${entry.name}`) : [`${path}/${entry.name}`];
@@ -23,7 +23,9 @@ export function sourceFingerprint() {
   for (const file of inputs) {
     const bytes = readFileSync(resolve(root, file));
     const content = /\.(ts|tsx|js|mjs|cjs|json|tsv|sh|py|yaml|yml|md)$/.test(file) ? bytes.toString('utf8').replaceAll('\r\n', '\n') : bytes;
-    digest.update(file + '\0' + hash(content) + '\n');
+    const contentHash = hash(content);
+    if (entries) entries[file] = contentHash;
+    digest.update(file + '\0' + contentHash + '\n');
   }
   return digest.digest('hex');
 }
@@ -112,7 +114,18 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     if (manifest) {
       const commit = process.env.EAS_BUILD_GIT_COMMIT_HASH || git('rev-parse', 'HEAD');
       errors.push(...candidateErrors(manifest, app, commit, profile));
-      if (manifest.sourceFingerprint !== sourceFingerprint()) errors.push('Candidate source fingerprint differs from actual build inputs. Freeze a clean commit; do not upload dirty sources under an old SHA.');
+      const inputs = {}, snapshotPath = resolve(root, 'apps/mobile/artifacts/source-inputs.json');
+      if (manifest.sourceFingerprint !== sourceFingerprint(inputs)) {
+        errors.push('Candidate source fingerprint differs from actual build inputs. Freeze a clean commit; do not upload dirty sources under an old SHA.');
+        try {
+          const original = JSON.parse(readFileSync(snapshotPath, 'utf8'));
+          const changed = [...new Set([...Object.keys(original), ...Object.keys(inputs)])].filter(file => original[file] !== inputs[file]);
+          errors.push(`Changed build inputs: ${changed.join(', ')}`);
+        } catch { /* The mandatory fingerprint error above remains authoritative. */ }
+      } else if (args.includes('--build') && process.env.EAS_BUILD && !errors.length) {
+        mkdirSync(dirname(snapshotPath), { recursive: true });
+        writeFileSync(snapshotPath, JSON.stringify(inputs));
+      }
       if (args.includes('--build') && !process.env.EAS_BUILD && git('status', '--porcelain')) errors.push('Freeze a clean source checkout before building a candidate.');
     }
   }
