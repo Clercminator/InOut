@@ -37,8 +37,9 @@ test("release fails closed for test providers, mocks, demo ads and open gates; a
   const eas = JSON.parse(readFileSync("apps/mobile/eas.json", "utf8"));
   assert.equal(eas.build["store-test"].distribution, "store"); assert.equal(eas.build["store-test"].android.buildType, "app-bundle");
   const app = JSON.parse(readFileSync("apps/mobile/app.json", "utf8")).expo;
-  assert.equal(app.version, "1.2.2");
-  assert.equal(app.android.versionCode, 8);
+  assert.equal(app.version, "1.3.0");
+  assert.equal(app.android.versionCode, 9);
+  assert.equal(app.ios.buildNumber, "2");
   assert.equal(eas.build.production.autoIncrement, false);
   assert.match(readFileSync("apps/mobile/app.config.ts", "utf8"), /enableMinifyInReleaseBuilds:\s*true/);
   assert.equal(eas.build["store-test"].android.buildArtifactPaths[0], "android/app/build/outputs/mapping/release/**");
