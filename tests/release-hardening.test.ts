@@ -1,7 +1,10 @@
 import { firebaseEnv } from "./firebase-fixture";
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync, readdirSync, mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { copyCrashlyticsPlist } from "../apps/mobile/plugins/with-crashlytics-plist.cjs";
 import { spawnSync } from "node:child_process";
 import { buildPolicy } from "../scripts/build-policy.cjs";
 import { associations } from "../scripts/build-link-associations.mjs";
@@ -19,6 +22,15 @@ test("live ads require both a production build marker and a non-development runt
   assert.equal(advertisingMode(true, false, "live"), "test");
   assert.equal(advertisingMode(true, false, "live", "production"), "live");
   assert.equal(advertisingMode(false, false, "live", "production"), "preview");
+});
+
+test("Crashlytics SPM receives the private plist at its project-root path, including paths with spaces", async () => {
+  const nativeRoot = mkdtempSync(join(tmpdir(), "inout crashlytics "));
+  const iosRoot = join(nativeRoot, "ios");
+  await copyCrashlyticsPlist(nativeRoot, iosRoot, firebaseEnv.GOOGLE_SERVICES_PLIST);
+  assert.deepEqual(readFileSync(join(iosRoot, "GoogleService-Info.plist")), readFileSync(firebaseEnv.GOOGLE_SERVICES_PLIST));
+  await assert.rejects(copyCrashlyticsPlist(nativeRoot, iosRoot, "missing.plist"));
+  assert.match(readFileSync("apps/mobile/app.config.ts", "utf8"), /with-crashlytics-plist\.cjs/);
 });
 
 test("release fails closed for test providers, mocks, demo ads and open gates; acceptance remains distinct", () => {
