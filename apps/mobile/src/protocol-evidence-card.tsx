@@ -4,11 +4,11 @@ import type { Protocol } from "@inout/shared-types";
 import { Card, Copy, Button, Disclosure } from "./ui";
 import { presentationFor } from "./protocol-evidence";
 
-export function ProtocolEvidenceCard({ protocol }: { protocol: Protocol }) {
+export function ProtocolEvidenceCard({ protocol, compact = false }: { protocol: Protocol; compact?: boolean }) {
   const content = presentationFor(protocol);
   const [failed, setFailed] = useState(false);
   const url = content.category === "Research-supported" ? content.source.url : content.category === "Expert-recommended" ? content.url : null;
-  return <Card><Disclosure title={content.category}>
+  const details = <Disclosure compact={compact} title={content.category}>
     <Copy>{content.purpose}</Copy>
     {content.category === "Research-supported" && <Copy>{content.rationale}</Copy>}
     {content.category === "Expert-recommended" && <><Copy>{content.recommendation}</Copy><Copy translate={false}>{content.attribution}</Copy></>}
@@ -18,5 +18,6 @@ export function ProtocolEvidenceCard({ protocol }: { protocol: Protocol }) {
       void Linking.openURL(url).catch(() => setFailed(true));
     }} />}
     {failed && <Copy accessibilityLiveRegion="polite">Unable to open the source. Check your connection and try again.</Copy>}
-  </Disclosure></Card>;
+  </Disclosure>;
+  return compact ? details : <Card>{details}</Card>;
 }

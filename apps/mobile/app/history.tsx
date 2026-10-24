@@ -25,7 +25,7 @@ export default function History() {
   useEffect(() => { setPage(0); }, [filter, date]);
   const records = controller.history().filter((record) => (filter === "All" || record.goal === filter) && (!date || dayKey(new Date(record.engine.startedAt)) === date));
   const currentPage = Math.min(page, Math.max(0, Math.ceil(records.length / 30) - 1));
-  const shifts = records.map((record) => stateShift(record.pre, record.post)).filter((value): value is number => value !== null);
+  const shifts = records.filter(record => record.stateMetric === "wellbeing_v2").map((record) => stateShift(record.pre, record.post, record.stateMetric)).filter((value): value is number => value !== null);
   return (
     <BackScreen title="HISTORY">
       <View style={s.row}>
@@ -40,7 +40,7 @@ export default function History() {
           <Chip key={goal} title={goal} selected={filter === goal} onPress={() => setFilter(goal)} />
         ))}
       </ScrollView>
-      <Copy style={s.small}>{countLabel(records.length, "session")} · {shifts.length ? `average shift ${decimal((shifts.reduce((a, b) => a + b, 0) / shifts.length), 1)}` : "no paired ratings yet"}</Copy>
+      <Copy style={s.small}>{countLabel(records.length, "session")} · {shifts.length ? message("Average well-being change: {0}", [decimal((shifts.reduce((a, b) => a + b, 0) / shifts.length), 1)]) : "No paired well-being ratings yet"}</Copy>
       {!records.length && <Card><Title>{date ? "No matching sessions on this day." : filter === "All" ? "Your first practice starts here." : `No ${filter.toLowerCase()} sessions yet.`}</Title><Copy>Each session adds to your personal practice history.</Copy><Button title="Start a practice" onPress={() => router.push("/pre")} /></Card>}
       {records.slice(currentPage * 30, (currentPage + 1) * 30).map((record) => (
         <Card key={record.id}>
@@ -50,7 +50,7 @@ export default function History() {
           </View>
           <Copy translate={false} style={s.subtitle}>{recordTitle(record)}</Copy>
           <Copy style={s.small}>{duration(record.engine.elapsedAtAnchor)} · {record.source === "manual" ? "Manually logged" : record.endReason === "completed" ? "Completed" : "Ended early"}</Copy>
-          <Copy style={{ color: stateShift(record.pre, record.post) !== null && stateShift(record.pre, record.post)! > 0 ? colors.exhale : colors.accent }}>{shiftText(record)}</Copy>
+          <Copy style={{ color: stateShift(record.pre, record.post, record.stateMetric) !== null && stateShift(record.pre, record.post, record.stateMetric)! > 0 ? colors.exhale : colors.accent }}>{shiftText(record)}</Copy>
           {record.note && <Copy translate={false}>{record.note}</Copy>}
           {record.effect && <Copy style={s.small}>{record.effect}</Copy>}
           <View style={s.row}>

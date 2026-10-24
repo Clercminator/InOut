@@ -97,10 +97,9 @@ export default function Pre() {
         </Copy>
       </View>
       {intense && <CyclicOverview compact />}
-      <Copy accessibilityRole="header" style={{ fontSize: 24, lineHeight: 32, fontWeight: "700" }}>How tense are you right now?</Copy>
+      <Copy accessibilityRole="header" style={{ fontSize: 24, lineHeight: 32, fontWeight: "700" }}>How are you feeling right now?</Copy>
       <GuidanceAllowance />
       {controller.preferences.audio === "voice" && !controller.guidedAccess().allowed && <Copy>Your guided allowance is used. You can still practice without voice guidance for free.</Copy>}
-      <Copy>Optional check-in. You can skip it and start breathing.</Copy>
       <StateScale value={rating} onChange={setRating} />
       <Card>
         <Label>SESSION LENGTH</Label>
@@ -126,7 +125,6 @@ export default function Pre() {
         {protocol.safetyCategory === "retention" && <Copy>Keep holds comfortable. Return to natural breathing whenever you need to.</Copy>}
       </Card>
       <ActionRow title="Audio & haptics" icon="tune" onPress={() => router.push("/practice-audio")} />
-      <Copy>Self-reported. Takes 1–2 seconds.</Copy>
       <ActionRow title="Save as a personal ritual" icon="bookmark-border" onPress={() => router.push({ pathname: "/ritual-edit", params: { protocolId: id ?? protocol.id, cycles: String(cycles) } })} />
       <ActionRow title="Breathing safety" icon="health-and-safety" onPress={() => router.push("/safety")} />
     </BackScreen>

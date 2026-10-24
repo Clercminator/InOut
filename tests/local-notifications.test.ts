@@ -39,7 +39,8 @@ test("quiet-hour adjustment preserves daytime reminders and moves late reminders
   assert.equal(beforeQuiet.getDate(), day.getDate());
   assert.equal(beforeQuiet.getHours(), 13);
   const nextMorning = notificationTime(day, 23, 0, quiet);
-  assert.equal(nextMorning.getDate(), day.getDate() + 1);
+  assert.equal(nextMorning.getDate(), day.getDate() + 2);
+  assert.ok(quiet.weekdays.includes(nextMorning.getDay() + 1));
   assert.equal(nextMorning.getHours(), 8);
   assert.equal(notificationTime(day, 23, 0, open).getDate(), day.getDate());
 });
@@ -80,5 +81,5 @@ test("optional weekly progress stays neutral and no engagement prompt follows to
   const schedule = buildEngagementSchedule(settings, now, context);
   assert.ok(schedule.length > 0);
   assert.ok(schedule.every(item => item.date.getDate() !== 19 && item.type === "weekly-progress"));
-  assert.ok(schedule.every(item => item.body === "Your weekly practice progress is ready to view."));
+  assert.ok(schedule.every(item => item.body === "Take a look at your practice history when you have a moment."));
 });

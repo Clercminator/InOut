@@ -1,5 +1,5 @@
 import { ActionFeedback, useActionFeedback } from "./action-feedback";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Linking, View } from "react-native";
 import { Switch, Alert } from "./localized-native";
 import { t, locale } from "./i18n";
@@ -7,7 +7,7 @@ import { useLanguage } from "./use-language";
 import { useTheme } from "./theme";
 import { useSession } from "./provider";
 import { useReminders } from "./reminder-context";
-import { Button, Card, Chip, Copy, Label, Disclosure, useStyles } from "./ui";
+import { ActionRow, Button, Card, Chip, Copy, Label, Disclosure, useStyles } from "./ui";
 import { SessionDatePicker } from "./session-date-picker";
 import { notificationContext, notificationDefaults, notificationPreferences, validateNotificationPreferences, type LocalNotificationPreferences } from "./local-notifications";
 import { configureEngagementNotifications, nativeReminderAdapter } from "./reminder-native";
@@ -22,6 +22,12 @@ export function NotificationSettings() {
   const [savingNotificationSettings, setSavingNotificationSettings] = useState(false);
   const feedback = useActionFeedback();
   const [draft, setDraft] = useState<LocalNotificationPreferences | null>(null);
+  const [showSuccess, setShowSuccess] = useState(false);
+  useEffect(() => {
+    setShowSuccess(feedback.state === "success");
+    const timer = setTimeout(() => setShowSuccess(false), 2000);
+    return () => clearTimeout(timer);
+  }, [feedback.state]);
   const preferences = controller.preferences;
   const notificationSettings = draft ?? notificationPreferences(preferences);
   const saveNotificationSettings = async (next: LocalNotificationPreferences) => {
@@ -48,8 +54,7 @@ export function NotificationSettings() {
     }, "Notification settings could not be saved. Try again.");
   };
   return (
-      <View style={{ gap: 16 }}>
-        <Copy style={s.small}>Optional local notifications stay on this phone. They are off until you enable a category. Scheduled prompts are limited to three days each week; achievement alerts are limited to one each week.</Copy>
+      <View style={{ gap: 8 }}>
         {([
           ["dailyReset", "Daily Reset"],
           ["weeklyProgress", "Weekly-goal progress"],
@@ -65,9 +70,7 @@ export function NotificationSettings() {
             onValueChange={value => { void saveNotificationSettings({ ...notificationSettings, [key]: value }); }}
             trackColor={{ true: colors.blue }} />
         </View>)}
-        <Copy style={s.small}>Check-ins offer Yes and Not yet. Yes opens a manual practice entry. Quiet hours follow your phone’s local time.</Copy>
-        <Copy style={s.small}>Return reminders use your last completed in-app practice and require practice reminders to be enabled. Pro offers are limited to one per four weeks and excluded while Pro or reviewer access is active.</Copy>
-        <SessionDatePicker timeOnly disabled={savingNotificationSettings} value={new Date(2026, 0, 1, notificationSettings.hour, notificationSettings.minute)}
+        <SessionDatePicker compact timeOnly disabled={savingNotificationSettings} value={new Date(2026, 0, 1, notificationSettings.hour, notificationSettings.minute)}
           onChange={date => { void saveNotificationSettings({ ...notificationSettings, hour: date.getHours(), minute: date.getMinutes() }); }} />
         <Label>NOTIFY ON (UP TO THREE DAYS)</Label>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
@@ -86,36 +89,54 @@ export function NotificationSettings() {
             }} />;
           })}
         </View>
-        <Label>QUIET HOURS</Label>
+        <Card style={{ padding: 12, gap: 0 }}><Label>QUIET HOURS</Label>
         <View style={s.row}>
           <Copy style={{ flex: 1 }}>Apply quiet hours to all IN/OUT notifications</Copy>
           <Switch disabled={savingNotificationSettings} accessibilityLabel={t("Apply quiet hours to all IN/OUT notifications")} value={notificationSettings.quietHoursEnabled}
             onValueChange={value => { void saveNotificationSettings({ ...notificationSettings, quietHoursEnabled: value }); }}
             trackColor={{ true: colors.blue }} />
         </View>
-        <SessionDatePicker timeOnly disabled={savingNotificationSettings} label="QUIET HOURS START" value={new Date(2026, 0, 1, notificationSettings.quietStartHour, 0)}
-          onChange={date => { void saveNotificationSettings({ ...notificationSettings, quietStartHour: date.getHours() }); }} />
-        <SessionDatePicker timeOnly disabled={savingNotificationSettings} label="QUIET HOURS END" value={new Date(2026, 0, 1, notificationSettings.quietEndHour, 0)}
-          onChange={date => { void saveNotificationSettings({ ...notificationSettings, quietEndHour: date.getHours() }); }} />
+        <SessionDatePicker compact timeOnly disabled={savingNotificationSettings} label="QUIET HOURS START" value={new Date(2026, 0, 1, notificationSettings.quietStartHour, notificationSettings.quietStartMinute ?? 0)}
+          onChange={date => { void saveNotificationSettings({ ...notificationSettings, quietStartHour: date.getHours(), quietStartMinute: date.getMinutes() }); }} />
+        <SessionDatePicker compact timeOnly disabled={savingNotificationSettings} label="QUIET HOURS END" value={new Date(2026, 0, 1, notificationSettings.quietEndHour, notificationSettings.quietEndMinute ?? 0)}
+          onChange={date => { void saveNotificationSettings({ ...notificationSettings, quietEndHour: date.getHours(), quietEndMinute: date.getMinutes() }); }} />
+        </Card>
         {notificationError ? <Copy accessibilityRole="alert" style={{ color: colors.danger }}>{notificationError}</Copy> : null}
-        <ActionFeedback {...feedback} retry={() => { void saveNotificationSettings(notificationSettings); }} />
-        <Button title="Disable all notifications" secondary disabled={savingNotificationSettings || reminders?.busy} onPress={() => {
-          void feedback.run(async () => {
-            const next = { ...notificationDefaults, achievementNoticeLog: notificationSettings.achievementNoticeLog, weekdays: [...notificationSettings.weekdays] };
+        <ActionFeedback {...feedback} state={feedback.state === "success" && !showSuccess ? "idle" : feedback.state} />
+        <Disclosure title="Advanced settings" compact>
+        <Copy style={s.small}>Optional local notifications stay on this phone. They are off until you enable a category. Scheduled prompts are limited to three days each week; achievement alerts are limited to one each week.</Copy>
+        <Copy style={s.small}>Check-ins offer Yes and Not yet. Yes opens a manual practice entry. Quiet hours follow your phone’s local time.</Copy>
+        <Copy style={s.small}>Return reminders use your last completed in-app practice and require practice reminders to be enabled. Pro offers are limited to one per four weeks and excluded while Pro or reviewer access is active.</Copy>
+        <Copy style={s.small}>Local schedules refresh when you open the app.</Copy>
+        <ActionRow title="Disable all notifications" icon="notifications-off" disabled={savingNotificationSettings || reminders?.busy} onPress={() => Alert.alert("Disable all notifications?", "Your reminder times will be kept.", [
+          { text: "Cancel", style: "cancel" }, { text: "Disable", style: "destructive", onPress: () => { void feedback.run(async () => {
+            setSavingNotificationSettings(true);
+            try {
+            const next = { ...notificationSettings, dailyReset: false, weeklyProgress: false, motivation: false, checkIn: false, achievements: false, education: false, reengagement: false, promotions: false };
             controller.setPreferences({ ...controller.preferences, notifications: next });
             if (controller.error) throw Error();
             setDraft(null);
-            await configureEngagementNotifications(controller.preferences, false);
-            for (const reminder of reminders?.items ?? []) if (reminder.enabled && !await reminders!.save({ ...reminder, enabled: false })) throw Error();
+            const results = await Promise.allSettled([
+              configureEngagementNotifications(controller.preferences, false),
+              reminders?.disableAll().then(saved => { if (!saved) throw Error(); }),
+            ]);
+            if (results.some(result => result.status === "rejected")) throw Error();
+            } finally { setSavingNotificationSettings(false); }
           }, "Notification settings could not be saved. Try again.");
-        }} />
-        <Button title="Reset notification settings" secondary disabled={savingNotificationSettings} onPress={() => { void saveNotificationSettings({ ...notificationDefaults, achievementNoticeLog: notificationSettings.achievementNoticeLog, weekdays: [...notificationDefaults.weekdays] }); }} />
+          } },
+        ])} />
+        <ActionRow icon="settings-backup-restore" title="Reset notification settings" disabled={savingNotificationSettings} onPress={() => Alert.alert("Reset notification settings?", "Notification categories will be turned off and the default schedule restored.", [{ text: "Cancel", style: "cancel" }, { text: "Reset", style: "destructive", onPress: () => { void saveNotificationSettings({ ...notificationDefaults, achievementNoticeLog: notificationSettings.achievementNoticeLog, weekdays: [...notificationDefaults.weekdays] }); } }])} />
+        {!!reminders?.message && <Copy accessibilityRole="alert">{reminders.message}</Copy>}
+        {(feedback.state === "error" || reminders?.schedulingFailed) && <ActionRow icon="refresh" title="Retry reminder scheduling" disabled={savingNotificationSettings || reminders?.busy}
+          onPress={() => { void saveNotificationSettings(notificationSettings); void reminders?.reconcile(); }} />}
+        <ActionRow icon="settings" title="Open notification settings" onPress={() => { void Linking.openSettings().catch(() => setNotificationError("Could not open phone settings.")); }} />
+        </Disclosure>
         {!!reminders?.items.length && <Disclosure title="Saved reminders" icon="notifications-none">
           {reminders.items.map(reminder => <Card key={reminder.id}>
             <Copy translate={false}>{reminder.label}</Copy>
             <Switch accessibilityLabel={reminder.label} disabled={reminders.busy} value={reminder.enabled}
               onValueChange={enabled => { void reminders.save({ ...reminder, enabled }); }} trackColor={{ true: colors.blue }} />
-            <SessionDatePicker timeOnly disabled={reminders.busy} value={new Date(2026, 0, 1, reminder.hour, reminder.minute)}
+            <SessionDatePicker compact timeOnly disabled={reminders.busy} value={new Date(2026, 0, 1, reminder.hour, reminder.minute)}
               onChange={date => { void reminders.save({ ...reminder, hour: date.getHours(), minute: date.getMinutes() }); }} />
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
               {[2, 3, 4, 5, 6, 7, 1].map(day => <Chip key={day} translate={false}
@@ -134,10 +155,6 @@ export function NotificationSettings() {
               ])} />
           </Card>)}
         </Disclosure>}
-        {!!reminders?.message && <Copy accessibilityRole="alert">{reminders.message}</Copy>}
-        <Button title="Retry reminder scheduling" secondary disabled={savingNotificationSettings || reminders?.busy}
-          onPress={() => { void saveNotificationSettings(notificationSettings); void reminders?.reconcile(); }} />
-        <Button title="Open notification settings" secondary onPress={() => { void Linking.openSettings().catch(() => setNotificationError("Could not open phone settings.")); }} />
       </View>
   );
 }

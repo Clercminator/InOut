@@ -42,7 +42,7 @@ test("streaks deduplicate dates, retain yesterday and award dated milestones onl
 test("period buckets reconcile time and counts, include zero days and separate count/time percentages", () => {
   const now = new Date(2026, 8, 21, 12);
   const a = record(new Date(2026, 8, 8), 60000), b = record(new Date(2026, 8, 21), 180000);
-  b.goal = "Focus"; b.source = "app"; b.pre = 8; b.post = 3;
+  b.goal = "Focus"; b.source = "app"; b.stateMetric = "wellbeing_v2"; b.pre = 3; b.post = 8;
   const invalid = { ...record(now), engine: { ...record(now).engine, elapsedAtAnchor: 0 } };
   const stats = periodStats([a, b, invalid, record(new Date(2026, 8, 7, 23, 59)), record(addDays(now, 1))], "Days", now);
   assert.equal(stats.count, 2); assert.equal(stats.totalMs, 240000); assert.equal(stats.calendarDays, 14);

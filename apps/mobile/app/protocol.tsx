@@ -1,16 +1,14 @@
 import { useSession, SaveError } from "../src/provider";
 import { useTheme } from "../src/theme";
-import { t } from "../src/i18n";
+import { message, countLabel, decimal } from "../src/i18n";
 import { useLanguage } from "../src/use-language";
-import { Pressable } from "../src/localized-native";
 import { router } from "expo-router";
 import { useLocalSearchParams } from "expo-router";
-import { BackScreen, Title, Label, Card, Copy, Button, ActionRow, useStyles } from "../src/ui";
+import { BackScreen, Title, Label, Card, Copy, Button, Disclosure, IconButton, useStyles } from "../src/ui";
 import { protocols, sigh, isCyclic } from "@inout/protocols";
 import { CyclicOverview, CyclicSafety } from "../src/cyclic-content";
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { View } from "react-native";
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { ShareExercise } from "../src/share-exercise";
 import { ProtocolEvidenceCard } from "../src/protocol-evidence-card";
 
@@ -19,7 +17,6 @@ export default function ProtocolDetail() {
   const s = useStyles();
   useLanguage();
   const controller = useSession();
-  const [showSafety, setShowSafety] = useState(false);
   const { id } = useLocalSearchParams<{ id?: string }>();
   const protocol = protocols.find((item) => item.id === id) ?? sigh;
   useEffect(() => { if (id !== "intimacy-calm" && (!id || protocols.some(p => p.id === id))) controller.analytics.track("protocol_viewed"); }, [controller, id]);
@@ -30,9 +27,11 @@ export default function ProtocolDetail() {
     <BackScreen title="PROTOCOL" footer={<View style={{ padding: 16, borderTopWidth: 1, borderTopColor: colors.border, backgroundColor: colors.background }}><Button title="Start practice  →" onPress={() => router.push({ pathname: "/pre", params: { id: protocol.id } })} /></View>}>
       <View style={{ gap: 8 }}>
       <Label>{protocol.goalTags.join(" · ").toUpperCase()}</Label>
-      <Title>{protocol.name}</Title>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}><View style={{ flex: 1 }}><Title>{protocol.name}</Title></View>
+        <IconButton title={controller.isFavorite(protocol.id) ? "Remove from saved" : "Save protocol"}
+          icon={controller.isFavorite(protocol.id) ? "bookmark" : "bookmark-border"} onPress={() => controller.toggleFavorite(protocol.id)} />
+      </View>
       {protocol.description && <Copy>{protocol.description}</Copy>}
-      {protocol.instructions && <Copy>{protocol.instructions}</Copy>}
       {protocol.precaution && <Copy>{protocol.precaution}</Copy>}
       <Copy>{protocol.phases.map((phase) => phase.label).join(" · ")}</Copy>
       </View>
@@ -51,43 +50,20 @@ export default function ProtocolDetail() {
           Follow each phase gently and stop if you feel dizzy, faint or unwell.
         </Copy>
         <Label>
-          {protocol.defaultCycles} CYCLES · {Math.round(protocol.defaultDuration / 1000)} SECONDS · {protocol.phases.filter(phase => phase.durationMs > 0).reduce((sum, phase) => sum + phase.durationMs, 0) / 1000}s / cycle · {Number((60 / (protocol.phases.filter(phase => phase.durationMs > 0).reduce((sum, phase) => sum + phase.durationMs, 0) / 1000)).toFixed(1))} breaths/min
+          {countLabel(protocol.defaultCycles, "cycle")} · {message("{0} seconds", [Math.round(protocol.defaultDuration / 1000)])} · {message("{0}s / cycle", [decimal(protocol.phases.reduce((sum, phase) => sum + phase.durationMs, 0) / 1000, 0)])} · {message("{0} breaths/min", [decimal(60 / (protocol.phases.reduce((sum, phase) => sum + phase.durationMs, 0) / 1000))])}
         </Label>
       </Card>}
-      {!isCyclic(protocol) && <Card>
-        <Pressable accessibilityRole="button" accessibilityLabel={t("Before you start")} accessibilityState={{ expanded: showSafety }}
-          onPress={() => setShowSafety(value => !value)} style={[s.row, { minHeight: 48 }]}>
-          <Label>BEFORE YOU START</Label>
-          <MaterialIcons name={showSafety ? "expand-less" : "expand-more"} size={24} color={colors.accent} />
-        </Pressable>
-        {showSafety && <View style={{ gap: 16 }}>
-          <Copy>
-            Sit comfortably. Breathe without forcing. Stop if you feel dizzy,
-            faint or unwell.
-          </Copy>
-          {protocol.safetyCategory === "retention" && (
-            <Copy>
-              Keep holds comfortable. Never strain, compete with the timer, or
-              push through air hunger.
-            </Copy>
-          )}
-          {protocol.safetyCategory === "highIntensity" && (
-            <Copy style={{ color: colors.danger }}>
-              A safety confirmation is required before starting. Practice only
-              seated or lying down, never in or near water.
-            </Copy>
-          )}
-          <Copy style={s.small}>
-            The timings are a guide, not a target to push through.
-          </Copy>
-        </View>}
-      </Card>}
-      <ProtocolEvidenceCard protocol={protocol} />
-      <Card style={{ paddingVertical: 8 }}>
-        <ActionRow title={controller.isFavorite(protocol.id) ? "Remove from saved" : "Save protocol"}
-          icon={controller.isFavorite(protocol.id) ? "bookmark" : "bookmark-border"}
-          onPress={() => controller.toggleFavorite(protocol.id)} />
-      </Card>
+      {protocol.safetyCategory === "retention" && <Copy>Keep holds comfortable. Never strain, compete with the timer, or push through air hunger.</Copy>}
+      <View style={{ gap: 0 }}>
+        <Label>About this practice</Label>
+        <Disclosure compact title="Before you start">
+          {protocol.instructions && <Copy>{protocol.instructions}</Copy>}
+          <Copy>Sit comfortably. Breathe without forcing. Stop if you feel dizzy, faint or unwell.</Copy>
+          <Copy>The timings are a guide, not a target to push through.</Copy>
+        </Disclosure>
+        <Disclosure compact title="Benefits and purpose"><Copy>{protocol.purpose ?? protocol.description ?? protocol.name}</Copy></Disclosure>
+        <ProtocolEvidenceCard protocol={protocol} compact />
+      </View>
       <SaveError />
       <ShareExercise protocol={protocol} />
     </BackScreen>

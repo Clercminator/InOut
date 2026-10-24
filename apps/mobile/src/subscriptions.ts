@@ -13,7 +13,21 @@ export function defaultPlan(offers: SubscriptionOffer[], preferred: PlanId = "mo
   return offers.find(o => o.id === preferred && o.id !== "weekly") ?? offers.find(o => o.id === "monthly") ?? offers.find(o => o.id === "annual");
 }
 export class SubscriptionError extends Error {
-  constructor(readonly reason: "cancelled" | "pending" | "unavailable" | "failed", message: string) { super(message); }
+  constructor(readonly reason: "cancelled" | "pending" | "unavailable" | "failed" | "network" | "store" | "configuration" | "no_products" | "product_unavailable" | "service", message: string) { super(message); }
+}
+/** Classify SDK codes, never infer a network failure from an arbitrary error. */
+export function classifySubscriptionError(error: unknown): SubscriptionError {
+  if (error instanceof SubscriptionError) return error.reason === "cancelled" ? new SubscriptionError("cancelled", "Purchase cancelled. Nothing changed.") : error;
+  const value = error as { code?: string | number; userCancelled?: boolean } | null;
+  if (value?.userCancelled || String(value?.code) === "1") return new SubscriptionError("cancelled", "Purchase cancelled. Nothing changed.");
+  const code = String(value?.code);
+  if (["10", "35"].includes(code)) return new SubscriptionError("network", "Could not connect to the store. Check your connection and try again.");
+  if (["11", "23"].includes(code)) return new SubscriptionError("configuration", "Subscription setup is incomplete. Please contact Help & feedback. Free practice is available.");
+  if (["5", "6"].includes(code)) return new SubscriptionError("product_unavailable", "This plan is not available from your store right now. Refresh plans or contact Help & feedback.");
+  if (["2", "3"].includes(code)) return new SubscriptionError("store", "Your store could not load purchases. Check your store account and try again.");
+  if (["16", "19"].includes(code)) return new SubscriptionError("service", "The subscription service is temporarily unavailable. Please try again later.");
+  if (code === "20") return new SubscriptionError("pending", "Purchase is pending store approval. Refresh or restore when it completes.");
+  return new SubscriptionError("failed", "Could not load subscription information. Try again or contact Help & feedback.");
 }
 export interface SubscriptionProvider {
   readonly mode: "development" | "store" | "unavailable";
@@ -124,7 +138,7 @@ export class SubscriptionService {
     this.busy = true; this.message = ""; this.emit();
     try { await action(); }
     catch (error) {
-      this.message = error instanceof SubscriptionError && error.reason === "cancelled" ? "Purchase cancelled. Nothing changed." : error instanceof SubscriptionError ? error.message : "Could not connect to the store. Check your connection and try again.";
+      this.message = classifySubscriptionError(error).message;
     } finally { this.busy = false; this.emit(); }
   }
   async load() { if (this.busy) return; await this.operation(async () => {

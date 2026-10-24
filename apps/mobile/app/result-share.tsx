@@ -52,7 +52,7 @@ export default function ResultShare() {
       <Copy testID="result-share-invitation" allowFontScaling={false} numberOfLines={2} adjustsFontSizeToFit style={{ position: "absolute", left: 80 * scale, right: 80 * scale, top: (story ? 1680 : 935) * scale, color: "#FFFFFF", fontSize: (story ? 32 : 26) * scale, lineHeight: (story ? 42 : 32) * scale }}>Try a breathing practice with IN/OUT.</Copy>
       <Copy translate={false} allowFontScaling={false} style={{ position: "absolute", left: 80 * scale, right: 80 * scale, top: (story ? 1790 : 1010) * scale, color: "#d7b8ff", fontSize: 27 * scale, lineHeight: 36 * scale }}>inout.imrtech.xyz</Copy>
     </View>
-    {record.pre !== null && record.post !== null && <Chip title="Include my tension change when sharing" selected={includeRating} onPress={() => { if (!busy) setRatingConsentFor(includeRating ? null : id); }} />}
+    {record.pre !== null && record.post !== null && <Chip title={record.stateMetric === "wellbeing_v2" ? "Include my well-being change when sharing" : "Include my tension change when sharing"} selected={includeRating} onPress={() => { if (!busy) setRatingConsentFor(includeRating ? null : id); }} />}
     <Copy>Only the visible card is shared. Your name, photo and notes stay private.</Copy>
     <Copy>Some apps share the image without its link. Use Share invitation link to send the link separately.</Copy>
     {!!error && <Copy accessibilityRole="alert">{error}</Copy>}

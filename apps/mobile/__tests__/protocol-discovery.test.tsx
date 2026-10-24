@@ -32,14 +32,15 @@ test("Saved is independent, filters apply together, chips remove and empty searc
   await fireEvent.press(screen.getByRole("button", { name: "Saved" }));
   expect(screen.getByText("Protocols found: 1")).toBeTruthy();
   await fireEvent.press(screen.getByLabelText("Filters, 0 active"));
-  await fireEvent.press(screen.getByRole("button", { name: "Calm & Unwind" }));
-  await fireEvent.press(screen.getByRole("button", { name: "Sleep" }));
-  await fireEvent.press(screen.getByRole("button", { name: "Fitness" }));
+  expect(screen.getByRole("button", { name: /^Calm & Unwind \(/ }).props.accessibilityState.disabled).toBe(true);
+  expect(screen.getByRole("button", { name: /^Advanced \(/ }).props.accessibilityState.disabled).toBe(true);
+  await fireEvent.press(screen.getByRole("button", { name: /^Balance \(/ }));
+  await fireEvent.press(screen.getByRole("button", { name: /^Focus \(/ }));
   await fireEvent.press(screen.getByRole("button", { name: "Apply filters" }));
-  expect(screen.getByText("Protocols found: 0")).toBeTruthy();
-  expect(screen.getByLabelText("Filters, 3 active")).toBeTruthy();
-  await fireEvent.press(screen.getByLabelText("Remove filter: Calm & Unwind"));
+  expect(screen.getByText("Protocols found: 1")).toBeTruthy();
   expect(screen.getByLabelText("Filters, 2 active")).toBeTruthy();
+  await fireEvent.press(screen.getByLabelText("Remove filter: Balance"));
+  expect(screen.getByLabelText("Filters, 1 active")).toBeTruthy();
   await fireEvent.changeText(screen.getByLabelText("Search protocols"), "zzzzzz");
   await fireEvent.press(screen.getByText("Reset search & filters"));
   await fireEvent.changeText(screen.getByLabelText("Search protocols"), "zzzzzz");
@@ -52,12 +53,12 @@ test("Saved is independent, filters apply together, chips remove and empty searc
 test("closing discards draft choices and Clear applies immediately", async () => {
   await render(<Protocols />);
   await fireEvent.press(screen.getByLabelText("Filters, 0 active"));
-  await fireEvent.press(screen.getByRole("button", { name: "Advanced" }));
+  await fireEvent.press(screen.getByRole("button", { name: /^Advanced \(/ }));
   await fireEvent.press(screen.getByRole("button", { name: "Close" }));
   expect(screen.getByLabelText("Filters, 0 active")).toBeTruthy();
   await fireEvent.press(screen.getByLabelText("Filters, 0 active"));
-  expect(screen.getByRole("button", { name: "Advanced" }).props.accessibilityState.selected).toBe(false);
-  await fireEvent.press(screen.getByRole("button", { name: "Sleep" }));
+  expect(screen.getByRole("button", { name: /^Advanced \(/ }).props.accessibilityState.selected).toBe(false);
+  await fireEvent.press(screen.getByRole("button", { name: /^Sleep \(/ }));
   await fireEvent.press(screen.getByText("Apply filters"));
   await fireEvent.press(screen.getByLabelText("Filters, 1 active"));
   await fireEvent.press(screen.getByText("Clear filters"));
@@ -82,4 +83,14 @@ test("sensitive and pre-filtered intimacy results never emit discovery telemetry
   await act(() => jest.advanceTimersByTime(1000));
   expect(mockTrack).toHaveBeenCalledWith("protocol_search_used");
   expect(mockTrack.mock.calls[0]).toHaveLength(1);
+});
+
+test("Advanced disables Stress even when another purpose has matches, and active filters can be removed", async () => {
+  await render(<Protocols />);
+  await fireEvent.press(screen.getByLabelText("Filters, 0 active"));
+  await fireEvent.press(screen.getByRole("button", { name: /^Advanced \(/ }));
+  expect(screen.getByRole("button", { name: "Stress (0)" }).props.accessibilityState.disabled).toBe(true);
+  await fireEvent.press(screen.getByRole("button", { name: /^General wellness \(/ }));
+  expect(screen.getByRole("button", { name: "Stress (0)" }).props.accessibilityState.disabled).toBe(true);
+  expect(screen.getByRole("button", { name: /^Advanced \(/ }).props.accessibilityState.disabled).toBe(false);
 });

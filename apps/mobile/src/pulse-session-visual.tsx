@@ -5,12 +5,11 @@ import type { snapshot } from "@inout/breathing-engine";
 import type { Phase, Preferences } from "@inout/shared-types";
 import { PulseOrb } from "./pulse-orb";
 import { resolvePacerTheme } from "./pacer-theme";
-import { breathingGuidance } from "./breathing-guidance";
-import { Copy } from "./ui";
-import { t } from "./i18n";
+import { SessionReadout } from "./session-readout";
+import { sessionAnimationSize, pulseStageFill } from "./session-layout";
 
-export function PulseSessionVisual({ view, phases, running, cycleLabel, pacerTheme, geometry = "pulse" }: {
-  view: ReturnType<typeof snapshot>; phases: Phase[]; running: boolean; cycleLabel?: string; pacerTheme?: Preferences["pacerTheme"]; geometry?: "pulse" | "box" | "triangle";
+export function PulseSessionVisual({ view, phases, running, cycleLabel, pacerTheme, geometry = "pulse", availableHeight, nextLabel }: {
+  view: ReturnType<typeof snapshot>; phases: Phase[]; running: boolean; cycleLabel?: string; pacerTheme?: Preferences["pacerTheme"]; geometry?: "pulse" | "box" | "triangle"; availableHeight?: number; nextLabel?: string;
 }) {
   const [reduced, setReduced] = useState(true);
   useEffect(() => {
@@ -19,29 +18,21 @@ export function PulseSessionVisual({ view, phases, running, cycleLabel, pacerThe
     const sub = AccessibilityInfo.addEventListener("reduceMotionChanged", setReduced);
     return () => { active = false; sub.remove(); };
   }, []);
-  const { width, height } = useWindowDimensions();
-  const guidance = breathingGuidance(phases, view.phaseIndex, view.phaseElapsedMs);
-  const size = Math.max(96, Math.min(260, width - 104, height * .32));
-  const separate = true;
+  const { width, height, fontScale } = useWindowDimensions();
+  const [measuredWidth, setMeasuredWidth] = useState<number | null>(null);
+  const [readoutHeight, setReadoutHeight] = useState(190 * fontScale);
+  const size = sessionAnimationSize(measuredWidth ?? width - 56, availableHeight ?? height * .7, readoutHeight);
   const theme = resolvePacerTheme(pacerTheme);
-  const readout = <View accessible accessibilityLabel={`${t(running ? guidance.label : "Paused")}. ${Math.ceil(view.phaseRemainingMs / 1000)}. ${view.phase.nostril ? t(view.phase.nostril + " nostril") : ""}`}
-    style={{ alignItems: "center", flexDirection: separate ? "row" : "column", flexWrap: "wrap", justifyContent: "center", gap: separate ? 12 : 4, padding: 8 }}>
-    <Copy style={{ color: theme.preview.secondaryText, fontSize: 16, lineHeight: 24, fontWeight: "700", textAlign: "center" }}>{running ? guidance.label : "Paused"}</Copy>
-    <Copy style={{ color: theme.preview.text, fontSize: separate ? 38 : 48, lineHeight: separate ? 46 : 56, fontWeight: "700", fontVariant: ["tabular-nums"] }}>{Math.ceil(view.phaseRemainingMs / 1000)}</Copy>
-    {view.phase.nostril && <Copy style={{ color: theme.preview.text }}>{view.phase.nostril.toUpperCase()} NOSTRIL</Copy>}
-  </View>;
-  return <View testID="pulse-session-visual" style={{ width: "100%", gap: 12, alignItems: "center", padding: 12, backgroundColor: theme.preview.background, borderRadius: 24, overflow: "hidden" }}>
-    <View style={{ width: "100%", alignItems: "center", justifyContent: "center" }}>
+  return <View testID="pulse-session-visual" style={{ width: "100%", gap: 12, alignItems: "center", padding: 0, backgroundColor: theme.preview.background, borderRadius: 24 }}>
+    <View testID="session-animation-area" onLayout={event => setMeasuredWidth(event.nativeEvent.layout.width)} style={{ width: "100%", height: size, alignItems: "center", justifyContent: "center" }}>
       {geometry !== "pulse" ? <View testID={`${geometry}-orb-container`} style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }} pointerEvents="none">
         <View style={geometry === "triangle" ? { transform: [{ translateY: size * (.1 + .8 / Math.sqrt(3) - .5) }] } : undefined}>
           <PulseOrb view={view} phases={phases} running={running} size={size * (geometry === "triangle" ? .43 : .76)} minimumScale={.45} theme={pacerTheme ?? "default"} />
         </View>
         <BoxVisual phases={phases} geometry={geometry} view={view} running={running} reduced={reduced} pacerTheme={pacerTheme ?? "default"} />
-      </View> : <PulseOrb view={view} phases={phases} running={running} size={size} minimumScale={.45} theme={pacerTheme ?? "default"} />}
-      {!separate && <View style={{ position: "absolute", backgroundColor: `${theme.preview.surface}E8`, borderColor: `${theme.preview.ring}88`, borderWidth: 1, borderRadius: 28, maxWidth: "90%" }}>{readout}</View>}
+      </View> : <PulseOrb view={view} phases={phases} running={running} size={size * pulseStageFill} minimumScale={.58} theme={pacerTheme ?? "default"} />}
     </View>
-    {separate && <View style={{ backgroundColor: theme.preview.surface, borderColor: `${theme.preview.ring}88`, borderWidth: 1, borderRadius: 20 }}>{readout}</View>}
-    <Copy style={{ color: theme.preview.secondaryText, textAlign: "center" }}>{cycleLabel ?? `${t("CYCLE")} ${view.currentCycle}/${view.totalCycles}`}</Copy>
-    <Copy style={{ color: theme.preview.secondaryText, textAlign: "center" }}>{running ? guidance.instruction : "Breathe naturally while paused"}</Copy>
+    <SessionReadout view={view} phases={phases} running={running} cycleLabel={cycleLabel} pacerTheme={pacerTheme} nextLabel={nextLabel}
+      onLayout={event => setReadoutHeight(event.nativeEvent.layout.height)} />
   </View>;
 }

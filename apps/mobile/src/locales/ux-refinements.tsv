@@ -1,0 +1,47 @@
+How are you feeling right now?	¿Cómo te sientes ahora?	Como você está se sentindo agora?
+Very bad	Muy mal	Muito mal
+Not great	No muy bien	Não muito bem
+Okay	Regular	Mais ou menos
+Good	Bien	Bem
+Excellent	Excelente	Excelente
+Well-being rating	Puntuación de bienestar	Nota de bem-estar
+Lower well-being rating	Disminuir puntuación de bienestar	Diminuir nota de bem-estar
+Higher well-being rating	Aumentar puntuación de bienestar	Aumentar nota de bem-estar
+Choose 1 for feeling very bad or 10 for feeling excellent.	Elige 1 si te sientes muy mal o 10 si te sientes excelente.	Escolha 1 se estiver se sentindo muito mal ou 10 se estiver excelente.
+Self-reported well-being · 1–10	Bienestar percibido · 1–10	Bem-estar percebido · 1–10
+{0} paired check-ins · Self-reported well-being, 1–10	{0} registros antes y después · Bienestar percibido, 1–10	{0} registros antes e depois · Bem-estar percebido, 1–10
+Well-being unchanged	Tu bienestar no cambió	Seu bem-estar não mudou
+Well-being {0}/10 · no pre-rating	Bienestar {0}/10 · sin registro previo	Bem-estar {0}/10 · sem registro anterior
+Well-being up {0} point	Tu bienestar subió {0} punto	Seu bem-estar aumentou {0} ponto
+Well-being up {0} points	Tu bienestar subió {0} puntos	Seu bem-estar aumentou {0} pontos
+Well-being down {0} point	Tu bienestar bajó {0} punto	Seu bem-estar diminuiu {0} ponto
+Well-being down {0} points	Tu bienestar bajó {0} puntos	Seu bem-estar diminuiu {0} pontos
+Positive means improved well-being.	Un valor positivo indica mayor bienestar percibido.	Um valor positivo indica melhora no bem-estar percebido.
+Positive means improved well-being. Historical tension ratings remain in your session history.	Un valor positivo indica mayor bienestar. Los registros anteriores de tensión siguen en tu historial.	Um valor positivo indica melhora no bem-estar. Os registros anteriores de tensão continuam no histórico.
+Average from {0} completed sessions with paired ratings. Positive values mean improved well-being. Historical tension ratings are excluded. These are your observations, not a measure of clinical benefit.	Promedio de {0} sesiones completadas con ambos registros. Los valores positivos indican mayor bienestar. No incluye registros anteriores de tensión. Son tus observaciones, no una medida de beneficio clínico.	Média de {0} sessões concluídas com os dois registros. Valores positivos indicam melhora no bem-estar. Registros anteriores de tensão não entram no cálculo. São suas observações, não uma medida de benefício clínico.
+You reported feeling better. Your session is saved.	Indicaste que te sientes mejor. Tu sesión está guardada.	Você registrou que está se sentindo melhor. Sua sessão foi salva.
+Include my well-being change when sharing	Incluir mi cambio de bienestar al compartir	Incluir minha mudança de bem-estar ao compartilhar
+Median State Shift: {0}	Mediana del cambio de estado: {0}	Mediana da mudança de estado: {0}
+Improved: {0} · Unchanged: {1} · Declined: {2}	Mejoró: {0} · Sin cambio: {1} · Empeoró: {2}	Melhorou: {0} · Sem mudança: {1} · Piorou: {2}
+Rate how you feel, breathe gently for sixty seconds, then rate the same feeling again. A change in either direction is a valid result.	Indica cómo te sientes, respira suavemente durante sesenta segundos y vuelve a registrar cómo te sientes. Un cambio en cualquier dirección es válido.	Registre como você se sente, respire suavemente por sessenta segundos e registre de novo. Uma mudança em qualquer direção é válida.
+Self-reported well-being, not a medical measurement. Sit safely, never while driving or in water. Stop if dizzy or uncomfortable.	Bienestar percibido, no una medición médica. Siéntate en un lugar seguro, nunca al conducir ni en el agua. Detente si te mareas o sientes incomodidad.	Bem-estar percebido, não uma medida médica. Sente-se em segurança, nunca ao dirigir ou na água. Pare se sentir tontura ou desconforto.
+About this practice	Sobre esta práctica	Sobre esta prática
+Benefits and purpose	Beneficios y propósito	Benefícios e propósito
+Advanced settings	Ajustes avanzados	Configurações avançadas
+Disable all notifications?	¿Desactivar todas las notificaciones?	Desativar todas as notificações?
+Your reminder times will be kept.	Se conservarán los horarios de tus recordatorios.	Os horários dos seus lembretes serão mantidos.
+Disable	Desactivar	Desativar
+Reset notification settings?	¿Restablecer los ajustes de notificaciones?	Redefinir as configurações de notificações?
+Notification categories will be turned off and the default schedule restored.	Se desactivarán las categorías de notificaciones y se restaurará el horario predeterminado.	As categorias de notificações serão desativadas e os horários padrão serão restaurados.
+Subscription setup is incomplete. Please contact Help & feedback. Free practice is available.	La configuración de las suscripciones está incompleta. Contacta a Ayuda y comentarios. Puedes seguir practicando gratis.	A configuração das assinaturas está incompleta. Entre em contato em Ajuda e comentários. Você pode continuar praticando de graça.
+This plan is not available from your store right now. Refresh plans or contact Help & feedback.	Este plan no está disponible en tu tienda por ahora. Actualiza los planes o contacta a Ayuda y comentarios.	Este plano não está disponível na sua loja agora. Atualize os planos ou entre em contato em Ajuda e comentários.
+Your store could not load purchases. Check your store account and try again.	Tu tienda no pudo cargar las compras. Revisa tu cuenta de la tienda e inténtalo de nuevo.	Sua loja não conseguiu carregar as compras. Confira sua conta da loja e tente novamente.
+The subscription service is temporarily unavailable. Please try again later.	El servicio de suscripciones no está disponible temporalmente. Inténtalo más tarde.	O serviço de assinaturas está temporariamente indisponível. Tente mais tarde.
+Could not load subscription information. Try again or contact Help & feedback.	No se pudo cargar la información de suscripciones. Inténtalo de nuevo o contacta a Ayuda y comentarios.	Não foi possível carregar as informações de assinatura. Tente novamente ou entre em contato em Ajuda e comentários.
+No subscription plans were returned by your store. Try again later or contact Help & feedback.	Tu tienda no devolvió planes de suscripción. Inténtalo más tarde o contacta a Ayuda y comentarios.	Sua loja não retornou planos de assinatura. Tente mais tarde ou entre em contato em Ajuda e comentários.
+Reset	Restablecer	Redefinir
+Timer	Cronómetro	Cronômetro
+Measure a comfortable breath hold	Mide una pausa respiratoria cómoda	Meça uma pausa respiratória confortável
+Local schedules refresh when you open the app.	Los horarios locales se actualizan cuando abres la app.	Os agendamentos locais são atualizados ao abrir o app.
+Average well-being change: {0}	Cambio promedio de bienestar: {0}	Mudança média no bem-estar: {0}
+No paired well-being ratings yet	Aún no hay registros de bienestar antes y después	Ainda sem registros de bem-estar antes e depois

@@ -76,7 +76,7 @@ export default function Result() {
     );
   const dailyStats = dailyResetStats(controller.dailyReset(), record.completionLocalDay);
   const dailyCredit = controller.dailyReset().credits.find(c => c.sessionId === record.id);
-  const shift = stateShift(record.pre, record.post);
+  const shift = stateShift(record.pre, record.post, record.stateMetric);
   const resultColor = shift !== null && shift > 0 ? colors.exhale : colors.accent;
   const view = snapshot(record.engine, record.engine.anchorAt);
   const enrollment = controller.coachState().enrollments.find(e => e.completed.some(step => step.sessionId === record.id));
@@ -95,7 +95,7 @@ export default function Result() {
         variant="saved"
         awards={controller.latestAwards}
         title={record.dailyReset ? "The 60-Second Reset" : shift !== null && shift > 0 ? "A little lighter." : "Session saved!"}
-        message={shift !== null && shift > 0 ? "You reported less tension. A moment worth celebrating — your session is saved." : "Your practice is part of your progress. Nicely done."}
+        message={shift !== null && shift > 0 ? (record.stateMetric === "wellbeing_v2" ? "You reported feeling better. Your session is saved." : "You reported less tension. A moment worth celebrating — your session is saved.") : "Your practice is part of your progress. Nicely done."}
       />}
       {saved === "1" && controller.current?.id === id && !controller.error && record.endReason === "completed" && !!controller.pacerThemeNotice.length && <Card>
         <Label>NEW PACER THEME</Label>
@@ -143,7 +143,7 @@ export default function Result() {
           </View>
         </View>
         <Title>{shiftText(record)}</Title>
-        <Copy style={s.small}>Self-reported tension · 1–10</Copy>
+        <Copy style={s.small}>{record.stateMetric === "wellbeing_v2" ? "Self-reported well-being · 1–10" : "Self-reported tension · 1–10"}</Copy>
       </Card>}
       {record.source !== "manual" && <Card>
         <Label>CADENCE</Label>

@@ -27,7 +27,7 @@ export function OnboardingHero({ compact = false }: { compact?: boolean }) {
   </LinearGradient>;
 }
 
-export function OnboardingScene({ children }: { children: React.ReactNode }) {
+export function OnboardingScene({ children, compact = false }: { children: React.ReactNode; compact?: boolean }) {
   const opacity = useRef(new Animated.Value(1)).current;
   useEffect(() => {
     let alive = true;
@@ -39,5 +39,5 @@ export function OnboardingScene({ children }: { children: React.ReactNode }) {
     }).catch(() => {});
     return () => { alive = false; listener.remove(); opacity.stopAnimation(); };
   }, [opacity]);
-  return <Animated.View style={{ opacity, gap: 20 }}>{children}</Animated.View>;
+  return <Animated.View style={{ opacity, gap: compact ? 8 : 20 }}>{children}</Animated.View>;
 }

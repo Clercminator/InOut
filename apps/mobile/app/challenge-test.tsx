@@ -9,7 +9,7 @@ import { testCatalog, personalBest } from "../src/challenge-tests";
 import { ChallengeArt } from "../src/challenge-art";
 import { useTheme } from "../src/theme";
 import { useLanguage } from "../src/use-language";
-import { message } from "../src/i18n";
+import { message, decimal, t } from "../src/i18n";
 
 export default function ChallengeTest() {
   useLanguage();
@@ -97,14 +97,14 @@ export default function ChallengeTest() {
     {running ? <>
       <Label>{d.id === "nasal-10" ? "EASY WALK · TIME REMAINING" : "STAY COMFORTABLE"}</Label>
       <View style={{ minHeight: 240, borderRadius: 120, backgroundColor: colors.accentSurface, alignItems: "center", justifyContent: "center" }}>
-        <Copy translate={false} accessibilityLabel={d.id === "nasal-10" ? message("{0} seconds remaining", [remaining]) : message("{0} seconds", [(elapsed / 1000).toFixed(1)])} style={{ fontSize: 64, lineHeight: 80, color: colors.accent, fontVariant: ["tabular-nums"] }}>{d.id === "nasal-10" ? `${Math.floor(remaining / 60)}:${String(remaining % 60).padStart(2, "0")}` : (elapsed / 1000).toFixed(1)}</Copy>
+        <Copy translate={false} accessibilityLabel={d.id === "nasal-10" ? message("{0} seconds remaining", [remaining]) : message("{0} seconds", [decimal(elapsed / 1000)])} style={{ fontSize: 64, lineHeight: 80, color: colors.accent, fontVariant: ["tabular-nums"] }}>{d.id === "nasal-10" ? `${Math.floor(remaining / 60)}:${String(remaining % 60).padStart(2, "0")}` : decimal(elapsed / 1000)}</Copy>
       </View>
       <Copy>{d.id === "comfort-hold" ? "Finish at the first desire to breathe. Resume normal breathing." : d.id === "nasal-10" ? "Keep the walk easy. Return to normal breathing whenever needed." : "Finish as soon as your comfortable exhale ends."}</Copy>
       {d.id !== "nasal-10" && <Button title="Finish" onPress={() => c.finishTest(timing.current ? performance.now() - timing.current.mono : 0)} />}
       <Button title="Stop without a result" secondary onPress={() => { timing.current = null; c.abandonTest(); setNotice("Resume normal breathing. Try again only when comfortable."); }} />
     </> : p?.finishedAt !== undefined ? <>
       <ChallengeArt art={d.art} height={180} /><Title>{d.id === "nasal-10" ? "How did your walk go?" : "Your result"}</Title>
-      <Copy translate={false} style={{ fontSize: 56, lineHeight: 68, color: colors.accent }}>{p.value?.toFixed(1)} {d.unit}</Copy>
+      <Copy translate={false} style={{ fontSize: 56, lineHeight: 68, color: colors.accent }}>{p.value == null ? "—" : decimal(p.value)} {t(d.unit)}</Copy>
       <Copy>{d.id === "nasal-10" ? "Did you complete all 10 minutes breathing only through your nose?" : "Resume calm normal breathing. Save this attempt to your personal history."}</Copy>
       <Button title={d.id === "nasal-10" ? "Yes, all 10 minutes" : "Save result"} disabled={!!c.error || locked} onPress={() => save(true)} />
       {d.id === "nasal-10" && <Button title="Not this time" secondary disabled={!!c.error || locked} onPress={() => save(false)} />}
@@ -112,12 +112,12 @@ export default function ChallengeTest() {
       <Button title="Discard attempt" secondary onPress={() => c.abandonTest()} />
     </> : <>
       <ChallengeArt art={d.art} height={190} /><Title>{d.title}</Title><Copy>{d.description}</Copy><Label>{d.duration}</Label>
-      {d.type === "benchmark" && <Card><Label>PERSONAL HISTORY</Label><Title>{best ? message("Best: {0} sec", [best.value.toFixed(1)]) : "Establish your baseline"}</Title><Copy>{message("Attempts: {0}", [history.length])}</Copy></Card>}
+      {d.type === "benchmark" && <Card><Label>PERSONAL HISTORY</Label><Title>{best ? message("Best: {0} sec", [decimal(best.value)]) : "Establish your baseline"}</Title><Copy>{message("Attempts: {0}", [history.length])}</Copy></Card>}
       <Card><Label>HOW IT WORKS</Label><Copy>{d.instructions}</Copy></Card>
       <Card><Label>STAY SAFE</Label><Copy>{d.safety}</Copy><ActionRow title="Breathing safety" icon="health-and-safety" onPress={() => router.push("/safety")} /></Card>
       {excluded ? <><Copy>You marked this test as unsuitable. Choose another practice.</Copy><Button title="Review my eligibility" secondary onPress={() => { c.excludeTest(d.id, false); setConfirmed(false); }} /></> : <>
         <Chip title={d.id === "nasal-10" ? "I am somewhere safe for an easy walk" : "I have read the precautions and I am in a safe place"} selected={confirmed} onPress={() => setConfirmed(!confirmed)} />
-        {d.id === "state-shift-60" && <><Title>How tense are you right now?</Title><StateScale value={rating} onChange={setRating} /></>}
+        {d.id === "state-shift-60" && <><Title>How are you feeling right now?</Title><StateScale value={rating} onChange={setRating} /></>}
         {pending && !p && <Button title="Resume unfinished challenge" secondary onPress={() => router.replace({ pathname: "/challenge-test", params: { id: pending.challengeId } })} />}
         {c.current && c.current.stage !== "result" && <Button title="Resume practice" secondary onPress={() => router.push(c.current?.stage === "post" ? "/post" : "/session")} />}
         <Button title={locked ? "Unlock with InOut Pro" : "Ready · Start"} disabled={!locked && (!confirmed || (d.id === "state-shift-60" && rating === null) || !!pending || !!c.error || (!!c.current && c.current.stage !== "result"))} onPress={start} />

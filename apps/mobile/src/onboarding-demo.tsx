@@ -18,7 +18,7 @@ export function OnboardingDemo() {
   const [finished, setFinished] = useState(false);
   const clock = useRef(0);
   const generation = useRef(0);
-  const { width } = useWindowDimensions();
+  const { width, height, fontScale } = useWindowDimensions();
   const stop = useCallback(() => { generation.current++; setEngine(null); setFinished(false); }, []);
   useFocusEffect(useCallback(() => {
     const listener = AppState.addEventListener("change", state => { if (state !== "active") stop(); });
@@ -37,12 +37,12 @@ export function OnboardingDemo() {
     return () => clearInterval(timer);
   }, [engine]);
   const view = snapshot(engine ?? idle, now);
-  return <View style={{ gap: 16 }}>
-    <View style={{ borderRadius: 32, padding: 24, alignItems: "center", gap: 18, backgroundColor: "#171024", overflow: "hidden" }}>
-      <PulseOrb view={engine ? view : snapshot(idle, 0)} phases={phases} running={!!engine} size={Math.min(228, width - 96)} />
-      <Copy accessibilityLiveRegion="polite" style={{ color: "#FFFFFF", fontSize: 24, lineHeight: 32, textAlign: "center", fontWeight: "700" }}>{engine ? view.phase.type === "inhale" ? "Breathe in" : "Breathe out" : finished ? "Return to natural breathing." : "Follow your own comfort."}</Copy>
+  return <View style={{ gap: 8 }}>
+    <View style={{ borderRadius: 32, padding: 16, alignItems: "center", gap: 10, backgroundColor: "#171024", overflow: "hidden" }}>
+      <PulseOrb view={engine ? view : snapshot(idle, 0)} phases={phases} running={!!engine} size={Math.max(112, Math.min(228, width - 96, (height - 500) / Math.max(1, fontScale)))} />
+      <Copy accessibilityLiveRegion="polite" style={{ color: "#FFFFFF", fontSize: 20, lineHeight: 26, textAlign: "center", fontWeight: "700" }}>{engine ? view.phase.type === "inhale" ? "Breathe in" : "Breathe out" : finished ? "Return to natural breathing." : "Follow your own comfort."}</Copy>
     </View>
-    <Copy>No holds. No score. Breathe gently and stop whenever you need.</Copy>
+    <Copy>Breathe gently. Stop if you feel dizzy or unwell.</Copy>
     <Button title={engine ? "Stop demonstration" : finished ? "Try again" : "Try a few breaths"} secondary onPress={() => {
       if (engine) stop();
       else { clock.current = performance.now(); setNow(0); setFinished(false); setEngine(start(plan, 0)); }

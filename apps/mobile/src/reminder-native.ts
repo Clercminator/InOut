@@ -1,3 +1,4 @@
+import { notificationCopy } from "./notification-content";
 import Constants from "expo-constants";
 import { Platform } from "react-native";
 import type * as Notifications from "expo-notifications";
@@ -20,8 +21,9 @@ const achievementPrefix = "inout-achievement:";
 export interface DailyResetSchedule { enabled: boolean; hour: number; minute: number; weekdays: number[]; }
 export function nativeReminderAdapter(
   message: () => string = () => "A moment to breathe, when it suits you.",
-  quietHours: () => Pick<LocalNotificationPreferences, "quietHoursEnabled" | "quietStartHour" | "quietEndHour"> =
+  quietHours: () => Pick<LocalNotificationPreferences, "quietHoursEnabled" | "quietStartHour" | "quietEndHour" | "quietStartMinute" | "quietEndMinute"> =
     () => ({ quietHoursEnabled: false, quietStartHour: 22, quietEndHour: 8 }),
+  lastPracticeAt: () => number | null = () => null,
 ): ReminderAdapter {
   return {
     async permission(request) {
@@ -39,11 +41,24 @@ export function nativeReminderAdapter(
     async schedule(id, reminder, weekday) {
       const sdk = notifications();
       if (!sdk) throw new Error("Reminders need an installed native build. They are unavailable in Expo Go.");
-      const adjusted = notificationTime(new Date(2026, 5, 6 + weekday), reminder.hour, reminder.minute, quietHours());
+      const now = new Date();
+      const day = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      day.setDate(day.getDate() + (weekday - (day.getDay() + 1) + 7) % 7);
+      let adjusted = notificationTime(day, reminder.hour, reminder.minute, { ...quietHours(), weekdays: reminder.weekdays });
+      if (adjusted.getTime() <= now.getTime() + 60_000) {
+        day.setDate(day.getDate() + 7);
+        adjusted = notificationTime(day, reminder.hour, reminder.minute, { ...quietHours(), weekdays: reminder.weekdays });
+      }
+      if (adjusted.getTime() > now.getTime() + 7 * 86400000) return;
+      const practice = lastPracticeAt();
+      if (practice !== null && notificationDayKey(adjusted) === notificationDayKey(new Date(practice))) return;
+      const existing = await sdk.getAllScheduledNotificationsAsync();
+      // User schedules take priority; overlapping saved reminders share one daily slot.
+      if (existing.some(item => item.identifier.startsWith("inout-reminder:") && typeof item.content.data?.scheduledFor === "string" && notificationDayKey(new Date(item.content.data.scheduledFor)) === notificationDayKey(adjusted))) return;
       await sdk.scheduleNotificationAsync({ identifier: id,
         content: { title: "IN/OUT", body: t(message()), sound: false, color: "#5B2DFF",
-          data: { notificationType: "practice-reminder", reminderId: reminder.id } },
-        trigger: { type: sdk.SchedulableTriggerInputTypes.WEEKLY, weekday: adjusted.getDay() + 1, hour: adjusted.getHours(), minute: adjusted.getMinutes(), channelId },
+          data: { notificationType: "practice-reminder", reminderId: reminder.id, scheduledFor: adjusted.toISOString() } },
+        trigger: { type: sdk.SchedulableTriggerInputTypes.DATE, date: adjusted, channelId },
       });
     },
   };
@@ -92,7 +107,7 @@ export function configureEngagementNotifications(preferences: Preferences, reque
   const today = new Date();
   const key = JSON.stringify([settings.weeklyProgress, settings.dailyReset, settings.motivation, settings.checkIn, settings.achievements,
     settings.hour, settings.minute, settings.weekdays, settings.quietStartHour, settings.quietEndHour,
-    settings.quietHoursEnabled, settings.education, settings.reengagement, settings.promotions, preferences.language, context,
+    settings.quietStartMinute, settings.quietEndMinute, settings.quietHoursEnabled, settings.education, settings.reengagement, settings.promotions, preferences.language, context,
     today.getFullYear(), today.getMonth(), today.getDate(), today.getTimezoneOffset()]);
   if (!force && !requestPermission && configuredEngagementKey === key) return Promise.resolve();
   if (engagementConfiguration?.key === key) return engagementConfiguration.promise;
@@ -113,7 +128,7 @@ async function applyEngagementNotifications(settings: LocalNotificationPreferenc
   const prior = await sdk.getAllScheduledNotificationsAsync();
   // Remove obsolete conditional prompts even after permission revocation or a Pro grant.
   for (const item of prior) if (item.identifier.startsWith(engagementNotificationPrefix) ||
-    (!settings.achievements && item.identifier.startsWith(achievementPrefix))) await sdk.cancelScheduledNotificationAsync(item.identifier);
+    item.identifier.startsWith(achievementPrefix)) await sdk.cancelScheduledNotificationAsync(item.identifier);
   if (active && requestPermission && !await adapter.permission(true))
     throw new Error("Notifications are off. Enable them in phone settings, then try again.");
   if (active && !await adapter.permission(false))
@@ -124,7 +139,10 @@ async function applyEngagementNotifications(settings: LocalNotificationPreferenc
       { identifier: "DISMISS_CHECK_IN", buttonTitle: t("Not yet"), options: { opensAppToForeground: false } },
     ]);
   }
-  const reservedDays = new Set<string>();
+  const reservedDays = new Set(prior.filter(item => item.identifier.startsWith("inout-reminder:")).flatMap(item => {
+    const at = item.content.data?.scheduledFor;
+    return typeof at === "string" && Number.isFinite(Date.parse(at)) ? [notificationDayKey(new Date(at))] : [];
+  }));
   // Pending earned events must also follow edited times/quiet hours; never invent a new award.
   for (const item of prior.filter(item => settings.achievements && item.identifier.startsWith(achievementPrefix))) {
     const original = item.content.data?.scheduledFor;
@@ -135,12 +153,12 @@ async function applyEngagementNotifications(settings: LocalNotificationPreferenc
       const candidateDay = new Date(day.getFullYear(), day.getMonth(), day.getDate() + offset);
       if (!settings.weekdays.includes(candidateDay.getDay() + 1)) continue;
       const candidate = notificationTime(candidateDay, settings.hour, settings.minute, settings);
-      if (candidate.getTime() > Date.now() + 60_000) { at = candidate; break; }
+      if (settings.weekdays.includes(candidate.getDay() + 1) && !reservedDays.has(notificationDayKey(candidate)) && candidate.getTime() > Date.now() + 60_000) { at = candidate; break; }
     }
     await sdk.cancelScheduledNotificationAsync(item.identifier);
     if (at) {
       await sdk.scheduleNotificationAsync({ identifier: item.identifier,
-        content: { title: "IN/OUT", sound: false, color: "#5B2DFF", body: t("You earned a practice milestone."), data: { ...item.content.data, scheduledFor: at.toISOString() } },
+        content: { title: "IN/OUT", sound: false, color: "#5B2DFF", body: t(notificationCopy(["achievement"], at)), data: { ...item.content.data, scheduledFor: at.toISOString() } },
         trigger: { type: sdk.SchedulableTriggerInputTypes.DATE, date: at, channelId },
       });
       reservedDays.add(notificationDayKey(at));
@@ -193,16 +211,16 @@ export async function scheduleAchievementNotification(
   let at: Date | null = null;
   for (let offset = 0; offset < 8 && !at; offset++) {
     const day = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offset);
-    if (value.weekdays.length && !value.weekdays.includes(day.getDay() + 1)) continue;
+    if (!value.weekdays.includes(day.getDay() + 1)) continue;
     const candidate = notificationTime(day, value.hour, value.minute, value);
-    if (candidate.getTime() > now.getTime() + 60_000 && !reservedDays.has(notificationDayKey(candidate))) at = candidate;
+    if (value.weekdays.includes(candidate.getDay() + 1) && candidate.getTime() > now.getTime() + 60_000 && !reservedDays.has(notificationDayKey(candidate))) at = candidate;
   }
   if (!at) return null;
   const identifier = `${achievementPrefix}${awardId}`;
   await sdk.scheduleNotificationAsync({
     identifier,
     content: {
-      title: "IN/OUT", body: t("You earned a practice milestone."), sound: false, color: "#5B2DFF",
+      title: "IN/OUT", body: t(notificationCopy(["achievement"], at)), sound: false, color: "#5B2DFF",
       data: { notificationType: "achievement", awardId, scheduledFor: at.toISOString() },
     },
     trigger: { type: sdk.SchedulableTriggerInputTypes.DATE, date: at, channelId },

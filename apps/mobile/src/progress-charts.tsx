@@ -103,7 +103,7 @@ export function StateShiftChart({ buckets }: { buckets: StatsBucket[] }) {
   const label = (value: number | null) => value === null ? "No paired ratings" : `${value > 0 ? "+" : ""}${decimal(value, 1)} average State Shift`;
   return <Card>
     <Label>STATE SHIFT OVER TIME</Label>
-    <Copy style={s.small}>Positive means lower self-reported tension. Gaps mean no paired ratings.</Copy>
+    <Copy style={s.small}>Positive means improved well-being. Historical tension ratings remain in your session history.</Copy>
     {!buckets.some(b => summarize(b.records).shifts) ? <Copy>Add before-and-after ratings to see your trend.</Copy> : <ChartFrame buckets={buckets}
       selected={selected} select={index => setKey(buckets[index].key)} ticks={["+9", "0", "−9"]}
       description={`${chosen.label}: ${label(summary.averageShift)} · ${summary.shifts} paired ratings`}

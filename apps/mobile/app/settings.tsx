@@ -1,3 +1,4 @@
+import { countLabel } from "../src/i18n";
 import { audioSettings } from "../src/audio-preferences";
 import { WelcomeEmailOptIn } from "../src/welcome-email-ui";
 import { useShareLinks } from "../src/share-links-context";
@@ -88,7 +89,7 @@ export default function Settings() {
       </Disclosure>
       <Label>PRACTICE</Label>
       <Disclosure title="Your practice" icon="person-outline">
-        <Copy>IN/OUT · {historyCount} sessions</Copy>
+        <Copy>IN/OUT · {countLabel(historyCount, "session")}</Copy>
         <ActionRow title="Open Profile" icon="person-outline" onPress={() => router.push("/profile")} />
         <ActionRow title="Personalize my experience" icon="palette" onPress={() => router.push("/personalize")} />
       </Disclosure>

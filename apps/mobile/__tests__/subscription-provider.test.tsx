@@ -7,7 +7,7 @@ const mockSdk = { ENTITLEMENT_VERIFICATION_MODE: { INFORMATIONAL: "INFORMATIONAL
 jest.mock("react-native-purchases", () => ({ default: mockSdk }));
 const info = () => ({ requestDate: new Date(1000).toISOString(), entitlements: { verification: "VERIFIED", all: { in_out_pro: { productIdentifier: "fixture", expirationDate: new Date(10000).toISOString(), isActive: true, willRenew: true, periodType: "NORMAL" } } }, managementURL: "https://apps.apple.com/account/subscriptions" });
 const item = (period: string, price: number) => ({ product: { identifier: period, priceString: `${price},00 Kč`, price, currencyCode: "CZK", subscriptionPeriod: period } });
-beforeEach(() => { jest.clearAllMocks(); Platform.OS = "ios"; mockSdk.getCustomerInfo.mockResolvedValue(info()); mockSdk.restorePurchases.mockResolvedValue(info()); mockSdk.purchasePackage.mockResolvedValue({ customerInfo: info() }); mockSdk.checkTrialOrIntroductoryPriceEligibility.mockResolvedValue({}); mockSdk.getOfferings.mockResolvedValue({ all: { default: { weekly: item("P1W", 50), monthly: item("P1M", 100), annual: item("P1Y", 900) } } }); });
+beforeEach(() => { jest.clearAllMocks(); Platform.OS = "ios"; mockSdk.getCustomerInfo.mockResolvedValue(info()); mockSdk.restorePurchases.mockResolvedValue(info()); mockSdk.purchasePackage.mockResolvedValue({ customerInfo: info() }); mockSdk.checkTrialOrIntroductoryPriceEligibility.mockResolvedValue({}); mockSdk.getOfferings.mockResolvedValue({ all: { default: { availablePackages: [item("P1M", 100)], weekly: item("P1W", 50), monthly: item("P1M", 100), annual: item("P1Y", 900) } } }); });
 
 test("uses exact entitlement/default offering, three store-localized prices and Monthly default", async () => {
   const provider = revenueCatAdapter("appl_fixture");
@@ -22,14 +22,28 @@ test("uses exact entitlement/default offering, three store-localized prices and 
 test("missing offering, unknown duration, missing price or currency never fabricate an offer", async () => {
   const provider = revenueCatAdapter("appl_fixture");
   mockSdk.getOfferings.mockResolvedValueOnce({ current: { monthly: item("P1M", 100) }, all: {} });
-  expect(await provider.offers()).toEqual([]);
-  mockSdk.getOfferings.mockResolvedValueOnce({ all: { default: { weekly: item("P3M", 50), monthly: { product: { ...item("P1M", 100).product, priceString: "" } }, annual: { product: { ...item("P1Y", 900).product, currencyCode: "" } } } } });
+  await expect(provider.offers()).rejects.toMatchObject({ reason: "configuration" });
+  mockSdk.getOfferings.mockResolvedValueOnce({ all: { default: { availablePackages: [item("P1M", 100)], weekly: item("P3M", 50), monthly: { product: { ...item("P1M", 100).product, priceString: "" } }, annual: { product: { ...item("P1Y", 900).product, currencyCode: "" } } } } });
   expect(await provider.offers()).toEqual([]);
   await expect(provider.purchase("monthly")).rejects.toMatchObject({ reason: "unavailable" });
 });
+
+test.each([["10", "network"], ["23", "configuration"], ["2", "store"]])("iOS offering error %s stays classified in both paywall paths", async (code, reason) => {
+  const provider = revenueCatAdapter("appl_fixture");
+  mockSdk.getOfferings.mockRejectedValueOnce({ code }).mockRejectedValueOnce({ code });
+  await expect(provider.offers()).rejects.toMatchObject({ reason });
+  await expect(provider.remotePaywall!.offering("es")).rejects.toMatchObject({ reason });
+  expect(mockSdk.purchasePackage).not.toHaveBeenCalled();
+});
+
+test("empty store products remain distinct from a missing configured offering", async () => {
+  const provider = revenueCatAdapter("appl_fixture");
+  mockSdk.getOfferings.mockResolvedValueOnce({ all: { default: { availablePackages: [] } } });
+  await expect(provider.offers()).rejects.toMatchObject({ reason: "no_products" });
+});
 test("introductory terms require authoritative eligibility", async () => {
   const monthly = { product: { ...item("P1M", 100).product, introPrice: { price: 0, priceString: "0,00 Kč", cycles: 1, period: "P7D" } } };
-  mockSdk.getOfferings.mockResolvedValue({ all: { default: { monthly } } });
+  mockSdk.getOfferings.mockResolvedValue({ all: { default: { availablePackages: [monthly], monthly } } });
   const provider = revenueCatAdapter("appl_fixture");
   expect((await provider.offers())[0].introductoryOffer).toBeUndefined();
   mockSdk.checkTrialOrIntroductoryPriceEligibility.mockResolvedValue({ P1M: { status: 2 } });
@@ -70,6 +84,6 @@ test("remote paywall uses the exact default offering and preferred locale, with 
   expect(await provider.remotePaywall!.offering("es-419")).toBe(offering);
   expect(mockSdk.overridePreferredLocale).toHaveBeenCalledWith("es-419");
   mockSdk.getOfferings.mockResolvedValueOnce({ all: {} });
-  await expect(provider.remotePaywall!.offering("pt-BR")).rejects.toMatchObject({ reason: "unavailable" });
+  await expect(provider.remotePaywall!.offering("pt-BR")).rejects.toMatchObject({ reason: "configuration" });
   expect(revenueCatAdapter("test_fixture", true).remotePaywall).toBeUndefined();
 });

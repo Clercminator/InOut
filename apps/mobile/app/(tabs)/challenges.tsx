@@ -54,7 +54,7 @@ export default function Challenges() {
 
   const open = (id: string) => router.push({ pathname: tests.some(d => d.id === id) ? "/challenge-test" : "/challenge", params: { id } });
 
-  return <Screen tabScreen hideHeader footer={<AdSlot placement="challenges" />}><View style={{ gap: 8 }}><Label>YOUR PRACTICE. YOUR PROGRESS.</Label><Title>Challenges</Title><Copy>Test yourself. Build a habit. Take it into your day.</Copy></View>
+  return <Screen tabScreen title="Challenges" backLabel="Back to Home" back={() => router.navigate("/(tabs)")} footer={<AdSlot placement="challenges" />}><View style={{ gap: 8 }}><Label>YOUR PRACTICE. YOUR PROGRESS.</Label><Title>Challenges</Title><Copy>Test yourself. Build a habit. Take it into your day.</Copy></View>
 
     <DailyResetCard />
     {(todayTest || todayProgram) && <Card style={{ backgroundColor: colors.accentSurface }}><Label>TODAY’S CHALLENGE</Label><ChallengeArt art={todayTest?.art ?? todayProgram!.artKey} height={155} /><Title>{todayTest?.title ?? todayProgram!.title}</Title><Copy>{todayTest?.description ?? todayProgram!.description}</Copy><Copy>{todayTest?.duration ?? todayProgram!.time}</Copy><Button title={practiced ? "Today is complete · View" : "Start"} onPress={() => open(daily!)} /></Card>}

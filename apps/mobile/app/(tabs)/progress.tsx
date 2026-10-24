@@ -10,7 +10,7 @@ import { useProgressDate } from "../../src/progress-ui";
 import { AchievementGallery } from "../../src/achievement-gallery";
 import { WeekActivity } from "../../src/week-activity";
 import { productConfig } from "../../src/product-config";
-import { countLabel, locale, message, t } from "../../src/i18n";
+import { decimal, countLabel, locale, message, t } from "../../src/i18n";
 import { useTheme } from "../../src/theme";
 import { useLanguage } from "../../src/use-language";
 export default function Progress() {
@@ -25,18 +25,18 @@ export default function Progress() {
   useEffect(() => { if (section === "Calendar") controller.analytics.track("calendar_viewed"); }, [controller, section]);
   const records = controller.history();
   const stats = useMemo(() => practiceStats(records, now), [records, now]);
-  const paired = stats.records.filter(r => r.endReason === "completed" && r.pre !== null && r.post !== null);
+  const paired = stats.records.filter(r => r.stateMetric === "wellbeing_v2" && r.stateMetric === "wellbeing_v2" && r.endReason === "completed" && r.pre !== null && r.post !== null);
   const weekStart = addDays(now, -((now.getDay() + 6) % 7));
   const weekRecords = stats.records.filter(r => r.engine.startedAt >= weekStart.getTime());
   const weekMinutes = Math.floor(weekRecords.reduce((sum, r) => sum + r.engine.elapsedAtAnchor, 0) / 60000);
-  const shift = paired.length ? `${(paired.reduce((n, r) => n + r.pre!, 0) / paired.length).toFixed(1)} → ${(paired.reduce((n, r) => n + r.post!, 0) / paired.length).toFixed(1)}` : "—";
+  const shift = paired.length ? `${decimal(paired.reduce((n, r) => n + r.pre!, 0) / paired.length)} → ${decimal(paired.reduce((n, r) => n + r.post!, 0) / paired.length)}` : "—";
   const daily = Array.from({ length: 7 }, (_, i) => { const date = addDays(weekStart, i); return { key: dayKey(date), label: date.toLocaleDateString(locale(), { weekday: "narrow" }), records: weekRecords.filter(r => dayKey(new Date(r.engine.startedAt)) === dayKey(date)) }; });
-  return <Screen tabScreen hideHeader footer={<AdSlot placement="progress" />}>
+  return <Screen tabScreen title="Results" backLabel="Back to Home" back={() => router.navigate("/(tabs)")} footer={<AdSlot placement="progress" />}>
     <View style={{ gap: 6 }}><Title>Results</Title><Copy>Your practice, taking shape.</Copy></View>
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>{[
       [String(stats.current), "DAY STREAK"], [String(weekMinutes), "MINUTES THIS WEEK"], [String(stats.count), "SESSIONS"], [shift, "AVERAGE STATE SHIFT"],
     ].map(([value, label]) => <Card key={label} style={{ flexBasis: "46%", flexGrow: 1, padding: 16, backgroundColor: colors.accentSurface, gap: 8 }}><Copy translate={false} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{ fontSize: label === "AVERAGE STATE SHIFT" ? width < 360 ? 20 : 24 : 34, lineHeight: 40, fontWeight: "700", color: colors.accent }}>{value}</Copy><Label>{label}</Label></Card>)}</View>
-    <Copy style={{ fontSize: 12, lineHeight: 18, color: colors.secondaryText }}>{paired.length ? message("{0} paired check-ins · Self-reported tension, 1–10", [paired.length]) : "Complete optional before-and-after check-ins to see your State Shift here."}</Copy>
+    <Copy style={{ fontSize: 12, lineHeight: 18, color: colors.secondaryText }}>{paired.length ? message("{0} paired check-ins · Self-reported well-being, 1–10", [paired.length]) : "Complete optional before-and-after check-ins to see your State Shift here."}</Copy>
     <WeekActivity buckets={daily} />
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>{["Overview", "Calendar", "Badges"].map(name => <Chip key={name} title={name} selected={section === name} onPress={() => setSection(name)} />)}</View>
     {section === "Badges" && <AchievementGallery />}

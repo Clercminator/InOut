@@ -7,7 +7,7 @@ import { goalContent, journeyFor, practiceGoals, selectedGoals, toggleGoal } fro
 import { useTheme } from "./theme";
 import { GoalMark } from "./onboarding-art";
 import { t } from "./i18n";
-export function GoalPicker({ showPrimary = true }: { showPrimary?: boolean }) {
+export function GoalPicker({ showPrimary = true, compact = false }: { showPrimary?: boolean; compact?: boolean }) {
   const controller = useSession();
   const { colors } = useTheme();
   const journey = journeyFor(controller.preferences);
@@ -16,8 +16,8 @@ export function GoalPicker({ showPrimary = true }: { showPrimary?: boolean }) {
     const content = goalContent[goal], selected = goals.includes(goal);
     return <Pressable key={goal} accessibilityRole="checkbox" accessibilityLabel={t(content.title)} accessibilityState={{ checked: selected }}
       onPress={() => controller.setPreferences({ ...controller.preferences, journey: toggleGoal(controller.preferences, goal) })}
-      style={{ flexDirection: "row", gap: 14, alignItems: "center", minHeight: 64, padding: 16, borderRadius: 20, backgroundColor: selected ? colors.accentSurface : colors.card, borderWidth: selected ? 2 : 1, borderColor: selected ? colors.accent : colors.border }}>
-      <GoalMark goal={goal} /><Copy style={{ flex: 1, fontWeight: "600" }}>{content.title}</Copy>
+      style={{ flexDirection: "row", gap: 14, alignItems: "center", minHeight: compact ? 48 : 64, padding: compact ? 10 : 16, borderRadius: 20, backgroundColor: selected ? colors.accentSurface : colors.card, borderWidth: selected ? 2 : 1, borderColor: selected ? colors.accent : colors.border }}>
+      <GoalMark goal={goal} size={compact ? 32 : 48} /><Copy style={{ flex: 1, fontWeight: "600" }}>{content.title}</Copy>
       <MaterialIcons accessible={false} name={selected ? "check-box" : "check-box-outline-blank"} size={22} color={colors.accent} />
     </Pressable>;
   })}{showPrimary && goals.length > 0 && <><Label>PRIMARY GOAL · OPTIONAL</Label>

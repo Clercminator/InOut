@@ -31,6 +31,7 @@ export class ReminderService {
   items: Reminder[] = [];
   busy = false;
   message = "";
+  schedulingFailed = false;
   private revision = 0;
   private listeners = new Set<() => void>();
   private rerun = false;
@@ -54,6 +55,7 @@ export class ReminderService {
     return this.change(next, reminder.enabled);
   }
   async remove(id: string) { return this.change(this.items.filter(r => r.id !== id), false); }
+  async disableAll() { return this.change(this.items.map(r => ({ ...r, enabled: false })), false); }
   private async change(next: Reminder[], request: boolean) {
     if (this.busy || !this.readable) return false;
     const generation = this.generation;
@@ -73,7 +75,7 @@ export class ReminderService {
       this.message = "Reminder changes saved on this phone.";
       return true;
     } catch (error) {
-      if (permissionFailure) this.onScheduleFailure("permission");
+      if (permissionFailure) { this.schedulingFailed = true; this.onScheduleFailure("permission"); }
       this.message = error instanceof Error ? error.message : "Reminders could not be scheduled. Try again.";
       return false;
     } finally { this.busy = false; this.emit(); if (this.rerun) { this.rerun = false; void this.reconcile(); } }
@@ -89,6 +91,7 @@ export class ReminderService {
     finally { this.busy = false; this.emit(); if (this.rerun) { this.rerun = false; void this.reconcile(); } }
   }
   private async schedule() {
+    this.schedulingFailed = false;
     try {
       for (const id of await this.adapter.list()) if (id.startsWith(reminderPrefix)) await this.adapter.cancel(id);
       const active = this.items.filter(r => r.enabled);
@@ -100,6 +103,7 @@ export class ReminderService {
         for (const weekday of r.weekdays) await this.adapter.schedule(`${reminderPrefix}${r.id}:${weekday}`, r, weekday);
       }
     } catch (error) {
+      this.schedulingFailed = true;
       this.onScheduleFailure("scheduler");
       // Best effort removal avoids silently leaving a partially updated schedule.
       try { for (const id of await this.adapter.list()) if (id.startsWith(reminderPrefix)) await this.adapter.cancel(id); } catch {}

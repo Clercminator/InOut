@@ -1,13 +1,19 @@
 import React from "react";
-import { fireEvent, render, screen } from "@testing-library/react-native";
+import { act, fireEvent, render, screen } from "@testing-library/react-native";
+import { Alert } from "react-native";
+import { defaultPreferences } from "../src/storage";
 import { NotificationSettings } from "../src/notification-settings";
 import { ReminderContext } from "../src/reminder-context";
 import { ReminderService, type Reminder } from "../src/reminders";
 import { setLanguage } from "../src/i18n";
 jest.mock("expo-router", () => ({ router: { push: jest.fn(), back: jest.fn(), canGoBack: () => true } }));
-jest.mock("../src/provider", () => ({ useSession: () => ({ preferences: require("../src/storage").defaultPreferences,
-  history: () => [], analytics: { track: jest.fn() }, entitlements: { state: { pro: false }, billingReady: true } }) }));
-jest.mock("../src/reminder-native", () => ({ nativeReminderAdapter: () => ({ permission: async () => true }), configureEngagementNotifications: async () => {} }));
+const mockConfigure = jest.fn(async (..._args: unknown[]) => {});
+const mockController = { preferences: defaultPreferences, setPreferences: jest.fn((value: typeof defaultPreferences) => { mockController.preferences = value; }),
+  history: () => [], analytics: { track: jest.fn() }, entitlements: { state: { pro: false }, billingReady: true } };
+jest.mock("../src/provider", () => ({ useSession: () => mockController }));
+jest.mock("../src/reminder-native", () => ({ nativeReminderAdapter: () => ({ permission: async () => true }), configureEngagementNotifications: (...args: unknown[]) => mockConfigure(...args) }));
+beforeEach(() => { setLanguage("en"); mockController.preferences = defaultPreferences; mockController.setPreferences.mockClear(); mockConfigure.mockReset().mockResolvedValue(undefined); });
+afterEach(() => { jest.restoreAllMocks(); jest.useRealTimers(); });
 
 test("Settings preserves existing reminders and edits or pauses their schedules in the same panel", async () => {
   setLanguage("en");
@@ -41,4 +47,33 @@ test("new installations have only the main notification settings", async () => {
   expect(screen.getByLabelText("Daily Reset")).toBeTruthy();
   expect(screen.queryByRole("button", { name: "Saved reminders" })).toBeNull();
   expect(screen.queryByRole("button", { name: "Add reminder" })).toBeNull();
+});
+
+test("advanced actions stay collapsed, require confirmation, and retry appears only after failure", async () => {
+  jest.useFakeTimers();
+  const alert = jest.spyOn(Alert, "alert").mockImplementation(() => {});
+  let items: Reminder[] = [{ id: "saved", label: "My time", hour: 17, minute: 20, weekdays: [2,4], enabled: true }];
+  const service = new ReminderService({ read: () => items, write: value => { items = value; } }, {
+    permission: async () => true, list: async () => [], cancel: async () => {}, schedule: async () => {},
+  }, () => true, () => []);
+  await render(<ReminderContext.Provider value={service}><NotificationSettings /></ReminderContext.Provider>);
+  expect(screen.queryByRole("button", { name: "Disable all notifications" })).toBeNull();
+  expect(screen.getByRole("button", { name: /QUIET HOURS START/ })).toBeTruthy();
+  expect(screen.getByRole("button", { name: /QUIET HOURS END/ })).toBeTruthy();
+  await fireEvent.press(screen.getByRole("button", { name: "Advanced settings" }));
+  expect(screen.queryByRole("button", { name: "Retry reminder scheduling" })).toBeNull();
+  await fireEvent.press(screen.getByRole("button", { name: "Disable all notifications" }));
+  expect(mockController.setPreferences).not.toHaveBeenCalled();
+  expect(items[0].enabled).toBe(true);
+  const buttons = alert.mock.calls.at(-1)![2]!;
+  await act(async () => { buttons.find(b => b.text === "Disable")!.onPress!(); });
+  expect(items[0]).toMatchObject({ enabled: false, hour: 17, minute: 20, weekdays: [2,4] });
+  expect(screen.queryByRole("button", { name: "Retry reminder scheduling" })).toBeNull();
+  await act(() => jest.advanceTimersByTime(2100));
+  expect(screen.queryByText("Saved")).toBeNull();
+  mockConfigure.mockRejectedValueOnce(Error("Scheduler unavailable"));
+  await fireEvent(screen.getByLabelText("Motivational reminders"), "valueChange", true);
+  expect(screen.getByRole("button", { name: "Retry reminder scheduling" })).toBeTruthy();
+  await fireEvent.press(screen.getByRole("button", { name: "Retry reminder scheduling" }));
+  expect(screen.queryByRole("button", { name: "Retry reminder scheduling" })).toBeNull();
 });

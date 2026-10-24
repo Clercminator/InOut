@@ -29,9 +29,9 @@ function weekStart(date: Date) { return addDays(date, -((date.getDay() + 6) % 7)
 export function practiceRecords(records: SessionRecord[], now: Date) {
   return records.filter(r => r.stage === "result" && Number.isFinite(r.engine.elapsedAtAnchor) && r.engine.elapsedAtAnchor > 0 && r.engine.startedAt <= now.getTime());
 }
-export function summarize(records: SessionRecord[]) {
+export function summarize(records: SessionRecord[], metric: import("@inout/shared-types").StateMetric = "wellbeing_v2") {
   const totalMs = records.reduce((sum, r) => sum + r.engine.elapsedAtAnchor, 0);
-  const shifts = records.filter(r => r.endReason === "completed").map(r => stateShift(r.pre, r.post)).filter((n): n is number => n !== null);
+  const shifts = records.filter(r => r.endReason === "completed" && (r.stateMetric ?? "tension_v1") === metric).map(r => stateShift(r.pre, r.post, metric)).filter((n): n is number => n !== null);
   return { count: records.length, totalMs, activeDays: new Set(records.map(r => practiceDay(r))).size,
     averageSession: records.length ? totalMs / records.length : 0,
     longestSession: records.reduce((max, r) => Math.max(max, r.engine.elapsedAtAnchor), 0),

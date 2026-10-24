@@ -1,3 +1,4 @@
+import { notificationCopy } from "./notification-content";
 import type { Preferences, SessionRecord } from "@inout/shared-types";
 import { practiceDateForPacerTheme } from "./pacer-theme";
 
@@ -28,6 +29,8 @@ export interface LocalNotificationPreferences {
   quietHoursEnabled: boolean;
   quietStartHour: number;
   quietEndHour: number;
+  quietStartMinute?: number;
+  quietEndMinute?: number;
   achievementNoticeLog?: Array<{ id: string; at: number }>;
 }
 export interface EngagementNotification {
@@ -53,15 +56,10 @@ export const notificationDefaults: LocalNotificationPreferences = {
   quietHoursEnabled: false,
   quietStartHour: 22,
   quietEndHour: 8,
+  quietStartMinute: 0,
+  quietEndMinute: 0,
   achievementNoticeLog: [],
 };
-const motivationalMessages = [
-  "A small pause can make room for what matters.",
-  "Take a moment for yourself when it fits.",
-  "A gentle breath is enough to begin.",
-  "Your practice is here whenever you are ready.",
-];
-
 export function notificationPreferences(preferences: Preferences): LocalNotificationPreferences {
   const value = preferences.notifications;
   if (!value) return { ...notificationDefaults, weekdays: [...notificationDefaults.weekdays] };
@@ -76,7 +74,8 @@ export function validateNotificationPreferences(value: LocalNotificationPreferen
     typeof value.checkIn !== "boolean" || typeof value.achievements !== "boolean" ||
     [value.weeklyProgress, value.education, value.reengagement, value.promotions].some(flag => flag !== undefined && typeof flag !== "boolean") ||
     !hour(value.hour) || !Number.isInteger(value.minute) || value.minute < 0 || value.minute > 59 ||
-    typeof value.quietHoursEnabled !== "boolean" || !hour(value.quietStartHour) || !hour(value.quietEndHour) || value.quietStartHour === value.quietEndHour ||
+    typeof value.quietHoursEnabled !== "boolean" || !hour(value.quietStartHour) || !hour(value.quietEndHour) || (value.quietStartHour * 60 + (value.quietStartMinute ?? 0) === value.quietEndHour * 60 + (value.quietEndMinute ?? 0)) ||
+    [value.quietStartMinute, value.quietEndMinute].some(n => n !== undefined && (!Number.isInteger(n) || n < 0 || n > 59)) ||
     !Array.isArray(value.weekdays) || value.weekdays.length > 3 ||
     new Set(value.weekdays).size !== value.weekdays.length ||
     value.weekdays.some(day => !Number.isInteger(day) || day < 1 || day > 7) ||
@@ -89,16 +88,19 @@ export function validateNotificationPreferences(value: LocalNotificationPreferen
 export function notificationDayKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
-function nextAllowedTime(date: Date, hour: number, minute: number, quietStart: number, quietEnd: number) {
+function nextAllowedTime(date: Date, hour: number, minute: number, quietStart: number, quietEnd: number, startMinute = 0, endMinute = 0) {
   const result = new Date(date);
   result.setHours(hour, minute, 0, 0);
-  const currentHour = result.getHours();
+  const currentHour = result.getHours() * 60 + result.getMinutes();
+  const endHour = quietEnd;
+  quietStart = quietStart * 60 + startMinute;
+  quietEnd = quietEnd * 60 + endMinute;
   const inQuiet = quietStart < quietEnd
     ? currentHour >= quietStart && currentHour < quietEnd
     : currentHour >= quietStart || currentHour < quietEnd;
   if (inQuiet) {
-    if (quietStart < quietEnd || currentHour < quietEnd) result.setHours(quietEnd, 0, 0, 0);
-    else { result.setDate(result.getDate() + 1); result.setHours(quietEnd, 0, 0, 0); }
+    if (quietStart < quietEnd || currentHour < quietEnd) result.setHours(endHour, endMinute, 0, 0);
+    else { result.setDate(result.getDate() + 1); result.setHours(endHour, endMinute, 0, 0); }
   }
   return result;
 }
@@ -106,22 +108,25 @@ export function notificationTime(
   date: Date,
   hour: number,
   minute: number,
-  settings: Pick<LocalNotificationPreferences, "quietHoursEnabled" | "quietStartHour" | "quietEndHour">,
+  settings: Pick<LocalNotificationPreferences, "quietHoursEnabled" | "quietStartHour" | "quietEndHour" | "quietStartMinute" | "quietEndMinute"> & { weekdays?: number[] },
 ) {
-  if (settings.quietHoursEnabled) return nextAllowedTime(date, hour, minute, settings.quietStartHour, settings.quietEndHour);
+  if (settings.quietHoursEnabled) {
+    const at = nextAllowedTime(date, hour, minute, settings.quietStartHour, settings.quietEndHour, settings.quietStartMinute, settings.quietEndMinute);
+    if (settings.weekdays?.length) for (let i = 0; i < 7 && !settings.weekdays.includes(at.getDay() + 1); i++) at.setDate(at.getDate() + 1);
+    return at;
+  }
   const result = new Date(date);
   result.setHours(hour, minute, 0, 0);
   return result;
 }
-function messageFor(type: EngagementNotificationType, date: Date, weekIndex: number) {
-  if (type === "weekly-progress") return "Your weekly practice progress is ready to view.";
-  if (type === "daily-reset") return "A Daily Reset is ready when you are.";
-  if (type === "check-in") return "Did you practice mindful breathing today?";
-  if (type === "education") return "Gentle, paced breathing may help you relax. Keep each breath comfortable.";
-  if (type === "reengagement") return "Your space to breathe is still here. Return with a short practice when it suits you.";
+function messageFor(type: EngagementNotificationType, date: Date, rotation: number) {
+  if (type === "weekly-progress") return "Take a look at your practice history when you have a moment.";
+  if (type === "daily-reset") return notificationCopy(date.getHours() >= 18 ? ["sleep"] : ["relaxation", "focus", "recovery", "habit"], date, rotation);
+  if (type === "check-in") return notificationCopy(["followup"], date, rotation);
+  if (type === "education") return notificationCopy(["relaxation", "focus", "recovery"], date, rotation);
+  if (type === "reengagement") return notificationCopy(["habit"], date, rotation);
   if (type === "promotion") return "Explore guided programs and every pacer theme with IN/OUT Pro. Your free practice is always here.";
-  const dayOfYear = Math.floor((date.getTime() - new Date(date.getFullYear(), 0, 0).getTime()) / 86400000);
-  return motivationalMessages[(dayOfYear + weekIndex) % motivationalMessages.length];
+  return notificationCopy(["motivation"], date, rotation);
 }
 
 export function buildEngagementSchedule(value: LocalNotificationPreferences, now = new Date(), context: NotificationContext = unknownContext): EngagementNotification[] {
@@ -143,20 +148,23 @@ export function buildEngagementSchedule(value: LocalNotificationPreferences, now
     if (!value.weekdays.includes(weekday)) continue;
     const at = notificationTime(day, value.hour, value.minute, value);
     if (context.lastPracticeAt !== null && notificationDayKey(at) === notificationDayKey(new Date(context.lastPracticeAt))) continue;
-    if (at.getTime() > now.getTime() + 60_000) candidates.push(at);
+    if (value.weekdays.includes(at.getDay() + 1) && at.getTime() > now.getTime() + 60_000) candidates.push(at);
   }
   const uniqueDays = new Map<string, Date>();
   for (const candidate of candidates) if (!uniqueDays.has(notificationDayKey(candidate))) uniqueDays.set(notificationDayKey(candidate), candidate);
   // Calendar rotation is stable across launches, but gives each enabled category a turn.
   // Promotions occupy at most one selected slot per four calendar weeks.
   let promoted = false;
-  return [...uniqueDays.values()].slice(0, 3).flatMap((date, index) => {
+  return [...uniqueDays.values()].sort((a, b) => a.getTime() - b.getTime()).slice(0, 3).flatMap(date => {
     const week = Math.floor((Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) - Date.UTC(2026, 0, 5)) / (7 * 86400000));
     const promotionSlot = promotions && !promoted && week % 4 === 0 && date.getDay() + 1 === Math.min(...value.weekdays);
     if (!active.length && !promotionSlot) return [];
-    const type = promotionSlot ? "promotion" : active[((week * 3 + index) % active.length + active.length) % active.length];
+    // Anchor to the selected calendar slot, not this reconciliation's array index.
+    const weekdays = [...value.weekdays].sort((a, b) => (a + 5) % 7 - (b + 5) % 7);
+    const slot = week * weekdays.length + weekdays.indexOf(date.getDay() + 1);
+    const type = promotionSlot ? "promotion" : active[((slot % active.length) + active.length) % active.length];
     if (promotionSlot) promoted = true;
     const time = `${String(date.getHours()).padStart(2, "0")}${String(date.getMinutes()).padStart(2, "0")}`;
-    return { id: `${engagementNotificationPrefix}${notificationDayKey(date)}:${time}:${type}`, type, date, body: messageFor(type, date, index) };
+    return { id: `${engagementNotificationPrefix}${notificationDayKey(date)}:${time}:${type}`, type, date, body: messageFor(type, date, Math.floor(slot / Math.max(1, active.length))) };
   });
 }

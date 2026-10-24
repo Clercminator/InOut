@@ -52,7 +52,7 @@ export function staticParity() {
     if (file.startsWith('apps/mobile/app/') && /\.(ios|android)\./.test(file)) errors.push(`${file}: product routes must be shared.`);
   }
   for (const file of ['entitlements.ts', 'product-config.ts', 'protocol-search.ts']) if (/Platform\.|isIOS|isAndroid/.test(read(`apps/mobile/src/${file}`))) errors.push(`${file}: product policy must remain shared.`);
-  for (const file of ['app/breath-hold-timer.tsx', 'app/onboarding.tsx', 'src/breath-hold-timer.ts', 'src/audio-preferences.ts', 'src/audio-sample.ts']) {
+  for (const file of ['app/breath-hold-timer.tsx', 'app/onboarding.tsx', 'app/(tabs)/_layout.tsx', 'src/swipe-surface.tsx', 'src/swipe-navigation.ts', 'src/onboarding-flow.ts', 'src/breath-hold-timer.ts', 'src/audio-preferences.ts', 'src/audio-sample.ts']) {
     if (/Platform\s*\.|isIOS|isAndroid/.test(read(`apps/mobile/${file}`))) errors.push(`${file}: timer, onboarding and audio behavior must remain shared.`);
   }
   for (const file of ['src/audio-library.ts', 'src/audio-sample.ts', 'src/session-effects.tsx', 'src/sound-controls.tsx']) {

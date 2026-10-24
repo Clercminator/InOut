@@ -46,9 +46,9 @@ function PaywallContent(props: PaywallProps) {
     <Copy>Guided programs for your goals</Copy><Copy>A practice without ads</Copy>
     <Button title="Start practicing" onPress={() => { services.subscriptions.dismissPurchaseConfirmation(); close(); }} />
   </Screen>;
-  if (props.entry === "onboarding" && pro) return <Screen><Copy>Your Pro access is ready.</Copy>{props.completionError && <Copy accessibilityRole="alert">{props.completionError}</Copy>}<Button title="Continue to Home" onPress={close} /></Screen>;
+  if (props.entry === "onboarding" && pro) return <Screen><Copy>Your Pro access is ready.</Copy>{props.completionError && <Copy accessibilityRole="alert">{props.completionError}</Copy>}<Button title="Start breathing" onPress={close} /></Screen>;
   if (props.entry === "onboarding" && services?.subscriptions.adapter.mode === "store" && !services.entitlements.billingReady)
-    return <Screen><Copy accessibilityRole="alert">{services.subscriptions.message || "Contacting the store…"}</Copy><Button title="Refresh plans & status" secondary disabled={services.subscriptions.busy} onPress={() => { void services.subscriptions.load(); }} /><Button title="Continue to Home" onPress={close} /></Screen>;
+    return <Screen><Copy accessibilityRole="alert">{services.subscriptions.message || "Contacting the store…"}</Copy><Button title="Refresh plans & status" secondary disabled={services.subscriptions.busy} onPress={() => { void services.subscriptions.load(); }} /><Button title="Start breathing" onPress={close} /></Screen>;
   return <NativePaywall {...props} onClose={close} />;
 }
 function NativePaywall({ entry = "profile", onClose, completionError }: PaywallProps) {
@@ -80,7 +80,7 @@ function NativePaywall({ entry = "profile", onClose, completionError }: PaywallP
     {chosen && !state.pro && <><Copy style={{ textAlign: "center", fontWeight: "600" }}>{message("{0} / {1}", [chosen.price, t(chosen.period)])}</Copy>
     <Button title={`${demo ? "Simulate" : "Continue with"} ${chosen.title}`} disabled={subscriptions.busy || subscriptions.purchaseUncertain} onPress={() => { void subscriptions.purchase(chosen.id); }} /></>}
     {state.pro && <Copy accessibilityRole="alert">Your Pro access is ready.</Copy>}
-    {onClose && <Button title={state.pro ? "Continue to Home" : "Continue for free"} variant="quiet" onPress={close} />}
+    {onClose && <Button title={state.pro ? entry === "onboarding" ? "Start breathing" : "Continue to Home" : "Continue for free"} variant="quiet" onPress={close} />}
   </ActionFooter> : undefined}>
     {completionError && <Copy accessibilityRole="alert">{completionError}</Copy>}
     {entry === "onboarding" ? <><View style={{ alignItems: "center" }}><PulseArtwork size={150} /></View><Label>WELCOME TO YOUR NEXT CHAPTER</Label><Title>Make this practice yours.</Title><Copy>A personal breathing coach. More ways to grow.</Copy></> : <><View style={{ alignItems: "center" }}><PulseArtwork size={96} /></View><Title>{state.pro ? "Your Pro access is ready." : "More room for your practice."}</Title></>}
@@ -103,6 +103,10 @@ function NativePaywall({ entry = "profile", onClose, completionError }: PaywallP
     {!demo && subscriptions.offers.length > 0 && <Copy>Subscriptions renew automatically unless cancelled through your store. Review the store confirmation for final price, any eligible introductory offer, and renewal terms.</Copy>}
     {subscriptions.busy && <Copy accessibilityRole="alert">Contacting the store…</Copy>}
     {!!subscriptions.message && <Copy accessibilityRole="alert">{subscriptions.message}</Copy>}
+    {!!subscriptions.message && !subscriptions.offers.length && !state.pro && !subscriptions.purchaseUncertain && <View style={{ gap: 8 }}>
+      <Button title="Refresh plans & status" secondary disabled={subscriptions.busy} onPress={() => { void subscriptions.load(); }} />
+      <Button title="Help & feedback" variant="quiet" onPress={() => router.push("/support")} />
+    </View>}
     {subscriptions.purchaseUncertain && <Card><Copy accessibilityRole="alert">Purchase status is uncertain. Do not pay again. Refresh status, restore purchases or contact Help & feedback.</Copy>
       <Button title="Refresh plans & status" secondary disabled={subscriptions.busy} onPress={() => { void subscriptions.load(); }} />
       <Button title="Help & feedback" secondary onPress={() => router.push("/support")} />

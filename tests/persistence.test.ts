@@ -774,3 +774,23 @@ test("consented first and second completion metrics are once-only and bounded to
     await Promise.resolve();
   } finally { env.db.close(); }
 });
+
+
+test("legacy pending tension resumes unchanged; new well-being sessions persist their explicit metric", () => {
+  const env = setup();
+  try {
+    const c = env.controller(); c.start(8);
+    assert.equal(c.current?.stateMetric, "wellbeing_v2");
+    const legacy = { ...c.current! }; delete legacy.stateMetric;
+    env.store.save(legacy);
+    const resumed = env.controller();
+    assert.equal(resumed.current?.stateMetric, undefined);
+    resumed.resume(); env.now(49000); resumed.tick(); resumed.answer(3, null);
+    const historical = env.store.history()[0];
+    assert.equal(stateShift(historical.pre, historical.post, historical.stateMetric), 5);
+    resumed.start(3); env.now(97000); resumed.tick(); resumed.answer(8, null);
+    const records = new LocalStore(env.adapter).history();
+    assert.equal(records.find(r => r.id !== historical.id)?.stateMetric, "wellbeing_v2");
+    assert.equal(records.find(r => r.id === historical.id)?.pre, 8);
+  } finally { env.db.close(); }
+});

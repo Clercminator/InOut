@@ -73,6 +73,7 @@ export class LocalStore {
     );
   }
   save(record: SessionRecord, pro = false, now = Date.now()) {
+    if (record.stateMetric !== undefined && !["tension_v1", "wellbeing_v2"].includes(record.stateMetric)) throw new Error("Saved session could not be read. Your data has been preserved.");
     if (!validRating(record.pre) || !validRating(record.post))
       throw new Error("Invalid tension rating");
     this.db.withTransactionSync(() => {
@@ -214,6 +215,7 @@ export class LocalStore {
     if (
       !value.id ||
       !["active", "post", "result"].includes(value.stage) ||
+      (value.stateMetric !== undefined && !["tension_v1", "wellbeing_v2"].includes(value.stateMetric)) ||
       !validRating(value.pre) ||
       !validRating(value.post)
     )

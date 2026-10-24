@@ -9,7 +9,7 @@ import { ChallengeArt } from "../src/challenge-art";
 import { AchievementMark } from "../src/achievement-mark";
 import { useTheme } from "../src/theme";
 import { useLanguage } from "../src/use-language";
-import { message, t } from "../src/i18n";
+import { decimal, message, t } from "../src/i18n";
 export default function ChallengeAttemptResult() {
   useLanguage();
   const { attempt, fresh } = useLocalSearchParams<{ attempt: string; fresh?: string }>(), c = useSession(), { colors } = useTheme();
@@ -31,14 +31,14 @@ export default function ChallengeAttemptResult() {
     <Animated.View style={{ transform: [{ scale: reveal }] }}><ChallengeArt art={d.art} height={180} /></Animated.View>
     <View style={{ alignItems: "center", gap: 14 }}>
       {a.completed && <AchievementMark earned size={76} />}
-      <Copy translate={false} style={{ fontSize: 56, lineHeight: 68, fontWeight: "700", color: colors.accent }}>{d.id === "state-shift-60" ? `${a.before} → ${a.after}` : `${a.value.toFixed(1)} ${t(d.unit)}`}</Copy>
-      {d.id === "state-shift-60" && <><Label>{message("{0} in 60 seconds", [a.value > 0 ? `+${a.value}` : a.value])}</Label><Copy>Self-reported tension · 1–10</Copy><Copy>Results vary. A change in either direction is a valid result.</Copy></>}
+      <Copy translate={false} style={{ fontSize: 56, lineHeight: 68, fontWeight: "700", color: colors.accent }}>{d.id === "state-shift-60" ? `${a.before} → ${a.after}` : `${decimal(a.value)} ${t(d.unit)}`}</Copy>
+      {d.id === "state-shift-60" && <><Label>{message("{0} in 60 seconds", [a.value > 0 ? `+${a.value}` : a.value])}</Label><Copy>{a.definitionVersion === 2 ? "Self-reported well-being · 1–10" : "Self-reported tension · 1–10"}</Copy><Copy>Results vary. A change in either direction is a valid result.</Copy></>}
       {d.id === "nasal-10" && <Copy>{a.completed ? "Ten comfortable minutes. A practice for everyday life." : "Every attempt teaches you something. Try again when it feels right."}</Copy>}
     </View>
-    {d.type === "benchmark" && d.id !== "comfort-hold" && <Card><Label>PERSONAL HISTORY</Label><Copy>{message("Best: {0} sec", [best?.toFixed(1) ?? "—"])}</Copy><Copy>{message("Attempts: {0}", [comparison.attemptCount])}</Copy>
-      {comparison.previousAttempt !== null && <Copy>{message("Previous attempt: {0} sec", [comparison.previousAttempt.toFixed(1)])}</Copy>}
-      {comparison.previousBest !== null && <Copy>{message("Previous best: {0} sec", [comparison.previousBest.toFixed(1)])}</Copy>}
-      {comparison.isPersonalBest && <Copy>{message("+{0} sec from your previous best", [comparison.improvement!.toFixed(1)])}</Copy>}
+    {d.type === "benchmark" && d.id !== "comfort-hold" && <Card><Label>PERSONAL HISTORY</Label><Copy>{message("Best: {0} sec", [best == null ? "—" : decimal(best)])}</Copy><Copy>{message("Attempts: {0}", [comparison.attemptCount])}</Copy>
+      {comparison.previousAttempt !== null && <Copy>{message("Previous attempt: {0} sec", [decimal(comparison.previousAttempt)])}</Copy>}
+      {comparison.previousBest !== null && <Copy>{message("Previous best: {0} sec", [decimal(comparison.previousBest)])}</Copy>}
+      {comparison.isPersonalBest && <Copy>{message("+{0} sec from your previous best", [decimal(comparison.improvement!)])}</Copy>}
     </Card>}
     {d.id === "comfort-hold" && <Copy>Repeatability matters more than duration. Always stop at the first desire to breathe.</Copy>}
     <Button title="Share result" onPress={() => router.push({ pathname: "/challenge-share", params: { attempt: a.id } })} />

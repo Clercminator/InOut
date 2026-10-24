@@ -68,7 +68,11 @@ export interface EngineState {
     | "recovery"
     | "clockChange";
 }
+export type StateMetric = "tension_v1" | "wellbeing_v2";
+export const stateMetric = (record: Pick<SessionRecord, "stateMetric">): StateMetric => record.stateMetric ?? "tension_v1";
 export interface SessionRecord {
+  /** Missing on legacy records; always means tension_v1. */
+  stateMetric?: StateMetric;
   coach?: { enrollmentId: string; step: number } | { week: string; date: string };
   challengeTest?: "state-shift-60";
   dailyReset?: true;
@@ -110,6 +114,8 @@ export interface Preferences {
     weekdays: number[];
     quietStartHour: number;
     quietEndHour: number;
+    quietStartMinute?: number;
+    quietEndMinute?: number;
     achievementNoticeLog?: Array<{ id: string; at: number }>;
   };
   guidance?: {
@@ -182,8 +188,9 @@ export interface SavedRoutine {
 export function stateShift(
   pre: number | null,
   post: number | null,
+  metric: StateMetric = "tension_v1",
 ): number | null {
-  return pre === null || post === null ? null : pre - post;
+  return !validRating(pre) || !validRating(post) || pre === null || post === null ? null : metric === "wellbeing_v2" ? post - pre : pre - post;
 }
 export function validRating(value: unknown): value is number | null {
   return (

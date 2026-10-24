@@ -88,3 +88,20 @@ export function discoverProtocols(protocols: readonly Protocol[], options: {
     (!options.saved || options.isFavorite(p.id)) && (!options.category || categoryFor(p.id) === options.category)),
     options.query, options.tags, language);
 }
+
+export function discoveryFacets(protocols: readonly Protocol[], options: Parameters<typeof discoverProtocols>[1], language: Language = getLanguage()) {
+  const base = searchProtocols(protocols.filter(p => p.availability === "enabled" && (!options.saved || options.isFavorite(p.id))), options.query, [], language);
+  const categoryCounts = Object.fromEntries(categories.map(category => [category, base.filter(p => categoryFor(p.id) === category && (!options.tags.length || options.tags.some(tag => protocolTags(p).includes(tag)))).length]));
+  const purposeBase = base.filter(p => !options.category || categoryFor(p.id) === options.category);
+  const purposeCounts = Object.fromEntries((Object.keys(intentTags) as IntentTag[]).map(tag => [tag, purposeBase.filter(p => protocolTags(p).includes(tag)).length])) as Record<IntentTag, number>;
+  return { categories: categoryCounts, purposes: purposeCounts };
+}
+
+export function reconcileDiscoveryFilters(protocols: readonly Protocol[], options: Parameters<typeof discoverProtocols>[1]) {
+  const base = discoverProtocols(protocols, { ...options, category: null, tags: [] });
+  // Keep a legitimate empty text search; changing the query should not erase choices.
+  if (!base.length && options.query.trim()) return { category: options.category, tags: [...options.tags] };
+  const category = base.some(p => categoryFor(p.id) === options.category) ? options.category : null;
+  const candidates = base.filter(p => !category || categoryFor(p.id) === category);
+  return { category, tags: options.tags.filter(tag => candidates.some(p => protocolTags(p).includes(tag))) };
+}

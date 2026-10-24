@@ -1,14 +1,15 @@
 import { AppDialog } from "./app-dialog";
 import { useTheme } from "./theme";
-import { locale } from "./i18n";
+import { locale, t } from "./i18n";
 import { useLanguage } from "./use-language";
 import { useState } from "react";
 import { Platform, View } from "react-native";
 import DateTimePicker, { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 
+import { Pressable } from "./localized-native";
 import { Button, Copy, Label } from "./ui";
 
-export function SessionDatePicker({ value, onChange, disabled = false, timeOnly = false, label = "REMINDER TIME" }: { value: Date; onChange: (value: Date) => void; disabled?: boolean; timeOnly?: boolean; label?: string }) {
+export function SessionDatePicker({ value, onChange, disabled = false, timeOnly = false, label = "REMINDER TIME", compact = false }: { value: Date; onChange: (value: Date) => void; disabled?: boolean; timeOnly?: boolean; label?: string; compact?: boolean }) {
   const { colors, mode: themeMode } = useTheme();
   useLanguage();
   const [mode, setMode] = useState<"date" | "time" | null>(null);
@@ -23,12 +24,17 @@ export function SessionDatePicker({ value, onChange, disabled = false, timeOnly 
     } else { setDraft(value); setMode(kind); }
   };
   return <View style={{ gap: 10 }}>
-    <Label>{timeOnly ? label : "START DATE & TIME"}</Label>
+    {compact && timeOnly ? <Pressable accessibilityRole="button" accessibilityLabel={`${t(label)}, ${value.toLocaleTimeString(locale(), { hour: "2-digit", minute: "2-digit" })}`}
+      accessibilityState={{ disabled }} disabled={disabled} onPress={() => open("time")}
+      style={{ minHeight: 48, flexDirection: "row", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 8, opacity: disabled ? 0.4 : 1 }}>
+      <Copy>{label}</Copy><Copy translate={false} style={{ color: colors.accent }}>{value.toLocaleTimeString(locale(), { hour: "2-digit", minute: "2-digit" })}</Copy>
+    </Pressable> : <><Label>{timeOnly ? label : "START DATE & TIME"}</Label>
     <Copy>{!timeOnly ? `${value.toLocaleDateString(locale(), { year: "numeric", month: "short", day: "numeric" })} · ` : ""}{value.toLocaleTimeString(locale(), { hour: "2-digit", minute: "2-digit" })}</Copy>
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
       {!timeOnly && <Button title="Choose date" secondary disabled={disabled} onPress={() => open("date")} />}
       <Button title="Choose time" secondary disabled={disabled} onPress={() => open("time")} />
     </View>
+    </>}
     {mode !== null && <AppDialog title={mode === "date" ? "CHOOSE DATE" : "CHOOSE TIME"} onRequestClose={() => setMode(null)}>
           <DateTimePicker locale={locale()} value={draft} mode={mode} display="spinner" themeVariant={themeMode} style={{ alignSelf: "stretch" }}
             minimumDate={mode === "date" ? new Date(1970, 0, 1) : undefined} maximumDate={mode === "date" ? new Date() : undefined}

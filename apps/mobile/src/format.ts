@@ -1,6 +1,10 @@
 import { stateShift, type SessionRecord } from "@inout/shared-types";
 export function shiftText(record: SessionRecord) {
-  const shift = stateShift(record.pre, record.post);
+  const shift = stateShift(record.pre, record.post, record.stateMetric);
+  if (record.stateMetric === "wellbeing_v2") {
+    if (shift === null) return record.post === null ? "State Shift not recorded" : `Well-being ${record.post}/10 · no pre-rating`;
+    return shift === 0 ? "Well-being unchanged" : `Well-being ${shift > 0 ? "up" : "down"} ${Math.abs(shift)} ${Math.abs(shift) === 1 ? "point" : "points"}`;
+  }
   if (shift === null)
     return record.post === null
       ? "State Shift not recorded"

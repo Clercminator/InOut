@@ -1,4 +1,5 @@
-import { DailyResetCard, openDailyReset } from "../../src/daily-reset-card";
+import { SwipeExclusion } from "../../src/swipe-surface";
+import { DailyResetCard } from "../../src/daily-reset-card";
 import { DailyCoachCard } from "../../src/daily-coach-card";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { typography } from "@inout/design-tokens";
@@ -58,16 +59,16 @@ export default function Today() {
         <View style={{ height: 156, alignItems: "center", justifyContent: "center", backgroundColor: colors.lowest }}><PulseArtwork size={174} /></View><View style={{ padding: 18, gap: 5 }}><Copy style={{ fontFamily: typography.heading, fontSize: 23, lineHeight: 28 }}>Breathe</Copy><Copy style={{ fontSize: 12, color: colors.secondaryText }}>Find your rhythm</Copy><MaterialIcons accessible={false} name="arrow-forward" size={23} color={colors.accent} /></View>
       </Pressable>
       <View style={{ flex: 1, gap: 12 }}>
-        <HomeTile title="Daily Reset" icon="air" tone="aqua" onPress={() => openDailyReset(controller)} />
+        <HomeTile title="Timer" hint="Measure a comfortable breath hold" icon="timer" tone="aqua" onPress={() => router.push("/breath-hold-timer")} />
         <HomeTile title="Create" icon="tune" tone="gold" onPress={() => router.push("/custom")} />
       </View>
     </View>
     <DailyResetCard />
     <DailyCoachCard goal={moment ?? undefined} />
     <GuidanceAllowance />
-    <View style={{ gap: 12 }}><Label>WHAT DO YOU NEED?</Label><ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={{ gap: 8, paddingRight: 20, alignItems: "center" }}>
+    <View style={{ gap: 12 }}><Label>WHAT DO YOU NEED?</Label><SwipeExclusion><ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={{ gap: 8, paddingRight: 20, alignItems: "center" }}>
       {(Object.keys(situationGoals) as Goal[]).map(situation => <Chip key={situation} title={situation} selected={content.situation === situation} onPress={() => { setMoment(situationGoals[situation]); controller.analytics.track("situation_selected"); }} />)}
-    </ScrollView></View>
+    </ScrollView></SwipeExclusion></View>
     {returning && <Copy>{returning}</Copy>}
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
       <QuickTile title="Saved practices" icon="bookmark-border" onPress={() => router.push("/custom")} />
@@ -84,9 +85,9 @@ export default function Today() {
   </Screen>;
 }
 
-function HomeTile({ title, icon, tone, onPress }: { title: string; icon: keyof typeof MaterialIcons.glyphMap; tone: "aqua" | "gold"; onPress: () => void }) {
+function HomeTile({ title, hint, icon, tone, onPress }: { title: string; hint?: string; icon: keyof typeof MaterialIcons.glyphMap; tone: "aqua" | "gold"; onPress: () => void }) {
   const { colors } = useTheme();
-  return <Pressable accessibilityRole="button" accessibilityLabel={t(title)} onPress={onPress} style={({ pressed }) => ({ flex: 1, minHeight: 116, padding: 18, gap: 14, borderRadius: 24, justifyContent: "space-between", backgroundColor: tone === "gold" ? colors.reward + "28" : colors.raised, opacity: pressed ? .8 : 1 })}><MaterialIcons accessible={false} name={icon} size={34} color={colors.accent} /><Copy style={{ fontFamily: typography.heading, fontSize: 18, lineHeight: 24 }}>{title}</Copy></Pressable>;
+  return <Pressable accessibilityRole="button" accessibilityLabel={t(title)} accessibilityHint={hint ? t(hint) : undefined} onPress={onPress} style={({ pressed }) => ({ flex: 1, minHeight: 116, padding: 18, gap: 14, borderRadius: 24, justifyContent: "space-between", backgroundColor: tone === "gold" ? colors.reward + "28" : colors.raised, opacity: pressed ? .8 : 1 })}><MaterialIcons accessible={false} name={icon} size={34} color={colors.accent} /><Copy style={{ fontFamily: typography.heading, fontSize: 18, lineHeight: 24 }}>{title}</Copy></Pressable>;
 }
 function QuickTile({ title, icon, onPress }: { title: string; icon: keyof typeof MaterialIcons.glyphMap; onPress: () => void }) {
   const { colors } = useTheme();

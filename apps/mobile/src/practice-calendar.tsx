@@ -1,3 +1,4 @@
+import { SwipeExclusion } from "./swipe-surface";
 import { useTheme } from "./theme";
 import { t, locale, countLabel, message } from "./i18n";
 import { useLanguage } from "./use-language";
@@ -29,7 +30,7 @@ export function PracticeCalendar({ activeDays, milestones, now }: { activeDays: 
     <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}><View style={{ flex: 1 }}><Label>{title}</Label></View><IconButton icon="chevron-left" title="Previous month" onPress={() => setOffset(offset - 1)} /><IconButton icon="chevron-right" title="Next month" disabled={offset === 0} onPress={() => setOffset(offset + 1)} /></View><Copy>{message("This month: {0}", [countLabel(count, "practiceDay")])} · {Math.round(count / elapsed * 100)}%</Copy>
     <Copy style={{ color: colors.exhale }}>{rating}</Copy>
     <View onLayout={event => setWidth(event.nativeEvent.layout.width)}>
-    <ScrollView horizontal showsHorizontalScrollIndicator={gridWidth > width}>
+    <SwipeExclusion><ScrollView horizontal showsHorizontalScrollIndicator={gridWidth > width}>
     <View style={{ width: gridWidth }}>
     <View style={{ flexDirection: "row" }}>{Array.from({ length: 7 }, (_, i) => new Date(2026, 5, 1 + i).toLocaleDateString(locale(), { weekday: "narrow" })).map((day, i) => <Copy key={i} style={{ width: "14.2857%", textAlign: "center", color: colors.muted }}>{day}</Copy>)}</View>
     <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
@@ -44,6 +45,6 @@ export function PracticeCalendar({ activeDays, milestones, now }: { activeDays: 
           <Copy style={{ color: active ? colors.onAccent : colors.muted, fontSize: 13 }}>{i + 1}{earned.length ? "★" : ""}</Copy>
         </Pressable>;
       })}
-    </View></View></ScrollView></View><Copy style={s.small}>★ Milestone · Tap a practice day to view its logs.</Copy>
+    </View></View></ScrollView></SwipeExclusion></View><Copy style={s.small}>★ Milestone · Tap a practice day to view its logs.</Copy>
   </Card>;
 }

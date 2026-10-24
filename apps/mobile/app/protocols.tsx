@@ -9,7 +9,7 @@ import { catalogProtocols } from "@inout/protocols";
 import { useSession } from "../src/provider";
 import { message, t } from "../src/i18n";
 import { useTheme } from "../src/theme";
-import { categories, intentTags, discoverProtocols, normalizeSearch, type IntentTag } from "../src/protocol-search";
+import { categories, intentTags, discoveryFacets, reconcileDiscoveryFilters, discoverProtocols, normalizeSearch, type IntentTag } from "../src/protocol-search";
 
 const purposes: Record<string, string> = {
   "physiological-sigh": "Short practice",
@@ -46,6 +46,13 @@ export default function Protocols() {
   const [draftTags, setDraftTags] = useState<IntentTag[]>([]);
   useEffect(() => { if (params.filter) setSaved(params.filter === "Saved"); }, [params.filter]);
   const filtered = discoverProtocols(catalogProtocols, { query: search, category, tags, saved, isFavorite: id => controller.isFavorite(id) });
+  const facets = discoveryFacets(catalogProtocols, { query: search, category: draftCategory, tags: draftTags, saved, isFavorite: id => controller.isFavorite(id) });
+  const favoriteKey = catalogProtocols.filter(p => controller.isFavorite(p.id)).map(p => p.id).join(",");
+  useEffect(() => {
+    const next = reconcileDiscoveryFilters(catalogProtocols, { query: search, category, tags, saved, isFavorite: id => controller.isFavorite(id) });
+    if (next.category !== category) setCategory(next.category);
+    if (next.tags.join(",") !== tags.join(",")) setTags(next.tags);
+  }, [search, saved, favoriteKey, category, tags, controller]);
   const activeCount = tags.length + Number(!!category);
   const emptyCollection = saved && !search.trim() && activeCount === 0;
   const searching = !!search.trim() || activeCount > 0 || saved;
@@ -116,11 +123,11 @@ export default function Protocols() {
             <Label>Categories</Label>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
               <Chip title="All" selected={!draftCategory} onPress={() => setDraftCategory(null)} />
-              {categories.map(item => <Chip key={item} title={item} selected={draftCategory === item} onPress={() => setDraftCategory(draftCategory === item ? null : item)} />)}
+              {categories.map(item => <Chip key={item} translate={false} title={`${t(item)} (${facets.categories[item]})`} disabled={draftCategory !== item && !facets.categories[item]} selected={draftCategory === item} onPress={() => setDraftCategory(draftCategory === item ? null : item)} />)}
             </View>
             <Label>Purposes</Label>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-              {(Object.keys(intentTags) as IntentTag[]).map(tag => <Chip key={tag} title={intentTags[tag].label} selected={draftTags.includes(tag)}
+              {(Object.keys(intentTags) as IntentTag[]).map(tag => <Chip key={tag} translate={false} title={`${t(intentTags[tag].label)} (${facets.purposes[tag]})`} disabled={!draftTags.includes(tag) && !facets.purposes[tag]} selected={draftTags.includes(tag)}
                 onPress={() => setDraftTags(current => current.includes(tag) ? current.filter(item => item !== tag) : [...current, tag])} />)}
             </View>
           </ScrollView>

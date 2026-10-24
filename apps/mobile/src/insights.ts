@@ -1,4 +1,4 @@
-import type { SessionRecord } from "@inout/shared-types";
+import { stateShift, type SessionRecord } from "@inout/shared-types";
 import { addDays, dayKey, dayStart, practiceRecords, summarize } from "./progress";
 export const insightPolicy = { windowDays: 30, minimumPairs: 5, minimumDays: 3 } as const;
 export function practiceInsights(records: SessionRecord[], now = new Date()) {
@@ -10,13 +10,13 @@ export function practiceInsights(records: SessionRecord[], now = new Date()) {
   const completed = recent.filter(r => r.source !== "manual" && r.endReason === "completed");
   const groups = new Map<string, SessionRecord[]>();
   for (const record of completed) {
-    const key = JSON.stringify([record.protocolId, record.protocolVersion, record.engine.plan]);
+    const key = JSON.stringify([record.protocolId, record.protocolVersion, record.engine.plan, record.stateMetric ?? "tension_v1"]);
     const group = groups.get(key) ?? []; group.push(record); groups.set(key, group);
   }
   const patterns = [...groups].map(([key, rows]) => {
     const paired = rows.filter(r => r.pre !== null && r.post !== null);
     const days = new Set(paired.map(r => dayKey(new Date(r.engine.startedAt)))).size;
-    const shifts = paired.map(r => r.pre! - r.post!).sort((a, b) => a - b);
+    const shifts = paired.map(r => stateShift(r.pre, r.post, r.stateMetric)!).sort((a, b) => a - b);
     const enough = shifts.length >= insightPolicy.minimumPairs && days >= insightPolicy.minimumDays;
     const mid = Math.floor(shifts.length / 2);
     const median = enough ? shifts.length % 2 ? shifts[mid] : (shifts[mid - 1] + shifts[mid]) / 2 : null;

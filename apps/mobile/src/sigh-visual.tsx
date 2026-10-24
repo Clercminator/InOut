@@ -1,3 +1,5 @@
+import { SessionReadout } from "./session-readout";
+import { sessionAnimationSize } from "./session-layout";
 import { resolvePacerTheme, type PacerThemeId } from "./pacer-theme";
 import type { ThemeColors } from "@inout/design-tokens";
 import { useTheme, useThemedStyles } from "./theme";
@@ -10,6 +12,7 @@ import {
   Easing,
   StyleSheet,
   View,
+  useWindowDimensions,
 } from "react-native";
 import { typography as f } from "@inout/design-tokens";
 import type { snapshot } from "@inout/breathing-engine";
@@ -27,6 +30,7 @@ export function SighVisual({
   phases = [],
   cycleLabel,
   pacerTheme,
+  availableHeight, nextLabel,
 }: {
   view: Snapshot;
   running: boolean;
@@ -34,6 +38,7 @@ export function SighVisual({
   phases?: Phase[];
   cycleLabel?: string;
   pacerTheme?: PacerThemeId;
+  availableHeight?: number; nextLabel?: string;
 }) {
   const { colors: baseColors, palettes } = useTheme();
   const theme = pacerTheme ? resolvePacerTheme(pacerTheme).preview : null;
@@ -43,7 +48,10 @@ export function SighVisual({
   const { experience } = useExperience();
   const palette = theme ? { accent: theme.ring, exhale: theme.ring, hold: theme.glow } : palettes[experience.palette];
   const [reduced, setReduced] = useState(true);
-  const separateReadout = true;
+  const { width, height, fontScale } = useWindowDimensions();
+  const [measuredWidth, setMeasuredWidth] = useState<number | null>(null);
+  const [readoutHeight, setReadoutHeight] = useState(190 * fontScale);
+  const size = sessionAnimationSize(measuredWidth ?? width - 56, availableHeight ?? height * .7, readoutHeight);
   const guidance = breathingGuidance(phases.length ? phases : [view.phase], phases.length ? view.phaseIndex : 0, view.phaseElapsedMs);
   // Animate absolute volume: changing phases must never remap the previous
   // phase's final progress through the next phase's reversed size curve.
@@ -110,16 +118,10 @@ export function SighVisual({
   const textureStyle = experience.texture === "halo"
     ? { borderWidth: 5, shadowColor: phaseColor, shadowOpacity: 0.5, shadowRadius: 20 }
     : experience.texture === "orbit" ? { borderStyle: "dotted" as const, borderWidth: 3 } : undefined;
-  const readout = <View style={[styles.readout, separateReadout && { maxWidth: "100%" }]}
-    accessible accessibilityLabel={cycleLabel ? `${t(running ? guidance.label : "Paused")}. ${Math.ceil(view.phaseRemainingMs / 1000)}. ${t(cycleLabel)}` : t(`${running ? guidance.label : "Paused"}. ${Math.ceil(view.phaseRemainingMs / 1000)} seconds remaining. Cycle ${view.currentCycle} of ${view.totalCycles}${view.phase.nostril ? `. ${view.phase.nostril} nostril` : ""}`)}>
-    <Copy style={[styles.phase, { color: running ? phaseColor : c.secondaryText }]}>{running ? guidance.label.toUpperCase() : "PAUSED"}</Copy>
-    {view.phase.nostril && <Copy>{view.phase.nostril.toUpperCase()} NOSTRIL</Copy>}
-    <Copy style={[styles.timer, { color: c.text }]}>{Math.ceil(view.phaseRemainingMs / 1000).toString().padStart(2, "0")}</Copy>
-    {cycleLabel ? <Copy style={[styles.cycle, { color: c.secondaryText }]}>{cycleLabel}</Copy> : <Copy style={[styles.cycle, { color: c.secondaryText }]}>CYCLE {view.currentCycle}/{view.totalCycles}</Copy>}
-  </View>;
   return (
-    <View testID={`specialized-${animationType}`} pointerEvents="none" style={{ gap: 16, backgroundColor: theme?.background, borderRadius: 24, padding: theme ? 12 : 0 }}>
-    <View style={[styles.area, separateReadout && { maxWidth: 240 }]}>
+    <View testID={`specialized-${animationType}`} pointerEvents="none" style={{ gap: 12, backgroundColor: theme?.background, borderRadius: 24 }}>
+    <View testID="session-animation-area" onLayout={event => setMeasuredWidth(event.nativeEvent.layout.width)} style={{ width: "100%", height: size, alignItems: "center" }}>
+    <View style={[styles.area, { width: size * .9, height: size * .9, maxWidth: undefined, margin: size * .05 }]}>
       {animationType === "box" && <BoxVisual phases={phases} view={view} running={running} reduced={reduced} />}
       {animationType !== "alternating" && animationType !== "ripple" && <Animated.View
         testID="breathing-bubble"
@@ -160,10 +162,10 @@ export function SighVisual({
           style={[styles.orbHighlight, { transform: [{ scale: breathScale }] }]}
         />
       )}
-      {!separateReadout && readout}
     </View>
-    {separateReadout && readout}
-    <Copy style={{ color: c.secondaryText, textAlign: "center" }}>{running ? guidance.instruction : "Breathe naturally while paused"}</Copy>
+    </View>
+    <SessionReadout view={view} phases={phases} running={running} cycleLabel={cycleLabel} pacerTheme={pacerTheme} nextLabel={nextLabel}
+      onLayout={event => setReadoutHeight(event.nativeEvent.layout.height)} />
     </View>
   );
 }

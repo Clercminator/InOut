@@ -58,7 +58,7 @@ test("welcome offer uses the shared purchase service, localized store prices and
   await fireEvent.press(screen.getByRole("button", { name: "Simular Pro mensal" }));
   expect(purchase).toHaveBeenCalledWith("monthly");
   expect(s.entitlements.state.pro).toBe(true);
-  await fireEvent.press(screen.getByRole("button", { name: "Ir para o início" }));
+  await fireEvent.press(screen.getByRole("button", { name: "Começar a respirar" }));
   expect(close).toHaveBeenCalledTimes(1);
 });
 

@@ -11,7 +11,7 @@
       "acceptance": "Both physical platforms required before nativeDeviceAcceptance."
     },
     "apps/mobile/app/result-share.tsx": {
-      "sha256": "f66b474be1487926203e759e61f177e17777b45561d2ffd31bea0f1e725c3d65",
+      "sha256": "805d67b23f7e95ca75cae21562883f643ec6359f8c2227735ff15fbd7e98c792",
       "reason": "Native share APIs differ; both share the same session result.",
       "acceptance": "Both physical platforms required before nativeDeviceAcceptance."
     },
@@ -36,22 +36,22 @@
       "acceptance": "Both physical platforms required before nativeDeviceAcceptance."
     },
     "apps/mobile/src/onboarding-demo.tsx": {
-      "sha256": "b8bd48c06a8bd20f7ef99031680298248b98578dfdd6baaf6e1e0e1e8fe54bf7",
+      "sha256": "bc92893da5520b94fbc1d4776f4fc93e3ec0a66304b9939f085d85fbd17f7079",
       "reason": "Android blur pauses demo in addition to shared AppState handling.",
       "acceptance": "Both physical platforms required before nativeDeviceAcceptance."
     },
     "apps/mobile/src/provider.tsx": {
-      "sha256": "cbb834546311e956cb561e04bbc40ed7d86fd0952916c71a372aa1d32db145c4",
+      "sha256": "263e9b23a9a58025296096ac926e4e1e8655a4624d18b5e17d722437a53eece9",
       "reason": "Android blur pauses sessions in addition to shared AppState handling.",
       "acceptance": "Both physical platforms required before nativeDeviceAcceptance."
     },
     "apps/mobile/src/reminder-native.ts": {
-      "sha256": "8c2646e193da8f6b1b7cc051769b997d9651c72313fb532bf386c14c2fc299c4",
+      "sha256": "c8d629c2a0b3e33b824ec715582203b389335b4291bede4a8228699bd3be8d9b",
       "reason": "Android requires notification channels; both schedule local reminders.",
       "acceptance": "Both physical platforms required before nativeDeviceAcceptance."
     },
     "apps/mobile/src/session-date-picker.tsx": {
-      "sha256": "7f4f345ba9f9be2da8b983ef49c38911564a3ff69a153937ac14ef487f0b99e2",
+      "sha256": "821bc435ba3b5ca980ee398c0bc1283e7278039677fa97ce2a0f675c78a8edde",
       "reason": "Native date-picker presentation differs; both select a local practice date.",
       "acceptance": "Both physical platforms required before nativeDeviceAcceptance."
     },
@@ -61,12 +61,12 @@
       "acceptance": "Both physical platforms required before nativeDeviceAcceptance."
     },
     "apps/mobile/src/ui.tsx": {
-      "sha256": "78a8731f6c13ebb8e35b18b2e62a974ef4334cd6982ed0c3c244c77331876b4e",
+      "sha256": "71db224faed5642456adbf0b0e4f6dff17a9bd186d0ca61df0ddacccf2c447ac",
       "reason": "OS-specific keyboard avoidance preserving equivalent access to controls.",
       "acceptance": "Both physical platforms required before nativeDeviceAcceptance."
     },
     "apps/mobile/src/subscription-providers/revenuecat.ts": {
-      "sha256": "b6e16836785b9435dd8dfac3774ccd370e982f55a4b8ca1f7c44603e34dd1203",
+      "sha256": "4cc6c0423f9885839a6cefa71ca47e4c8b79f1b66706759858de0e49246584bc",
       "reason": "StoreKit and Play offer eligibility, key prefixes and subscription management URLs differ; shared verified in_out_pro access.",
       "acceptance": "Both physical platforms required before nativeDeviceAcceptance."
     }

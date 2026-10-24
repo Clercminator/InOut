@@ -465,6 +465,7 @@ export class SessionController {
       goal: protocol.goalTags[0],
       engine: engine.start(plan, this.now()),
       pre,
+      stateMetric: "wellbeing_v2",
       post: null,
       stage: "active",
       finishedAt: null,

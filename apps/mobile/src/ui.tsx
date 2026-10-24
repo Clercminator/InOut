@@ -1,7 +1,8 @@
+import { emotionalAnchors, emotionFor } from "./wellbeing";
 import type { ThemeColors } from "@inout/design-tokens";
 import { useTheme, useThemedStyles } from "./theme";
 import { Pressable } from "./localized-native";
-import { t, protocolTitle, locale, message } from "./i18n";
+import { t, protocolTitle, locale, message, countLabel } from "./i18n";
 import { isCyclic } from "@inout/protocols";
 import { useLanguage } from "./use-language";
 import React, { useEffect, useRef, useState, type PropsWithChildren } from "react";
@@ -15,14 +16,14 @@ import { duration } from "./format";
 import { useExperience } from "./experience-context";
 
 
-export function Chip({ title, selected, onPress, translate = true }: { title: string; selected: boolean; onPress: () => void; translate?: boolean }) {
+export function Chip({ title, selected, onPress, translate = true, disabled = false }: { title: string; selected: boolean; onPress: () => void; translate?: boolean; disabled?: boolean }) {
   const { colors: c, palettes } = useTheme();
   const s = useStyles();
   useLanguage();
   const { experience } = useExperience();
   const accent = palettes[experience.palette].accent;
-  return <Pressable accessibilityRole="button" accessibilityState={{ selected }} onPress={onPress}
-    style={({ pressed }) => [s.chip, selected && { backgroundColor: accent, borderColor: accent }, { opacity: pressed ? 0.7 : 1 }]}>
+  return <Pressable accessibilityRole="button" accessibilityState={{ selected, disabled }} disabled={disabled} onPress={onPress}
+    style={({ pressed }) => [s.chip, selected && { backgroundColor: accent, borderColor: accent }, { opacity: disabled ? 0.35 : pressed ? 0.7 : 1 }]}>
     <Copy translate={translate} style={{ color: selected ? c.onAccent : c.secondaryText, fontFamily: f.label, textAlign: "center" }}>{title}</Copy>
   </Pressable>;
 }
@@ -73,19 +74,19 @@ export function Card({
 
 type IconName = keyof typeof MaterialIcons.glyphMap;
 
-export function Disclosure({ title, summary, icon, children, initiallyOpen = false }: PropsWithChildren<{
-  title: string; summary?: string; icon?: IconName; initiallyOpen?: boolean;
+export function Disclosure({ title, summary, icon, children, initiallyOpen = false, compact = false }: PropsWithChildren<{
+  title: string; summary?: string; icon?: IconName; initiallyOpen?: boolean; compact?: boolean;
 }>) {
   const { colors: c, palettes } = useTheme();
   const s = useStyles();
   useLanguage();
   const [open, setOpen] = useState(initiallyOpen);
   const accent = palettes[useExperience().experience.palette].accent;
-  return <View style={[s.card, { padding: 0, gap: 0 }]}>
+  return <View style={[s.card, { padding: 0, gap: 0 }, compact && { backgroundColor: "transparent", borderWidth: 0, borderRadius: 0 }]}>
     <Pressable accessibilityRole="button" accessibilityLabel={t(title)}
       accessibilityHint={!open && summary ? t(summary) : undefined}
       accessibilityState={{ expanded: open }} onPress={() => setOpen(value => !value)}
-      style={({ pressed }) => ({ minHeight: 64, paddingHorizontal: 16, paddingVertical: 12,
+      style={({ pressed }) => ({ minHeight: compact ? 48 : 64, paddingHorizontal: compact ? 0 : 16, paddingVertical: compact ? 8 : 12,
         flexDirection: "row", alignItems: "center", gap: 12, opacity: pressed ? 0.7 : 1 })}>
       {icon && <View style={{ width: 36, height: 36, borderRadius: 11, backgroundColor: accent + "14", alignItems: "center", justifyContent: "center" }}><MaterialIcons name={icon} size={21} color={accent} accessible={false} /></View>}
       <View style={{ flex: 1, gap: 3 }}><Copy style={{ fontFamily: f.heading }}>{title}</Copy>
@@ -197,6 +198,7 @@ export function Screen({
   avoidKeyboard = false,
   tabScreen = false,
   hideHeader = false,
+  backLabel = "Go back",
 }: PropsWithChildren<{
   back?: () => void;
   title?: string;
@@ -206,6 +208,7 @@ export function Screen({
   avoidKeyboard?: boolean;
   tabScreen?: boolean;
   hideHeader?: boolean;
+  backLabel?: string;
 }>) {
   const { colors: c, backgrounds } = useTheme();
   const s = useStyles();
@@ -218,7 +221,7 @@ export function Screen({
         {back ? (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={t("Go back")}
+            accessibilityLabel={t(backLabel)}
             onPress={back}
             style={s.iconButton}
           >
@@ -274,10 +277,12 @@ export function StateScale({
   value,
   onChange,
   timing = "Before the practice",
+  metric = "wellbeing_v2",
 }: {
   value: number | null;
   onChange: (n: number) => void;
   timing?: string;
+  metric?: import("@inout/shared-types").StateMetric;
 }) {
   const { colors: c } = useTheme();
   useLanguage();
@@ -297,19 +302,22 @@ export function StateScale({
     animation.start();
     return () => animation.stop();
   }, [value, progress, reduced]);
+  const wellbeing = metric === "wellbeing_v2";
+  const emotion = value === null ? null : emotionFor(value);
   const adjust = (direction: number) => onChange(value === null ? 1 : Math.max(1, Math.min(10, value + direction)));
   const select = (x: number) => onChange(Math.max(1, Math.min(10, Math.round(Math.max(0, x - 12) / Math.max(1, width - 24) * 9) + 1)));
   return <Card>
     <View style={{ flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 12, justifyContent: "space-between" }}>
-      <View style={{ flexShrink: 1 }}><Label>CURRENT STATE</Label><Copy>{timing}</Copy></View>
+      <View style={{ flexShrink: 1 }}><Copy>{timing}</Copy>{wellbeing && emotion && <Copy>{emotion.label}</Copy>}</View>
+      {wellbeing && <Copy accessible={false} style={{ fontSize: 42, lineHeight: 50 }}>{emotion?.emoji ?? "○"}</Copy>}
       <Copy translate={false} style={{ fontSize: 36, lineHeight: 46, fontWeight: "700", color: c.accent }}>{value === null ? "—" : value}<Copy translate={false}> / 10</Copy></Copy>
     </View>
     <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-      <IconButton icon="remove" title="Lower tension rating" onPress={() => adjust(-1)} />
-      <View accessibilityRole="adjustable" accessible accessibilityLabel={t("Tension rating")}
-        accessibilityHint={t("Choose 1 for very relaxed or 10 for very tense.")}
-        accessibilityValue={{ min: 1, max: 10, ...(value === null ? { text: t("Not selected") } : { now: value, text: `${value} / 10` }) }}
-        accessibilityActions={[{ name: "increment", label: t("Higher tension rating") }, { name: "decrement", label: t("Lower tension rating") }]}
+      <IconButton icon="remove" title={wellbeing ? "Lower well-being rating" : "Lower tension rating"} onPress={() => adjust(-1)} />
+      <View accessibilityRole="adjustable" accessible accessibilityLabel={t(wellbeing ? "Well-being rating" : "Tension rating")}
+        accessibilityHint={t(wellbeing ? "Choose 1 for feeling very bad or 10 for feeling excellent." : "Choose 1 for very relaxed or 10 for very tense.")}
+        accessibilityValue={{ min: 1, max: 10, ...(value === null ? { text: t("Not selected") } : { now: value, text: `${value} / 10${wellbeing && emotion ? ` · ${t(emotion.label)}` : ""}` }) }}
+        accessibilityActions={[{ name: "increment", label: t(wellbeing ? "Higher well-being rating" : "Higher tension rating") }, { name: "decrement", label: t(wellbeing ? "Lower well-being rating" : "Lower tension rating") }]}
         onAccessibilityAction={event => { if (event.nativeEvent.actionName === "increment") adjust(1); if (event.nativeEvent.actionName === "decrement") adjust(-1); }}
         onLayout={event => setWidth(event.nativeEvent.layout.width)}
         onStartShouldSetResponder={() => true} onMoveShouldSetResponder={() => true}
@@ -320,12 +328,17 @@ export function StateScale({
           {value !== null && <Animated.View style={{ position: "absolute", left: progress.interpolate({ inputRange: [0, 1], outputRange: ["0%", "100%"] }), marginLeft: -11, top: -9, width: 22, height: 22, borderRadius: 11, backgroundColor: c.accent }} />}
         </View>
       </View>
-      <IconButton icon="add" title="Higher tension rating" onPress={() => adjust(1)} />
+      <IconButton icon="add" title={wellbeing ? "Higher well-being rating" : "Higher tension rating"} onPress={() => adjust(1)} />
     </View>
-    <View style={{ flexDirection: "row", gap: 16, justifyContent: "space-between" }}>
+    {wellbeing ? <View style={{ flexDirection: "row", justifyContent: "space-between", flexWrap: "wrap", gap: 2 }}>
+      {emotionalAnchors.map(anchor => <Pressable key={anchor.value} accessibilityRole="button"
+        accessibilityLabel={`${anchor.value} / 10 · ${t(anchor.label)}`} accessibilityState={{ selected: value === anchor.value }}
+        onPress={() => onChange(anchor.value)} style={{ minWidth: 44, minHeight: 44, alignItems: "center", justifyContent: "center", borderRadius: 12, backgroundColor: value === anchor.value ? c.accentSurface : "transparent" }}>
+        <Copy accessible={false} style={{ fontSize: 24, lineHeight: 32 }}>{anchor.emoji}</Copy><Copy translate={false} style={{ fontSize: 12 }}>{anchor.value}</Copy>
+      </Pressable>)}
+    </View> : <View style={{ flexDirection: "row", gap: 16, justifyContent: "space-between" }}>
       <Copy style={{ flex: 1, fontSize: 13 }}>1 · Very relaxed</Copy><Copy style={{ flex: 1, fontSize: 13, textAlign: "right" }}>10 · Very tense</Copy>
-    </View>
-    <Copy style={{ fontSize: 13 }}>Optional. Choose a number or skip this check-in.</Copy>
+    </View>}
   </Card>;
 }
 
@@ -361,7 +374,7 @@ export function ProtocolRow({
         <Copy style={s.small}>{purpose}</Copy>
         {protocol.safetyCategory !== "general" && <Copy style={s.small}>{t("Read precautions")}</Copy>}
         <Copy style={s.protocolMeta}>
-          {isCyclic(protocol) ? message(protocol.defaultCycles === 1 ? "Up to {0} · 1 round" : "Up to {0} · {1} rounds", [duration(protocol.defaultDuration), protocol.defaultCycles]) : `${duration(protocol.defaultDuration)} · ${message("{0} cycles", [protocol.defaultCycles])} · ${protocol.goalTags.map(goal => t(goal)).join(" / ")}${favorite ? " · ★" : ""}`}
+          {isCyclic(protocol) ? message(protocol.defaultCycles === 1 ? "Up to {0} · 1 round" : "Up to {0} · {1} rounds", [duration(protocol.defaultDuration), protocol.defaultCycles]) : `${duration(protocol.defaultDuration)} · ${countLabel(protocol.defaultCycles, "cycle")} · ${protocol.goalTags.map(goal => t(goal)).join(" / ")}${favorite ? " · ★" : ""}`}
         </Copy>
       </View>
       <MaterialIcons accessible={false} name={locked ? "lock-outline" : "chevron-right"} size={22} color={locked ? c.gold : c.secondaryText} />

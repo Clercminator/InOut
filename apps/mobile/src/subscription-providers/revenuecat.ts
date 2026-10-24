@@ -1,6 +1,6 @@
 import type { CustomerInfo, PurchasesPackage } from "react-native-purchases";
 import { commercialPolicy, type EntitlementGrant } from "../entitlements";
-import { SubscriptionError, type SubscriptionProvider, type SubscriptionOffer, type PlanId } from "../subscriptions";
+import { SubscriptionError, classifySubscriptionError, type SubscriptionProvider, type SubscriptionOffer, type PlanId } from "../subscriptions";
 import config from "../../../../release/monetization.json";
 
 export function grantFromCustomerInfo(info: CustomerInfo, testStore = false): EntitlementGrant {
@@ -28,21 +28,29 @@ export function revenueCatAdapter(apiKey: string, testStore = false): Subscripti
   Purchases.configure({ apiKey, entitlementVerificationMode: Purchases.ENTITLEMENT_VERIFICATION_MODE.INFORMATIONAL });
   let packages: Partial<Record<PlanId, PurchasesPackage>> = {};
   const grant = (info: CustomerInfo) => grantFromCustomerInfo(info, testStore);
-  const customer = async () => grant(await Purchases.getCustomerInfo());
+  const request = async <T,>(action: () => Promise<T>): Promise<T> => {
+    try { return await action(); } catch (error) { throw classifySubscriptionError(error); }
+  };
+  const customer = async () => grant(await request(() => Purchases.getCustomerInfo()));
+  const loadOffering = async () => {
+    const offering = (await request(() => Purchases.getOfferings())).all[config.offering];
+    if (!offering) throw new SubscriptionError("configuration", "Subscription setup is incomplete. Please contact Help & feedback. Free practice is available.");
+    if (!offering.availablePackages.length) throw new SubscriptionError("no_products", "No subscription plans were returned by your store. Try again later or contact Help & feedback.");
+    return offering;
+  };
   return {
     mode: "store", testStore,
     ...(!testStore ? { remotePaywall: {
       async offering(locale: string) {
         await Purchases.overridePreferredLocale(locale);
-        const offering = (await Purchases.getOfferings()).all[config.offering];
-        if (!offering?.availablePackages.length) throw new SubscriptionError("unavailable", "No subscription plans are available in this build yet.");
+        const offering = await loadOffering();
         return offering;
       },
       verify: (info: unknown) => grantFromCustomerInfo(info as CustomerInfo),
     } } : {}),
     async offers() {
       packages = {};
-      const current = (await Purchases.getOfferings()).all[config.offering];
+      const current = await loadOffering();
       const candidates = { weekly: current?.weekly, monthly: current?.monthly, annual: current?.annual };
       const identifiers = Object.values(candidates).flatMap(p => p?.product.identifier ? [p.product.identifier] : []);
       const eligibility = Platform.OS === "ios" && identifiers.length ? await Purchases.checkTrialOrIntroductoryPriceEligibility(identifiers).catch(() => ({} as Record<string, { status: number }>)) : {} as Record<string, { status: number }>;
@@ -74,7 +82,7 @@ export function revenueCatAdapter(apiKey: string, testStore = false): Subscripti
         throw new SubscriptionError("failed", "The store could not complete this request. Try again.");
       }
     },
-    async restore() { return grant(await Purchases.restorePurchases()); },
+    async restore() { return grant(await request(() => Purchases.restorePurchases())); },
     async managementUrl() {
       if (testStore) return null;
       const url = (await Purchases.getCustomerInfo()).managementURL;

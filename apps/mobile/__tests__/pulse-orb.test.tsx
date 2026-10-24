@@ -20,9 +20,9 @@ test("native ribbons remain still during holds", async () => {
 });
 afterEach(() => { jest.restoreAllMocks(); jest.useRealTimers(); });
 
-test("brand image is explicitly sized inside a clipped, centered animation viewport", async () => {
+test("brand image is explicitly sized inside a centered animation viewport with unclipped edges", async () => {
   await render(<PulseOrb view={snapshot(start(testingPlan, 0), 0)} phases={testingPlan.blocks[0].phases} running size={180} />);
-  expect(screen.getByTestId("pulse-orb", { includeHiddenElements: true })).toHaveStyle({ width: 180, height: 180, overflow: "hidden", alignItems: "center", justifyContent: "center" });
+  expect(screen.getByTestId("pulse-orb", { includeHiddenElements: true })).toHaveStyle({ width: 180, height: 180, overflow: "visible", alignItems: "center", justifyContent: "center" });
   expect(screen.getByTestId("pulse-branded-art", { includeHiddenElements: true })).toHaveStyle({ width: "100%", height: "100%" });
 });
 

@@ -27,10 +27,9 @@ export function ReminderEffects() {
     !!service?.items.some(item => item.enabled) || notificationPreferences(controller.preferences).dailyReset);
   const history = controller.history();
   const pro = entitlement.state.pro, billingReady = entitlement.billingReady;
-  useEffect(() => { void service?.reconcile(); }, [service, preferences]);
   useEffect(() => {
     if (!service) return;
-    void configureEngagementNotifications(preferences, false, context()).catch(() => {
+    void service.reconcile().then(() => configureEngagementNotifications(preferences, false, context(), true)).catch(() => {
       controller.analytics.track("notification_schedule_failed", { outcome: "failed", errorCategory: "scheduler" });
     });
   }, [service, preferences, controller, history, pro, billingReady, remindersEnabled]);
@@ -127,8 +126,7 @@ export function ReminderEffects() {
     void sdk.getLastNotificationResponseAsync().then(response => { if (mounted) open(response); }).catch(() => {});
     const foreground = AppState.addEventListener("change", state => {
       if (state === "active") {
-        void service.reconcile();
-        void configureEngagementNotifications(controller.preferences, false, context(), true).catch(() => {
+        void service.reconcile().then(() => configureEngagementNotifications(controller.preferences, false, context(), true)).catch(() => {
           controller.analytics.track("notification_schedule_failed", { outcome: "failed", errorCategory: "scheduler" });
         });
       }

@@ -320,21 +320,21 @@ test("post hides the prior score/comparison until an explicit answer", async () 
   expect(mockController.current?.stage).toBe("result");
 });
 test("fresh saved improvement celebrates, history and failed saves do not", async () => {
-  mockController.start(7);
+  mockController.start(3);
   now = 48000;
   mockController.tick();
-  mockController.answer(3, null);
+  mockController.answer(7, null);
   mockParams = { id: "test-session", saved: "1" };
   const rendered = await render(<Result />);
   expect(screen.getByText("A little lighter.")).toBeTruthy();
   mockParams = { id: "test-session" };
   await rendered.rerender(<Result />);
   expect(screen.queryByText("A little lighter.")).toBeNull();
-  mockController.start(7);
+  mockController.start(3);
   now += 48000;
   mockController.tick();
   mockDiskFull = true;
-  mockController.answer(3, null);
+  mockController.answer(7, null);
   mockParams = { id: "test-session", saved: "1" };
   await rendered.rerender(<Result />);
   expect(screen.queryByText("A little lighter.")).toBeNull();
@@ -393,13 +393,13 @@ test("sharing privacy details appear only from the adjacent info button", async 
 });
 test("result presents raw scores and honest negative shift", async () => {
   mockParams = { id: "test-session" };
-  mockController.start(3);
+  mockController.start(7);
   now = 48000;
   mockController.tick();
-  mockController.answer(7, "Worse");
+  mockController.answer(3, "Worse");
   await render(<Result />);
-  expect(screen.getByText("Tension up 4 points")).toBeTruthy();
-  expect(screen.getByText("Self-reported tension · 1–10")).toBeTruthy();
+  expect(screen.getByText("Well-being down 4 points")).toBeTruthy();
+  expect(screen.getByText("Self-reported well-being · 1–10")).toBeTruthy();
 });
 test("skip saves null rather than the visual default", async () => {
   await render(<Pre />);
@@ -468,7 +468,7 @@ test("library filters saved routines and goals without losing navigation", async
   expect(screen.queryByText("Box Breathing")).toBeNull();
   await fireEvent.press(screen.getByRole("button", { name: "All" }));
   await fireEvent.press(screen.getByLabelText("Filters, 0 active"));
-  await fireEvent.press(screen.getByRole("button", { name: "Calm & Unwind" }));
+  await fireEvent.press(screen.getByRole("button", { name: /^Calm & Unwind \(/ }));
   await fireEvent.press(screen.getByText("Apply filters"));
   expect(screen.getByText("4-7-8 Breathing")).toBeTruthy();
   expect(screen.queryByText("Coherent Breathing")).toBeNull();
@@ -667,7 +667,7 @@ test("practice audio opens a focused route while the pre-session draft stays mou
   if (preset) await fireEvent.press(preset);
   await fireEvent.press(screen.getByRole("button", { name: "Audio & haptics" }));
   expect(mockPush).toHaveBeenCalledWith("/practice-audio");
-  expect(screen.getByText("How tense are you right now?")).toBeTruthy();
+  expect(screen.getByText("How are you feeling right now?")).toBeTruthy();
   expect(screen.queryByRole("button", { name: "Breath sounds" })).toBeNull();
   await fireEvent.press(screen.getByRole("button", { name: "Skip rating & continue" }));
   await act(async () => { mockController.confirmSafety(); });

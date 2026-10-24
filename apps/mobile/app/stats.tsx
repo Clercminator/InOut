@@ -42,7 +42,7 @@ export default function Stats() {
       </Card>
       <Card><Label>PROTOCOLS</Label>{breakdown(selected.records, "protocolName").map(group => <StatRow key={group.label} translateLabel={false} label={recordTitle(selected.records.find(record => record.protocolName === group.label)!)} value={`${group.count} · ${statsDuration(group.totalMs)}`} />)}{!selected.count && <Copy>No protocols logged in this period.</Copy>}</Card>
       <Card><Label>STATE SHIFT · SELF-REPORTED</Label><Title>{selected.averageShift === null ? "—" : `${selected.averageShift > 0 ? "+" : ""}${decimal(selected.averageShift, 1)}`}</Title>
-        <Copy style={s.small}>Average from {selected.shifts} completed sessions with paired ratings. Positive values mean lower tension. These are your observations, not a measure of clinical benefit.</Copy>
+        <Copy style={s.small}>Average from {selected.shifts} completed sessions with paired ratings. Positive values mean improved well-being. Historical tension ratings are excluded. These are your observations, not a measure of clinical benefit.</Copy>
         {groups.filter(group => group.shifts > 0).map(group => <StatRow key={group.label} label={`${group.label} (${group.shifts} pairs)`} value={decimal(group.averageShift!, 1)} />)}
       </Card>
       <StateShiftChart buckets={selected.buckets} />

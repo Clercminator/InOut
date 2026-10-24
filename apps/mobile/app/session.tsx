@@ -2,7 +2,8 @@ import { useTheme } from "../src/theme";
 import { recordTitle, message, t } from "../src/i18n";
 import { useLanguage } from "../src/use-language";
 import { Alert } from "../src/localized-native";
-import { View, useWindowDimensions } from "react-native";
+import { useState } from "react";
+import { ScrollView, View, useWindowDimensions } from "react-native";
 import { Redirect, router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { Screen, Label, Title, Copy, Button, useStyles } from "../src/ui";
@@ -18,6 +19,9 @@ export default function Session() {
   const { colors } = useTheme();
   const s = useStyles();
   const { width, fontScale } = useWindowDimensions();
+  const [viewportHeight, setViewportHeight] = useState(0);
+  const [headingHeight, setHeadingHeight] = useState(0);
+  const [detailsHeight, setDetailsHeight] = useState(0);
   const stackedControls = width < 360 || fontScale > 1.3;
   useLanguage();
   const controller = useSession();
@@ -48,11 +52,14 @@ export default function Session() {
   const nextLabel = nextIndex < 0 ? "Session complete" : `${breathingGuidance(nextPhases, nextIndex).label} · ${practiceDuration(nextPhases[nextIndex].durationMs)}`;
   return (
     <Screen
-      title="ACTIVE SESSION"
+      title="ACTIVE SESSION" scroll={false}
       footer={<SessionControls controller={controller} running={running} disabled={!!controller.error || unavailable}
         compact={stackedControls} release={intense && holding ? view.phase.type === "retention" ? "Breathe in now" : "Release now" : undefined} />}
 
     >
+      <ScrollView testID="session-content" style={{ flex: 1 }} onLayout={event => setViewportHeight(event.nativeEvent.layout.height)}
+        contentContainerStyle={{ padding: 16, gap: 12 }}>
+      <View onLayout={event => setHeadingHeight(event.nativeEvent.layout.height)} style={{ gap: 6 }}>
       <Title translate={false}>{recordTitle(record)}</Title>
       <Label>
         {intense ? message("Up to {0} remaining", [practiceDuration(view.sessionRemainingMs)]) : `${record.goal.toUpperCase()} · ${practiceDuration(view.sessionRemainingMs)} REMAINING`}
@@ -76,11 +83,14 @@ export default function Session() {
             : "Session paused after an interruption. Breathe naturally, then resume or restart."}
         </Copy>
       )}
+      </View>
       <LinearGradient
         colors={["#171029", "#0E0A19"]}
-        style={[s.card, { padding: 16, borderWidth: 1, borderColor: colors.sessionBorder, borderRadius: 24 }]}
+        style={[s.card, { padding: 12, gap: 8, borderWidth: 1, borderColor: colors.sessionBorder, borderRadius: 24 }]}
       >
         <SessionVisual
+          availableHeight={viewportHeight ? viewportHeight - headingHeight - detailsHeight - 72 : undefined}
+          nextLabel={nextLabel}
           protocolId={block.protocolId}
           animationType={animationType}
           key={record.id}
@@ -90,10 +100,10 @@ export default function Session() {
           pacerTheme={controller.effectivePacerTheme()}
           cycleLabel={intense ? block.cycles === 30 ? message("Breath {0} of 30", [view.currentCycle]) : view.phase.type === "retention" ? "Optional retention" : "Recovery breath" : undefined}
         />
-        <Copy style={[s.small, { textAlign: "center", color: "#E2D6F5" }]}>Next: {nextLabel}</Copy>
+        <View onLayout={event => setDetailsHeight(event.nativeEvent.layout.height)} style={{ gap: 8 }}>
         <View style={s.row}>
           {record.engine.plan.blocks[view.blockIndex].phases.map((phase, i) => phase.durationMs > 0 && (
-            <View key={i} style={{ flexGrow: 1, flexBasis: 100 * fontScale, maxWidth: "100%", gap: 8 }}>
+            <View key={i} accessible accessibilityLabel={`${t(breathingGuidance(block.phases, i).label)} · ${practiceDuration(phase.durationMs)}`} style={{ flex: 1, gap: 8 }}>
               <View
                 style={{
                   height: 4,
@@ -102,8 +112,6 @@ export default function Session() {
                     i === view.phaseIndex ? colors.accent : colors.border,
                 }}
               />
-              <Copy style={[s.small, { color: i === view.phaseIndex ? "#FFFFFF" : "#C5B5DB" }]}>{breathingGuidance(record.engine.plan.blocks[view.blockIndex].phases, i).label.toUpperCase()}</Copy>
-              <Copy style={[s.small, { color: "#C5B5DB" }]}>{phase.durationMs / 1000}s</Copy>
             </View>
           ))}
         </View>
@@ -124,10 +132,8 @@ export default function Session() {
             }
           />
         )}
+        </View>
       </LinearGradient>
-      <Copy style={s.small}>
-        Breathe comfortably. Follow the guide without forcing.
-      </Copy>
       {!running && (
         <Button
           title="Audio & haptics"
@@ -135,6 +141,7 @@ export default function Session() {
           onPress={() => router.push("/practice-audio")}
         />
       )}
+      </ScrollView>
     </Screen>
   );
 }

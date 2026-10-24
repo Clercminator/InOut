@@ -36,11 +36,12 @@ export default function Insights() {
       {!insights.patterns.length && <Card><Copy>Your first practice starts here.</Copy><Button title="Start a practice" onPress={() => router.push("/pre")} /></Card>}
       {insights.patterns.map(pattern => <Card key={pattern.key}>
         <Title translate={false}>{recordTitle(pattern.record)}</Title>
+        <Copy>{pattern.record.stateMetric === "wellbeing_v2" ? "Self-reported well-being · 1–10" : "Self-reported tension · 1–10"}</Copy>
         <Copy>{practiceDuration(pattern.record.engine.elapsedAtAnchor)} · {message("{0} paired check-ins across {1} days", [pattern.pairs, pattern.days])}</Copy>
         {pattern.median === null ? <Copy>Not enough check-ins yet. Rating your practice is always optional.</Copy> : <>
-          <Copy>{message("Median tension change: {0}", [decimal(pattern.median, 1)])}</Copy>
-          <Copy>{message("Lower: {0} · Unchanged: {1} · Higher: {2}", [pattern.lower, pattern.same, pattern.higher])}</Copy>
-          <Copy>Positive means lower reported tension. Your circumstances and the sessions you chose to rate can affect this pattern.</Copy>
+          <Copy>{message("Median State Shift: {0}", [decimal(pattern.median, 1)])}</Copy>
+          <Copy>{message("Improved: {0} · Unchanged: {1} · Declined: {2}", [pattern.lower, pattern.same, pattern.higher])}</Copy>
+          <Copy>{pattern.record.stateMetric === "wellbeing_v2" ? "Positive means improved well-being." : "Positive means lower reported tension. Your circumstances and the sessions you chose to rate can affect this pattern."}</Copy>
         </>}
       </Card>)}
     </>}

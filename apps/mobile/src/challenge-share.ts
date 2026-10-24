@@ -20,7 +20,7 @@ export function attemptShareData(attempt: ChallengeAttempt, history: ChallengeAt
   return { width: 1080, height: story ? 1920 : 1080, title: t(d.title), art: d.art, destination: info.supportUrl,
     status: t(comparison.isPersonalBest ? "NEW PERSONAL BEST" : attempt.completed ? "CHALLENGE COMPLETE" : "ATTEMPT SAVED"),
     metric: state ? includeRating ? `${attempt.before} → ${attempt.after}` : null : `${attempt.value.toFixed(1)} ${t(d.unit)}`,
-    detail: state ? includeRating ? `${t("Self-reported tension · 1–10")} · ${message("{0} in 60 seconds", [attempt.value > 0 ? `+${attempt.value}` : attempt.value])}` : t("One minute. A moment for myself.") : comparison.isPersonalBest ? message("+{0} sec from your previous best", [comparison.improvement!.toFixed(1)]) : t(attempt.completed ? "A personal practice. A moment worth keeping." : "Every attempt is part of the practice.") };
+    detail: state ? includeRating ? `${t(attempt.definitionVersion === 2 ? "Self-reported well-being · 1–10" : "Self-reported tension · 1–10")} · ${message("{0} in 60 seconds", [attempt.value > 0 ? `+${attempt.value}` : attempt.value])}` : t("One minute. A moment for myself.") : comparison.isPersonalBest ? message("+{0} sec from your previous best", [comparison.improvement!.toFixed(1)]) : t(attempt.completed ? "A personal practice. A moment worth keeping." : "Every attempt is part of the practice.") };
 }
 
 export function dailyResetShareData(state: import("./daily-reset").DailyResetState, sessionId: string, story: boolean, record?: import("@inout/shared-types").SessionRecord) {

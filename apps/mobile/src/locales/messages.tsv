@@ -145,7 +145,6 @@ Before	Antes	Antes
 After	Después	Depois
 Self-reported	Tu valoración	Sua avaliação
 Self-reported tension · 1–10	Tu nivel de tensión · 1–10	Seu nível de tensão · 1–10
-Self-reported. Takes 1–2 seconds.	Tu valoración. Solo toma unos segundos.	Sua avaliação. Leva só alguns segundos.
 1 · Very relaxed	1 · Muy relajado	1 · Muito relaxado
 10 · Very tense	10 · Mucha tensión	10 · Muita tensão
 A quick self-report. There is no right answer.	Una autoevaluación breve. No hay una respuesta correcta.	Uma autoavaliação breve. Não existe resposta certa.
@@ -539,10 +538,10 @@ Reset notification settings	Restablecer ajustes de notificaciones	Redefinir conf
 Log practice	Registrar práctica	Registrar prática
 Not now	Ahora no	Agora não
 Would you like to log a breathing practice?	¿Quieres registrar una práctica de respiración?	Você gostaria de registrar uma prática de respiração?
-A small pause can make room for what matters.	Una pequeña pausa puede dejar espacio para lo importante.	Uma pequena pausa pode abrir espaço para o que importa.
-Take a moment for yourself when it fits.	Tómate un momento cuando te venga bien.	Reserve um momento para você quando puder.
-A gentle breath is enough to begin.	Una respiración suave es suficiente para empezar.	Uma respiração suave basta para começar.
-Your practice is here whenever you are ready.	Tu práctica estará aquí cuando estés listo.	Sua prática estará aqui quando você estiver pronto.
+A small pause can make room for what matters.	Una pausa breve también cuenta.	Uma pausa pequena também tem valor.
+Take a moment for yourself when it fits.	Cuando puedas, regálate un momento.	Quando der, reserve um momento para você.
+A gentle breath is enough to begin.	Puedes empezar con una respiración suave.	Uma respiração tranquila já é um começo.
+Your practice is here whenever you are ready.	Tu espacio para respirar te espera.	Seu espaço para respirar continua aqui.
 You earned a practice milestone.	Has alcanzado un logro de práctica.	Você conquistou um marco na prática.
 Notifications need an installed native build. They are unavailable in Expo Go.	Las notificaciones requieren una compilación nativa instalada. No están disponibles en Expo Go.	As notificações precisam de uma versão nativa instalada. Elas não estão disponíveis no Expo Go.
 Pulse Default	Pulso predeterminado	Pulso padrão

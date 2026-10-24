@@ -17,7 +17,7 @@ export const getLanguage = () => language;
 export const locale = () => languages.find(item => item.id === language)!.locale;
 export const subscribeLanguage = (listener: () => void) => { listeners.add(listener); return () => { listeners.delete(listener); }; };
 export function setLanguage(value: Language) {
-  if (value === language) return;
+  if (!isLanguage(value) || value === language) return;
   language = value;
   listeners.forEach(listener => listener());
 }
