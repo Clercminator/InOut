@@ -23,7 +23,7 @@ for (const [language, catalog] of Object.entries(catalogs)) {
   const file = path.join(root, `${language}.json`);
   const generated = JSON.stringify(catalog, null, 2) + '\n';
   if (process.argv.includes('--check')) {
-    if (fs.readFileSync(file, 'utf8') !== generated) throw new Error(`Stale catalog: run npm run locales:build (${language})`);
+    if (fs.readFileSync(file, 'utf8').replaceAll('\r\n', '\n') !== generated) throw new Error(`Stale catalog: run npm run locales:build (${language})`);
   } else fs.writeFileSync(file, generated);
 }
 console.log(`${Object.keys(catalogs.es).length} messages in each language`);
