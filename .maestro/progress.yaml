@@ -95,7 +95,7 @@ appId: com.imrtech.inout
 - openLink:
     link: "inout://pre?id=box"
 - extendedWaitUntil:
-    visible: "Open|Skip rating & start"
+    visible: "Open|Skip rating & continue"
     timeout: 20000
 - tapOn:
     text: "Open"
@@ -103,14 +103,16 @@ appId: com.imrtech.inout
     retryTapIfNoChange: true
 - scrollUntilVisible:
     element:
-      text: "Skip rating & start"
+      text: "Skip rating & continue"
     direction: DOWN
     timeout: 60000
     waitToSettleTimeoutMs: 1000
     centerElement: false
 - tapOn:
-    text: "Skip rating & start"
+    text: "Skip rating & continue"
     waitToSettleTimeoutMs: 100
+- assertVisible: "Breathe comfortably."
+- tapOn: "Start practice"
 - extendedWaitUntil:
     visible: "Next: Exhale.*"
     timeout: 25000
