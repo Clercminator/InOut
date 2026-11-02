@@ -107,7 +107,7 @@ test("central reviewer entitlement and configurable Pro gates govern enrollment 
 });
 test("upgrade preserves existing sessions and preferences while challenge state starts empty", () => {
   const f = fixture(); try {
-    f.store.save(record("old", "coherent", start)); f.store.savePreferences({ ...f.store.preferences(), language: "es" });
+    f.store.save(record("old", "coherent", start)); f.store.savePreferences({ ...f.store.preferences(), language: "es", languageSource: "manual" });
     const upgraded = new LocalStore(f.adapter); assert.deepEqual(upgraded.challenges(), []); assert.equal(upgraded.history().length, 1); assert.equal(upgraded.preferences().language, "es");
     f.db.prepare("INSERT OR REPLACE INTO settings VALUES('challenges-v1',?)").run('{"broken":true}');
     assert.throws(() => upgraded.challenges(), /preserved/); assert.equal(upgraded.history().length, 1);
