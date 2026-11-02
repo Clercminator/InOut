@@ -19,8 +19,7 @@ appId: com.imrtech.inout
 - tapOn: "Start breathing"
 - tapOn: "Close subscription offer"
 - assertVisible: 'How are you feeling right now\?'
-- openLink: "inout://"
-- tapOn: { text: "Open", optional: true }
+- tapOn: "Go back"
 - tapOn: ".*Results"
 - assertVisible: "DAY STREAK"
 - takeScreenshot: progress-overview
