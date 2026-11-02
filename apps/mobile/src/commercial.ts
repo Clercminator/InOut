@@ -40,7 +40,7 @@ export function createCommercialServices(store: LocalStore): CommercialServices 
   if (native && reviewCapture && reviewPrice) adapter = { ...unavailableSubscriptions, lifetime: {
     customerId: async () => "ios-review-capture",
     offer: async () => ({ productId: "com.imrtech.inout.pro.lifetime", price: reviewPrice }),
-    purchase: async () => { throw new Error("Purchases are disabled in the review capture build."); },
+    purchase: async () => { throw new Error("review_capture_purchase_disabled"); },
   } };
   entitlements.billingReady = entitlements.billingEvidenceReady;
   const subscriptions = new SubscriptionService(adapter, entitlements, analytics, { read: () => store.purchaseUncertain(), write: value => store.savePurchaseUncertainty(value) });

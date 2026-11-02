@@ -26,7 +26,7 @@
       "acceptance": "Both physical platforms required before nativeDeviceAcceptance."
     },
     "apps/mobile/src/commercial.ts": {
-      "sha256": "cc0a770ab5b15122c3ede6dc47ca9946adf1a7b6075ec516cfdfcd9653db5d97",
+      "sha256": "a5225f7c2574aa40297f41623e95b4b0b8425e530a0b23172a05768d8b96585b",
       "reason": "Native SDK availability and platform public billing keys; shared entitlement and consent services. A compile-time iOS simulator review harness renders a non-purchasable Lifetime card and is absent from store profiles.",
       "acceptance": "Both physical platforms required before nativeDeviceAcceptance."
     },
