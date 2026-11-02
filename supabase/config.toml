@@ -6,3 +6,5 @@ verify_jwt = false
 verify_jwt = true
 [functions.inout-privacy]
 verify_jwt = true
+[functions.inout-founders]
+verify_jwt = false

@@ -59,11 +59,11 @@ export function SoundControls({ compact = false }: { compact?: boolean }) {
     if (controller.current?.engine.status === "running") return;
     const token = generation.current;
     setPreviewState("loading");
-    const preview = createAudioPreview(detail => {
+    const preview = createAudioPreview(() => {
       if (token === generation.current) {
         stop();
         controller.analytics.track("audio_playback_failed", { outcome: "failed", errorCategory: "playback" });
-        setError(detail ? `Sound preview unavailable (${detail})` : "Sound preview unavailable. Check media volume and silent mode, then try again.");
+        setError("Sound preview unavailable. Check media volume and silent mode, then try again.");
       }
     }, () => { if (token === generation.current) stop(); }, state => { if (token === generation.current) setPreviewState(state); });
     audioPreview.current = preview;

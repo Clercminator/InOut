@@ -1,3 +1,4 @@
+import { ProBadge } from "../src/pro-badge";
 import { useCommercial } from "../src/commercial-context";
 import { practiceStats } from "../src/progress";
 import { goalContent, selectedGoals } from "../src/personalization";
@@ -12,7 +13,7 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { BackScreen, Title, Label, Card, ActionRow, Copy, Button, useStyles } from "../src/ui";
 import { useSession } from "../src/provider";
 import { practiceDuration } from "../src/format";
-import { experienceFor } from "../src/experience";
+import { profileIntention, experienceFor } from "../src/experience";
 import { photoUri } from "../src/profile-photo";
 import { captureRef, releaseCapture } from "react-native-view-shot";
 import * as sharingService from "expo-sharing";
@@ -37,14 +38,15 @@ export default function Profile() {
   const favorite = e.rituals.find(r => r.id === e.favoriteRitualId);
   return <BackScreen title="PROFILE">
     <View ref={card} collapsable={false} style={{ backgroundColor: colors.card, padding: 24, borderRadius: 24, gap: 16, borderWidth: 1, borderColor: accent + "55" }}>
-      <Label>IN/OUT · MY PRACTICE</Label>{pro && <View style={{ alignSelf: "flex-start", paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: colors.accentSurface, borderColor: colors.accent, borderWidth: 1 }}><Copy style={{ color: colors.accent, fontWeight: "700" }}>IN/OUT PRO</Copy></View>}
+      <Label>IN/OUT · MY PRACTICE</Label>{pro && <ProBadge />}
+      {commercial?.founders?.member && !commercial.founders.sandboxMember && <View style={s.inlineLabel}><MaterialIcons accessible={false} name="workspace-premium" size={22} color={colors.gold} /><Label>Founding Member</Label></View>}
       <View style={[s.profileIdentity, { flexWrap: "wrap" }]}>
         <View style={[s.profileAvatar, { width: 76, height: 76, backgroundColor: accent + "20", borderWidth: e.frame === "laurel" ? 4 : 2, borderColor: accent,
           shadowColor: accent, shadowOpacity: e.frame === "glow" ? 0.6 : 0, shadowRadius: 16 }]}>
           {e.photo && failedPhoto !== e.photo ? <Image accessibilityLabel={t("Your profile photo")} source={{ uri: photoUri(e.photo) }} onError={() => setFailedPhoto(e.photo)} style={{ width: 66, height: 66, borderRadius: 14 }} />
             : <MaterialIcons name={e.avatar} size={34} color={accent} />}
         </View>
-        <View style={{ flex: 1, minWidth: 140, gap: 4 }}><Title translate={false}>{e.name || t("Your practice")}</Title><Copy translate={false}>{controller.preferences.experience?.intention ?? t(e.intention)}</Copy></View>
+        <View style={{ flex: 1, minWidth: 140, gap: 4 }}><Title translate={false}>{e.name || t("Your practice")}</Title><Copy translate={false}>{profileIntention(controller.preferences)}</Copy></View>
       </View>
       {!!e.bio && <Copy translate={false}>{e.bio}</Copy>}
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>{[

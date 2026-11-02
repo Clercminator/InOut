@@ -1,3 +1,4 @@
+import { CloseButton } from "../src/ui";
 import { useLanguage } from "../src/use-language";
 import { useEffect, useState } from "react";
 import { FlatList, Keyboard, Modal, Pressable, ScrollView, TextInput, View } from "react-native";
@@ -27,8 +28,8 @@ const purposes: Record<string, string> = {
   "runner-rhythm": "Steady cadence",
   "high-intensity-cyclic": "Cyclic hyperventilation with retention",
   athletic: "Prepare with control",
-  endurance: "Build steady stamina",
-  swimmer: "Keep rhythm while moving",
+  endurance: "Explore comfortable breath holds",
+  swimmer: "Practice breath awareness on dry land",
   measured: "Find a calm pace",
 };
 export default function Protocols() {
@@ -75,6 +76,7 @@ export default function Protocols() {
       keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" initialNumToRender={8} windowSize={5}
       ListHeaderComponent={<View style={{ gap: 12 }}>
         <View style={{ gap: 4 }}><Title>Find your rhythm.</Title><Copy>Choose a cadence for the moment ahead.</Copy></View>
+        <ActionRow title="Breathing for exercise" subtitle="Before, during & after training" icon="directions-run" onPress={() => router.push("/athletes")} />
         <View style={[s.input, { paddingVertical: 0, flexDirection: "row", alignItems: "center", gap: 8 }]}>
           <MaterialIcons name="search" size={23} color={c.secondaryText} accessible={false} />
           <TextInput value={search} onChangeText={setSearch} placeholder={t("Search protocols")} placeholderTextColor={c.muted}
@@ -117,7 +119,7 @@ export default function Protocols() {
           style={{ maxHeight: "90%", backgroundColor: c.background, borderTopLeftRadius: 24, borderTopRightRadius: 24 }}>
           <ScrollView contentContainerStyle={{ padding: 20, gap: 16 }} keyboardShouldPersistTaps="handled">
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-              <Title>Filters</Title><Button title="Close" secondary onPress={() => setFiltersOpen(false)} />
+              <Title>Filters</Title><CloseButton onPress={() => setFiltersOpen(false)} />
             </View>
             <Copy>Choose one category and any purposes. Results match any selected purpose.</Copy>
             <Label>Categories</Label>

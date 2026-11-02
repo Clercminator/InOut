@@ -5,7 +5,8 @@ import { Pressable } from "./localized-native";
 import { t, protocolTitle, locale, message, countLabel } from "./i18n";
 import { isCyclic } from "@inout/protocols";
 import { useLanguage } from "./use-language";
-import React, { useEffect, useRef, useState, type PropsWithChildren } from "react";
+import React, { useContext, useEffect, useRef, useState, type PropsWithChildren } from "react";
+import { SessionContext } from "./session-context";
 import { AccessibilityInfo, Animated, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View, type TextProps, type ViewStyle } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -98,19 +99,25 @@ export function Disclosure({ title, summary, icon, children, initiallyOpen = fal
   </View>;
 }
 
-export function ActionRow({ title, icon, onPress, danger = false, disabled = false }: {
-  title: string; icon: IconName; onPress: () => void; danger?: boolean; disabled?: boolean;
+export function ActionRow({ title, subtitle, icon, onPress, danger = false, disabled = false }: {
+  title: string; subtitle?: string; icon: IconName; onPress: () => void; danger?: boolean; disabled?: boolean;
 }) {
   const { colors: c } = useTheme();
   useLanguage();
-  return <Pressable accessibilityRole="button" accessibilityLabel={t(title)} accessibilityState={{ disabled }}
+  return <Pressable accessibilityRole="button" accessibilityLabel={t(title)} accessibilityHint={subtitle ? t(subtitle) : undefined} accessibilityState={{ disabled }}
     disabled={disabled} onPress={onPress}
     style={({ pressed }) => ({ minHeight: 48, paddingVertical: 8, flexDirection: "row", alignItems: "center", gap: 12,
       opacity: disabled ? 0.4 : pressed ? 0.7 : 1 })}>
     <MaterialIcons name={icon} size={22} color={danger ? c.danger : c.secondaryText} accessible={false} />
-    <Copy style={{ flex: 1, color: danger ? c.danger : c.text }}>{title}</Copy>
+    <View style={{ flex: 1, gap: 2 }}><Copy style={{ color: danger ? c.danger : c.text }}>{title}</Copy>
+      {subtitle && <Copy style={{ fontSize: 12, color: c.secondaryText }}>{subtitle}</Copy>}
+    </View>
     <MaterialIcons name="chevron-right" size={20} color={c.muted} accessible={false} />
   </Pressable>;
+}
+
+export function CloseButton({ onPress, title = "Close", disabled = false }: { onPress(): void; title?: string; disabled?: boolean }) {
+  return <IconButton title={title} icon="close" onPress={onPress} disabled={disabled} />;
 }
 
 export function IconButton({ title, icon, onPress, disabled = false }: {
@@ -211,6 +218,7 @@ export function Screen({
   backLabel?: string;
 }>) {
   const { colors: c, backgrounds } = useTheme();
+  const controller = useContext(SessionContext);
   const s = useStyles();
   useLanguage();
   const { experience } = useExperience();
@@ -228,9 +236,12 @@ export function Screen({
             <MaterialIcons name="arrow-back" size={24} color={c.text} />
           </Pressable>
         ) : (
-          <Copy style={s.brand}>
+          <Pressable accessibilityRole="button" accessibilityLabel={t("IN/OUT · Home")}
+            onPress={() => { controller?.pause("manual"); router.navigate("/(tabs)"); }} style={({ pressed }) => ({ minHeight: 48, minWidth: 48, justifyContent: "center", opacity: pressed ? 0.7 : 1 })}>
+          <Copy accessible={false} translate={false} style={s.brand}>
             IN<Copy style={[s.brand, { color: c.accent }]}>/</Copy>OUT
           </Copy>
+          </Pressable>
         )}
         <View style={{ flex: 1, minWidth: 0, alignItems: back ? "center" : "flex-end" }}>{title ? <Label>{title}</Label> : null}</View>
         {headerAction ?? (back ? <View style={{ width: 48 }} /> : null)}

@@ -1,7 +1,8 @@
 import type { CustomerInfo, PurchasesPackage } from "react-native-purchases";
-import { commercialPolicy, type EntitlementGrant } from "../entitlements";
+import { commercialPolicy, isLifetimeProduct, type EntitlementGrant } from "../entitlements";
 import { SubscriptionError, classifySubscriptionError, type SubscriptionProvider, type SubscriptionOffer, type PlanId } from "../subscriptions";
 import config from "../../../../release/monetization.json";
+import founders from "../../../../release/founders.json";
 
 export function grantFromCustomerInfo(info: CustomerInfo, testStore = false): EntitlementGrant {
   const entitlement = info.entitlements.all[commercialPolicy.entitlementId];
@@ -12,10 +13,11 @@ export function grantFromCustomerInfo(info: CustomerInfo, testStore = false): En
   const trusted = testStore || ["VERIFIED", "VERIFIED_ON_DEVICE"].includes(info.entitlements.verification);
   if (!trusted) throw new SubscriptionError("failed", "The store response could not be verified. Try restoring purchases.");
   const active = trusted && entitlement?.isActive === true && !subscription?.refundedAt;
-  return { source: testStore ? "development" : "store", active, verifiedAt, expiresAt, graceUntil, productId: entitlement?.productIdentifier, planId: entitlement?.productPlanIdentifier ?? undefined,
+  const lifetime = !!entitlement && isLifetimeProduct(entitlement.productIdentifier) && entitlement.expirationDate === null;
+  return { source: testStore ? "development" : "store", active, lifetime, verifiedAt, expiresAt, graceUntil, productId: entitlement?.productIdentifier, planId: entitlement?.productPlanIdentifier ?? undefined,
     status: !entitlement ? "free" : !active ? "expired" : entitlement.billingIssueDetectedAt
       ? graceUntil && graceUntil > verifiedAt ? "grace" : "billingRetry"
-      : !entitlement.willRenew ? "cancelled" : entitlement.periodType.toLowerCase() === "trial" ? "trial" : "active" };
+      : lifetime ? "active" : !entitlement.willRenew ? "cancelled" : entitlement.periodType.toLowerCase() === "trial" ? "trial" : "active" };
 }
 
 export function revenueCatAdapter(apiKey: string, testStore = false): SubscriptionProvider {
@@ -27,11 +29,16 @@ export function revenueCatAdapter(apiKey: string, testStore = false): Subscripti
   const Purchases = sdk.default;
   Purchases.configure({ apiKey, entitlementVerificationMode: Purchases.ENTITLEMENT_VERIFICATION_MODE.INFORMATIONAL });
   let packages: Partial<Record<PlanId, PurchasesPackage>> = {};
+  let lifetimePackage: PurchasesPackage | undefined;
   const grant = (info: CustomerInfo) => grantFromCustomerInfo(info, testStore);
   const request = async <T,>(action: () => Promise<T>): Promise<T> => {
     try { return await action(); } catch (error) { throw classifySubscriptionError(error); }
   };
-  const customer = async () => grant(await request(() => Purchases.getCustomerInfo()));
+  const customer = async () => request(async () => {
+    // A foreground/manual check must see refunds even within the SDK cache TTL.
+    await Purchases.invalidateCustomerInfoCache();
+    return grant(await Purchases.getCustomerInfo());
+  });
   const loadOffering = async () => {
     const offering = (await request(() => Purchases.getOfferings())).all[config.offering];
     if (!offering) throw new SubscriptionError("configuration", "Subscription setup is incomplete. Please contact Help & feedback. Free practice is available.");
@@ -40,6 +47,25 @@ export function revenueCatAdapter(apiKey: string, testStore = false): Subscripti
   };
   return {
     mode: "store", testStore,
+    ...(!testStore ? { lifetime: {
+      customerId: () => Purchases.getAppUserID(),
+      async offer() {
+        lifetimePackage = undefined;
+        const offering = (await request(() => Purchases.getOfferings())).all[founders.offering];
+        const item = offering?.availablePackages.find(p => p.identifier === founders.package);
+        const p = item?.product;
+        const expected = Platform.OS === "ios" ? founders.products.ios : founders.products.android;
+        if (!item || item.packageType !== "LIFETIME" || p?.identifier !== expected || p.subscriptionPeriod != null ||
+          !p.priceString?.trim() || !Number.isFinite(p.price) || p.price <= 0 || !/^[A-Z]{3}$/.test(p.currencyCode))
+          throw new SubscriptionError("product_unavailable", "Lifetime Pro is unavailable from your store right now.");
+        lifetimePackage = item;
+        return { productId: p.identifier, price: p.priceString };
+      },
+      async purchase() {
+        if (!lifetimePackage) throw new SubscriptionError("unavailable", "Lifetime Pro is unavailable from your store right now.");
+        return request(async () => grant((await Purchases.purchasePackage(lifetimePackage!)).customerInfo));
+      },
+    } } : {}),
     ...(!testStore ? { remotePaywall: {
       async offering(locale: string) {
         await Purchases.overridePreferredLocale(locale);

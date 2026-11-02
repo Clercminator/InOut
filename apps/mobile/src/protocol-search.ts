@@ -1,6 +1,14 @@
 import type { Protocol } from "@inout/shared-types";
 import { t, type Language, getLanguage } from "./i18n";
 
+// Mobile discovery context; preset identities, timings and history remain unchanged.
+export const athleteSearchTerms: Readonly<Record<string, string>> = {
+  "runner-rhythm": "before exercise before running pre workout runner gym BJJ martial arts antes de entrenar antes de correr antes do treino corrida academia artes marciales artes marciais",
+  athletic: "before exercise pre training gym BJJ martial arts antes de entrenar gimnasio artes marciales antes do treino academia artes marciais",
+  "post-workout-reset": "after exercise after running post workout BJJ gym cooldown después de entrenar después de correr gimnasio recuperación após treino depois de correr academia recuperação",
+  diaphragmatic: "recovery day dia de recuperacion día de descanso dia de recuperação",
+};
+
 export const intentTags = {
   sleep: { label: "Sleep", terms: "sleep sleeping bedtime insomnia insomnio insônia dormindo dormir sueño sueno sono noite noche" },
   stress: { label: "Stress", terms: "stress anxiety calm relaxation nervousness nervios nervosismo relajacion relaxamento estrés ansiedad estresse ansiedade tension tensión" },
@@ -35,7 +43,7 @@ export function searchProtocols(protocols: readonly Protocol[], query: string, t
     const purpose = normalizeSearch(t(protocol.purpose ?? "", language));
     const description = normalizeSearch(t(protocol.description ?? "", language));
     const synonyms = normalizeSearch([
-      protocol.name, ...(protocol.searchTerms ?? []),
+      protocol.name, ...(protocol.searchTerms ?? []), athleteSearchTerms[protocol.id] ?? "",
       ...assigned.map(tag => `${t(intentTags[tag].label, language)} ${intentTags[tag].terms}`),
       // A comfortable pause after meals is context, not a digestive treatment.
       ...(["diaphragmatic", "coherent"].includes(protocol.id) ? ["after meals digestion después comer digestión após refeições digestão"] : []),

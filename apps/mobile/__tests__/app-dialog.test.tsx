@@ -34,3 +34,13 @@ test("popup titles, messages and actions use the selected language", async () =>
   await fireEvent.press(screen.getByRole("button", { name: "Cancelar" }));
   await act(() => jest.advanceTimersByTime(221));
 });
+
+test.each([["en", "Close", "Manage shared links"], ["es", "Cerrar", "Administrar enlaces compartidos"], ["pt", "Fechar", "Gerenciar links compartilhados"]] as const)("%s sharing dialog replaces the dismiss text with an X and preserves its CTA", async (language, close, manage) => {
+  setLanguage(language); const action = jest.fn();
+  await render(<AppAlertHost />);
+  await act(() => Alert.alert("About exercise sharing", "", [{ text: "Close" }, { text: "Manage shared links", onPress: action }]));
+  expect(screen.getByRole("button", { name: close })).toBeTruthy();
+  expect(screen.queryByText(close)).toBeNull();
+  await fireEvent.press(screen.getByRole("button", { name: manage }));
+  await act(() => jest.advanceTimersByTime(221)); expect(action).toHaveBeenCalledTimes(1);
+});

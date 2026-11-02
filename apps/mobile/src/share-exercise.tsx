@@ -15,7 +15,7 @@ import { useShareLinks } from "./share-links-context";
 import sharingConfig from "../../../release/sharing.json";
 const shareBase = () => linkConfig.origin ? new URL(linkConfig.path, linkConfig.origin).href : new URL("reset.html", info.privacyUrl).href;
 export const shareUrl = (id: string) => `${shareBase()}?s=${id}&lang=${getLanguage()}`;
-export function ShareExercise({ protocol, title = "Share this exercise" }: { protocol: Protocol; title?: string }) {
+export function ShareExercise({ protocol, title = "Share this exercise", compact = false }: { protocol: Protocol; title?: string; compact?: boolean }) {
   const controller = useSession();
   const links = useShareLinks();
   const [busy, setBusy] = useState(false);
@@ -24,7 +24,7 @@ export function ShareExercise({ protocol, title = "Share this exercise" }: { pro
   if (includesHighIntensity(protocol)) return null;
   return <>
     <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}><View style={{ flex: 1 }}>
-    <Button title={error ? "Retry sharing" : title} secondary disabled={busy || links?.busy} onPress={() => {
+    <Button compact={compact} title={error ? "Retry sharing" : title} secondary disabled={busy || links?.busy} onPress={() => {
       if (lock.current) return;
       lock.current = true;
       setBusy(true); setError("");
@@ -52,9 +52,13 @@ export function ShareExercise({ protocol, title = "Share this exercise" }: { pro
         setError(publicError(error, "Sharing is temporarily unavailable. Please try again online."));
       }).finally(() => { lock.current = false; setBusy(false); });
     }} />
-    </View><IconButton title="About exercise sharing" icon="info-outline" onPress={() => Alert.alert("About exercise sharing",
-      "Only the breathing cadence is uploaded. Names, ratings and notes stay private. Links expire after 30 days and can be revoked from Shared links.",
-      [{ text: "Close" }, { text: "Manage shared links", onPress: () => router.push("/shared-links") }])} /></View>
+    </View>{!compact && <ShareExerciseInfo />}</View>
     {!!error && <Copy accessibilityRole="alert">{error}</Copy>}
   </>;
+}
+
+export function ShareExerciseInfo() {
+  return <IconButton title="About exercise sharing" icon="info-outline" onPress={() => Alert.alert("About exercise sharing",
+    "Only the breathing cadence is uploaded. Names, ratings and notes stay private. Links expire after 30 days and can be revoked from Shared links.",
+    [{ text: "Close" }, { text: "Manage shared links", onPress: () => router.push("/shared-links") }])} />;
 }

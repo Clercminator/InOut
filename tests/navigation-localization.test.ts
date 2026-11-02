@@ -2,11 +2,12 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { SwipeIntent, adjacentTab } from "../apps/mobile/src/swipe-navigation";
 import { onboardingStep, onboardingSteps, previousOnboardingStep, canAdvanceOnboarding } from "../apps/mobile/src/onboarding-flow";
-import { copyCandidates, auditLocalization } from "../scripts/check-localization";
+import { copyCandidates, auditLocalization, hasCompleteTranslation, catalogIntegrityIssues } from "../scripts/check-localization";
 import { protocols } from "../packages/protocols/src/index";
-import { t, countLabel, setLanguage, getLanguage } from "../apps/mobile/src/i18n";
+import { t, message, countLabel, setLanguage, getLanguage } from "../apps/mobile/src/i18n";
 import es from "../apps/mobile/src/locales/es.json";
 import pt from "../apps/mobile/src/locales/pt.json";
+import mobileConfig from "../apps/mobile/app.config";
 
 test("main tabs have bounded, symmetric swipe destinations", () => {
   assert.equal(adjacentTab("index", "right"), "progress");
@@ -24,6 +25,14 @@ test("vertical, diagonal, short and multitouch gestures cannot change pages", ()
   }
   const intent = new SwipeIntent(); assert.equal(intent.update(-20, 2, 1), true);
   assert.equal(intent.direction(-40, 2), undefined); assert.equal(intent.direction(-80, 2), "left");
+});
+
+test("short deliberate flicks navigate, tiny movements and reversing flicks do not", () => {
+  const intent = new SwipeIntent(); intent.update(-20, 2, 1);
+  assert.equal(intent.direction(-35, 2, -.6), "left");
+  assert.equal(intent.direction(-20, 2, -2), undefined);
+  assert.equal(intent.direction(-35, 2, .6), undefined);
+  assert.equal(intent.direction(-35, 2, -.1), undefined);
 });
 test("five-stage flow migrates checkpoints and never turns a swipe into safety consent", () => {
   assert.equal(onboardingSteps.length, 5);
@@ -55,8 +64,53 @@ test("all built-in protocol descriptions and instructions translate in both lang
     for (const text of [p.name, p.description, p.instructions, p.precaution, p.purpose, ...p.phases.map(v => v.label)].filter(Boolean) as string[]) {
       if (["Nadi Shodhana", "Bhramari"].includes(text)) continue;
       assert.notEqual(t(text, language), text, `${language}: ${p.id}: ${text}`);
+      assert.ok(hasCompleteTranslation(text), `${p.id}: ${text}`);
     }
   }
+});
+
+test("audit rejects partial translations and untranslated native attributes", () => {
+  assert.notEqual(t("Untranslated Pattern", "es"), "Untranslated Pattern");
+  assert.equal(hasCompleteTranslation("Untranslated Pattern"), false);
+  assert.equal(hasCompleteTranslation("Endurance Pattern"), true);
+  assert.equal(hasCompleteTranslation("A sentence entirely missing from the catalog"), false);
+  const copy = copyCandidates(`import { View } from 'react-native'; import { TextInput } from './localized-native';
+    const screen = <><View accessibilityLabel="Continue"/><View accessibilityLabel={t('Next')}/><TextInput placeholder="Name"/></>`, "sample.tsx");
+  assert.ok(copy.some(item => item.text === "Continue" && item.raw));
+  assert.ok(copy.some(item => item.text === "Next" && !item.raw));
+  assert.ok(copy.some(item => item.text === "Name" && !item.raw));
+  assert.deepEqual(catalogIntegrityIssues(), []);
+});
+
+test("Spanish and Brazilian Portuguese use natural breathing cues and full protocol names", () => {
+  for (const [key, spanish, portuguese] of [
+    ["Breathe in", "Inhala", "Inspire"], ["Breathe out", "Exhala", "Expire"],
+    ["Endurance Pattern", "Ritmo de resistencia", "Ritmo de resistência"],
+    ["LEFT NOSTRIL", "FOSA NASAL IZQUIERDA", "NARINA ESQUERDA"],
+    ["RIGHT NOSTRIL", "FOSA NASAL DERECHA", "NARINA DIREITA"],
+    ["Coach", "Guía", "Guia"],
+  ]) {
+    assert.equal(t(key, "es"), spanish); assert.equal(t(key, "pt"), portuguese);
+  }
+});
+
+test("composed copy agrees with singular counts and preserves user supplied values", () => {
+  assert.equal(message("{0} day streak", [1], "es"), "Racha de 1 día");
+  assert.equal(message("{0} day streak", [2], "es"), "Racha de 2 días");
+  assert.equal(message("{0} seconds remaining", [1], "pt"), "Resta 1 segundo");
+  assert.equal(countLabel(1, "pairedRating", "pt"), "1 avaliação antes e depois");
+  assert.equal(countLabel(2, "pairedRating", "pt"), "2 avaliações antes e depois");
+  assert.equal(countLabel(1, "minute", "es"), "1 minuto");
+  assert.equal(message("{0} ({1} pairs)", ["Focus", 1], "es"), "Focus (1 par)");
+  assert.equal(message("Contact {0}. Your session history is not attached automatically.", ["hello@example.com"], "pt"),
+    "Contate hello@example.com. Seu histórico de sessões não é anexado automaticamente.");
+});
+
+test("native photo permission has Spanish and Portuguese iOS localization", () => {
+  const config = mobileConfig({ config: { name: "IN/OUT", slug: "inout" }, projectRoot: process.cwd(), staticConfigPath: null, packageJsonPath: null });
+  assert.equal(config.locales.es.ios.NSPhotoLibraryUsageDescription, "Elige una foto para tu perfil privado de IN/OUT.");
+  assert.equal(config.locales.pt.ios.NSPhotoLibraryUsageDescription, "Escolha uma foto para seu perfil privado no IN/OUT.");
+  assert.equal(config.locales.en.ios.NSPhotoLibraryUsageDescription, "Choose a photo for your private IN/OUT profile.");
 });
 test("every count unit has singular and plural catalog entries; unsupported choices preserve the active language", () => {
   for (const catalog of [es, pt]) for (const [singular, plural] of [["session", "sessions"], ["day", "days"], ["week", "weeks"], ["month", "months"], ["year", "years"], ["practice day", "practice days"], ["consecutive day", "consecutive days"], ["milestone", "milestones"], ["cycle", "cycles"], ["repeat", "repeats"]]) {

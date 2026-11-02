@@ -13,6 +13,45 @@ import type { CustomerInfo } from "react-native-purchases";
 const routine = (id: string, kind: "pattern" | "mix"): SavedRoutine => ({ id, kind, protocol: protocols[0], updatedAt: 0 });
 const grant = (patch: Partial<EntitlementGrant> = {}): EntitlementGrant => ({ source: "store", status: "active", active: true, verifiedAt: 1000, expiresAt: 10000, graceUntil: null, ...patch });
 
+test("newer revoked access replaces persisted Pro and rejects a late cached active callback", () => {
+  let saved: unknown = grant();
+  const cache = { read: () => saved, write: (g: EntitlementGrant) => { saved = g; } };
+  const e = new EntitlementService(false, () => 2000, cache);
+  const ads = new AdService(e, "preview");
+  const context = { path: "/", foreground: true, sessionStage: null };
+  assert.equal(ads.allowed("today", context), false);
+  e.acceptStoreGrant(grant({ active: false, status: "expired", verifiedAt: 2000 }));
+  e.acceptStoreGrant(grant());
+  assert.equal(e.state.pro, false);
+  assert.equal(ads.allowed("today", context), true);
+  assert.equal(new EntitlementService(false, () => 2000, cache).state.pro, false);
+});
+
+test("an unusable future-dated local cache cannot block current verified Free evidence", () => {
+  const e = new EntitlementService(false, () => 2000, { read: () => grant({ verifiedAt: 9000 }), write: () => {} });
+  e.acceptStoreGrant(grant({ active: false, status: "free", verifiedAt: 2000 }));
+  assert.equal(e.state.pro, false); assert.equal(e.billingEvidenceReady, true);
+});
+
+test("foreground checks during a remote purchase run after completion and survive paywall unmount", async () => {
+  const e = new EntitlementService(false, () => 2000);
+  let resolve!: (g: EntitlementGrant) => void, calls = 0;
+  const active = grant({ verifiedAt: 1500 });
+  const adapter: SubscriptionProvider = { mode: "store", offers: async () => [], managementUrl: async () => null,
+    refresh: () => { calls++; return new Promise(done => { resolve = done; }); },
+    purchase: async () => active, restore: async () => active,
+    remotePaywall: { offering: async () => { throw Error("unused"); }, verify: () => active } };
+  const s = new SubscriptionService(adapter, e, new AnalyticsService());
+  s.remoteStarted("purchase"); await s.refreshAccess();
+  assert.equal(calls, 0);
+  s.remoteCompleted({}, "purchase"); s.remoteClosed();
+  assert.equal(calls, 1); assert.equal(s.busy, true);
+  resolve(grant({ active: false, status: "expired", verifiedAt: 2000 }));
+  await new Promise(done => setImmediate(done));
+  assert.equal(e.state.pro, false); assert.equal(e.billingReady, true);
+  assert.equal(s.purchaseConfirmation, null);
+});
+
 test("Free quotas distinguish new saves, edits and kind changes; Pro removes limits", () => {
   const e = new EntitlementService(true, () => 1000);
   const items = [routine("p", "pattern"), routine("m", "mix")];

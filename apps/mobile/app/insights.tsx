@@ -37,7 +37,7 @@ export default function Insights() {
       {insights.patterns.map(pattern => <Card key={pattern.key}>
         <Title translate={false}>{recordTitle(pattern.record)}</Title>
         <Copy>{pattern.record.stateMetric === "wellbeing_v2" ? "Self-reported well-being · 1–10" : "Self-reported tension · 1–10"}</Copy>
-        <Copy>{practiceDuration(pattern.record.engine.elapsedAtAnchor)} · {message("{0} paired check-ins across {1} days", [pattern.pairs, pattern.days])}</Copy>
+        <Copy>{practiceDuration(pattern.record.engine.elapsedAtAnchor)} · {message("{0} across {1}", [countLabel(pattern.pairs, "pairedRating"), countLabel(pattern.days, "day")])}</Copy>
         {pattern.median === null ? <Copy>Not enough check-ins yet. Rating your practice is always optional.</Copy> : <>
           <Copy>{message("Median State Shift: {0}", [decimal(pattern.median, 1)])}</Copy>
           <Copy>{message("Improved: {0} · Unchanged: {1} · Declined: {2}", [pattern.lower, pattern.same, pattern.higher])}</Copy>

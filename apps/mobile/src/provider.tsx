@@ -33,6 +33,7 @@ import { ReminderService } from "./reminders";
 import { nativeReminderAdapter } from "./reminder-native";
 import { notificationContext, notificationPreferences } from "./local-notifications";
 import { ReminderContext, ReminderEffects } from "./reminder-context";
+import { watchSubscriptionAccess } from "./subscription-lifecycle";
 
 export function SessionProvider({ children }: PropsWithChildren) {
   const [attempt, setAttempt] = useState(0);
@@ -78,10 +79,8 @@ export function SessionProvider({ children }: PropsWithChildren) {
   useEffect(() => {
     if (!commercial || !controller) return;
     const unsubscribe = commercial.entitlements.subscribe(controller.entitlementsChanged);
-    const unsubscribeStore = commercial.subscriptions.listen();
+    const stopSubscriptions = watchSubscriptionAccess(commercial.subscriptions, commercial.entitlements);
     void commercial.reviewer?.refresh();
-    if (commercial.subscriptions.adapter.mode !== "unavailable") void commercial.subscriptions.load();
-    const timer = setInterval(commercial.entitlements.checkExpiry, 1000);
     const checkpointTimer = setInterval(() => { void commercial.reviewer?.checkpoint(); }, 30000);
     const reviewerTimer = setInterval(() => { void commercial.reviewer?.refresh(); }, 15 * 60000);
     const foreground = AppState.addEventListener("change", (state) => {
@@ -89,10 +88,9 @@ export function SessionProvider({ children }: PropsWithChildren) {
         commercial.analytics.track("app_open");
         commercial.entitlements.refresh();
         void commercial.reviewer?.refresh();
-        if (commercial.subscriptions.adapter.mode === "store") void commercial.subscriptions.load();
       }
     });
-    return () => { unsubscribe(); unsubscribeStore(); foreground.remove(); clearInterval(timer); clearInterval(reviewerTimer); clearInterval(checkpointTimer); };
+    return () => { unsubscribe(); stopSubscriptions(); foreground.remove(); clearInterval(reviewerTimer); clearInterval(checkpointTimer); };
   }, [commercial, controller]);
   useEffect(() => {
     if (!controller) return;

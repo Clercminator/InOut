@@ -4,6 +4,7 @@ import type { SubscriptionService } from "./subscriptions";
 import type { AdService } from "./ads";
 import type { AnalyticsService } from "./analytics";
 import type { ReviewerService } from "./reviewer";
+import type { FounderService } from "./founders";
 
 export interface CommercialServices {
   entitlements: EntitlementService;
@@ -11,6 +12,7 @@ export interface CommercialServices {
   ads: AdService;
   analytics: AnalyticsService;
   reviewer?: ReviewerService;
+  founders?: FounderService;
 }
 export const CommercialContext = createContext<CommercialServices | null>(null);
 const idleSubscribe = () => () => {};
@@ -21,5 +23,6 @@ export function useCommercial() {
   useSyncExternalStore(services?.subscriptions.subscribe ?? idleSubscribe, services?.subscriptions.getRevision ?? idleRevision, idleRevision);
   useSyncExternalStore(services?.ads.subscribe ?? idleSubscribe, services?.ads.getRevision ?? idleRevision, idleRevision);
   useSyncExternalStore(services?.reviewer?.subscribe ?? idleSubscribe, services?.reviewer?.getRevision ?? idleRevision, idleRevision);
+  useSyncExternalStore(services?.founders?.subscribe ?? idleSubscribe, services?.founders?.getRevision ?? idleRevision, idleRevision);
   return services;
 }

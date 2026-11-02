@@ -1,5 +1,5 @@
 import { useTheme } from "./theme";
-import { t, decimal } from "./i18n";
+import { t, decimal, countLabel, message } from "./i18n";
 import { useLanguage } from "./use-language";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { ScrollView, View, useWindowDimensions } from "react-native";
@@ -72,7 +72,7 @@ export function PracticeChart({ title, subtitle, buckets, metric, by }: {
   const maximum = Math.max(1, ...totals);
   const max = metric === "sessions" ? Math.max(2, Math.ceil(maximum / 2) * 2) : Math.max(2000, Math.ceil(maximum / 2000) * 2000);
   const total = totals.reduce((a, b) => a + b, 0);
-  const format = (value: number) => metric === "time" ? statsDuration(value) : `${value} ${value === 1 ? "session" : "sessions"}`;
+  const format = (value: number) => metric === "time" ? statsDuration(value) : countLabel(value, "session");
   const chosen = buckets[selected];
   return <Card>
     <Label>{title}</Label>{subtitle && <Copy>{subtitle}</Copy>}
@@ -88,7 +88,7 @@ export function PracticeChart({ title, subtitle, buckets, metric, by }: {
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
         {groups.map(group => <Copy key={group.label} style={s.small}><Copy style={{ color: chartColors[group.label] }}>● </Copy>{group.label} {Math.round((metric === "time" ? group.totalMs : group.count) / total * 100)}%</Copy>)}
       </View>
-      {breakdown(chosen.records, by).map(group => <Copy key={group.label} style={s.small}>{group.label}: {format(metric === "time" ? group.totalMs : group.count)}</Copy>)}
+      {breakdown(chosen.records, by).map(group => <Copy key={group.label} style={s.small}>{t(group.label)}: {format(metric === "time" ? group.totalMs : group.count)}</Copy>)}
     </>}
   </Card>;
 }
@@ -100,13 +100,13 @@ export function StateShiftChart({ buckets }: { buckets: StatsBucket[] }) {
   const [key, setKey] = useState<string | null>(null);
   const selected = Math.max(0, key && buckets.some(b => b.key === key) ? buckets.findIndex(b => b.key === key) : buckets.length - 1);
   const chosen = buckets[selected], summary = summarize(chosen?.records ?? []);
-  const label = (value: number | null) => value === null ? "No paired ratings" : `${value > 0 ? "+" : ""}${decimal(value, 1)} average State Shift`;
+  const label = (value: number | null) => value === null ? t("No paired ratings") : message("Average well-being change: {0}", [`${value > 0 ? "+" : ""}${decimal(value, 1)}`]);
   return <Card>
     <Label>STATE SHIFT OVER TIME</Label>
     <Copy style={s.small}>Positive means improved well-being. Historical tension ratings remain in your session history.</Copy>
     {!buckets.some(b => summarize(b.records).shifts) ? <Copy>Add before-and-after ratings to see your trend.</Copy> : <ChartFrame buckets={buckets}
       selected={selected} select={index => setKey(buckets[index].key)} ticks={["+9", "0", "−9"]}
-      description={`${chosen.label}: ${label(summary.averageShift)} · ${summary.shifts} paired ratings`}
+      description={`${chosen.label}: ${label(summary.averageShift)} · ${countLabel(summary.shifts, "pairedRating")}`}
       column={bucket => {
         const value = summarize(bucket.records).averageShift;
         return value === null ? null : <View style={{ position: "absolute", left: 2, right: 2, top: value > 0 ? 64 - value * 7 : 64,

@@ -30,6 +30,11 @@ export function classifySubscriptionError(error: unknown): SubscriptionError {
   return new SubscriptionError("failed", "Could not load subscription information. Try again or contact Help & feedback.");
 }
 export interface SubscriptionProvider {
+  lifetime?: {
+    offer(): Promise<{ productId: string; price: string }>;
+    purchase(): Promise<EntitlementGrant>;
+    customerId(): Promise<string>;
+  };
   readonly mode: "development" | "store" | "unavailable";
   readonly testStore?: boolean;
   remotePaywall?: {
@@ -55,6 +60,15 @@ export const unavailableSubscriptions: SubscriptionProvider = {
 };
 
 export class SubscriptionService {
+  onAccessChanged?: () => void;
+  onRestored?: () => void;
+  /** Founders shares the purchase lock, persisted uncertainty and authoritative grant path. */
+  async lifetimeOperation(action: (apply: (grant: EntitlementGrant) => void) => Promise<void>) {
+    if (this.busy) return false;
+    this.busy = true; this.message = ""; this.emit();
+    try { await action(grant => this.apply(grant)); return true; }
+    finally { this.finishOperation(); }
+  }
   purchaseConfirmation: string | null = null;
   private confirmedPurchases = new Set<string>();
   dismissPurchaseConfirmation() { this.purchaseConfirmation = null; this.emit(); }
@@ -77,6 +91,12 @@ export class SubscriptionService {
   private listeners = new Set<() => void>();
   private revision = 0;
   private identifying = false;
+  private refreshQueued = false;
+  private remoteInFlight = false;
+  private finishOperation() {
+    this.busy = false; this.emit();
+    if (this.refreshQueued) { this.refreshQueued = false; void this.refreshAccess(); }
+  }
   constructor(readonly adapter: SubscriptionProvider, private entitlements: EntitlementService, private analytics: AnalyticsService, private uncertaintyStore?: { read(): boolean; write(value: boolean): void }) {
     try { this.uncertain = uncertaintyStore?.read() ?? false; } catch { this.uncertain = true; }
   }
@@ -93,10 +113,13 @@ export class SubscriptionService {
     this.entitlements.refresh();
     if (this.entitlements.state.subscriptionPro) this.purchaseUncertain = false;
     const isPro = this.entitlements.state.subscriptionPro;
+    if (!isPro) this.purchaseConfirmation = null;
     if (grant.source === "store" && !wasPro && isPro) this.analytics.track("pro_entitlement_activated");
     if (grant.source === "store" && wasPro && !isPro) this.analytics.track("pro_entitlement_expired");
+    this.onAccessChanged?.();
   }
   remoteStarted(operation: "purchase" | "restore") {
+    this.remoteInFlight = true;
     if (operation === "purchase") this.purchaseUncertain = true;
     this.busy = true; this.message = "";
     this.analytics.track(operation === "purchase" ? "purchase_started" : "restore_started");
@@ -111,6 +134,7 @@ export class SubscriptionService {
       this.apply(grant);
       unlocked = this.entitlements.state.subscriptionPro;
       if (unlocked && operation === "purchase") this.confirmPurchase(grant);
+      if (unlocked && operation === "restore") this.onRestored?.();
       this.message = unlocked ? "Pro is active." : "No active Pro subscription was found.";
       if (unlocked) {
         this.analytics.track(operation === "purchase" ? "purchase_success" : "restore_success");
@@ -121,25 +145,33 @@ export class SubscriptionService {
       this.purchaseUncertain = operation === "purchase";
       this.message = "Purchase status is uncertain. Do not pay again. Refresh status, restore purchases or contact Help & feedback.";
     }
-    finally { this.busy = false; this.emit(); }
+    finally { this.remoteInFlight = false; this.finishOperation(); }
     return unlocked;
   }
   remoteFailed(cancelled = false) {
+    this.remoteInFlight = false;
     this.busy = false;
     this.purchaseUncertain = !cancelled;
     this.message = cancelled ? "Purchase cancelled. Nothing changed." : "Purchase status is uncertain. Do not pay again. Refresh status, restore purchases or contact Help & feedback.";
     if (cancelled) this.analytics.track("purchase_cancelled");
     else this.analytics.track("purchase_failed", { outcome: "failed" });
-    this.emit();
+    this.finishOperation();
   }
-  remoteClosed() { if (this.busy) { this.busy = false; this.emit(); } }
+  remoteClosed() { if (this.remoteInFlight) { this.remoteInFlight = false; this.finishOperation(); } }
   private async operation(action: () => Promise<void>) {
     if (this.busy) return;
     this.busy = true; this.message = ""; this.emit();
     try { await action(); }
     catch (error) {
       this.message = classifySubscriptionError(error).message;
-    } finally { this.busy = false; this.emit(); }
+    } finally { this.finishOperation(); }
+  }
+  /** Refresh access independently of product availability, including after a busy store sheet. */
+  async refreshAccess() {
+    if (this.busy) { this.refreshQueued = true; return; }
+    await this.operation(async () => { this.apply(await this.adapter.refresh()); });
+    this.entitlements.billingReady = this.entitlements.billingEvidenceReady;
+    this.entitlements.refresh();
   }
   async load() { if (this.busy) return; await this.operation(async () => {
     this.offers = [];
@@ -199,6 +231,7 @@ export class SubscriptionService {
   async restore() { await this.operation(async () => {
     if (this.adapter.mode === "store") this.analytics.track("restore_started");
     const grant = await this.adapter.restore(); this.apply(grant);
+    this.onRestored?.();
     this.message = this.entitlements.state.subscriptionPro ? "Pro access restored." : "No active Pro subscription was found.";
     if (grant.source === "store" && this.entitlements.state.subscriptionPro) this.analytics.track("subscription_restored");
     if (grant.source === "store" && this.entitlements.state.subscriptionPro) this.analytics.track("restore_success");
@@ -208,5 +241,6 @@ export class SubscriptionService {
     const previous = this.entitlements.state.status;
     try { this.apply(grant); } catch { this.message = "Could not refresh your subscription. Try restoring purchases."; this.emit(); return; }
     if (grant.status === "cancelled" && previous !== "cancelled") this.analytics.track("subscription_cancelled");
+    this.emit();
   }) ?? (() => {}); }
 }

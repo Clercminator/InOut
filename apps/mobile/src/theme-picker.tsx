@@ -5,7 +5,7 @@ import { View, useWindowDimensions } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { darkColors, lightColors, type ThemePreference } from "@inout/design-tokens";
 import { Pressable } from "./localized-native";
-import { Button, Card, Copy, Label, useStyles } from "./ui";
+import { Button, Card, CloseButton, Copy, Label, useStyles } from "./ui";
 import { useTheme } from "./theme";
 import { message, t } from "./i18n";
 import { pacerThemes, type PacerThemeId, type PacerThemeProgress } from "./pacer-theme";
@@ -76,8 +76,8 @@ export function PacerThemePicker({ value, progress, noticeThemeIds, pro, onApply
   return <>
     <Copy>{message("Earn new pacer themes through completed practice days, or unlock every theme instantly with IN/OUT Pro. Your completed days: {0}.", [progress.practiceDays])}</Copy>
     {!!noticeThemeIds.length && <Card style={{ borderColor: colors.accent }}>
+      <View style={{ alignSelf: "flex-end" }}><CloseButton title="Dismiss" onPress={onDismissNotice} /></View>
       <Copy accessibilityRole="alert">{message("New pacer theme available: {0}.", [t(pacerThemes.find(theme => theme.id === noticeThemeIds[0])?.name ?? "Default")])}</Copy>
-      <Button title="Dismiss" secondary onPress={onDismissNotice} />
     </Card>}
     <View testID="pacer-theme-grid" onLayout={event => setGalleryWidth(event.nativeEvent.layout.width)}
       style={{ width: "100%", alignSelf: "stretch", flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
@@ -120,7 +120,7 @@ export function PacerThemePicker({ value, progress, noticeThemeIds, pro, onApply
       </View>;
     })}
     </View>
-    {preview && previewColors && <AppDialog title="Pacer theme preview" onRequestClose={() => setPreviewId(null)}>
+    {preview && previewColors && <AppDialog title="Pacer theme preview" closeLabel="Close preview" onRequestClose={() => setPreviewId(null)}>
           <View accessibilityLabel={t(preview.name)} style={{ minHeight: 220, borderRadius: 18, alignItems: "center", justifyContent: "center", gap: 12, backgroundColor: previewColors.background }}>
             <View style={{ width: 120, height: 120, borderRadius: 999, borderWidth: 8, borderColor: previewColors.ring, backgroundColor: previewColors.surface, shadowColor: previewColors.glow, shadowOpacity: 0.9, shadowRadius: 24, shadowOffset: { width: 0, height: 0 }, elevation: 8, alignItems: "center", justifyContent: "center" }}>
               <PulseArtwork size={104} />
@@ -129,13 +129,11 @@ export function PacerThemePicker({ value, progress, noticeThemeIds, pro, onApply
             <Copy style={{ color: previewColors.secondaryText }}>{t("CYCLE")} 1/8</Copy>
           </View>
           <Copy style={{ color: colors.secondaryText }}>{t(preview.name)}</Copy>
-          <Button title="Close preview" secondary onPress={() => setPreviewId(null)} />
     </AppDialog>}
     {locked && <AppDialog title={locked.name} onRequestClose={() => setLockedId(null)}>
           <Copy>{message("{0} of {1} practice days", [progress.practiceDays, locked.unlockDays])}</Copy>
           <Button title="Continue practicing to unlock" onPress={() => setLockedId(null)} />
           <Button title="Unlock all themes instantly with IN/OUT Pro" variant="premium" onPress={() => { setLockedId(null); onUpgrade(); }} />
-          <Button title="Not now" secondary onPress={() => setLockedId(null)} />
     </AppDialog>}
   </>;
 }

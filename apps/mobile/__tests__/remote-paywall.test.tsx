@@ -91,13 +91,22 @@ test("cancel, error, unverified and expired responses cannot grant Pro or close 
   expect(close).not.toHaveBeenCalled();
 });
 
-test("cancelled renewal retains paid access only until expiry; stale offline grants expire", () => {
-  const s = services();
-  expect(s.subscriptions.remoteCompleted(info("VERIFIED", Date.now() + 86400000, false), "restore")).toBe(true);
-  expect(s.entitlements.state.status).toBe("cancelled");
-  const stale = { ...info(), requestDate: new Date(Date.now() - 73 * 3600000).toISOString() };
-  expect(s.subscriptions.remoteCompleted(stale, "restore")).toBe(false);
-  expect(s.entitlements.state.pro).toBe(false);
+test("cancelled renewal expires on time; stale callbacks cannot overwrite newer verified access", () => {
+  jest.useFakeTimers();
+  try {
+    const s = services();
+    expect(s.subscriptions.remoteCompleted(info("VERIFIED", Date.now() + 1000, false), "restore")).toBe(true);
+    expect(s.entitlements.state.status).toBe("cancelled");
+    jest.advanceTimersByTime(1001); s.entitlements.checkExpiry(); expect(s.entitlements.state.pro).toBe(false);
+    expect(s.subscriptions.remoteCompleted(info(), "restore")).toBe(true);
+    const stale = { ...info(), requestDate: new Date(Date.now() - 73 * 3600000).toISOString() };
+    expect(s.subscriptions.remoteCompleted(stale, "restore")).toBe(true);
+    expect(s.entitlements.state.pro).toBe(true);
+    // Without newer evidence, a stale offline response cannot establish Pro.
+    const restarted = services();
+    expect(restarted.subscriptions.remoteCompleted(stale, "restore")).toBe(false);
+    expect(restarted.entitlements.state.pro).toBe(false);
+  } finally { jest.useRealTimers(); }
 });
 test("offline offering failure keeps a free exit available", async () => {
   const s = services(); s.subscriptions.adapter.offers = jest.fn().mockRejectedValue(new Error("offline"));

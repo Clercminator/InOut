@@ -80,7 +80,10 @@ const templates = Object.fromEntries(Object.entries(catalogs).map(([lang, entrie
 ]));
 
 export function message(key: string, values: Array<string | number>, selected: Language = language) {
-  const translated = selected === 'en' ? key : catalogs[selected][key] ?? key;
+  // Only explicitly authored singular forms apply; user-provided values stay literal.
+  const singular = values.flatMap((value, index) => value === 1 ? [key.replaceAll(`{${index}}`, '1')] : []);
+  const selectedKey = singular.find(candidate => candidate !== key && candidate in catalogs.es && candidate in catalogs.pt) ?? key;
+  const translated = selected === 'en' ? key : catalogs[selected][selectedKey] ?? key;
   return translated.replace(/\{(\d+)\}/g, (_, index) => String(values[Number(index)]));
 }
 
@@ -103,6 +106,8 @@ const countUnits = {
   week: ['week', 'weeks'], month: ['month', 'months'], year: ['year', 'years'],
   practiceDay: ['practice day', 'practice days'], consecutiveDay: ['consecutive day', 'consecutive days'],
   milestone: ['milestone', 'milestones'], cycle: ['cycle', 'cycles'], repeat: ['repeat', 'repeats'],
+  pairedRating: ['paired rating', 'paired ratings'],
+  minute: ['minute', 'minutes'],
 } as const;
 export function countLabel(count: number, unit: keyof typeof countUnits, selected: Language = language) {
   const words = countUnits[unit];

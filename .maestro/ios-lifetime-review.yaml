@@ -1,0 +1,30 @@
+appId: com.imrtech.inout
+---
+- launchApp:
+    clearState: true
+- tapOn: "Personalize InOut"
+- tapOn: "Reduce stress & anxiety"
+- scrollUntilVisible:
+    element:
+      text: "Continue"
+    direction: DOWN
+- tapOn: "Continue"
+- assertVisible: "Comfort comes first."
+- tapOn: "I understand"
+- assertVisible: "A rhythm you can follow."
+- tapOn: "Start breathing"
+- tapOn: "Close subscription offer"
+- openLink: "inout://pro"
+- tapOn: { text: "Open", optional: true }
+- extendedWaitUntil:
+    visible: "FOUNDING MEMBER EDITION"
+    timeout: 30000
+- assertVisible: "Breathe better. Forever."
+- assertVisible: "One payment. No subscription."
+- scrollUntilVisible:
+    element:
+      text: "Unlock Lifetime Pro — \\$25.00"
+    direction: DOWN
+    timeout: 30000
+- assertVisible: "Separately paid AI services with ongoing usage costs are not included."
+- takeScreenshot: INOUT_Founding_Lifetime_Pro_Apple_Review

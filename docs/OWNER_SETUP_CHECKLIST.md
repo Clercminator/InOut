@@ -1,5 +1,64 @@
 # InOut — owner acceptance and submission
 
+## October 28 — Founding 1,000 Lifetime Pro
+
+**Implemented; activation blocked on the configuration and real-store checks below.** The existing Supabase InOut project has migration `20261028181752_inout_founders`; Edge Function `inout-founders` v4 contains the API v2 correction. Both campaigns remain `inactive`, `ready=false`, with zero purchases/reservations. Deployment and inventory were checked live on November 2. No store product, offering, entitlement, price, release or submission was changed. No new entitlement is needed.
+
+### Remaining dashboard actions, in order
+
+| # | Dashboard / menu | Field and exact value | Reason / completion check |
+| --- | --- | --- | --- |
+| 1 | App Store Connect → IN/OUT → Monetization → In-App Purchases → existing Founding Lifetime product | Confirm Product ID **`com.imrtech.inout.pro.lifetime`**, type **Non-Consumable**, US price target **USD 25.00** (use the supported price point approved by the owner), and regional availability/prices | Do not recreate the product. If the actual ID differs, stop iOS activation and update the implementation allowlist before building. Verify the native store sheet returns the intended localized price. |
+| 2 | RevenueCat → In/Out → Product catalog → Products → iOS | Import/add the **existing Apple product** above; entitlement **`in_out_pro`** | Verify the product appears on the existing entitlement. This is a RevenueCat catalog association, not another Apple purchase or entitlement. |
+| 3 | RevenueCat → Product catalog → Offerings → `inout_pro_lifetime` → `$rc_lifetime` | iOS product = the confirmed Apple ID; retain Android **`inout_pro_lifetime`** | Package must return a Lifetime product on both platforms. Keep **`default`** as the subscription offering. No RevenueCat-hosted paywall is needed for the new native card. |
+| 4 | RevenueCat → Product catalog → Products → Android → `inout_pro_lifetime` | Product type = **Non-consumable** | Required to avoid consumption/repurchase. The installed RN SDK 10.10.0 uses hybrid-common 19.0.0 / Android 10.21.1, above RevenueCat's Android 7.11.0 minimum. Verify a second native checkout reports ownership and restore works. |
+| 5 | RevenueCat → Project settings → General/API keys; Supabase → InOut (`jvmrsoxknaidcbqoasst`) → Edge Functions → Secrets | **`FOUNDERS_REVENUECAT_PROJECT_ID`** = the RevenueCat API v2 project ID (the `proj...` value, not the dashboard URL slug); **`FOUNDERS_REVENUECAT_API_KEY`** = the existing v2 secret key with read access to customers, purchases and subscriptions; retain **`FOUNDERS_WEBHOOK_TOKEN`**, **`FOUNDERS_ADMIN_TOKEN`** and **`FOUNDERS_SANDBOX_CODE_SHA256`** | Deployed function v4 uses v2 customer search, aliases and paginated purchase/subscription resources. Keep all five values out of app env/bundles/repository. Missing configuration fails closed. After adding the project ID, verify one real sandbox customer; no code redeploy is required for a project-secret update. If unused, remove the extra plaintext **`SANDBOX_TEST_CODE`** secret after retaining the private code outside Supabase; only its SHA-256 digest is read. |
+| 6 | RevenueCat → Integrations → Webhooks | URL **`https://jvmrsoxknaidcbqoasst.supabase.co/functions/v1/inout-founders/webhook`**; Authorization **`Bearer <FOUNDERS_WEBHOOK_TOKEN>`**; environments **Production and Sandbox**; apps **both In/Out apps**; events **all** | Covers purchase, cancellation/refund, expiration and refund reversal. Send the dashboard test: expect HTTP 200. Then require an actual store sandbox `NON_RENEWING_PURCHASE` with `in_out_pro` and a single sandbox ledger row. Webhook entitlement/plan access is not verified by the supplied screenshots; confirm this menu is usable on the account. |
+| 7 | Google Play Console → IN/OUT → Monetize with Play → Products → One-time products → `inout_pro_lifetime` | Existing option **`lifetime-buy`**, Buy, active, backwards-compatible; US target **USD 25.00**; review regional prices | Keep the existing product/tag and check its actual native price. Use a license tester and a Play-installed internal candidate; verify purchase, restore, no consumption, Pro unlock and ad suppression. |
+| 8 | App Store Connect → existing Lifetime product → Review Information | Screenshot = **`INOUT_Founding_Lifetime_Pro_Apple_Review.png`** captured from the real app; review notes = navigation/testing procedure below | Capture has **not** been produced: this Windows session has no iOS runtime. Confirm the screenshot shows the actual product/price/terms, then upload it. |
+| 9 | App Store Connect → app version → In-App Purchases and Subscriptions / App Review | Attach the **existing** Lifetime purchase to the appropriate version and supply the private purchase-testing code in reviewer notes | Owner performs submission after native validation; no submission was made here. Keep production inactive during review. |
+
+Generate each random token locally with `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"`. Hash the privately chosen testing code locally with SHA-256; retain only its hex digest in `FOUNDERS_SANDBOX_CODE_SHA256`. Do not use the ordinary reviewer Pro-unlock code: this separate testing code only admits sandbox checkout and grants no entitlement. Use a sandbox store account; a server reservation cannot force a real store account into sandbox.
+
+### Remote controls and inspection
+
+From the repository root, put the admin token in the current shell without committing it:
+
+```powershell
+$env:INOUT_FOUNDERS_ADMIN_TOKEN = [System.Net.NetworkCredential]::new('', (Read-Host 'Founders admin token' -AsSecureString)).Password
+node scripts/founder-control.mjs sandbox active --verified-ready
+node scripts/founder-control.mjs sandbox status
+node scripts/founder-control.mjs production status
+```
+
+`--verified-ready` is an explicit operator attestation: configure and test the webhook and store first. Production activation, only after approval and acceptance: `node scripts/founder-control.mjs production active --verified-ready`. Pause/emergency stop: `node scripts/founder-control.mjs production paused`. Resume: `node scripts/founder-control.mjs production active`. Permanent close: `node scripts/founder-control.mjs production closed`. Repeat for `sandbox` as needed. `closed` cannot be reopened through the control endpoint. Remove the local token with `Remove-Item Env:INOUT_FOUNDERS_ADMIN_TOKEN` when finished.
+
+The status command shows confirmed transactions (including refunded/revoked), active reservations, available checkout capacity and the safety buffer. For individual reconciliation, Supabase → SQL Editor:
+
+```sql
+select environment,status,ready,allocation,safety_buffer from inout_private.founder_campaigns;
+select environment,store,transaction_id,product_id,customer_id,purchased_at,state,allocated,event_id
+from inout_private.founder_purchases order by received_at desc;
+select environment,customer_id,platform,created_at,expires_at,state
+from inout_private.founder_reservations where state='reserved' order by created_at;
+```
+
+Reservations expire after 30 minutes and stop consuming capacity automatically; no cron is needed. Reopening the app/refreshing/restoring reconciles a currently active Lifetime purchase through RevenueCat API v2 using its canonical **store transaction ID**, environment, store, ownership, product and `in_out_pro` association. Restoration never adds a second row. For missing refund/revocation events, RevenueCat → Integrations → Webhooks → failed event → **Retry** (or retry from that customer's event details). Compare the transaction ID and environment, never insert a purchase manually. If synchronization or webhook delivery is unhealthy, pause sales first. Pending or ambiguous native checkouts remain locked across restart: refresh/restore and resolve the transaction in the store; reservation expiry alone does not authorize charging again.
+
+At 990 confirmed transactions, sales automatically pause; live reservations also consume the 990-checkout threshold. The remaining ten slots absorb delayed completions. At 1,000, status becomes `sold_out`. Refunds retain their slots. Late/overflow transactions are recorded, and legitimate store-backed Pro is never revoked because inventory is late/full. Only allocated, non-refunded purchases receive founder recognition. This is a practical bound, **not an exact store-level 1,000-sale guarantee**: pending store sheets, expired reservations and direct/older clients can complete later. Monitor RevenueCat and disable new store sales at closure. In Play, deactivate **`lifetime-buy`**; in App Store Connect, remove Lifetime from sale/availability. **Keep the product attached to `in_out_pro` and retain purchase records/restoration.**
+
+### Real-device test and genuine Apple screenshot
+
+Build using the existing real-store billing configuration (`EXPO_PUBLIC_REVENUECAT_MODE=store`, existing platform SDK keys), not RevenueCat Test Store or Expo Go. After sandbox activation, open **Profile → Pro & subscriptions → Reviewer access → Lifetime purchase testing**, enter the private testing code, and tap **Open sandbox offer**. Scroll back to the Lifetime card. The card uses the actual store price; normal subscriptions remain visible. Purchases must show in the **sandbox** ledger, with production counts unchanged. The testing code is not persisted.
+
+On TestFlight, use a clean tester without a paid subscription. Capture the actual screen with the iPhone screenshot buttons and save the unscaled PNG as `INOUT_Founding_Lifetime_Pro_Apple_Review.png`. On a macOS simulator with working StoreKit/RevenueCat product access, use `xcrun simctl io booted screenshot INOUT_Founding_Lifetime_Pro_Apple_Review.png`; inspect dimensions with `sips -g pixelWidth -g pixelHeight INOUT_Founding_Lifetime_Pro_Apple_Review.png`. No generated/mock paywall image is an acceptable replacement.
+
+On both physical platforms verify localized price/terms, cancellation, pending approval, failed payment, duplicate taps, process termination, purchase/restore, refund/revocation, ad suppression, ordinary Free ads/consent, current subscriptions, reviewer access and EN/ES/PT accessibility/reduced motion. Existing subscribers cannot check out Lifetime until their paid term ends; cancelling renewal is separate. Same-store-account restoration works through RevenueCat. Cross-platform restoration is unavailable with the existing anonymous identity; a future authenticated account linked through the existing `identify`/`logIn` seam is the smallest safe correction, and was not added for this campaign.
+
+Validation: 285 domain/backend tests and the 435-test mobile regression (32 suites) passed; the final focused rerun passed 35 tests, including one added onboarding race regression (436 distinct mobile tests overall); TypeScript, locales (zero defects), static parity, release metadata and Android/iOS Hermes exports passed. Exports are in `artifacts/founders-export/` and are **bundling evidence only**, using the local development environment. No signed build, store purchase, refund delivery or physical-device acceptance was produced. Existing animation-test `act(...)` warnings remain non-failing. Live Supabase checks confirmed inactive campaigns, zero records, denied client RPC access and no security warning/error; four informational RLS-without-policy notices reflect intentional default-deny private tables.
+
+No additional provider or fixed-price service was introduced. Expected additional fixed infrastructure cost: **USD 0 while within the existing Supabase quotas**, with usage charged under the owner's plan. RevenueCat's published Pro pricing is free below USD 2,500 monthly tracked revenue, then 1%; the account's actual plan/legacy terms are unverified. References: [non-consumable setup](https://www.revenuecat.com/docs/getting-started/entitlements/android-products), [webhooks](https://www.revenuecat.com/docs/integrations/webhooks), [pricing](https://www.revenuecat.com/pricing), [Apple submission](https://developer.apple.com/help/app-store-connect/manage-submissions-to-app-review/submit-an-in-app-purchase).
+
 ## October 23 development iteration: physical acceptance still open
 
 The audio cleanup, single onboarding goal collection, shared State Shift slider and Free **Challenges → Breath Hold Timer** are implemented and locally tested. Version remains 1.2.2; this iteration does not authorize a store build or submission. Detailed implementation/evidence is in `CROSS_PLATFORM_RELEASE_READINESS.md`.

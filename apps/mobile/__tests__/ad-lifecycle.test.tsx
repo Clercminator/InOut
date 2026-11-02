@@ -61,6 +61,29 @@ test("consent denial and unresolved billing prevent every ad request", async () 
   f.ads.setContext(context); f.tick(); for (const id of ["a", "b", "c"]) f.ads.prepareCompletion(id);
   expect(mockInitialize).not.toHaveBeenCalled(); expect(mockFactory).not.toHaveBeenCalled();
 });
+
+test("refund restores completion ad eligibility after active Pro without resetting consent or frequency caps", async () => {
+  const f = fixture(); await f.ads.prepare(); f.tick(); f.ads.setContext(context);
+  f.entitlements.acceptStoreGrant({ source: "store", active: true, status: "active", verifiedAt: f.now(), expiresAt: f.now() + 100000, graceUntil: null });
+  f.ads.prepareCompletion("paid"); expect(f.load).not.toHaveBeenCalled(); expect(f.ads.ready).toBe(false);
+  f.entitlements.acceptStoreGrant({ source: "store", active: false, status: "expired", verifiedAt: f.now(), expiresAt: 0, graceUntil: null });
+  await f.ads.prepare(); f.ads.prepareCompletion("after-refund");
+  expect(f.load).toHaveBeenCalledTimes(1); expect(mockConsent).toHaveBeenCalledTimes(1);
+  f.events.get("loaded")!(); const done = f.ads.showCompletion("after-refund");
+  f.events.get("opened")!(); f.events.get("closed")!(); expect(await done).toBe(true);
+});
+
+test("a Free surface joining in-flight consent recovers after the prior Pro surface unmounts", async () => {
+  const f = fixture(); let resolve!: (value: { canRequestAds: boolean }) => void, firstMounted = true;
+  mockConsent.mockReturnValueOnce(new Promise(done => { resolve = done; }));
+  const first = f.ads.prepare(() => firstMounted);
+  f.entitlements.simulate("active"); firstMounted = false;
+  f.entitlements.simulate("expired");
+  const next = f.ads.prepare(() => true);
+  resolve({ canRequestAds: true }); await Promise.all([first, next]);
+  expect(f.ads.ready).toBe(true); expect(mockConsent).toHaveBeenCalledTimes(1);
+  expect(mockInitialize).toHaveBeenCalledTimes(1);
+});
 test("completion ads require consent, app age, unique completion, dismissal, interval and daily caps", async () => {
   const f = fixture(null, 0); await f.ads.prepare(); f.ads.setContext(context);
   f.ads.prepareCompletion("early"); expect(f.load).not.toHaveBeenCalled(); f.tick(180001);

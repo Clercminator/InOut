@@ -3,6 +3,7 @@ import type { Experience, Preferences, SessionRecord } from "@inout/shared-types
 import { addDays, dayKey, practiceStats, practiceDay } from "./progress";
 import { achievementProgress, qualifyingRecords } from "./achievements";
 import { challengeCatalog, definitionForState, type UserChallenge } from "./challenges";
+import { t } from "./i18n";
 
 export const defaultExperience: Experience = {
   name: "", bio: "", intention: "A moment for myself", avatar: "spa", pinnedBadges: [], weeklyGoal: 3,
@@ -11,6 +12,13 @@ export const defaultExperience: Experience = {
   guidanceVolume: 0.7, celebrationVolume: 0.45, rituals: [],
 };
 export const experienceFor = (preferences: Preferences): Experience => ({ ...defaultExperience, ...preferences.experience });
+export function profileIntention(preferences: Preferences) {
+  const value = experienceFor(preferences);
+  // Older preference saves persisted the built-in default even when only the avatar changed.
+  const builtIn = ["A moment for myself", "More calm", "Room to recharge"].find(key =>
+    (["en", "es", "pt"] as const).some(language => value.intention === t(key, language)));
+  return value.intentionSource !== "custom" && builtIn ? t(builtIn) : value.intention;
+}
 export interface Badge { id: string; label: string; date: string }
 export interface RewardLedger { version: 1; badges: Badge[]; weekGoals: Record<string, number> }
 export const emptyLedger = (): RewardLedger => ({ version: 1, badges: [], weekGoals: {} });

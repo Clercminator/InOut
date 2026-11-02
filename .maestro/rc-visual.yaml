@@ -24,20 +24,36 @@ appId: com.imrtech.inout
     element: { text: "Continue" }
     direction: DOWN
 - tapOn: "Continue"
-- takeScreenshot: 03-value
-- scrollUntilVisible:
-    element: { text: "Let's get started" }
-    direction: DOWN
-- tapOn: "Let's get started"
-- takeScreenshot: 04-safety
-- scrollUntilVisible:
-    element: { text: "I understand" }
-    direction: DOWN
+- assertVisible: "Comfort comes first."
+- swipe:
+    direction: LEFT
+- assertVisible: "Comfort comes first."
 - tapOn: "I understand"
-- takeScreenshot: 05-paywall
-- assertNotVisible: "DEVELOPMENT DEMO"
+- assertVisible: "A rhythm you can follow."
+- takeScreenshot: onboarding-demo
+- tapOn: "Start breathing"
 - tapOn: "Close subscription offer"
+- assertVisible: 'How tense are you right now\?'
+- openLink: "inout://"
+- tapOn: { text: "Open", optional: true }
 - takeScreenshot: 06-home
+- swipe:
+    start: "30%,20%"
+    end: "85%,20%"
+- assertVisible: "Your practice, taking shape."
+- swipe:
+    start: "30%,20%"
+    end: "85%,20%"
+- assertVisible: "Your practice, taking shape."
+- tapOn: "Back to Home"
+- swipe:
+    start: "85%,20%"
+    end: "25%,20%"
+- assertVisible: "Test yourself. Build a habit. Take it into your day."
+- swipe:
+    start: "25%,20%"
+    end: "85%,20%"
+- assertVisible: "Explore protocols"
 - tapOn: "Explore protocols"
 - takeScreenshot: 07-library
 - tapOn: "Go back"

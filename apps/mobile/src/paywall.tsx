@@ -15,6 +15,7 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { ThemeSurface, useTheme } from "./theme";
 import { productConfig } from "./product-config";
 import { annualIsBetterValue, defaultPlan, type PlanId } from "./subscriptions";
+import { FounderOffer, FounderTesting } from "./founder-offer";
 function introDuration(period: string) {
   const match = /^P(\d+)([DWMY])$/.exec(period);
   const unit = { D: "day", W: "week", M: "month", Y: "year" }[match?.[2] ?? ""] as "day" | "week" | "month" | "year";
@@ -29,7 +30,7 @@ function PaywallContent(props: PaywallProps) {
   const closing = useRef(false);
   useEffect(() => { if (props.completionError) closing.current = false; }, [props.completionError]);
   const close = () => {
-    if (services?.subscriptions.purchaseConfirmation && services.entitlements.state.pro) return;
+    if ((services?.subscriptions.purchaseConfirmation || services?.founders?.confirmation) && services?.entitlements.state.pro) return;
     if (closing.current) return;
     closing.current = true;
     services?.analytics.track("paywall_dismissed");
@@ -38,13 +39,15 @@ function PaywallContent(props: PaywallProps) {
     else router.replace("/(tabs)");
   };
   const pro = services?.entitlements.state.pro;
-  const confirmation = services?.subscriptions.purchaseConfirmation;
-  useEffect(() => { if (props.entry === "onboarding" && pro && !confirmation) close(); }, [pro, props.entry, confirmation]);
+  const confirmation = services?.subscriptions.purchaseConfirmation || services?.founders?.confirmation;
+  useEffect(() => { if (props.entry === "onboarding" && pro && !confirmation && !services?.subscriptions.busy) close(); }, [pro, props.entry, confirmation, services?.subscriptions.busy]);
   if (confirmation && pro && services) return <Screen title="InOut Pro">
     <View style={{ alignItems: "center" }}><PulseArtwork size={180} /></View>
-    <Celebration title="Welcome to InOut Pro!" message="Your Pro access is ready." />
+    <Celebration title={services.founders?.member && !services.founders.sandboxMember ? "Welcome, Founding Member!" : "Welcome to InOut Pro!"} message={services.entitlements.state.lifetimePro ? "Lifetime Pro is now yours." : "Your Pro access is ready."} />
+    {services.founders?.member && !services.founders.sandboxMember && <Copy>Thank you for supporting IN/OUT as a Founding Member.</Copy>}
+    {services.founders?.sandboxMember && <Copy>STORE SANDBOX TESTING</Copy>}
     <Copy>Guided programs for your goals</Copy><Copy>A practice without ads</Copy>
-    <Button title="Start practicing" onPress={() => { services.subscriptions.dismissPurchaseConfirmation(); close(); }} />
+    <Button title="Start practicing" onPress={() => { services.subscriptions.dismissPurchaseConfirmation(); services.founders?.dismissConfirmation(); close(); }} />
   </Screen>;
   if (props.entry === "onboarding" && pro) return <Screen><Copy>Your Pro access is ready.</Copy>{props.completionError && <Copy accessibilityRole="alert">{props.completionError}</Copy>}<Button title="Start breathing" onPress={close} /></Screen>;
   if (props.entry === "onboarding" && services?.subscriptions.adapter.mode === "store" && !services.entitlements.billingReady)
@@ -83,6 +86,7 @@ function NativePaywall({ entry = "profile", onClose, completionError }: PaywallP
     {onClose && <Button title={state.pro ? entry === "onboarding" ? "Start breathing" : "Continue to Home" : "Continue for free"} variant="quiet" onPress={close} />}
   </ActionFooter> : undefined}>
     {completionError && <Copy accessibilityRole="alert">{completionError}</Copy>}
+    <FounderOffer />
     {entry === "onboarding" ? <><View style={{ alignItems: "center" }}><PulseArtwork size={150} /></View><Label>WELCOME TO YOUR NEXT CHAPTER</Label><Title>Make this practice yours.</Title><Copy>A personal breathing coach. More ways to grow.</Copy></> : <><View style={{ alignItems: "center" }}><PulseArtwork size={96} /></View><Title>{state.pro ? "Your Pro access is ready." : "More room for your practice."}</Title></>}
     {entry === "quota" && <Copy>Your guided allowance is used. Keep practicing without voice guidance, or explore Pro.</Copy>}
     {entry === "protocol" && <Copy>Unlock this protocol and make more room for your practice.</Copy>}
@@ -111,7 +115,7 @@ function NativePaywall({ entry = "profile", onClose, completionError }: PaywallP
       <Button title="Refresh plans & status" secondary disabled={subscriptions.busy} onPress={() => { void subscriptions.load(); }} />
       <Button title="Help & feedback" secondary onPress={() => router.push("/support")} />
     </Card>}
-    <Button title="Restore purchases" secondary disabled={subscriptions.busy} onPress={() => { void subscriptions.restore(); }} />
+    <Button title="Restore purchases" secondary disabled={subscriptions.busy} onPress={() => { void (services.founders ? services.founders.restore() : subscriptions.restore()); }} />
     <Disclosure title="Subscription details" icon="manage-accounts" initiallyOpen={state.pro}>
     <View style={{ gap: 8 }}><Label>YOUR ACCESS</Label><Copy>{state.pro ? "InOut Pro" : "Free"}</Copy>{state.productId && <Copy translate={false}>{state.productId}{state.planId ? ` · ${state.planId}` : ""}</Copy>}
       {state.subscriptionPro && state.expiresAt && <Copy>Access until: {new Date(state.expiresAt).toLocaleDateString(locale())}</Copy>}
@@ -134,6 +138,7 @@ function NativePaywall({ entry = "profile", onClose, completionError }: PaywallP
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}><Button title="Privacy policy" variant="quiet" onPress={() => router.push("/privacy")} /><Button title="Subscription terms" variant="quiet" onPress={() => router.push("/subscription-terms")} /></View>
     <Button title="Reviewer access" variant="quiet" onPress={() => setReviewerOpen(value => !value)} />
     {reviewerOpen && <Card><Label>Reviewer access</Label>
+      <FounderTesting />
       <TextInput accessibilityLabel="Review code" placeholder="Review code" secureTextEntry autoCapitalize="none" autoCorrect={false}
         maxLength={128} value={reviewCode} editable={!services.reviewer?.busy} onChangeText={setReviewCode} style={styles.input} />
       <Button title="Unlock Pro" secondary disabled={!reviewCode.trim() || !services.reviewer || services.reviewer.busy} onPress={() => {

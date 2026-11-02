@@ -1,0 +1,8 @@
+{
+  "offering": "inout_pro_lifetime",
+  "package": "$rc_lifetime",
+  "products": {
+    "android": "inout_pro_lifetime",
+    "ios": "com.imrtech.inout.pro.lifetime"
+  }
+}

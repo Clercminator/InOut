@@ -1,4 +1,8 @@
 import type { ConfigContext } from "expo/config";
+import es from "./src/locales/es.json";
+import pt from "./src/locales/pt.json";
+
+const photoPermission = "Choose a photo for your private IN/OUT profile.";
 
 export default ({ config }: ConfigContext) => {
   const preview = process.env.INOUT_PREVIEW === "1";
@@ -16,6 +20,12 @@ export default ({ config }: ConfigContext) => {
     : !!androidGoogleServicesFile || !!iosGoogleServicesFile;
   return ({
   ...config,
+  locales: {
+    ...config.locales,
+    en: { ios: { NSPhotoLibraryUsageDescription: photoPermission } },
+    es: { ios: { NSPhotoLibraryUsageDescription: es[photoPermission] } },
+    pt: { ios: { NSPhotoLibraryUsageDescription: pt[photoPermission] } },
+  },
   ...(preview ? { name: "IN/OUT Preview", scheme: "inout-preview" } : {}),
   extra: { ...config.extra, adEnvironment: process.env.INOUT_RELEASE === "1" || process.env.EAS_BUILD_PROFILE === "production" ? "production" : "test", firebasePlatforms: { android: !!androidGoogleServicesFile, ios: !!iosGoogleServicesFile }, ...(process.env.EXPO_PUBLIC_EAS_PROJECT_ID ? { eas: { projectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID } } : {}) },
   ios: { ...config.ios, ...(preview ? { bundleIdentifier: "com.imrtech.inout.preview" } : {}), ...(iosGoogleServicesFile ? { googleServicesFile: iosGoogleServicesFile } : {}), ...(!preview && links.origin && links.appleTeamId ? { appleTeamId: links.appleTeamId, associatedDomains: [`applinks:${new URL(links.origin).host}`] } : {}) },
@@ -28,7 +38,7 @@ export default ({ config }: ConfigContext) => {
     "expo-sharing",
     ["expo-notifications", { icon: "./assets/notification-sphere-small.png", color: "#5B2DFF" }],
     "./plugins/with-notification-sphere.cjs",
-    ["expo-image-picker", { photosPermission: "Choose a photo for your private IN/OUT profile.", cameraPermission: false, microphonePermission: false }],
+    ["expo-image-picker", { photosPermission: photoPermission, cameraPermission: false, microphonePermission: false }],
     "@react-native-community/datetimepicker",
     ["expo-build-properties", { ios: { useFrameworks: "dynamic" }, android: { kotlinVersion: "2.2.21", enableMinifyInReleaseBuilds: true } }],
     "./plugins/with-kotlin-compiler.cjs",

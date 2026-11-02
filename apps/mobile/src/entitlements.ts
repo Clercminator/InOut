@@ -1,6 +1,9 @@
 import type { SavedRoutine, Protocol } from "@inout/shared-types";
 import { productConfig } from "./product-config";
 import monetization from "../../../release/monetization.json";
+import founders from "../../../release/founders.json";
+
+export const isLifetimeProduct = (id: string | undefined) => !!id && Object.values(founders.products).includes(id);
 
 export const commercialPolicy = Object.freeze({
   freeSavedPatterns: 1,
@@ -16,6 +19,7 @@ export const proCapabilities = [
 export type Capability = typeof proCapabilities[number];
 export type SubscriptionStatus = "free" | "trial" | "active" | "cancelled" | "billingRetry" | "grace" | "expired";
 export interface EntitlementGrant {
+  lifetime?: boolean;
   productId?: string;
   planId?: string;
   source: "store" | "development";
@@ -80,17 +84,22 @@ export class EntitlementService {
     this.highWater = Math.max(this.highWater, now);
     const deadline = g?.status === "grace" ? Math.max(g.expiresAt, g.graceUntil ?? 0) : g?.expiresAt ?? 0;
     const fresh = !!g && !rollback && now >= g.verifiedAt && now - g.verifiedAt < commercialPolicy.maxOfflineAgeMs;
-    const pro = !!g && g.active && fresh && now < deadline && !["free", "expired"].includes(g.status);
+    const lifetime = !!g && g.lifetime === true && isLifetimeProduct(g.productId) && g.expiresAt === 0;
+    // A verified, allowlisted non-consumable remains useful offline. Revocations still
+    // replace this cache when RevenueCat can be reached; subscriptions retain the
+    // bounded freshness policy above.
+    const pro = !!g && g.active && (lifetime || fresh) && (lifetime || now < deadline) && !["free", "expired"].includes(g.status);
     const reviewer = !rollback && !!this.reviewer && now >= this.reviewer.verifiedAt && now < this.reviewer.expiresAt && now - this.reviewer.verifiedAt < 3600000;
     return {
       pro: pro || reviewer,
       subscriptionPro: pro,
+      lifetimePro: pro && lifetime,
       productId: pro ? g!.productId : undefined,
       planId: pro ? g!.planId : undefined,
       reviewerPro: reviewer,
       source: pro ? g!.source : reviewer ? "reviewer" : g?.source ?? "unconfigured",
       status: pro ? g!.status : reviewer ? "active" as const : g && g.status !== "free" ? "expired" as const : "free" as const,
-      expiresAt: pro ? deadline : reviewer ? this.reviewer!.expiresAt : deadline || null,
+      expiresAt: pro ? lifetime ? null : deadline : reviewer ? this.reviewer!.expiresAt : deadline || null,
       needsRefresh: !!g && !fresh,
     };
   }
@@ -116,6 +125,9 @@ export class EntitlementService {
   /** Accept normalized provider evidence; never a UI preference. */
   acceptStoreGrant(grant: EntitlementGrant) {
     if (!validGrant(grant) || grant.source !== "store") throw new Error("Invalid store entitlement");
+    // A delayed SDK callback must not undo newer refund/purchase evidence.
+    // verifiedAt=0 is the explicit identity-reset sentinel, never usable billing evidence.
+    if (grant.verifiedAt !== 0 && this.grant?.source === "store" && this.grant.verifiedAt <= this.now() && grant.verifiedAt < this.grant.verifiedAt) return;
     this.grant = { ...grant };
     try { this.cache?.write(this.grant); } catch { /* Live grant remains usable; next launch refreshes. */ }
     this.refresh();

@@ -724,6 +724,7 @@ export class SessionController {
   updateExperience(patch: Partial<Experience>) {
     if (this.error) return false;
     const next = { ...experienceFor(this.preferences), ...patch };
+    if (patch.intention !== undefined) next.intentionSource = patch.intentionSource ?? "custom";
     for (const key of ["palette", "texture", "frame", "celebrationStyle"] as const)
       if (!unlocked(this.rewards(), key, next[key])) return false;
     this.setPreferences({ ...this.preferences, experience: next });

@@ -89,5 +89,5 @@ export default function Onboarding() {
       {step === "demo" && <><View style={{ flexDirection: "row", gap: 12, alignItems: "center" }}><View style={{ flex: 1 }}><Title>A rhythm you can follow.</Title></View><IconButton icon="info-outline" title="About your practice" onPress={() => setHelp(true)} /></View><OnboardingDemo /></>}
       <SaveError />
     </OnboardingScene>
-  </Screen>{help && <AppDialog title="About your practice" onRequestClose={() => setHelp(false)}><Copy>Your Coach suggests short practices for your goals. Change your preferences anytime.</Copy><Copy>This is a breathing practice, not medical treatment. Your experience may vary.</Copy><Button title="Close" onPress={() => setHelp(false)} /></AppDialog>}</SwipeSurface>;
+  </Screen>{help && <AppDialog title="About your practice" onRequestClose={() => setHelp(false)}><Copy>Your Coach suggests short practices for your goals. Change your preferences anytime.</Copy><Copy>This is a breathing practice, not medical treatment. Your experience may vary.</Copy></AppDialog>}</SwipeSurface>;
 }

@@ -1,7 +1,9 @@
 import "../src/device-language";
 import { useTheme } from "../src/theme";
 import { useLanguage } from "../src/use-language";
-import { Stack } from "expo-router";
+import { Stack, usePathname } from "expo-router";
+import { WelcomeToast } from "../src/welcome-toast";
+import { useSession } from "../src/provider";
 import { useFonts } from "expo-font";
 import { Inter_400Regular } from "@expo-google-fonts/inter/400Regular";
 import { Inter_600SemiBold } from "@expo-google-fonts/inter/600SemiBold";
@@ -59,7 +61,10 @@ export default function RootLayout() {
 
 function ThemedNavigator() {
   const { colors } = useTheme();
+  const path = usePathname();
+  const controller = useSession();
   return (
+    <>
         <Stack
           screenOptions={{
             headerShown: false,
@@ -71,5 +76,7 @@ function ThemedNavigator() {
           <Stack.Screen name="session" options={{ gestureEnabled: false }} />
           <Stack.Screen name="post" options={{ gestureEnabled: false }} />
         </Stack>
+        <WelcomeToast eligible={path === "/" && !!controller.preferences.onboardingComplete && (!controller.current || controller.current.stage === "result")} />
+    </>
   );
 }

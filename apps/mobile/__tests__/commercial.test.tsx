@@ -13,6 +13,8 @@ import { DevelopmentSubscriptionProvider } from "../src/subscription-providers/t
 import { AnalyticsService } from "../src/analytics";
 import { AdService } from "../src/ads";
 import { ReviewerService, ReviewerError } from "../src/reviewer";
+import { FounderService } from "../src/founders";
+import { FounderOffer } from "../src/founder-offer";
 
 let mockPath = "/";
 const mockController = { current: null };
@@ -44,6 +46,39 @@ function services() {
   return { entitlements, analytics, subscriptions: new SubscriptionService(adapter, entitlements, analytics), ads: new AdService(entitlements, "preview") };
 }
 function wrap(s: CommercialServices, child: React.ReactNode) { return <CommercialContext.Provider value={s}>{child}</CommercialContext.Provider>; }
+
+test.each(["en","es","pt"] as const)("Lifetime uses real localized prices and accessible shared controls in %s",async language=>{
+  const s: CommercialServices=services();
+  s.subscriptions.adapter.lifetime={customerId:async()=>"fixture",offer:async()=>({productId:"inout_pro_lifetime",price:"CLP 24.990"}),purchase:async()=>{throw Error("not used");}};
+  s.founders=new FounderService(s.subscriptions,s.entitlements,s.analytics,async()=>({status:"active",allowed:true}),{read:()=>null,write:()=>{}},()=>"a".repeat(64),"android");
+  setLanguage(language);
+  await render(wrap(s,<FounderOffer />));
+  expect(screen.getByRole("button",{name:/CLP 24.990/})).toBeTruthy();
+  const purchase=jest.spyOn(s.founders,"purchase").mockResolvedValue();
+  await fireEvent.press(screen.getByRole("button",{name:/CLP 24.990/}));
+  expect(purchase).toHaveBeenCalledTimes(1);
+  await act(()=>{s.entitlements.acceptDevelopmentGrant({source:"development",status:"active",active:true,verifiedAt:Date.now(),expiresAt:Date.now()+3600000,graceUntil:null});});
+  expect(screen.getByRole("button",{name:/CLP 24.990/})).toBeDisabled();
+});
+
+test("onboarding waits for Lifetime checkout confirmation when SDK entitlement arrives first",async()=>{
+  const s: CommercialServices=services();
+  setLanguage("en");
+  const close=jest.fn();
+  s.subscriptions.adapter.lifetime={customerId:async()=>"fixture",offer:async()=>({productId:"inout_pro_lifetime",price:"$25.00"}),purchase:async()=>{throw Error("not used");}};
+  s.founders=new FounderService(s.subscriptions,s.entitlements,s.analytics,async()=>({status:"inactive",allowed:false}),{read:()=>null,write:()=>{}},()=>"a".repeat(64),"ios");
+  await s.subscriptions.load();
+  await render(wrap(s,<Paywall entry="onboarding" onClose={close} />));
+  await act(()=>{
+    s.subscriptions.busy=true;
+    s.entitlements.acceptStoreGrant({source:"store",status:"active",active:true,lifetime:true,productId:"inout_pro_lifetime",verifiedAt:Date.now(),expiresAt:0,graceUntil:null});
+  });
+  expect(close).not.toHaveBeenCalled();
+  await act(()=>{s.founders!.confirmation=true;s.subscriptions.busy=false;s.entitlements.refresh();});
+  expect(screen.getByText("Lifetime Pro is now yours.")).toBeTruthy();
+  await fireEvent.press(screen.getByRole("button",{name:"Start practicing"}));
+  expect(close).toHaveBeenCalledTimes(1);
+});
 
 test("welcome offer uses the shared purchase service, localized store prices and an explicit Free exit", async () => {
   const s = services(), close = jest.fn();
@@ -77,6 +112,20 @@ test("live banners load automatically, stay absent for unresolved billing, and d
   expect(screen.queryByText("Review ad privacy choices")).toBeNull();
   await act(async () => { s.entitlements.simulate("active"); });
   expect(screen.queryByTestId("native-banner")).toBeNull();
+  await act(async () => { s.entitlements.simulate("expired"); });
+  expect(screen.getByTestId("native-banner").props.width).toBe(280);
+});
+
+test("a verified refund on an already mounted Pro screen restores banners and clears Pro UI", async () => {
+  AppState.currentState = "active"; mockPath = "/";
+  const s = services(); s.ads = new AdService(s.entitlements, "live");
+  const now = Date.now();
+  s.entitlements.acceptStoreGrant({ source: "store", active: true, status: "active", verifiedAt: now, expiresAt: now + 100000, graceUntil: null });
+  await render(wrap(s, <AdSlot placement="today" />));
+  expect(screen.queryByTestId("banner-container")).toBeNull();
+  await act(() => s.entitlements.acceptStoreGrant({ source: "store", active: false, status: "expired", verifiedAt: now, expiresAt: 0, graceUntil: null }));
+  await fireEvent(screen.getByTestId("banner-container"), "layout", { nativeEvent: { layout: { width: 280 } } });
+  expect(screen.getByTestId("native-banner")).toBeTruthy();
 });
 
 test("reviewer UI handles loading, invalid code, server failure, success and expiry", async () => {

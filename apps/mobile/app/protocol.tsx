@@ -11,6 +11,7 @@ import { useEffect } from "react";
 import { View } from "react-native";
 import { ShareExercise } from "../src/share-exercise";
 import { ProtocolEvidenceCard } from "../src/protocol-evidence-card";
+import { ProtocolGuidanceCard } from "../src/protocol-guidance-card";
 
 export default function ProtocolDetail() {
   const { colors } = useTheme();
@@ -31,10 +32,10 @@ export default function ProtocolDetail() {
         <IconButton title={controller.isFavorite(protocol.id) ? "Remove from saved" : "Save protocol"}
           icon={controller.isFavorite(protocol.id) ? "bookmark" : "bookmark-border"} onPress={() => controller.toggleFavorite(protocol.id)} />
       </View>
-      {protocol.description && <Copy>{protocol.description}</Copy>}
-      {protocol.precaution && <Copy>{protocol.precaution}</Copy>}
       <Copy>{protocol.phases.map((phase) => phase.label).join(" · ")}</Copy>
       </View>
+      <ProtocolGuidanceCard protocolId={protocol.id} />
+      {protocol.precaution && <Copy>{protocol.precaution}</Copy>}
       {isCyclic(protocol) ? <><CyclicOverview /><Card><CyclicSafety /></Card></> : <Card>
         <Label>CADENCE</Label>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
@@ -61,7 +62,6 @@ export default function ProtocolDetail() {
           <Copy>Sit comfortably. Breathe without forcing. Stop if you feel dizzy, faint or unwell.</Copy>
           <Copy>The timings are a guide, not a target to push through.</Copy>
         </Disclosure>
-        <Disclosure compact title="Benefits and purpose"><Copy>{protocol.purpose ?? protocol.description ?? protocol.name}</Copy></Disclosure>
         <ProtocolEvidenceCard protocol={protocol} compact />
       </View>
       <SaveError />

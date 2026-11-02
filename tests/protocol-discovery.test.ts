@@ -6,6 +6,20 @@ import { protocolTags, searchProtocols, discoverProtocols } from "../apps/mobile
 import { evidenceFor, evidenceReferences, presentationFor } from "../apps/mobile/src/protocol-evidence";
 import { t } from "../apps/mobile/src/i18n";
 import { EntitlementService } from "../apps/mobile/src/entitlements";
+import { protocolGuidance } from "../apps/mobile/src/protocol-guidance";
+
+test("every protocol has distinct purpose, rationale and timing translated into ES and PT-BR", () => {
+  assert.deepEqual(Object.keys(protocolGuidance).sort(), protocols.map(p => p.id).sort());
+  for (const protocol of protocols) {
+    const content = protocolGuidance[protocol.id];
+    assert.equal(new Set([content.purpose, content.why, content.when]).size, 3);
+    for (const language of ["es", "pt"] as const) for (const text of Object.values(content)) {
+      assert.notEqual(t(text, language), text, `${protocol.id}: ${language}: ${text}`);
+    }
+  }
+  assert.match(protocolGuidance.endurance.when, /Not while walking, running, swimming/);
+  assert.match(protocolGuidance.swimmer.when, /Never.*swimming, diving/);
+});
 
 test("purpose protocols preserve 4/6 timing, bounded minute presets and Free access", () => {
   for (const [id, minutes, min, max] of [["sleep-wind-down", 6, 3, 10], ["post-workout-reset", 5, 3, 10], ["intimacy-calm", 4, 2, 8]] as const) {
@@ -69,4 +83,14 @@ test("purposes use OR, with category, text and Saved as independent AND restrict
   assert.equal(discoverProtocols(catalogProtocols, { ...options, query: "nonsense" }).length, 0);
   assert.ok(discoverProtocols(catalogProtocols, { ...options, query: "sueño", category: "Calm & Unwind" }).some(p => p.id === "sleep-wind-down"));
   assert.equal(discoverProtocols([...catalogProtocols, ...catalogProtocols], { ...options, tags: [] }).length, catalogProtocols.filter(p => p.availability === "enabled").length);
+});
+
+
+test("athlete searches find existing preparation and recovery presets in all languages", () => {
+  for (const query of ["before running", "antes de correr", "antes do treino", "BJJ"]) {
+    assert.ok(searchProtocols(catalogProtocols, query).some(p => p.id === "runner-rhythm"), query);
+  }
+  for (const query of ["after exercise", "después de entrenar", "após treino", "BJJ recovery"]) {
+    assert.ok(searchProtocols(catalogProtocols, query).some(p => p.id === "post-workout-reset"), query);
+  }
 });

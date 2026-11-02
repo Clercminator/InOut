@@ -3,11 +3,58 @@ import type { CustomerInfo } from "react-native-purchases";
 import { revenueCatAdapter, grantFromCustomerInfo } from "../src/subscription-providers/revenuecat";
 import { SubscriptionError, defaultPlan } from "../src/subscriptions";
 import { subscriptionConfiguration } from "../src/monetization";
-const mockSdk = { ENTITLEMENT_VERIFICATION_MODE: { INFORMATIONAL: "INFORMATIONAL" }, configure: jest.fn(), getCustomerInfo: jest.fn(), getOfferings: jest.fn(), overridePreferredLocale: jest.fn(), purchasePackage: jest.fn(), restorePurchases: jest.fn(), checkTrialOrIntroductoryPriceEligibility: jest.fn(), addCustomerInfoUpdateListener: jest.fn(), removeCustomerInfoUpdateListener: jest.fn(), logIn: jest.fn(), logOut: jest.fn(), isAnonymous: jest.fn() };
+const mockSdk = { ENTITLEMENT_VERIFICATION_MODE: { INFORMATIONAL: "INFORMATIONAL" }, configure: jest.fn(), getCustomerInfo: jest.fn(), invalidateCustomerInfoCache: jest.fn(), getOfferings: jest.fn(), overridePreferredLocale: jest.fn(), purchasePackage: jest.fn(), restorePurchases: jest.fn(), checkTrialOrIntroductoryPriceEligibility: jest.fn(), addCustomerInfoUpdateListener: jest.fn(), removeCustomerInfoUpdateListener: jest.fn(), logIn: jest.fn(), logOut: jest.fn(), isAnonymous: jest.fn() };
 jest.mock("react-native-purchases", () => ({ default: mockSdk }));
 const info = () => ({ requestDate: new Date(1000).toISOString(), entitlements: { verification: "VERIFIED", all: { in_out_pro: { productIdentifier: "fixture", expirationDate: new Date(10000).toISOString(), isActive: true, willRenew: true, periodType: "NORMAL" } } }, managementURL: "https://apps.apple.com/account/subscriptions" });
 const item = (period: string, price: number) => ({ product: { identifier: period, priceString: `${price},00 Kč`, price, currencyCode: "CZK", subscriptionPeriod: period } });
 beforeEach(() => { jest.clearAllMocks(); Platform.OS = "ios"; mockSdk.getCustomerInfo.mockResolvedValue(info()); mockSdk.restorePurchases.mockResolvedValue(info()); mockSdk.purchasePackage.mockResolvedValue({ customerInfo: info() }); mockSdk.checkTrialOrIntroductoryPriceEligibility.mockResolvedValue({}); mockSdk.getOfferings.mockResolvedValue({ all: { default: { availablePackages: [item("P1M", 100)], weekly: item("P1W", 50), monthly: item("P1M", 100), annual: item("P1Y", 900) } } }); });
+
+test.each(["ios", "android"] as const)("%s Lifetime explicitly loads its offering/package and preserves default subscriptions", async platform => {
+  Platform.OS = platform;
+  const productIdentifier = platform === "ios" ? "com.imrtech.inout.pro.lifetime" : "inout_pro_lifetime";
+  const lifetime = { identifier: "$rc_lifetime", packageType: "LIFETIME", product: {identifier:productIdentifier, priceString:"R$ 149,90",price:149.90,currencyCode:"BRL",subscriptionPeriod:null} };
+  mockSdk.getOfferings.mockResolvedValue({ current: { availablePackages: [] }, all: {
+    default:{availablePackages:[item("P1M",100)],monthly:item("P1M",100)}, inout_pro_lifetime:{availablePackages:[lifetime]},
+  }});
+  const provider = revenueCatAdapter(platform === "ios" ? "appl_fixture" : "goog_fixture");
+  expect(await provider.lifetime!.offer()).toEqual({productId:productIdentifier,price:"R$ 149,90"});
+  expect((await provider.offers()).map(o=>o.id)).toEqual(["monthly"]);
+  const lifetimeInfo = info();
+  lifetimeInfo.entitlements.all.in_out_pro = {...lifetimeInfo.entitlements.all.in_out_pro,productIdentifier,expirationDate:null as unknown as string,willRenew:false};
+  mockSdk.purchasePackage.mockResolvedValueOnce({customerInfo:lifetimeInfo});
+  expect(await provider.lifetime!.purchase()).toMatchObject({source:"store",active:true,lifetime:true,status:"active",expiresAt:0});
+  expect(mockSdk.purchasePackage).toHaveBeenCalledWith(lifetime);
+  lifetime.product.subscriptionPeriod = "P1M" as unknown as null;
+  await expect(provider.lifetime!.offer()).rejects.toMatchObject({reason:"product_unavailable"});
+  await expect(provider.lifetime!.purchase()).rejects.toMatchObject({reason:"unavailable"});
+});
+
+test("Lifetime missing package, wrong ID, bad price and checkout outcomes fail safely", async()=>{
+  const provider=revenueCatAdapter("appl_fixture");
+  await expect(provider.lifetime!.offer()).rejects.toMatchObject({reason:"product_unavailable"});
+  for(const patch of [{identifier:"wrong"},{priceString:""},{price:0}]) {
+    mockSdk.getOfferings.mockResolvedValue({all:{inout_pro_lifetime:{availablePackages:[{identifier:"$rc_lifetime",packageType:"LIFETIME",product:{identifier:"com.imrtech.inout.pro.lifetime",subscriptionPeriod:null,price:25,priceString:"$25.00",currencyCode:"USD",...patch}}]}}});
+    await expect(provider.lifetime!.offer()).rejects.toMatchObject({reason:"product_unavailable"});
+  }
+  mockSdk.getOfferings.mockResolvedValue({all:{inout_pro_lifetime:{availablePackages:[{identifier:"$rc_lifetime",packageType:"LIFETIME",product:{identifier:"com.imrtech.inout.pro.lifetime",subscriptionPeriod:null,price:25,priceString:"$25.00",currencyCode:"USD"}}]}}});
+  await provider.lifetime!.offer();
+  for(const [code,reason] of [["1","cancelled"],["20","pending"],["10","network"],["5","product_unavailable"]]) {
+    mockSdk.purchasePackage.mockRejectedValueOnce({code});await expect(provider.lifetime!.purchase()).rejects.toMatchObject({reason});
+  }
+  expect(revenueCatAdapter("test_fixture",true).lifetime).toBeUndefined();
+});
+
+test.each(["ios", "android"] as const)("%s refresh invalidates cached Pro before fetching revoked access", async platform => {
+  Platform.OS = platform;
+  const provider = revenueCatAdapter(platform === "ios" ? "appl_fixture" : "goog_fixture");
+  // Simulate an SDK cache that still returns Pro until explicitly invalidated.
+  mockSdk.invalidateCustomerInfoCache.mockImplementationOnce(async () => {
+    mockSdk.getCustomerInfo.mockResolvedValueOnce({ ...info(), entitlements: { verification: "VERIFIED", all: {} } });
+  });
+  expect((await provider.refresh()).active).toBe(false);
+  expect(mockSdk.invalidateCustomerInfoCache).toHaveBeenCalledTimes(1);
+  expect(mockSdk.invalidateCustomerInfoCache.mock.invocationCallOrder[0]).toBeLessThan(mockSdk.getCustomerInfo.mock.invocationCallOrder[0]);
+});
 
 test("uses exact entitlement/default offering, three store-localized prices and Monthly default", async () => {
   const provider = revenueCatAdapter("appl_fixture");

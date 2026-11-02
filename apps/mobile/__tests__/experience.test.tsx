@@ -1,3 +1,5 @@
+import Athletes from "../app/athletes";
+import { Screen } from "../src/ui";
 import BreathHoldTimerScreen from "../app/breath-hold-timer";
 import { StateScale } from "../src/ui";
 import { selectedGoals } from "../src/personalization";
@@ -34,6 +36,7 @@ import { SessionController } from "../src/session-controller";
 import { SessionContext } from "../src/session-context";
 import { ExperienceProvider } from "../src/experience-context";
 import { experienceFor } from "../src/experience";
+import { PracticeChart, StateShiftChart } from "../src/progress-charts";
 import EditProfile from "../app/edit-profile";
 import Profile from "../app/profile";
 import Personalize from "../app/personalize";
@@ -259,6 +262,57 @@ test("translated profile preserves user-written text even when it matches Englis
   expect(screen.getByText("Sleep")).toBeTruthy();
   expect(screen.getByText("A moment for myself")).toBeTruthy();
   expect(screen.getByRole("button", { name: "Editar perfil" })).toBeTruthy();
+});
+
+test.each(["es", "pt"] as const)("stored defaults follow the current language after unrelated profile edits (%s)", async language => {
+  mockController.updateExperience({ avatar: "air" });
+  mockController.setPreferences({ ...mockController.preferences, language, languageSource: "manual" });
+  const view = await render(wrap(<EditProfile />));
+  expect(screen.getByLabelText(t("Your intention")).props.value).toBe(language === "es" ? "Un momento para mí" : "Um momento para mim");
+  await fireEvent.changeText(screen.getByLabelText(t("Display name")), "Taylor");
+  await fireEvent.press(screen.getByRole("button", { name: t("Save profile") }));
+  expect(mockController.preferences.experience?.intentionSource).toBeUndefined();
+  await act(async () => mockController.setPreferences({ ...mockController.preferences, language: language === "es" ? "pt" : "es", languageSource: "manual" }));
+  await view.rerender(wrap(<Profile />));
+  expect(screen.getByText(language === "es" ? "Um momento para mim" : "Un momento para mí")).toBeTruthy();
+  await view.unmount(); setLanguage("en");
+});
+
+test("selected intention presets stay translated while typed intentions stay literal", async () => {
+  mockController.setPreferences({ ...mockController.preferences, language: "es", languageSource: "manual" });
+  const view = await render(wrap(<EditProfile />));
+  await fireEvent.press(screen.getByRole("button", { name: t("More calm") }));
+  await fireEvent.press(screen.getByRole("button", { name: t("Save profile") }));
+  expect(mockController.preferences.experience).toMatchObject({ intention: "More calm", intentionSource: "preset" });
+  await act(async () => mockController.setPreferences({ ...mockController.preferences, language: "pt", languageSource: "manual" }));
+  await view.rerender(wrap(<Profile />));
+  expect(screen.getByText("Mais calma")).toBeTruthy();
+  await view.rerender(wrap(<EditProfile />));
+  await fireEvent.changeText(screen.getByLabelText(t("Your intention")), "A moment for myself");
+  await fireEvent.press(screen.getByRole("button", { name: t("Save profile") }));
+  expect(mockController.preferences.experience?.intentionSource).toBe("custom");
+  await view.rerender(wrap(<Profile />));
+  expect(screen.getByText("A moment for myself")).toBeTruthy();
+  await view.unmount(); setLanguage("en");
+});
+
+test.each(["es", "pt"] as const)("populated charts and Coach accessibility contain fully localized copy (%s)", async language => {
+  mockController.setPreferences({ ...mockController.preferences, language, languageSource: "manual" });
+  mockController.start(3, 1);
+  jest.advanceTimersByTime(600000); mockController.tick(); mockController.answer(5, null);
+  const record = { ...mockController.history()[0], goal: "Calm" as const };
+  const buckets = [{ key: "today", label: "26/10", records: [record] }];
+  const view = await render(wrap(<><PracticeChart title="SESSIONS" buckets={buckets} metric="sessions" by="goal"/><StateShiftChart buckets={buckets}/></>));
+  expect(screen.getByText(language === "es" ? "Calma: 1 sesión" : "Calma: 1 sessão")).toBeTruthy();
+  const descriptions = screen.getAllByRole("adjustable").map(node => node.props.accessibilityLabel);
+  expect(descriptions.join(" ")).not.toMatch(/Calm:|session|paired rating|average State Shift|tensi[oó]n|tensão/);
+  expect(descriptions[1]).toContain(language === "es" ? "bienestar" : "bem-estar");
+  expect(descriptions[1]).toContain(language === "es" ? "1 evaluación antes y después" : "1 avaliação antes e depois");
+  await act(async () => mockController.enrollProgram("find-your-rhythm"));
+  await view.rerender(wrap(<Coach />));
+  expect(screen.getByRole("progressbar").props.accessibilityLabel).toBe(t("Find Your Rhythm"));
+  expect(screen.getByRole("progressbar").props.accessibilityLabel).not.toBe("Find Your Rhythm");
+  await view.unmount(); setLanguage("en");
 });
 
 test("Portuguese protocol safety expands and translated dialogs keep their actions", async () => {
@@ -836,10 +890,13 @@ test.each([["es", 320, 568, 1], ["pt", 430, 932, 1.4]] as const)("demo and conte
   expect(screen.getByRole("button", { name: t("Try again") })).toBeTruthy();
   expect(screen.queryByText("Return to natural breathing.")).toBeNull();
 });
-test.each(["es", "pt"] as const)("protocol descriptions and tab Home controls render in %s", async language => {
+test.each(["en", "es", "pt"] as const)("protocol guidance and tab Home controls render in %s", async language => {
   setLanguage(language); mockParams = { id: "coherent" };
   let view = await render(wrap(<ProtocolDetail />));
-  expect(screen.getByText(t("Steady, even breaths for a grounded and balanced rhythm."))).toBeTruthy();
+  expect(screen.getByText(t("Find an even rhythm during a busy day."))).toBeTruthy();
+  expect(screen.getByText(t("During a quiet break or at the start of recovery, once breathing is comfortable."))).toBeTruthy();
+  await fireEvent.press(screen.getByRole("button", { name: t("Why it may help") }));
+  expect(screen.getByText(t("Equal inhales and exhales offer a simple pace without breath holds, leaving less to keep track of."))).toBeTruthy();
   await view.unmount(); view = await render(wrap(<Progress />));
   await fireEvent.press(screen.getByRole("button", { name: t("Back to Home") }));
   expect(mockPush).toHaveBeenCalledWith("/(tabs)");
@@ -926,4 +983,61 @@ test("a failed completion save stays in onboarding and retry retains the first-p
   await act(() => mockController.retry());
   expect(mockController.preferences.onboardingComplete).toBe(true);
   expect(screen.getByText("Redirect: /pre")).toBeTruthy();
+});
+
+
+test.each(["en", "es", "pt"] as const)("exercise guide reuses presets and offers movement guidance without a hold timer (%s)", async language => {
+  setLanguage(language);
+  await render(wrap(<Athletes />));
+  await fireEvent.press(screen.getByRole("button", { name: new RegExp(t("Runner's Rhythm")) }));
+  expect(mockPush).toHaveBeenLastCalledWith({ pathname: "/protocol", params: { id: "runner-rhythm" } });
+  await fireEvent.press(screen.getByRole("button", { name: t("During exercise") }));
+  expect(screen.getByText(t("Let your breathing follow your effort"))).toBeTruthy();
+  expect(screen.queryByRole("button", { name: new RegExp(t("Runner's Rhythm")) })).toBeNull();
+  expect(screen.queryByRole("button", { name: t("Start practice") })).toBeNull();
+  await fireEvent.press(screen.getByRole("button", { name: t("After exercise") }));
+  await fireEvent.press(screen.getByRole("button", { name: new RegExp(t("Post-Workout Reset")) }));
+  expect(mockPush).toHaveBeenLastCalledWith({ pathname: "/protocol", params: { id: "post-workout-reset" } });
+});
+
+test("logo pauses an active practice before navigating Home and remains safe on repeat taps", async () => {
+  mockController.start(null);
+  await render(wrap(<Screen />));
+  await fireEvent.press(screen.getByRole("button", { name: "IN/OUT · Home" }));
+  expect(mockController.current?.engine.status).toBe("paused");
+  expect(mockPush).toHaveBeenLastCalledWith("/(tabs)");
+  await fireEvent.press(screen.getByRole("button", { name: "IN/OUT · Home" }));
+  expect(mockController.current?.engine.status).toBe("paused");
+});
+
+test.each(["en", "es", "pt"] as const)("result offers primary repeat and compact secondary sharing routes (%s)", async language => {
+  setLanguage(language);
+  mockController.start(3, 1);
+  jest.advanceTimersByTime(600000); mockController.tick(); mockController.answer(5, null);
+  const id = mockController.current!.id;
+  mockParams = { id, saved: "1" };
+  mockController.latestAwards = [{ id: "first-session", label: "First practice", date: "2026-10-26" }];
+  await render(wrap(<Result />));
+  const actions = screen.getAllByRole("button");
+  expect(actions.indexOf(screen.getByRole("button", { name: t("Do it again") }))).toBeLessThan(actions.indexOf(screen.getByRole("button", { name: t("Return to Home") })));
+  expect(actions.indexOf(screen.getByRole("button", { name: t("Return to Home") }))).toBeLessThan(actions.indexOf(screen.getByRole("button", { name: t("Share result") })));
+  expect(screen.getByRole("button", { name: t("Invite a friend") })).toBeTruthy();
+  await fireEvent.press(screen.getByRole("button", { name: t("Share achievement") }));
+  expect(mockPush).toHaveBeenLastCalledWith({ pathname: "/milestone", params: { badge: "first-session" } });
+  await fireEvent.press(screen.getByRole("button", { name: t("Share result") }));
+  expect(mockPush).toHaveBeenLastCalledWith({ pathname: "/result-share", params: { id } });
+  await fireEvent.press(screen.getByRole("button", { name: t("Do it again") }));
+  expect(mockReplace).toHaveBeenLastCalledWith({ pathname: "/pre", params: { id: "custom" } });
+});
+
+test("Home need selection updates the following recommendation and links to exercise guidance", async () => {
+  await render(wrap(<Today />));
+  expect(screen.queryByText("Good to have you back. Start with a short reset — your achievements are still here.")).toBeNull();
+  expect(screen.getByText("Choose a focus to update the practice below.")).toBeTruthy();
+  await fireEvent.press(screen.getByRole("button", { name: "Sleep" }));
+  expect(screen.getByRole("button", { name: "Sleep" }).props.accessibilityState.selected).toBe(true);
+  await fireEvent.press(screen.getByRole("button", { name: "Start practice" }));
+  expect(mockPush.mock.calls.at(-1)![0].params.id).toBe("sleep-wind-down");
+  await fireEvent.press(screen.getByRole("button", { name: "Breathing for exercise" }));
+  expect(mockPush).toHaveBeenLastCalledWith("/athletes");
 });

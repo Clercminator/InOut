@@ -16,7 +16,7 @@
       "acceptance": "Both physical platforms required before nativeDeviceAcceptance."
     },
     "apps/mobile/src/app-dialog.tsx": {
-      "sha256": "fa783ea56cb3c6782d73c759178c254653e78d00ed21d1aa17860fa89c35fd57",
+      "sha256": "bb864b8ece545f105ceebf4f905ea84effd4b333fc25c8b76756dd9a95569de9",
       "reason": "iOS waits for native Modal dismissal; Android uses a dismissal timer.",
       "acceptance": "Both physical platforms required before nativeDeviceAcceptance."
     },
@@ -26,8 +26,8 @@
       "acceptance": "Both physical platforms required before nativeDeviceAcceptance."
     },
     "apps/mobile/src/commercial.ts": {
-      "sha256": "be82e1f34a4f5d20da003375cf3003be0e3cb95c138ea25d5f1c4bf2c54d1d16",
-      "reason": "Native SDK availability and platform public billing keys; shared entitlement and consent services.",
+      "sha256": "1117ea0af00c600ecfb34e4cde9778f5520f0dfecd3068b0d1b228ec11a1f281",
+      "reason": "Native SDK availability and platform public billing keys; shared entitlement and consent services. A compile-time iOS simulator review harness renders a non-purchasable Lifetime card and is absent from store profiles.",
       "acceptance": "Both physical platforms required before nativeDeviceAcceptance."
     },
     "apps/mobile/src/monetization.ts": {
@@ -41,7 +41,7 @@
       "acceptance": "Both physical platforms required before nativeDeviceAcceptance."
     },
     "apps/mobile/src/provider.tsx": {
-      "sha256": "263e9b23a9a58025296096ac926e4e1e8655a4624d18b5e17d722437a53eece9",
+      "sha256": "bf602f996f721fa5ea4a8ec7a145b8aff5bd2858ecd712ba0da64227c04bb155",
       "reason": "Android blur pauses sessions in addition to shared AppState handling.",
       "acceptance": "Both physical platforms required before nativeDeviceAcceptance."
     },
@@ -51,22 +51,22 @@
       "acceptance": "Both physical platforms required before nativeDeviceAcceptance."
     },
     "apps/mobile/src/session-date-picker.tsx": {
-      "sha256": "821bc435ba3b5ca980ee398c0bc1283e7278039677fa97ce2a0f675c78a8edde",
+      "sha256": "466aca55a777aff63b751ac8d649ac09acf652d059d1cc5f3bd5c6524a49a6e9",
       "reason": "Native date-picker presentation differs; both select a local practice date.",
       "acceptance": "Both physical platforms required before nativeDeviceAcceptance."
     },
     "apps/mobile/src/sound-controls.tsx": {
-      "sha256": "d6f7c996557ddb8006d7019d08b8ed4952df7e9791dd2bf116aac825b46efa33",
+      "sha256": "278ef9f58bb1efc4cc8d982cd8cc6d34658471489c3e86b1d40159d462a2fecf",
       "reason": "Haptics supported on both mobile systems, unavailable on web.",
       "acceptance": "Both physical platforms required before nativeDeviceAcceptance."
     },
     "apps/mobile/src/ui.tsx": {
-      "sha256": "71db224faed5642456adbf0b0e4f6dff17a9bd186d0ca61df0ddacccf2c447ac",
+      "sha256": "796a942f6fdfefc099655dda1fdad1c07620fcc4245b3d89a18d8fb62bbc2fdb",
       "reason": "OS-specific keyboard avoidance preserving equivalent access to controls.",
       "acceptance": "Both physical platforms required before nativeDeviceAcceptance."
     },
     "apps/mobile/src/subscription-providers/revenuecat.ts": {
-      "sha256": "4cc6c0423f9885839a6cefa71ca47e4c8b79f1b66706759858de0e49246584bc",
+      "sha256": "5db09328e07f5425df949e1b1b4ea7086671abf27054be188e12b3ac2936452c",
       "reason": "StoreKit and Play offer eligibility, key prefixes and subscription management URLs differ; shared verified in_out_pro access.",
       "acceptance": "Both physical platforms required before nativeDeviceAcceptance."
     }

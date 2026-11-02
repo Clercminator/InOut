@@ -14,8 +14,9 @@ export class SwipeIntent {
       this.axis = Math.abs(dx) > Math.abs(dy) * 1.8 ? "horizontal" : "vertical";
     return this.axis === "horizontal";
   }
-  direction(dx: number, dy: number): SwipeDirection | undefined {
-    return this.axis === "horizontal" && Math.abs(dx) >= 64 && Math.abs(dx) > Math.abs(dy) * 1.8
+  direction(dx: number, dy: number, velocityX = 0): SwipeDirection | undefined {
+    const deliberate = Math.abs(dx) >= 64 || Math.abs(dx) >= 28 && Math.abs(velocityX) >= .35 && Math.sign(velocityX) === Math.sign(dx);
+    return this.axis === "horizontal" && deliberate && Math.abs(dx) > Math.abs(dy) * 1.8
       ? dx < 0 ? "left" : "right" : undefined;
   }
 }

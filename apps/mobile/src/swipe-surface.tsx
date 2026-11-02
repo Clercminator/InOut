@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useRef, useState, type PropsWithChildren } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type PropsWithChildren } from "react";
 import { AccessibilityInfo, Animated, PanResponder, View } from "react-native";
 import { SwipeIntent, type SwipeDirection } from "./swipe-navigation";
 
@@ -9,10 +9,11 @@ export function SwipeExclusion({ children }: PropsWithChildren) {
   return <View onTouchStart={exclude}>{children}</View>;
 }
 
-export function SwipeSurface({ children, onSwipe, testID = "swipe-surface" }: PropsWithChildren<{
-  onSwipe?: (direction: SwipeDirection) => void; testID?: string;
+export function SwipeSurface({ children, onSwipe, canSwipe, feedback = true, testID = "swipe-surface" }: PropsWithChildren<{
+  onSwipe?: (direction: SwipeDirection) => void; canSwipe?: (direction: SwipeDirection) => boolean; feedback?: boolean; testID?: string;
 }>) {
   const callback = useRef(onSwipe); callback.current = onSwipe;
+  const permitted = useRef(canSwipe); permitted.current = canSwipe;
   const blocked = useRef(false), intent = useRef(new SwipeIntent()), last = useRef(-Infinity);
   const [reduced, setReduced] = useState(true), [reader, setReader] = useState(true);
   const offset = useRef(new Animated.Value(0)).current;
@@ -27,7 +28,7 @@ export function SwipeSurface({ children, onSwipe, testID = "swipe-surface" }: Pr
   useEffect(() => { if (reduced || reader) { offset.stopAnimation(); offset.setValue(0); } }, [reduced, reader, offset]);
   const handlers = useMemo(() => {
     const reset = () => {
-      if (reduced) offset.setValue(0);
+      if (reduced || !feedback) offset.setValue(0);
       else Animated.timing(offset, { toValue: 0, duration: 150, useNativeDriver: true }).start();
     };
     return PanResponder.create({
@@ -37,18 +38,23 @@ export function SwipeSurface({ children, onSwipe, testID = "swipe-surface" }: Pr
         return false;
       },
       onMoveShouldSetPanResponderCapture: (_, g) => !reader && !blocked.current && !!callback.current &&
-        intent.current.update(g.dx, g.dy, g.numberActiveTouches),
-      onPanResponderMove: (_, g) => { intent.current.update(g.dx, g.dy, g.numberActiveTouches); if (!reduced) offset.setValue(Math.max(-36, Math.min(36, g.dx * .22))); },
+        intent.current.update(g.dx, g.dy, g.numberActiveTouches) &&
+        (permitted.current?.(g.dx < 0 ? "left" : "right") ?? true),
+      onPanResponderGrant: () => offset.stopAnimation(),
+      onPanResponderMove: (_, g) => { intent.current.update(g.dx, g.dy, g.numberActiveTouches); if (!reduced && feedback) offset.setValue(Math.max(-36, Math.min(36, g.dx * .22))); },
       onPanResponderRelease: (_, g) => {
-        reset();
-        const direction = intent.current.direction(g.dx, g.dy), now = Date.now();
-        if (direction && !reader && now - last.current >= 350 && !blocked.current) { last.current = now; callback.current?.(direction); }
+        const direction = intent.current.direction(g.dx, g.dy, g.vx), now = Date.now();
+        if (direction && !reader && now - last.current >= 260 && !blocked.current && (permitted.current?.(direction) ?? true)) {
+          offset.stopAnimation(); offset.setValue(0);
+          last.current = now; callback.current?.(direction);
+        } else reset();
       },
       onPanResponderTerminate: reset,
       onPanResponderTerminationRequest: () => true,
     }).panHandlers;
-  }, [offset, reduced, reader]);
-  return <ExcludeSwipe.Provider value={() => { blocked.current = true; }}>
+  }, [offset, reduced, reader, feedback]);
+  const exclude = useCallback(() => { blocked.current = true; }, []);
+  return <ExcludeSwipe.Provider value={exclude}>
     <Animated.View testID={testID} style={{ flex: 1, transform: [{ translateX: offset }] }} {...handlers}>{children}</Animated.View>
   </ExcludeSwipe.Provider>;
 }

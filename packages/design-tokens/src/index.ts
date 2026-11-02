@@ -34,6 +34,7 @@ export const spacing = {
   spacious: 40,
 } as const;
 export const radii = { button: 16, card: 22, pill: 9999 } as const;
+export const proBadge = { radius: 10, paddingX: 10, paddingY: 5, gap: 8, brandSize: 11, tierSize: 10, tracking: 1.4 } as const;
 export const typography = {
   body: "Inter_400Regular",
   medium: "Inter_600SemiBold",

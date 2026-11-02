@@ -9,13 +9,18 @@ appId: com.imrtech.inout
       text: "Continue"
     direction: DOWN
 - tapOn: "Continue"
-- tapOn: "Let's get started"
-- scrollUntilVisible:
-    element:
-      text: "I understand"
-    direction: DOWN
+- assertVisible: "Comfort comes first."
+- swipe:
+    direction: LEFT
+- assertVisible: "Comfort comes first."
 - tapOn: "I understand"
+- assertVisible: "A rhythm you can follow."
+- takeScreenshot: onboarding-demo
+- tapOn: "Start breathing"
 - tapOn: "Close subscription offer"
+- assertVisible: 'How tense are you right now\?'
+- openLink: "inout://"
+- tapOn: { text: "Open", optional: true }
 - tapOn: ".*Results"
 - assertVisible: "DAY STREAK"
 - takeScreenshot: progress-overview

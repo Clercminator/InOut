@@ -1,3 +1,4 @@
+import { CloseButton } from "../src/ui";
 import { dailyResetStats } from "../src/daily-reset";
 import { openDailyReset } from "../src/daily-reset-card";
 import { useTheme } from "../src/theme";
@@ -14,10 +15,10 @@ import { shiftText, practiceDuration as duration } from "../src/format";
 import { stateShift } from "@inout/shared-types";
 import { snapshot } from "@inout/breathing-engine";
 
-import { AchievementMark } from "../src/achievement-mark";
+import { includesHighIntensity } from "@inout/protocols";
 import { Celebration } from "../src/celebration";
 import { WeeklyGoal } from "../src/practice-rewards";
-import { ShareExercise } from "../src/share-exercise";
+import { ShareExercise, ShareExerciseInfo } from "../src/share-exercise";
 import { programFor } from "../src/coach";
 import { Alert } from "../src/localized-native";
 import { freeAdsDisclosure, shouldShowFreeAdsDisclosure } from "../src/ad-disclosure";
@@ -81,6 +82,7 @@ export default function Result() {
   const view = snapshot(record.engine, record.engine.anchorAt);
   const enrollment = controller.coachState().enrollments.find(e => e.completed.some(step => step.sessionId === record.id));
   const program = enrollment && programFor(enrollment.programId);
+  const canInvite = record.source !== "manual" && !!record.protocol && !includesHighIntensity(record.protocol);
   return (
     <Screen title={record.dailyReset ? "Daily Reset" : "STATE SHIFT"}>
       {record.endReason === "unwell" && <Card style={{ borderColor: colors.danger }}>
@@ -98,10 +100,9 @@ export default function Result() {
         message={shift !== null && shift > 0 ? (record.stateMetric === "wellbeing_v2" ? "You reported feeling better. Your session is saved." : "You reported less tension. A moment worth celebrating — your session is saved.") : "Your practice is part of your progress. Nicely done."}
       />}
       {saved === "1" && controller.current?.id === id && !controller.error && record.endReason === "completed" && !!controller.pacerThemeNotice.length && <Card>
-        <Label>NEW PACER THEME</Label>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}><Label>NEW PACER THEME</Label><CloseButton title="Dismiss" onPress={() => controller.dismissPacerThemeNotice()} /></View>
         <Copy accessibilityRole="alert">{message("New pacer theme available: {0}.", [t(pacerThemes.find(theme => theme.id === controller.pacerThemeNotice[0])?.name ?? "Default")])}</Copy>
         <Button title="Explore pacer themes" onPress={() => { controller.dismissPacerThemeNotice(); router.push("/settings"); }} />
-        <Button title="Dismiss" secondary onPress={() => controller.dismissPacerThemeNotice()} />
       </Card>}
       {record.dailyReset && record.endReason === "completed" && !controller.error && <Card>
         <Label>{dailyCredit ? "Daily completion earned" : "Today is complete"}</Label>
@@ -157,46 +158,38 @@ export default function Result() {
           <Copy>Stopped for discomfort. Breathe naturally and rest.</Copy>
         )}
       </Card>}
-      {saved === "1" && !controller.error && controller.latestAwards.length > 0 && <Card style={{ backgroundColor: colors.accentSurface }}><Button title="Share achievement" onPress={() => router.push(controller.latestAwards[0].id.startsWith("daily-reset-") ? { pathname: "/challenge-share", params: { daily: record.id } } : { pathname: "/milestone", params: { badge: controller.latestAwards[0].id } })} /><Button title="Close celebration" secondary onPress={() => controller.dismissAwards()} /></Card>}
       {!!record.note && <Card><Label>NOTE</Label><Copy translate={false}>{record.note}</Copy></Card>}
       <SaveError />
       {record.endReason === "completed" && !record.coach && <Copy>Come back tomorrow for another comfortable practice.</Copy>}
-      {record.source !== "manual" && record.protocol && <ShareExercise protocol={record.protocol} title={record.dailyReset ? "Invite a friend" : "Share this exercise"} />}
       <View style={{ gap: 8 }}>
-        <Button
-          title="Return to Home"
-          disabled={!!controller.error}
-          onPress={() => {
-            if (leaving.current) return;
-            leaving.current = true;
-            // Results remain immediately readable. Only an already-loaded, capped ad
-            // can show when the user chooses to leave; never wait for inventory.
-            const exit = () => { commercial?.ads.cancelCompletion(); router.replace("/(tabs)"); };
-            if (!commercial || !adEligible) { exit(); return; }
-            void commercial.ads.showCompletion(id).catch(() => false).finally(exit);
-          }}
-        />
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-        <View style={{ flexGrow: 1, flexBasis: 140 }}>
-        <Button
-          title="Share result"
-          secondary
-          disabled={!!controller.error}
-          onPress={() => { controller.analytics.track("share_result_invoked"); router.push(record.dailyReset && record.endReason === "completed" ? { pathname: "/challenge-share", params: { daily: record.id } } : { pathname: "/result-share", params: { id: record.id } }); }}
-        />
+        {record.source !== "manual" && <Button title="Do it again" disabled={!!controller.error} onPress={() => {
+          if (record.dailyReset) { openDailyReset(controller); return; }
+          if (record.protocol) {
+            controller.setCustomProtocol(record.protocol);
+            router.replace({ pathname: "/pre", params: { id: "custom" } });
+          } else router.replace({ pathname: "/pre", params: { id: record.protocolId } });
+        }} />}
+        <Button title="Return to Home" secondary={record.source !== "manual"} disabled={!!controller.error} onPress={() => {
+          if (leaving.current) return;
+          leaving.current = true;
+          const exit = () => { commercial?.ads.cancelCompletion(); router.replace("/(tabs)"); };
+          if (!commercial || !adEligible) { exit(); return; }
+          void commercial.ads.showCompletion(id).catch(() => false).finally(exit);
+        }} />
+      </View>
+      <View style={{ gap: 8 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+          <Label>Share your practice</Label>{canInvite && <ShareExerciseInfo />}
         </View>
-        {record.source !== "manual" && <View style={{ flexGrow: 1, flexBasis: 140 }}><Button
-          title="Do it again"
-          secondary
-          disabled={!!controller.error}
-          onPress={() => {
-            if (record.dailyReset) { openDailyReset(controller); return; }
-            if (record.protocol) {
-              controller.setCustomProtocol(record.protocol);
-              router.replace({ pathname: "/pre", params: { id: "custom" } });
-            } else router.replace({ pathname: "/pre", params: { id: record.protocolId } });
-          }}
-        /></View>}
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+          <View style={{ flexGrow: 1, flexBasis: 80 }}><Button title="Share result" secondary compact disabled={!!controller.error} onPress={() => {
+            controller.analytics.track("share_result_invoked");
+            router.push(record.dailyReset && record.endReason === "completed" ? { pathname: "/challenge-share", params: { daily: record.id } } : { pathname: "/result-share", params: { id: record.id } });
+          }} /></View>
+          {saved === "1" && controller.current?.id === id && !controller.error && controller.latestAwards.length > 0 && <View style={{ flexGrow: 1, flexBasis: 80 }}>
+            <Button title="Share achievement" secondary compact onPress={() => router.push(controller.latestAwards[0].id.startsWith("daily-reset-") ? { pathname: "/challenge-share", params: { daily: record.id } } : { pathname: "/milestone", params: { badge: controller.latestAwards[0].id } })} />
+          </View>}
+          {canInvite && record.protocol && <View style={{ flexGrow: 1, flexBasis: 80 }}><ShareExercise protocol={record.protocol} title="Invite a friend" compact /></View>}
         </View>
       </View>
     </Screen>

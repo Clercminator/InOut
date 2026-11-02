@@ -18,7 +18,7 @@
 {0} milestone	{0} hito	{0} marco
 {0} this {1}	{0} este {1}	{0} neste {1}
 Average {0}	Promedio {0}	Média {0}
-{0} average State Shift	Cambio medio en la tensión: {0}	Variação média da tensão: {0}
+{0} average State Shift	Cambio promedio de bienestar: {0}	Mudança média no bem-estar: {0}
 average shift {0}	cambio medio: {0}	variação média: {0}
 Sessions per {0}	Sesiones por {0}	Sessões por {0}
 Time per {0}	Tiempo por {0}	Tempo por {0}
@@ -83,3 +83,33 @@ Average from {0} completed sessions with paired ratings. Positive values mean lo
 {0} remaining	{0} restantes	{0} restantes
 {0} total practice days	{0} días de práctica en total	{0} dias de prática no total
 {0} total time	{0} de tiempo total	{0} de tempo total
+{0} paired rating	{0} evaluación antes y después	{0} avaliação antes e depois
+1 day streak	Racha de 1 día	Sequência de 1 dia
+1 day streak · {1} of the last 7 days	Racha de 1 día · {1} de los últimos 7 días	Sequência de 1 dia · {1} dos últimos 7 dias
+1 completed days · Best streak: {1}	1 día completado · Mejor racha: {1}	1 dia concluído · Maior sequência: {1}
+{0} of 1 practice days	{0} de 1 día de práctica	{0} de 1 dia de prática
+{0} of 1 practice days complete	{0} de 1 día de práctica completado	{0} de 1 dia de prática concluído
+1 practices · {1} min	1 práctica · {1} min	1 prática · {1} min
+{0} / 1 practices	{0} / 1 práctica	{0} / 1 prática
+1 practice days · {1}–{2} per session	1 día de práctica · {1}–{2} por sesión	1 dia de prática · {1}–{2} por sessão
+1 sessions completed. Your progress stays saved on this phone.	1 sesión completada. Tu progreso queda guardado en este teléfono.	1 sessão concluída. Seu progresso fica salvo neste celular.
+1 paired check-ins across {1} days	1 evaluación antes y después en {1} días	1 avaliação antes e depois em {1} dias
+Introductory price: {0} / {1}, for 1 billing periods.	Precio de introducción: {0} / {1}, durante 1 período de facturación.	Preço introdutório: {0} / {1}, por 1 período de cobrança.
+1 practice days remaining this week	Te queda 1 día de práctica esta semana	Falta 1 dia de prática nesta semana
+{0}. 1 seconds remaining.	{0}. Queda 1 segundo.	{0}. Resta 1 segundo.
+1 seconds remaining	Queda 1 segundo	Resta 1 segundo
+1 seconds	1 segundo	1 segundo
+1 protocols tried	1 protocolo probado	1 protocolo experimentado
+1 paired check-ins · Self-reported tension, 1–10	1 registro antes y después · Tensión percibida, 1–10	1 registro antes e depois · Tensão percebida, 1–10
+1 paired check-ins · Self-reported well-being, 1–10	1 registro antes y después · Bienestar percibido, 1–10	1 registro antes e depois · Bem-estar percebido, 1–10
+{0} (1 pairs)	{0} (1 par)	{0} (1 par)
+1 paired ratings	1 evaluación antes y después	1 avaliação antes e depois
+This week's goal stays at 1 days. Changes apply from next week.	La meta de esta semana sigue en 1 día. Los cambios se aplican desde la próxima semana.	A meta desta semana continua em 1 dia. As mudanças valem a partir da próxima semana.
+{0}. 1 seconds remaining. Cycle {2} of {3}	{0}. Queda 1 segundo. Ciclo {2} de {3}	{0}. Resta 1 segundo. Ciclo {2} de {3}
+paired rating	evaluación antes y después	avaliação antes e depois
+paired ratings	evaluaciones antes y después	avaliações antes e depois
+{0} minute	{0} minuto	{0} minuto
+{0} minutes	{0} minutos	{0} minutos
+{0} across {1}	{0} en {1}	{0} ao longo de {1}
+Average from 1 completed sessions with paired ratings. Positive values mean improved well-being. Historical tension ratings are excluded. These are your observations, not a measure of clinical benefit.	Promedio de 1 sesión completada con ambos registros. Los valores positivos indican mayor bienestar. No incluye registros anteriores de tensión. Son tus observaciones, no una medida de beneficio clínico.	Média de 1 sessão concluída com os dois registros. Valores positivos indicam melhora no bem-estar. Registros anteriores de tensão não entram no cálculo. São suas observações, não uma medida de benefício clínico.
+Average from 1 completed sessions with paired ratings. Positive values mean lower tension. These are your observations, not a measure of clinical benefit.	Promedio de 1 sesión completada con evaluaciones antes y después. Los valores positivos indican menor tensión. Son tus observaciones, no una medida de beneficio clínico.	Média de 1 sessão concluída com avaliações antes e depois. Os valores positivos indicam menor tensão. São suas observações, não uma medida de benefício clínico.

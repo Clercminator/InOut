@@ -20,6 +20,7 @@ export function SessionDatePicker({ value, onChange, disabled = false, timeOnly 
   const open = (kind: "date" | "time") => {
     if (Platform.OS === "android") {
       DateTimePickerAndroid.open({ value, mode: kind, maximumDate: kind === "date" ? new Date() : undefined, minimumDate: kind === "date" ? new Date(1970, 0, 1) : undefined,
+        positiveButton: { label: t("Done") }, negativeButton: { label: t("Cancel") },
         onValueChange: (_event, selected) => onChange(merge(selected, kind)) });
     } else { setDraft(value); setMode(kind); }
   };

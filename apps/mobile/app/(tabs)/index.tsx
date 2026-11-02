@@ -4,10 +4,8 @@ import { DailyCoachCard } from "../../src/daily-coach-card";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { typography } from "@inout/design-tokens";
 import { Pressable } from "../../src/localized-native";
-import { ChallengeArt } from "../../src/challenge-art";
 import { PulseArtwork } from "../../src/pulse-orb";
 import { photoUri } from "../../src/profile-photo";
-import { duration } from "../../src/format";
 import { useTheme } from "../../src/theme";
 import { t, protocolTitle, message } from "../../src/i18n";
 import { useLanguage } from "../../src/use-language";
@@ -16,18 +14,18 @@ import { useMemo, useState } from "react";
 import { Image, ScrollView, View } from "react-native";
 import { Screen, Title, Label, Copy, Button, Card, ActionRow, Chip } from "../../src/ui";
 import { useSession } from "../../src/provider";
-import { protocols, isCyclic } from "@inout/protocols";
+import { protocols } from "@inout/protocols";
 import type { Goal, PracticeGoal } from "@inout/shared-types";
 import { AdSlot } from "../../src/ad-slot";
-import { experienceFor, welcomeMessage } from "../../src/experience";
+import { profileIntention, experienceFor } from "../../src/experience";
 import { WeeklyGoal } from "../../src/practice-rewards";
-import { goalContent, goalForDay, recommendPractice } from "../../src/personalization";
+import { goalContent, goalForDay } from "../../src/personalization";
 import { practiceStats } from "../../src/progress";
 import { GuidanceAllowance } from "../../src/guidance-allowance";
 
 const situationGoals: Record<Goal, PracticeGoal> = { Calm: "stress", Sleep: "sleep", Focus: "focus", Perform: "pressure", Recover: "performance", Energize: "energy" };
 export default function Today() {
-  const { colors, mode } = useTheme();
+  const { colors } = useTheme();
   useLanguage();
   const controller = useSession();
   const { current } = controller;
@@ -39,11 +37,8 @@ export default function Today() {
   const content = goalContent[goal];
   const records = controller.history();
   const today = new Date().toDateString();
-  const pro = controller.entitlements.state.pro;
   const stats = useMemo(() => practiceStats(records), [records, today]);
-  const recommendation = useMemo(() => recommendPractice(goal, records, id => controller.entitlements.protocolAccess({ id }).allowed), [goal, records, pro, controller]);
   const recent = records.find(r => r.source !== "manual" && protocols.some(p => p.id === r.protocolId));
-  const returning = welcomeMessage(records);
   const [photoFailed, setPhotoFailed] = useState(false);
   return <Screen tabScreen hideHeader footer={<AdSlot placement="today" />}>
     <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 8 }}>
@@ -51,7 +46,7 @@ export default function Today() {
       <Pressable accessibilityRole="button" accessibilityLabel={message("{0} day streak", [stats.current])} onPress={() => router.push({ pathname: "/(tabs)/progress", params: { view: "Overview" } })} style={{ width: 48, height: 48, borderRadius: 24, borderWidth: 3, borderColor: colors.accentBorder, alignItems: "center", justifyContent: "center" }}><Copy style={{ fontFamily: typography.metric, fontSize: 19 }}>{stats.current}</Copy></Pressable>
       <Pressable accessibilityRole="button" accessibilityLabel={t("My practice profile")} onPress={() => router.push("/profile")} style={{ width: 48, height: 48, borderRadius: 18, overflow: "hidden", backgroundColor: colors.raised, alignItems: "center", justifyContent: "center" }}>{experience.photo && !photoFailed ? <Image source={{ uri: photoUri(experience.photo) }} onError={() => setPhotoFailed(true)} style={{ width: 48, height: 48 }} /> : <MaterialIcons accessible={false} name={experience.avatar} size={27} color={colors.accent} />}</Pressable>
     </View>
-    {controller.preferences.experience?.intention && <Copy translate={false} style={{ color: colors.secondaryText }}>{experience.intention}</Copy>}
+    {controller.preferences.experience?.intention && <Copy translate={false} style={{ color: colors.secondaryText }}>{profileIntention(controller.preferences)}</Copy>}
     {current?.stage === "active" && <Button title="Return to paused session" onPress={() => router.push("/session")} />}
     {current?.stage === "post" && <Button title="Finish your State Shift" onPress={() => router.push("/post")} />}
     <View style={{ flexDirection: "row", gap: 12 }}>
@@ -64,12 +59,17 @@ export default function Today() {
       </View>
     </View>
     <DailyResetCard />
-    <DailyCoachCard goal={moment ?? undefined} />
+    <View style={{ gap: 10 }}>
+      <Label>WHAT DO YOU NEED?</Label>
+      <Copy>Choose a focus to update the practice below.</Copy>
+      <SwipeExclusion><ScrollView horizontal showsHorizontalScrollIndicator style={{ flexGrow: 0 }} contentContainerStyle={{ gap: 8, paddingBottom: 8, paddingRight: 20, alignItems: "center" }}>
+        {(Object.keys(situationGoals) as Goal[]).map(situation => <Chip key={situation} title={situation} selected={content.situation === situation} onPress={() => { setMoment(situationGoals[situation]); controller.analytics.track("situation_selected"); }} />)}
+      </ScrollView></SwipeExclusion>
+      <Copy style={{ color: colors.secondaryText, fontSize: 12 }}>Swipe for more options</Copy>
+      <DailyCoachCard goal={moment ?? undefined} />
+    </View>
     <GuidanceAllowance />
-    <View style={{ gap: 12 }}><Label>WHAT DO YOU NEED?</Label><SwipeExclusion><ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={{ gap: 8, paddingRight: 20, alignItems: "center" }}>
-      {(Object.keys(situationGoals) as Goal[]).map(situation => <Chip key={situation} title={situation} selected={content.situation === situation} onPress={() => { setMoment(situationGoals[situation]); controller.analytics.track("situation_selected"); }} />)}
-    </ScrollView></SwipeExclusion></View>
-    {returning && <Copy>{returning}</Copy>}
+    <ActionRow title="Breathing for exercise" subtitle="Before, during & after training" icon="directions-run" onPress={() => router.push("/athletes")} />
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
       <QuickTile title="Saved practices" icon="bookmark-border" onPress={() => router.push("/custom")} />
       <QuickTile title="My rituals" icon="auto-awesome" onPress={() => router.push("/rituals")} />

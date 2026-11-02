@@ -5,6 +5,7 @@ import { validatePlan } from "@inout/breathing-engine";
 export function validateExperience(value: Experience) {
   const fail = () => { throw new Error("Personal preferences could not be read. Your data has been preserved."); };
   if (!value || typeof value !== "object") return fail();
+  if (value.intentionSource !== undefined && !["custom", "preset"].includes(value.intentionSource)) fail();
   for (const [key, max] of [["name", 40], ["bio", 180], ["intention", 90]] as const)
     if (typeof value[key] !== "string" || value[key].length > max) fail();
   const choices = {

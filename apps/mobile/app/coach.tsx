@@ -8,7 +8,7 @@ import { useSession, SaveError } from "../src/provider";
 import { programs, discoverPrograms, programDuration, programFor, coachProtocol, coachProtocolIds, weeklyReview } from "../src/coach";
 import { dayKey } from "../src/progress";
 import { useProgressDate } from "../src/progress-ui";
-import { protocolTitle, message, locale } from "../src/i18n";
+import { protocolTitle, message, locale, t, countLabel } from "../src/i18n";
 import { practiceDuration } from "../src/format";
 import { experienceFor } from "../src/experience";
 import { useTheme } from "../src/theme";
@@ -48,7 +48,7 @@ export default function Coach() {
     {current && enrollment && <Card>
       <Label>CURRENT PROGRAM</Label><Title>{current.title}</Title>
       <Copy>{message("{0} of {1} practice days complete", [enrollment.completed.length, current.days])}</Copy>
-      <View accessible accessibilityRole="progressbar" accessibilityLabel={current.title} accessibilityValue={{ min: 0, max: current.days, now: enrollment.completed.length }} style={{ height: 6, borderRadius: 3, backgroundColor: colors.border }}>
+      <View accessible accessibilityRole="progressbar" accessibilityLabel={t(current.title)} accessibilityValue={{ min: 0, max: current.days, now: enrollment.completed.length }} style={{ height: 6, borderRadius: 3, backgroundColor: colors.border }}>
         <View style={{ height: 6, borderRadius: 3, width: `${100 * enrollment.completed.length / current.days}%`, backgroundColor: colors.accent }} />
       </View>
       {!controller.entitlements.programAccess(current.id).allowed ? <><Copy>Your progress is saved. Pro access is needed to continue this program.</Copy><Button title="Explore InOut Pro" onPress={offer} /></> : <>
@@ -102,7 +102,7 @@ export default function Coach() {
         </View>)}
       </>}
     </Card>
-    <Card><Label>YOUR WEEKLY REVIEW</Label><Copy>{message("{0} sessions · {1} minutes · {2} practice days", [review.sessions, review.minutes, review.days])}</Copy><Copy>A missed day is a chance to return, not a debt to catch up on.</Copy>
+    <Card><Label>YOUR WEEKLY REVIEW</Label><Copy>{countLabel(review.sessions, "session")} · {countLabel(review.minutes, "minute")} · {countLabel(review.days, "practiceDay")}</Copy><Copy>A missed day is a chance to return, not a debt to catch up on.</Copy>
       {controller.entitlements.has("advancedInsights") && <ActionRow title="Practice insights" icon="insights" onPress={() => router.push("/insights")} />}
     </Card>
     <Disclosure title="About your coach" icon="info-outline"><Copy>Your coach works offline, without an account. Recommendations use approved protocols and never increase breathing intensity.</Copy><Copy>AI-assisted coaching is not enabled in this build. Your goals and check-ins are not sent to an AI service.</Copy></Disclosure>

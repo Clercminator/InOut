@@ -155,6 +155,7 @@ export interface Experience {
   name: string;
   bio: string;
   intention: string;
+  intentionSource?: "custom" | "preset";
   avatar: "spa" | "air" | "nightlight" | "wb-sunny";
   photo?: string;
   pinnedBadges: string[];

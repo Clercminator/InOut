@@ -1,4 +1,5 @@
 export const productEvents = [
+  "founder_offer_viewed", "founder_purchase_started", "founder_purchase_completed", "founder_purchase_cancelled", "founder_purchase_failed", "founder_purchase_restored", "founder_offer_sold_out",
   "breath_hold_timer_opened", "breath_hold_started", "breath_hold_stopped", "breath_hold_saved", "breath_hold_abandoned",
   "notification_preferences_saved", "session_reveal_viewed", "second_session_within_seven_days",
   "protocol_search_used", "protocol_search_empty", "session_interrupted",

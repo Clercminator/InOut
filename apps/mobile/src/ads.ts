@@ -55,10 +55,15 @@ export class AdService {
       context.sessionStage !== "active" && context.sessionStage !== "post" && context.sessionStage !== "pre" &&
       context.path === adPlacements[placement];
   }
-  async prepare(isEligible: () => boolean = () => true) {
+  async prepare(isEligible: () => boolean = () => true): Promise<void> {
     if (!this.canRequest() || !isEligible()) return;
     if (this.mode === "preview") { this.ready = true; return; }
-    if (this.pending) return this.pending;
+    if (this.pending) {
+      await this.pending;
+      // The prior surface may have unmounted or become Pro during consent.
+      // Re-evaluate this caller rather than inheriting that caller's cancelled eligibility.
+      return this.prepare(isEligible);
+    }
     const generation = this.consentGeneration;
     const eligible = () => generation === this.consentGeneration && this.canRequest() && isEligible();
     this.pending = (async () => {
