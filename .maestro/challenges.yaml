@@ -17,7 +17,7 @@ appId: com.imrtech.inout
 - takeScreenshot: onboarding-demo
 - tapOn: "Start breathing"
 - tapOn: "Close subscription offer"
-- assertVisible: 'How tense are you right now\?'
+- assertVisible: 'How are you feeling right now\?'
 - openLink: "inout://"
 - tapOn: { text: "Open", optional: true }
 - tapOn: "Challenges"
@@ -36,7 +36,7 @@ appId: com.imrtech.inout
     direction: DOWN
 - tapOn: "Skip rating & start"
 - extendedWaitUntil:
-    visible: 'How tense are you now\?'
+    visible: 'How are you feeling right now\?'
     timeout: 180000
 - scrollUntilVisible:
     element: { text: "Skip & save session" }
@@ -57,7 +57,7 @@ appId: com.imrtech.inout
           direction: DOWN
       - tapOn: "Skip rating & start"
       - extendedWaitUntil:
-          visible: 'How tense are you now\?'
+          visible: 'How are you feeling right now\?'
           timeout: 240000
       - scrollUntilVisible:
           element: { text: "Skip & save session" }

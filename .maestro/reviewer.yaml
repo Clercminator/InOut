@@ -18,7 +18,7 @@ appId: com.imrtech.inout
 - takeScreenshot: onboarding-demo
 - tapOn: "Start breathing"
 - tapOn: "Close subscription offer"
-- assertVisible: 'How tense are you right now\?'
+- assertVisible: 'How are you feeling right now\?'
 - openLink: "inout://"
 - tapOn: { text: "Open", optional: true }
 - tapOn: "My practice profile"

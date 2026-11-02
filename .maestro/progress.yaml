@@ -18,7 +18,7 @@ appId: com.imrtech.inout
 - takeScreenshot: onboarding-demo
 - tapOn: "Start breathing"
 - tapOn: "Close subscription offer"
-- assertVisible: 'How tense are you right now\?'
+- assertVisible: 'How are you feeling right now\?'
 - openLink: "inout://"
 - tapOn: { text: "Open", optional: true }
 - tapOn: ".*Results"
@@ -125,7 +125,6 @@ appId: com.imrtech.inout
 - takeScreenshot: breathing-paused
 - tapOn: "Resume"
 - extendedWaitUntil:
-    visible: 'How tense are you now\?'
+    visible: 'How are you feeling right now\?'
     timeout: 240000
 - takeScreenshot: breathing-completed
-

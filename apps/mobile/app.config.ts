@@ -41,6 +41,7 @@ export default ({ config }: ConfigContext) => {
     ["expo-image-picker", { photosPermission: photoPermission, cameraPermission: false, microphonePermission: false }],
     "@react-native-community/datetimepicker",
     ["expo-build-properties", { ios: { useFrameworks: "dynamic" }, android: { kotlinVersion: "2.2.21", enableMinifyInReleaseBuilds: true } }],
+    "./plugins/with-gradle-heap.cjs",
     "./plugins/with-kotlin-compiler.cjs",
     "./plugins/with-android-symbols.cjs",
     ["react-native-google-mobile-ads", {
