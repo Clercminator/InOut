@@ -112,6 +112,7 @@ appId: com.imrtech.inout
     text: "Skip rating & continue"
     waitToSettleTimeoutMs: 100
 - assertVisible: "Breathe comfortably."
+- tapOn: "I have read the precautions and I am in a safe place"
 - tapOn: "Start practice"
 - extendedWaitUntil:
     visible: "Next: Exhale.*"
