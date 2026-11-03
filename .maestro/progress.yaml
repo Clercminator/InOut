@@ -94,13 +94,12 @@ appId: com.imrtech.inout
 
 - openLink:
     link: "inout://pre?id=box"
-- extendedWaitUntil:
-    visible: "Open|Skip rating & continue"
-    timeout: 20000
 - tapOn:
     text: "Open"
     optional: true
-    retryTapIfNoChange: true
+- extendedWaitUntil:
+    visible: "Skip rating & continue"
+    timeout: 20000
 - scrollUntilVisible:
     element:
       text: "Skip rating & continue"
